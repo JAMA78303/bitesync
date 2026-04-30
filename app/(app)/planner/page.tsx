@@ -2,12 +2,13 @@ import { Suspense } from "react";
 import { ShoppingCart } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getMonday, toLocalISO, addDays } from "@/lib/utils/dates";
-import { getOrCreateMealPlan, getMealPlanEntries, buildGrid, groceryListExists } from "@/lib/supabase/meal-plans";
+import { getOrCreateMealPlan, getMealPlanEntries, buildGrid } from "@/lib/supabase/meal-plans";
 import { getProfile } from "@/lib/supabase/profile";
 import { PlannerGrid } from "@/components/planner/PlannerGrid";
 import { WeekNav } from "@/components/planner/WeekNav";
 import { GenerateListButton } from "@/components/planner/GenerateListButton";
 import { PlannerSkeleton } from "@/components/shared/skeletons";
+import { MEAL_TYPES } from "@/types";
 
 type Props = { searchParams: Promise<{ week?: string }> };
 
@@ -58,7 +59,12 @@ export default async function PlannerPage({ searchParams }: Props) {
   const dailyCalorieTarget = profile?.daily_calorie_target ?? null;
   const dailyProteinTarget = profile?.daily_protein_target ?? null;
   const grid = await buildGrid(entries ?? []);
-  const hasGroceryList = await groceryListExists(mealPlan.id);
+  const filledDays = Array.from({ length: 7 }, (_, day) =>
+    Object.values(grid[day]).some((entry) => entry?.recipe_id != null) ? day : -1,
+  ).filter((d) => d !== -1);
+  const filledMealTypes = MEAL_TYPES.filter((mealType) =>
+    Array.from({ length: 7 }, (_, day) => day).some((day) => grid[day][mealType]?.recipe_id != null),
+  );
 
   return (
     <section className="space-y-4">
@@ -69,7 +75,12 @@ export default async function PlannerPage({ searchParams }: Props) {
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
           <WeekNav weekStart={weekStart} />
-          <GenerateListButton mealPlanId={mealPlan.id} weekStart={weekStartISO} hasExistingList={hasGroceryList} />
+          <GenerateListButton
+            mealPlanId={mealPlan.id}
+            weekStart={weekStartISO}
+            filledDays={filledDays}
+            filledMealTypes={filledMealTypes}
+          />
           <ShoppingCart className="hidden h-5 w-5 text-gray-400 md:block" />
         </div>
       </div>

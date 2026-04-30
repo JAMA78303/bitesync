@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo } from "@/components/shared/Logo";
 import { requestPasswordReset } from "@/app/(auth)/reset/actions";
 import { AuthSubmitButton } from "@/components/shared/AuthSubmitButton";
 
@@ -13,7 +14,7 @@ export default async function ResetPage({
     <main className="mx-auto flex min-h-screen w-full flex-col justify-center px-6">
       <div className="mx-auto w-full max-w-md space-y-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         <div className="space-y-2 text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--brand-sage)]">BITESYNC</p>
+          <Logo size="sm" href="/" className="mx-auto" />
           <div className="mb-2">
             <h1 className="text-2xl font-bold text-slate-800">Reset password</h1>
             <p className="mt-1 text-sm text-slate-500">We will email you a secure reset link</p>

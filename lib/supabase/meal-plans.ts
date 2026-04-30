@@ -49,7 +49,7 @@ export async function getMealPlanEntries(mealPlanId: string) {
     .from("meal_plan_entries")
     .select(
       `
-      id, meal_plan_id, recipe_id, day_of_week, meal_type,
+      id, meal_plan_id, recipe_id, day_of_week, meal_type, quick_add_name, quick_add_calories,
       recipe:recipes (
         id, name,
         recipe_nutrition ( calories, protein_g, carbs_g, fat_g, fibre_g, sugar_g, coverage_pct )
@@ -78,7 +78,56 @@ export async function assignRecipeToSlot(
   const supabase = await createClient();
   const { error } = await supabase
     .from("meal_plan_entries")
-    .upsert({ meal_plan_id, recipe_id, day_of_week, meal_type }, { onConflict: "meal_plan_id,day_of_week,meal_type" });
+    .upsert(
+      {
+        meal_plan_id,
+        recipe_id,
+        day_of_week,
+        meal_type,
+        quick_add_name: null,
+        quick_add_calories: null,
+      },
+      { onConflict: "meal_plan_id,day_of_week,meal_type" },
+    );
+  if (error) return { error: error.message };
+  revalidatePath("/planner");
+  return { success: true };
+}
+
+export async function quickAddMeal(
+  meal_plan_id: string,
+  day_of_week: number,
+  meal_type: MealType,
+  quick_add_name: string,
+  quick_add_calories?: number | null,
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const { data: plan } = await supabase
+    .from("meal_plans")
+    .select("id")
+    .eq("id", meal_plan_id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!plan) return { error: "Meal plan not found" };
+
+  const { error } = await supabase.from("meal_plan_entries").upsert(
+    {
+      meal_plan_id,
+      recipe_id: null,
+      day_of_week,
+      meal_type,
+      quick_add_name: quick_add_name.trim(),
+      quick_add_calories: quick_add_calories ?? null,
+    },
+    { onConflict: "meal_plan_id,day_of_week,meal_type" },
+  );
+
   if (error) return { error: error.message };
   revalidatePath("/planner");
   return { success: true };

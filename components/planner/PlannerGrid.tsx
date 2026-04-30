@@ -6,7 +6,7 @@ import { RecipeSlotCard } from "@/components/planner/RecipeSlotCard";
 import { AddSlotButton } from "@/components/planner/AddSlotButton";
 import { DailyTotalsRow } from "@/components/planner/DailyTotalsRow";
 import { RecipePickerModal } from "@/components/planner/RecipePickerModal";
-import { DAY_LABELS, MEAL_LABELS, MEAL_TYPES } from "@/types";
+import { DAY_LABELS, MEAL_LABELS, MEAL_TYPES, getEntryCalories } from "@/types";
 import type { PlannerGrid as PlannerGridType, MealType } from "@/types";
 
 type Recipe = { id: string; name: string; calories?: number | null };
@@ -63,7 +63,13 @@ export function PlannerGrid({
                     {entry ? (
                       <RecipeSlotCard entry={entry} />
                     ) : (
-                      <AddSlotButton day={day} mealType={mealType} dayLabel={DAY_LABELS[day]} onClick={openPicker} />
+                      <AddSlotButton
+                        day={day}
+                        mealType={mealType}
+                        dayLabel={DAY_LABELS[day]}
+                        mealPlanId={mealPlanId}
+                        onPickRecipe={openPicker}
+                      />
                     )}
                   </div>
                 );
@@ -81,6 +87,7 @@ export function PlannerGrid({
 
       <PlannerGridMobileInline
         grid={grid}
+        mealPlanId={mealPlanId}
         weekDates={weekDates}
         openPicker={openPicker}
         dailyCalorieTarget={dailyCalorieTarget}
@@ -102,6 +109,7 @@ export function PlannerGrid({
 
 type MobileProps = {
   grid: PlannerGridType;
+  mealPlanId: string;
   weekDates: Date[];
   openPicker: (day: number, mealType: MealType) => void;
   dailyCalorieTarget?: number | null;
@@ -110,6 +118,7 @@ type MobileProps = {
 
 function PlannerGridMobileInline({
   grid,
+  mealPlanId,
   weekDates,
   openPicker,
   dailyCalorieTarget,
@@ -145,7 +154,13 @@ function PlannerGridMobileInline({
               {entry ? (
                 <RecipeSlotCard entry={entry} />
               ) : (
-                <AddSlotButton day={activeDay} mealType={mealType} dayLabel={DAY_LABELS[activeDay]} onClick={openPicker} />
+                <AddSlotButton
+                  day={activeDay}
+                  mealType={mealType}
+                  dayLabel={DAY_LABELS[activeDay]}
+                  mealPlanId={mealPlanId}
+                  onPickRecipe={openPicker}
+                />
               )}
             </div>
           );
@@ -154,7 +169,7 @@ function PlannerGridMobileInline({
         <div className="rounded-xl border border-gray-200 bg-white p-3">
           {(() => {
             const slots = Object.values(grid[activeDay]).filter(Boolean);
-            const cal = slots.reduce((s, e) => s + (e!.recipe?.recipe_nutrition?.calories ?? 0), 0);
+            const cal = slots.reduce((s, e) => s + (getEntryCalories(e!) ?? 0), 0);
             const pro = slots.reduce((s, e) => s + (e!.recipe?.recipe_nutrition?.protein_g ?? 0), 0);
             const carbs = slots.reduce((s, e) => s + (e!.recipe?.recipe_nutrition?.carbs_g ?? 0), 0);
             const fat = slots.reduce((s, e) => s + (e!.recipe?.recipe_nutrition?.fat_g ?? 0), 0);

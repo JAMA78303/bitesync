@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Logo } from "@/components/shared/Logo";
 import { createClient } from "@/lib/supabase/client";
 
 export default function ResetConfirmPage() {
@@ -34,7 +35,7 @@ export default function ResetConfirmPage() {
     <main className="mx-auto flex min-h-screen w-full flex-col justify-center px-6">
       <div className="mx-auto w-full max-w-md space-y-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         <div className="space-y-2 text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--brand-sage)]">BITESYNC</p>
+          <Logo size="sm" href="/" className="mx-auto" />
           <div className="mb-2">
             <h1 className="text-2xl font-bold text-slate-800">Set a new password</h1>
             <p className="mt-1 text-sm text-slate-500">Choose a strong password for your account</p>

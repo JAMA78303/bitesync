@@ -58,9 +58,11 @@ export type MealPlan = {
 export type MealPlanEntry = {
   id: string;
   meal_plan_id: string;
-  recipe_id: string;
+  recipe_id: string | null;
   day_of_week: number;
   meal_type: MealType;
+  quick_add_name: string | null;
+  quick_add_calories: number | null;
   recipe?: {
     id: string;
     name: string;
@@ -76,6 +78,14 @@ export type MealPlanEntry = {
   };
 };
 
+export function getEntryName(entry: MealPlanEntry): string {
+  return entry.recipe?.name ?? entry.quick_add_name ?? "Meal";
+}
+
+export function getEntryCalories(entry: MealPlanEntry): number | null {
+  return entry.recipe?.recipe_nutrition?.calories ?? entry.quick_add_calories ?? null;
+}
+
 export type PlannerGrid = {
   [day: number]: { [meal in MealType]: MealPlanEntry | null };
 };
@@ -87,6 +97,7 @@ export type GroceryItem = {
   quantity: number;
   unit: string;
   is_checked: boolean;
+  is_manual?: boolean;
   archived_at: string | null;
   created_at: string;
 };
