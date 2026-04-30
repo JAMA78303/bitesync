@@ -26,6 +26,22 @@ export async function toggleGroceryItem(item_id: string, is_checked: boolean) {
   return { success: true };
 }
 
+export async function deleteGroceryItem(item_id: string) {
+  const supabase = await createClient();
+  const now = new Date().toISOString();
+  const { error } = await supabase.from("grocery_items").update({ archived_at: now }).eq("id", item_id);
+
+  if (error && error.message.toLowerCase().includes("archived_at")) {
+    const { error: fallbackError } = await supabase.from("grocery_items").delete().eq("id", item_id);
+    if (fallbackError) return { error: fallbackError.message };
+  } else if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/grocery");
+  return { success: true };
+}
+
 export async function getMealPlanIdForWeek(weekStartDate?: string) {
   const supabase = await createClient();
   const {

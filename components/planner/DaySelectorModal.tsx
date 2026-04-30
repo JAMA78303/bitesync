@@ -62,6 +62,8 @@ export function DaySelectorModal({ open, onClose, mealPlanId, weekStart, filledD
     setSelectedMeals([]);
   }
 
+  const dayCountOptions = Array.from({ length: 7 }, (_, i) => i + 1);
+
   function handleGenerate() {
     if (!selected.length || !selectedMeals.length) return;
     startTransition(async () => {
@@ -90,22 +92,17 @@ export function DaySelectorModal({ open, onClose, mealPlanId, weekStart, filledD
         </DialogHeader>
         <p className="-mt-2 text-xs text-slate-400">Only ingredients from selected days and meal types will be added</p>
         <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => selectDayCount(1)}
-            disabled={orderedFilledDays.length === 0}
-            className="rounded-md border border-slate-200 px-2 py-1 text-[11px] text-slate-500 transition-colors hover:bg-slate-50 hover:text-[#1A4731] disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            1 day
-          </button>
-          <button
-            type="button"
-            onClick={() => selectDayCount(3)}
-            disabled={orderedFilledDays.length === 0}
-            className="rounded-md border border-slate-200 px-2 py-1 text-[11px] text-slate-500 transition-colors hover:bg-slate-50 hover:text-[#1A4731] disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            3 days
-          </button>
+          {dayCountOptions.map((count) => (
+            <button
+              key={count}
+              type="button"
+              onClick={() => selectDayCount(count)}
+              disabled={orderedFilledDays.length < count}
+              className="rounded-md border border-slate-200 px-2 py-1 text-[11px] text-slate-500 transition-colors hover:bg-slate-50 hover:text-[#1A4731] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {count} day{count === 1 ? "" : "s"}
+            </button>
+          ))}
           <button
             type="button"
             onClick={selectAll}
