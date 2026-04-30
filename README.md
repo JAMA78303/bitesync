@@ -3,7 +3,7 @@
 BiteSync is a meal planning web app that helps users build recipes, plan weekly meals, and generate grocery lists.
 Primary domain: `bitesync.io`.
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This is a  [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
 
