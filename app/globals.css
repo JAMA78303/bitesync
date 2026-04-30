@@ -1,0 +1,163 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  --background: #f8faf8;
+  --foreground: #1f2937;
+  --brand-sage: #1a4731;
+  --brand-amber: #d97706;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #0b1220;
+  --foreground: #e5e7eb;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+}
+
+html[data-theme="light"],
+html[data-theme="light"] body {
+  background-color: #f8faf8 !important;
+  color: #1f2937 !important;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body {
+  background-color: #0b1220 !important;
+  color: #e5e7eb !important;
+}
+
+:root[data-theme="dark"] .bg-white {
+  background-color: #111827 !important;
+}
+
+:root[data-theme="dark"] .bg-gray-50 {
+  background-color: #1f2937 !important;
+}
+
+:root[data-theme="dark"] .bg-gray-100 {
+  background-color: #273247 !important;
+}
+
+:root[data-theme="dark"] .text-gray-900 {
+  color: #f3f4f6 !important;
+}
+
+:root[data-theme="dark"] .text-gray-800 {
+  color: #e5e7eb !important;
+}
+
+:root[data-theme="dark"] .text-gray-700 {
+  color: #e2e8f0 !important;
+}
+
+:root[data-theme="dark"] .text-gray-600 {
+  color: #dbe3ef !important;
+}
+
+:root[data-theme="dark"] .text-gray-500 {
+  color: #d1d9e6 !important;
+}
+
+:root[data-theme="dark"] .text-slate-500 {
+  color: #c6d0df !important;
+}
+
+:root[data-theme="dark"] .text-slate-900 {
+  color: #f3f4f6 !important;
+}
+
+:root[data-theme="dark"] .text-slate-800 {
+  color: #e5e7eb !important;
+}
+
+:root[data-theme="dark"] .text-slate-700 {
+  color: #e2e8f0 !important;
+}
+
+:root[data-theme="dark"] .text-slate-600 {
+  color: #dbe3ef !important;
+}
+
+:root[data-theme="dark"] .text-gray-400 {
+  color: #bac6d8 !important;
+}
+
+:root[data-theme="dark"] .text-slate-400 {
+  color: #bac6d8 !important;
+}
+
+:root[data-theme="dark"] .text-black {
+  color: #f3f4f6 !important;
+}
+
+:root[data-theme="dark"] .text-zinc-900 {
+  color: #f3f4f6 !important;
+}
+
+:root[data-theme="dark"] .text-zinc-800 {
+  color: #e5e7eb !important;
+}
+
+:root[data-theme="dark"] .text-zinc-700 {
+  color: #dbe3ef !important;
+}
+
+:root[data-theme="dark"] .text-zinc-600 {
+  color: #d1d9e6 !important;
+}
+
+:root[data-theme="dark"] input::placeholder,
+:root[data-theme="dark"] textarea::placeholder {
+  color: #95a3b8 !important;
+  opacity: 1;
+}
+
+:root[data-theme="dark"] .border-gray-100 {
+  border-color: #2e3b53 !important;
+}
+
+:root[data-theme="dark"] .border-gray-300 {
+  border-color: #3a4963 !important;
+}
+
+:root[data-theme="dark"] .border-gray-200 {
+  border-color: #334155 !important;
+}
+
+:root[data-theme="dark"] .hover\:bg-gray-50:hover {
+  background-color: #1f2a3d !important;
+}
+
+:root[data-theme="dark"] .hover\:bg-gray-100:hover {
+  background-color: #273247 !important;
+}
+
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] textarea,
+:root[data-theme="dark"] select {
+  background-color: #0f172a !important;
+  color: #e5e7eb !important;
+  border-color: #334155 !important;
+}
+
+:root[data-theme="dark"] button.bg-white {
+  background-color: #1f2937 !important;
+  color: #e5e7eb !important;
+  border-color: #334155 !important;
+}
+
+:root[data-theme="dark"] .line-through {
+  color: #9fb0c6 !important;
+}
