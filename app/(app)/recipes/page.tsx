@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { archiveRecipe, restoreRecipe } from "@/app/(app)/recipes/actions";
+import { archiveRecipe, deleteRecipe, restoreRecipe } from "@/app/(app)/recipes/actions";
 
 type RecipeRow = {
   id: string;
@@ -96,14 +96,24 @@ export default async function RecipesPage({ searchParams }: Props) {
                     </button>
                   </form>
                 ) : (
-                  <form className="inline-block" action={archiveRecipe.bind(null, recipe.id)}>
-                    <button
-                      type="submit"
-                      className="ml-2 mt-3 inline-flex h-8 items-center justify-center rounded-md border border-amber-300 bg-amber-50 px-3 text-xs font-medium text-amber-700 hover:bg-amber-100"
-                    >
-                      Archive
-                    </button>
-                  </form>
+                  <>
+                    <form className="inline-block" action={archiveRecipe.bind(null, recipe.id)}>
+                      <button
+                        type="submit"
+                        className="ml-2 mt-3 inline-flex h-8 items-center justify-center rounded-md border border-amber-300 bg-amber-50 px-3 text-xs font-medium text-amber-700 hover:bg-amber-100"
+                      >
+                        Archive
+                      </button>
+                    </form>
+                    <form className="inline-block" action={deleteRecipe.bind(null, recipe.id)}>
+                      <button
+                        type="submit"
+                        className="ml-2 mt-3 inline-flex h-8 items-center justify-center rounded-md border border-red-300 bg-red-50 px-3 text-xs font-medium text-red-700 hover:bg-red-100"
+                      >
+                        Delete
+                      </button>
+                    </form>
+                  </>
                 )}
               </article>
             );
