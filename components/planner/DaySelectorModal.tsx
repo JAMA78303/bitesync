@@ -84,7 +84,9 @@ export function DaySelectorModal({ open, onClose, mealPlanId, weekStart, filledD
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle className="text-sm font-semibold">Which days to include?</DialogTitle>
+          <DialogTitle>
+            <span className="text-sm font-semibold">Which days to include?</span>
+          </DialogTitle>
         </DialogHeader>
         <p className="-mt-2 text-xs text-slate-400">Only ingredients from selected days and meal types will be added</p>
         <div className="flex flex-wrap gap-2">
