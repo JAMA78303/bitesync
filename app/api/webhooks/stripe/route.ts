@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { getStripeServer } from "@/lib/stripe/server";
 
 export const runtime = "nodejs";
@@ -43,6 +43,41 @@ function getSupabaseAdmin() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
+}
+
+/**
+ * `.update()` succeeds even when zero rows match (no profile row yet).
+ * Upsert creates `profiles` for `auth.users.id` when missing.
+ */
+async function updateOrInsertProfile(
+  supabase: SupabaseClient,
+  userId: string,
+  fields: Record<string, string>,
+): Promise<{ error: { message: string } | null }> {
+  const { data: updatedRows, error: updateError } = await supabase
+    .from("profiles")
+    .update(fields)
+    .eq("id", userId)
+    .select("id");
+
+  if (updateError) {
+    return { error: { message: updateError.message } };
+  }
+
+  if (updatedRows && updatedRows.length > 0) {
+    return { error: null };
+  }
+
+  const { error: upsertError } = await supabase
+    .from("profiles")
+    .upsert({ id: userId, ...fields }, { onConflict: "id" });
+
+  if (upsertError) {
+    console.error("[stripe webhook] profiles upsert (no row to update):", upsertError);
+    return { error: { message: upsertError.message } };
+  }
+
+  return { error: null };
 }
 
 function getInvoiceSubscriptionId(invoice: Stripe.Invoice): string | null {
@@ -115,17 +150,11 @@ export async function POST(request: Request) {
         if (customerId) updatePayload.stripe_customer_id = customerId;
         if (subscriptionId) updatePayload.stripe_subscription_id = subscriptionId;
 
-        const { error } = await supabase
-          .from("profiles")
-          .update(updatePayload)
-          .eq("id", userId);
+        const { error } = await updateOrInsertProfile(supabase, userId, updatePayload);
 
         if (error) {
-          console.error("[stripe webhook] profiles update failed:", error);
-          return NextResponse.json(
-            { error: error.message },
-            { status: 500 },
-          );
+          console.error("[stripe webhook] profiles update/upsert failed:", error);
+          return NextResponse.json({ error: error.message }, { status: 500 });
         }
 
         break;
@@ -150,10 +179,9 @@ export async function POST(request: Request) {
         }
         if (!userId) break;
 
-        const { error } = await supabase
-          .from("profiles")
-          .update({ subscription_status: "pro" })
-          .eq("id", userId);
+        const { error } = await updateOrInsertProfile(supabase, userId, {
+          subscription_status: "pro",
+        });
 
         if (error) {
           console.error("[stripe webhook] invoice.payment_succeeded:", error);
@@ -181,10 +209,9 @@ export async function POST(request: Request) {
         }
         if (!userId) break;
 
-        const { error } = await supabase
-          .from("profiles")
-          .update({ subscription_status: "past_due" })
-          .eq("id", userId);
+        const { error } = await updateOrInsertProfile(supabase, userId, {
+          subscription_status: "past_due",
+        });
 
         if (error) {
           console.error("[stripe webhook] invoice.payment_failed:", error);
@@ -243,10 +270,7 @@ export async function POST(request: Request) {
         const cid = normalizeStripeId(subscription.customer);
         if (cid) patch.stripe_customer_id = cid;
 
-        const { error } = await supabase
-          .from("profiles")
-          .update(patch)
-          .eq("id", userId);
+        const { error } = await updateOrInsertProfile(supabase, userId, patch);
 
         if (error) {
           console.error("[stripe webhook] subscription.updated profiles update:", error);

@@ -8,12 +8,20 @@ type Props = {
 export default async function BillingPage({ searchParams }: Props) {
   const params = await searchParams;
   const supabase = await createClient();
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("subscription_status, stripe_customer_id")
-    .single();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const isPro = profile?.subscription_status === "pro";
+  let isPro = false;
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("subscription_status, stripe_customer_id")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    isPro = profile?.subscription_status === "pro";
+  }
 
   return (
     <BillingClient

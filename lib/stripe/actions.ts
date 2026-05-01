@@ -19,7 +19,7 @@ export async function createCheckoutSession(
     .from("profiles")
     .select("stripe_customer_id")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
   let customerId = profile?.stripe_customer_id;
 
@@ -30,10 +30,13 @@ export async function createCheckoutSession(
     });
     customerId = customer.id;
 
-    await supabase
-      .from("profiles")
-      .update({ stripe_customer_id: customerId })
-      .eq("id", user.id);
+    const { error: persistError } = await supabase.from("profiles").upsert(
+      { id: user.id, stripe_customer_id: customerId },
+      { onConflict: "id" },
+    );
+    if (persistError) {
+      throw new Error(persistError.message);
+    }
   }
 
   const session = await stripe.checkout.sessions.create({
@@ -69,7 +72,7 @@ export async function createCustomerPortalSession() {
     .from("profiles")
     .select("stripe_customer_id")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
   if (!profile?.stripe_customer_id) {
     redirect("/settings/billing");
