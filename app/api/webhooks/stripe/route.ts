@@ -12,7 +12,7 @@ export async function GET() {
     ok: true,
     service: "bitesync-stripe-webhook",
     detail:
-      "This endpoint accepts POST requests from Stripe only. Open Stripe Dashboard → Webhooks to configure.",
+      "This endpoint accepts POST requests from Stripe only. Configure Stripe Dashboard > Developers > Webhooks.",
   });
 }
 
