@@ -1,6 +1,15 @@
 import { RecipeForm } from "@/components/recipes/RecipeForm";
+import { RecipeLimitReached } from "@/components/recipes/RecipeLimitReached";
+import { canCreateRecipe, getRecipeCount } from "@/lib/subscription";
 
-export default function NewRecipePage() {
+export default async function NewRecipePage() {
+  const allowed = await canCreateRecipe();
+  const count = await getRecipeCount();
+
+  if (!allowed) {
+    return <RecipeLimitReached count={count} />;
+  }
+
   return (
     <section className="space-y-4">
       <div>

@@ -82,6 +82,23 @@ export default async function SettingsPage() {
         </div>
       ) : null}
 
+      <div className="mt-4 rounded-xl border border-slate-200 bg-white p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-700">Subscription</h2>
+            <p className="mt-0.5 text-xs text-slate-400">
+              Manage your plan and billing
+            </p>
+          </div>
+          <Link
+            href="/settings/billing"
+            className="text-xs font-medium text-[#1A4731] hover:underline"
+          >
+            Manage →
+          </Link>
+        </div>
+      </div>
+
       <form action={logout}>
         <button
           type="submit"

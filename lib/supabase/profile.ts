@@ -11,6 +11,16 @@ export async function saveTDEEProfile(values: TDEEFormValues) {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("subscription_status")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.subscription_status !== "pro") {
+    return { error: "Upgrade to Pro to set TDEE targets." };
+  }
+
   const result = calculateNutritionTargets(values);
 
   const { error } = await supabase

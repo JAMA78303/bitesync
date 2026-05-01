@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { archiveRecipe, deleteRecipe, restoreRecipe } from "@/app/(app)/recipes/actions";
+import { getUserTier, getRecipeCount } from "@/lib/subscription";
 
 type RecipeRow = {
   id: string;
@@ -16,6 +17,8 @@ export default async function RecipesPage({ searchParams }: Props) {
   const params = await searchParams;
   const showArchived = params.view === "archived";
   const supabase = await createClient();
+  const [tier, count] = await Promise.all([getUserTier(), getRecipeCount()]);
+  const showLimitWarning = tier === "free" && count >= 8;
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -59,6 +62,27 @@ export default async function RecipesPage({ searchParams }: Props) {
           ) : null}
         </div>
       </div>
+      {showLimitWarning && !showArchived ? (
+        <div
+          className={`mb-4 flex items-center justify-between gap-3 rounded-lg border p-3 text-sm ${
+            count >= 10
+              ? "border-red-200 bg-red-50 text-red-700"
+              : "border-amber-200 bg-amber-50 text-amber-700"
+          }`}
+        >
+          <span>
+            {count >= 10
+              ? "Recipe limit reached - upgrade to add more"
+              : `${count} of 10 free recipes used`}
+          </span>
+          <Link
+            href="/settings/billing"
+            className="whitespace-nowrap text-xs font-semibold underline underline-offset-2"
+          >
+            Upgrade →
+          </Link>
+        </div>
+      ) : null}
       {!recipes.length ? (
         <div className="rounded-xl border border-dashed border-gray-300 bg-white p-6 text-sm text-gray-600">
           {showArchived

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { calculateRecipeNutrition, type RecipeIngredientInput } from "@/lib/nutrition/calculate";
+import { canCreateRecipe, getRecipeCount, getUserTier } from "@/lib/subscription";
 import type { ActionResult } from "@/types";
 
 type CreateRecipePayload = {
@@ -48,6 +49,17 @@ export async function createRecipe(
 
   if (!user) {
     return { error: "Unauthorized" };
+  }
+
+  const [tier, allowed, count] = await Promise.all([
+    getUserTier(),
+    canCreateRecipe(),
+    getRecipeCount(),
+  ]);
+  if (tier === "free" && !allowed) {
+    return {
+      error: `Recipe limit reached (${count}/10). Upgrade to Pro for unlimited recipes.`,
+    };
   }
 
   const { data: recipe, error: recipeError } = await supabase
