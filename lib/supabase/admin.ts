@@ -36,43 +36,70 @@ function projectRefFromSupabaseKey(key: string): string | null {
   return typeof p?.ref === "string" ? p.ref : null;
 }
 
-export function createSupabaseAdmin(): SupabaseClient {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key?.trim()) {
+/** Validates env and returns normalized URL + key. Throws if invalid (legacy JWT checks skipped for sb_secret_*). */
+export function getValidatedSupabaseServiceContext(): { url: string; key: string } {
+  const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const rawKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!rawUrl?.trim() || !rawKey?.trim()) {
     throw new Error(
       "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY (name must start with SUP — not UPABASE_)",
     );
   }
 
-  const trimmed = key.trim();
+  const url = rawUrl.trim().replace(/\/$/, "");
+  const key = rawKey.trim();
 
-  const role = jwtRoleFromSupabaseKey(trimmed);
-  if (role === "anon") {
-    throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY is the anon/public key. In Supabase Dashboard → Settings → API, copy the service_role secret (long JWT), not the anon key, into Vercel.",
-    );
-  }
-  if (role != null && role !== "service_role") {
-    throw new Error(
-      `SUPABASE_SERVICE_ROLE_KEY has role "${role}" but must be service_role. Copy the service_role secret from Supabase → Settings → API into Vercel.`,
-    );
+  if (!key.startsWith("sb_secret_")) {
+    const role = jwtRoleFromSupabaseKey(key);
+    if (role === "anon") {
+      throw new Error(
+        "SUPABASE_SERVICE_ROLE_KEY is the anon/public key. In Supabase Dashboard → Settings → API, copy the service_role secret (long JWT), not the anon key, into Vercel.",
+      );
+    }
+    if (role != null && role !== "service_role") {
+      throw new Error(
+        `SUPABASE_SERVICE_ROLE_KEY has role "${role}" but must be service_role. Copy the service_role secret from Supabase → Settings → API into Vercel.`,
+      );
+    }
+
+    const urlRef = projectRefFromSupabaseUrl(url);
+    const keyRef = projectRefFromSupabaseKey(key);
+    if (urlRef && keyRef && urlRef !== keyRef) {
+      throw new Error(
+        `NEXT_PUBLIC_SUPABASE_URL project (${urlRef}) does not match SUPABASE_SERVICE_ROLE_KEY project (${keyRef}). Paste both from the same Supabase project: Settings → API.`,
+      );
+    }
   }
 
-  const urlRef = projectRefFromSupabaseUrl(url);
-  const keyRef = projectRefFromSupabaseKey(trimmed);
-  if (urlRef && keyRef && urlRef !== keyRef) {
-    throw new Error(
-      `NEXT_PUBLIC_SUPABASE_URL project (${urlRef}) does not match SUPABASE_SERVICE_ROLE_KEY project (${keyRef}). Paste both from the same Supabase project: Settings → API.`,
-    );
-  }
+  return { url, key };
+}
 
-  // Critical: without `accessToken`, supabase-js uses `auth.getSession()` for REST calls when a
-  // browser/session cookie exists (e.g. Server Actions). That sends the user's JWT → RLS applies
-  // → permission denied on privileged writes. Pin REST auth to the service role key always.
-  return createClient(url, trimmed, {
-    accessToken: async () => trimmed,
+export function createSupabaseAdmin(): SupabaseClient {
+  const { url, key } = getValidatedSupabaseServiceContext();
+
+  return createClient(url, key, {
+    accessToken: async () => key,
   });
+}
+
+function restAuthHeaders(key: string): Record<string, string> {
+  return {
+    apikey: key,
+    Authorization: `Bearer ${key}`,
+    Accept: "application/json",
+  };
+}
+
+async function readPostgrestError(res: Response): Promise<string> {
+  const text = await res.text();
+  try {
+    const j = JSON.parse(text) as { message?: string; error?: string };
+    if (typeof j.message === "string") return j.message;
+    if (typeof j.error === "string") return j.error;
+  } catch {
+    /* ignore */
+  }
+  return text.trim() || `HTTP ${res.status}`;
 }
 
 /** Hint when PostgREST returns permission denied (wrong/missing service role on server). */
@@ -85,46 +112,96 @@ export function hintSupabasePermissionDenied(message: string): string {
   ) {
     return message;
   }
-  return `${message} — If this persists after redeploy: confirm SUPABASE_SERVICE_ROLE_KEY is the service_role secret (same Supabase project as NEXT_PUBLIC_SUPABASE_URL). Legacy JWT or sb_secret_ both work when the key matches the project.`;
+  return `${message} — Confirm SUPABASE_SERVICE_ROLE_KEY is the secret/service_role key from the same Supabase project as NEXT_PUBLIC_SUPABASE_URL, then redeploy.`;
 }
 
 /**
- * `.update()` succeeds even when zero rows match (no profile row yet).
- * Upsert creates `profiles` for `auth.users.id` when missing.
- *
- * Avoids `.update().select()` RETURNING: some DB setups reject RETURNING for the PostgREST role.
+ * Read `stripe_customer_id` via PostgREST fetch (no supabase-js REST auth chain).
+ * Used by Stripe sync so RLS / session JWT never applies.
+ */
+export async function fetchProfileStripeCustomerId(
+  userId: string,
+): Promise<{ stripe_customer_id: string | null } | { error: string }> {
+  try {
+    const { url, key } = getValidatedSupabaseServiceContext();
+    const res = await fetch(
+      `${url}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=stripe_customer_id`,
+      { headers: restAuthHeaders(key), cache: "no-store" },
+    );
+    if (!res.ok) {
+      return { error: hintSupabasePermissionDenied(await readPostgrestError(res)) };
+    }
+    const rows = (await res.json()) as { stripe_customer_id: string | null }[];
+    const row = rows[0];
+    return { stripe_customer_id: row?.stripe_customer_id ?? null };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Request failed";
+    return { error: hintSupabasePermissionDenied(msg) };
+  }
+}
+
+/**
+ * Updates or inserts `profiles` via PostgREST `fetch` only (service role headers).
+ * Avoids supabase-js using the logged-in user's JWT for REST in Server Actions.
  */
 export async function updateOrInsertProfile(
-  supabase: SupabaseClient,
   userId: string,
   fields: Record<string, string>,
 ): Promise<{ error: { message: string } | null }> {
-  const { error: updateError } = await supabase
-    .from("profiles")
-    .update(fields)
-    .eq("id", userId);
-
-  if (updateError) {
-    return { error: { message: hintSupabasePermissionDenied(updateError.message) } };
+  let url: string;
+  let key: string;
+  try {
+    ({ url, key } = getValidatedSupabaseServiceContext());
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Invalid Supabase configuration.";
+    return { error: { message: msg } };
   }
 
-  const { data: existing } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("id", userId)
-    .maybeSingle();
+  const headers: Record<string, string> = {
+    ...restAuthHeaders(key),
+    "Content-Type": "application/json",
+  };
 
-  if (existing) {
+  const patchRes = await fetch(`${url}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`, {
+    method: "PATCH",
+    headers: { ...headers, Prefer: "return=minimal" },
+    body: JSON.stringify(fields),
+  });
+
+  if (!patchRes.ok) {
+    return {
+      error: { message: hintSupabasePermissionDenied(await readPostgrestError(patchRes)) },
+    };
+  }
+
+  const getRes = await fetch(
+    `${url}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=id`,
+    { headers, cache: "no-store" },
+  );
+  if (!getRes.ok) {
+    return {
+      error: { message: hintSupabasePermissionDenied(await readPostgrestError(getRes)) },
+    };
+  }
+  const existing = (await getRes.json()) as { id: string }[];
+  if (existing.length > 0) {
     return { error: null };
   }
 
-  const { error: upsertError } = await supabase
-    .from("profiles")
-    .upsert({ id: userId, ...fields }, { onConflict: "id" });
+  const postRes = await fetch(`${url}/rest/v1/profiles`, {
+    method: "POST",
+    headers: {
+      ...headers,
+      Prefer: "resolution=merge-duplicates,return=minimal",
+    },
+    body: JSON.stringify({ id: userId, ...fields }),
+  });
 
-  if (upsertError) {
-    console.error("[supabase admin] profiles upsert (no row to update):", upsertError);
-    return { error: { message: hintSupabasePermissionDenied(upsertError.message) } };
+  if (!postRes.ok) {
+    console.error("[supabase admin] profiles POST upsert:", await postRes.text());
+    return {
+      error: { message: hintSupabasePermissionDenied(await readPostgrestError(postRes)) },
+    };
   }
 
   return { error: null };

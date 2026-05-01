@@ -114,7 +114,7 @@ export async function POST(request: Request) {
         if (customerId) updatePayload.stripe_customer_id = customerId;
         if (subscriptionId) updatePayload.stripe_subscription_id = subscriptionId;
 
-        const { error } = await updateOrInsertProfile(supabase, userId, updatePayload);
+        const { error } = await updateOrInsertProfile(userId, updatePayload);
 
         if (error) {
           console.error("[stripe webhook] profiles update/upsert failed:", error);
@@ -144,7 +144,7 @@ export async function POST(request: Request) {
         }
         if (!userId) break;
 
-        const { error } = await updateOrInsertProfile(supabase, userId, {
+        const { error } = await updateOrInsertProfile(userId, {
           subscription_status: "pro",
         });
 
@@ -175,7 +175,7 @@ export async function POST(request: Request) {
         }
         if (!userId) break;
 
-        const { error } = await updateOrInsertProfile(supabase, userId, {
+        const { error } = await updateOrInsertProfile(userId, {
           subscription_status: "past_due",
         });
 
@@ -238,7 +238,7 @@ export async function POST(request: Request) {
         const cid = normalizeStripeId(subscription.customer);
         if (cid) patch.stripe_customer_id = cid;
 
-        const { error } = await updateOrInsertProfile(supabase, userId, patch);
+        const { error } = await updateOrInsertProfile(userId, patch);
 
         if (error) {
           console.error("[stripe webhook] subscription.updated profiles update:", error);

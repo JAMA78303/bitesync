@@ -3,11 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getStripeServer } from "@/lib/stripe/server";
-import {
-  createSupabaseAdmin,
-  hintSupabasePermissionDenied,
-  updateOrInsertProfile,
-} from "@/lib/supabase/admin";
+import { fetchProfileStripeCustomerId, updateOrInsertProfile } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export async function createCheckoutSession(
@@ -108,26 +104,12 @@ export async function syncSubscriptionFromStripe(): Promise<
     return { error: "You must be signed in." };
   }
 
-  let admin;
-  try {
-    admin = createSupabaseAdmin();
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "Missing Supabase admin configuration.";
-    return { error: hintSupabasePermissionDenied(msg) };
+  const profileResult = await fetchProfileStripeCustomerId(user.id);
+  if ("error" in profileResult) {
+    return { error: profileResult.error };
   }
 
-  // Read with service role so RLS/column grants never hide stripe_customer_id from the sync path.
-  const { data: profile, error: profileReadError } = await admin
-    .from("profiles")
-    .select("stripe_customer_id")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (profileReadError) {
-    return { error: hintSupabasePermissionDenied(profileReadError.message) };
-  }
-
-  if (!profile?.stripe_customer_id) {
+  if (!profileResult.stripe_customer_id) {
     return {
       error:
         "No Stripe customer linked yet. Use Upgrade to checkout once so your account is connected.",
@@ -135,7 +117,7 @@ export async function syncSubscriptionFromStripe(): Promise<
   }
 
   const subs = await stripe.subscriptions.list({
-    customer: profile.stripe_customer_id,
+    customer: profileResult.stripe_customer_id,
     status: "all",
     limit: 20,
   });
@@ -150,9 +132,9 @@ export async function syncSubscriptionFromStripe(): Promise<
     };
   }
 
-  const { error } = await updateOrInsertProfile(admin, user.id, {
+  const { error } = await updateOrInsertProfile(user.id, {
     subscription_status: "pro",
-    stripe_customer_id: profile.stripe_customer_id,
+    stripe_customer_id: profileResult.stripe_customer_id,
     stripe_subscription_id: active.id,
   });
 
