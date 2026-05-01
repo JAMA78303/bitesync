@@ -33,14 +33,14 @@ export function RecipeSlotCard({ entry }: Props) {
   return (
     <div
       className={`group relative flex min-h-[64px] w-full flex-col justify-between rounded-lg p-2 text-left transition-opacity duration-150 ${
-        isQuickAdd ? "border border-slate-200 bg-slate-50" : "border border-[#6EE7B7] bg-[#D1FAE5]"
+        isQuickAdd ? "border border-slate-200 bg-slate-50" : "border border-slate-200 bg-slate-50"
       } ${isPending ? "opacity-50" : "opacity-100"}`}
     >
-      <p className={`line-clamp-2 pr-5 text-xs font-semibold leading-tight ${isQuickAdd ? "text-slate-600" : "text-[#1A4731]"}`}>
+      <p className={`line-clamp-2 pr-5 text-xs font-semibold leading-tight ${isQuickAdd ? "text-slate-600" : "text-slate-700"}`}>
         {name}
       </p>
       {calories != null ? (
-        <p className={`mt-1 text-[10px] ${isQuickAdd ? "text-slate-400" : "text-[#059669]"}`}>
+        <p className={`mt-1 text-[10px] ${isQuickAdd ? "text-slate-400" : "text-slate-500"}`}>
           {Math.round(calories)} kcal
           {isQuickAdd ? <span className="ml-1 text-slate-300">· quick add</span> : null}
         </p>
@@ -50,7 +50,7 @@ export function RecipeSlotCard({ entry }: Props) {
         onClick={handleRemove}
         disabled={isPending}
         aria-label={`Remove ${name}`}
-        className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded text-slate-300 opacity-0 transition-all duration-150 hover:bg-white hover:text-red-400 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100"
+        className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded bg-white/90 text-slate-500 opacity-80 transition-all duration-150 hover:bg-white hover:text-red-500 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100"
       >
         <X className="h-3 w-3" />
       </button>

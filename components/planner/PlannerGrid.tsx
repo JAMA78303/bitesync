@@ -15,6 +15,7 @@ type Props = {
   mealPlanId: string;
   recipes: Recipe[];
   weekDates: Date[];
+  initialActiveDay?: number;
   dailyCalorieTarget?: number | null;
   dailyProteinTarget?: number | null;
 };
@@ -24,6 +25,7 @@ export function PlannerGrid({
   mealPlanId,
   recipes,
   weekDates,
+  initialActiveDay = 0,
   dailyCalorieTarget,
   dailyProteinTarget,
 }: Props) {
@@ -90,6 +92,7 @@ export function PlannerGrid({
         mealPlanId={mealPlanId}
         weekDates={weekDates}
         openPicker={openPicker}
+        initialActiveDay={initialActiveDay}
         dailyCalorieTarget={dailyCalorieTarget}
         dailyProteinTarget={dailyProteinTarget}
       />
@@ -112,6 +115,7 @@ type MobileProps = {
   mealPlanId: string;
   weekDates: Date[];
   openPicker: (day: number, mealType: MealType) => void;
+  initialActiveDay: number;
   dailyCalorieTarget?: number | null;
   dailyProteinTarget?: number | null;
 };
@@ -121,10 +125,11 @@ function PlannerGridMobileInline({
   mealPlanId,
   weekDates,
   openPicker,
+  initialActiveDay,
   dailyCalorieTarget,
   dailyProteinTarget,
 }: MobileProps) {
-  const [activeDay, setActiveDay] = useState(0);
+  const [activeDay, setActiveDay] = useState(initialActiveDay);
   const hasTargets = !!dailyCalorieTarget && !!dailyProteinTarget;
 
   return (

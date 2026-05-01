@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { ShoppingCart } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { getMonday, toLocalISO, addDays } from "@/lib/utils/dates";
+import { getMonday, toLocalISO, addDays, isCurrentWeek } from "@/lib/utils/dates";
 import { getOrCreateMealPlan, getMealPlanEntries, buildGrid } from "@/lib/supabase/meal-plans";
 import { getProfile } from "@/lib/supabase/profile";
 import { PlannerGrid } from "@/components/planner/PlannerGrid";
@@ -26,6 +26,9 @@ export default async function PlannerPage({ searchParams }: Props) {
 
   const weekStartISO = toLocalISO(weekStart);
   const weekDates = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const today = new Date();
+  const currentWeek = isCurrentWeek(weekStart);
+  const initialActiveDay = currentWeek ? (today.getDay() === 0 ? 6 : today.getDay() - 1) : 0;
 
   const { data: recipes } = await supabase
     .from("recipes")
@@ -91,6 +94,7 @@ export default async function PlannerPage({ searchParams }: Props) {
           mealPlanId={mealPlan.id}
           recipes={formattedRecipes}
           weekDates={weekDates}
+          initialActiveDay={initialActiveDay}
           dailyCalorieTarget={dailyCalorieTarget}
           dailyProteinTarget={dailyProteinTarget}
         />

@@ -6,6 +6,11 @@ import { getMonday, toLocalISO } from "@/lib/utils/dates";
 import { mergeIngredients } from "@/lib/utils/merge";
 import type { MealType } from "@/types";
 
+function isMissingArchivedAtColumn(message?: string | null): boolean {
+  if (!message) return false;
+  return message.toLowerCase().includes("archived_at");
+}
+
 export async function getGroceryItems(meal_plan_id: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -15,7 +20,20 @@ export async function getGroceryItems(meal_plan_id: string) {
     .is("archived_at", null)
     .order("is_checked", { ascending: true })
     .order("name", { ascending: true });
-  return { data, error };
+
+  if (!error) return { data, error };
+
+  if (isMissingArchivedAtColumn(error.message)) {
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from("grocery_items")
+      .select("id, name, quantity, unit, is_checked, created_at")
+      .eq("meal_plan_id", meal_plan_id)
+      .order("is_checked", { ascending: true })
+      .order("name", { ascending: true });
+    return { data: fallbackData, error: fallbackError };
+  }
+
+  return { data: null, error };
 }
 
 export async function toggleGroceryItem(item_id: string, is_checked: boolean) {
@@ -62,11 +80,18 @@ export async function getMealPlanIdForWeek(weekStartDate?: string) {
 
 export async function groceryListExists(meal_plan_id: string): Promise<boolean> {
   const supabase = await createClient();
-  const { count } = await supabase
+  const { count, error } = await supabase
     .from("grocery_items")
     .select("*", { count: "exact", head: true })
     .eq("meal_plan_id", meal_plan_id)
     .is("archived_at", null);
+  if (error && isMissingArchivedAtColumn(error.message)) {
+    const { count: fallbackCount } = await supabase
+      .from("grocery_items")
+      .select("*", { count: "exact", head: true })
+      .eq("meal_plan_id", meal_plan_id);
+    return (fallbackCount ?? 0) > 0;
+  }
   return (count ?? 0) > 0;
 }
 
@@ -109,7 +134,57 @@ export async function generateGroceryList(meal_plan_id: string, selectedDays?: n
     p_meal_plan_id: meal_plan_id,
     p_items: merged,
   });
-  if (error) return { error: error.message };
+
+  if (error) {
+    const shouldFallback =
+      error.message.toLowerCase().includes("replace_grocery_items") ||
+      isMissingArchivedAtColumn(error.message);
+
+    if (!shouldFallback) return { error: error.message };
+
+    const now = new Date().toISOString();
+    const { error: softDeleteError } = await supabase
+      .from("grocery_items")
+      .update({ archived_at: now })
+      .eq("meal_plan_id", meal_plan_id);
+
+    if (softDeleteError && !isMissingArchivedAtColumn(softDeleteError.message)) {
+      return { error: softDeleteError.message };
+    }
+
+    if (softDeleteError && isMissingArchivedAtColumn(softDeleteError.message)) {
+      const { error: hardDeleteError } = await supabase.from("grocery_items").delete().eq("meal_plan_id", meal_plan_id);
+      if (hardDeleteError) return { error: hardDeleteError.message };
+    }
+
+    const rows = merged.map((item) => ({
+      meal_plan_id,
+      name: item.name,
+      quantity: item.quantity,
+      unit: item.unit,
+      is_checked: false,
+      archived_at: null as string | null,
+      is_manual: false,
+    }));
+
+    const { error: insertError } = await supabase.from("grocery_items").insert(rows);
+    if (!insertError) {
+      revalidatePath("/grocery");
+      return { success: true };
+    }
+
+    // Legacy fallback if archived_at / is_manual columns do not exist yet.
+    const legacyRows = merged.map((item) => ({
+      meal_plan_id,
+      name: item.name,
+      quantity: item.quantity,
+      unit: item.unit,
+      is_checked: false,
+    }));
+
+    const { error: legacyInsertError } = await supabase.from("grocery_items").insert(legacyRows);
+    if (legacyInsertError) return { error: legacyInsertError.message };
+  }
 
   revalidatePath("/grocery");
   return { success: true };
