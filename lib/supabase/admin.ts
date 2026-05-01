@@ -1,4 +1,5 @@
 import { Buffer } from "node:buffer";
+import postgres from "postgres";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 /** Decode JWT payload without verifying the signature (same pattern as Supabase dashboard keys). */
@@ -93,13 +94,90 @@ function restAuthHeaders(key: string): Record<string, string> {
 async function readPostgrestError(res: Response): Promise<string> {
   const text = await res.text();
   try {
-    const j = JSON.parse(text) as { message?: string; error?: string };
-    if (typeof j.message === "string") return j.message;
+    const j = JSON.parse(text) as {
+      message?: string;
+      error?: string;
+      details?: string;
+      hint?: string;
+      code?: string;
+    };
+    const parts: string[] = [];
+    if (typeof j.message === "string") parts.push(j.message);
+    if (typeof j.details === "string") parts.push(`Details: ${j.details}`);
+    if (typeof j.hint === "string") parts.push(`Hint: ${j.hint}`);
+    if (typeof j.code === "string") parts.push(`Code: ${j.code}`);
+    if (parts.length > 0) return parts.join(" — ");
     if (typeof j.error === "string") return j.error;
   } catch {
     /* ignore */
   }
   return text.trim() || `HTTP ${res.status}`;
+}
+
+const PROFILE_UPSERT_COLUMNS = new Set([
+  "subscription_status",
+  "stripe_customer_id",
+  "stripe_subscription_id",
+]);
+
+function sanitizeProfileFields(fields: Record<string, string>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(fields)) {
+    if (PROFILE_UPSERT_COLUMNS.has(k)) out[k] = v;
+  }
+  return out;
+}
+
+/** Bypass PostgREST entirely — connects as Postgres (transaction pooler URI). */
+async function upsertProfileViaPooler(
+  connectionString: string,
+  userId: string,
+  fields: Record<string, string>,
+): Promise<{ error: { message: string } | null }> {
+  const safe = sanitizeProfileFields(fields);
+  const keys = Object.keys(safe);
+  if (keys.length === 0) return { error: null };
+
+  const sql = postgres(connectionString, { max: 1, ssl: "require" });
+  try {
+    const columns = ["id", ...keys];
+    const colList = columns.join(", ");
+    const placeholders = columns.map((_, i) => `$${i + 1}`).join(", ");
+    const updates = keys.map((k) => `${k} = EXCLUDED.${k}`).join(", ");
+    const values: string[] = [userId, ...keys.map((k) => safe[k])];
+    const query = `
+      INSERT INTO public.profiles (${colList})
+      VALUES (${placeholders})
+      ON CONFLICT (id) DO UPDATE SET ${updates}
+    `;
+    await sql.unsafe(query, values);
+    return { error: null };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[supabase admin] pooler upsert failed:", msg);
+    return { error: { message: msg } };
+  } finally {
+    await sql.end({ timeout: 5 });
+  }
+}
+
+async function selectStripeCustomerViaPooler(
+  connectionString: string,
+  userId: string,
+): Promise<{ stripe_customer_id: string | null } | { error: string }> {
+  const sql = postgres(connectionString, { max: 1, ssl: "require" });
+  try {
+    const rows = await sql<{ stripe_customer_id: string | null }[]>`
+      SELECT stripe_customer_id FROM public.profiles WHERE id = ${userId}::uuid LIMIT 1
+    `;
+    const row = rows[0];
+    return { stripe_customer_id: row?.stripe_customer_id ?? null };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { error: msg };
+  } finally {
+    await sql.end({ timeout: 5 });
+  }
 }
 
 /** Hint when PostgREST returns permission denied (wrong/missing service role on server). */
@@ -112,7 +190,7 @@ export function hintSupabasePermissionDenied(message: string): string {
   ) {
     return message;
   }
-  return `${message} — Confirm SUPABASE_SERVICE_ROLE_KEY is the secret/service_role key from the same Supabase project as NEXT_PUBLIC_SUPABASE_URL, then redeploy.`;
+  return `${message} — Fix: (1) In Supabase → Settings → API open **Legacy anon, service_role API keys** and paste the **service_role** JWT (starts with eyJ) into Vercel as SUPABASE_SERVICE_ROLE_KEY — new sb_secret_ keys sometimes mis-auth via REST. (2) Or set SUPABASE_DB_POOLER_URL (Transaction pooler URI from Database → Connection string) to bypass REST. Redeploy after env changes.`;
 }
 
 /**
@@ -122,6 +200,11 @@ export function hintSupabasePermissionDenied(message: string): string {
 export async function fetchProfileStripeCustomerId(
   userId: string,
 ): Promise<{ stripe_customer_id: string | null } | { error: string }> {
+  const pooler = process.env.SUPABASE_DB_POOLER_URL?.trim();
+  if (pooler) {
+    return selectStripeCustomerViaPooler(pooler, userId);
+  }
+
   try {
     const { url, key } = getValidatedSupabaseServiceContext();
     const res = await fetch(
@@ -148,6 +231,11 @@ export async function updateOrInsertProfile(
   userId: string,
   fields: Record<string, string>,
 ): Promise<{ error: { message: string } | null }> {
+  const pooler = process.env.SUPABASE_DB_POOLER_URL?.trim();
+  if (pooler) {
+    return upsertProfileViaPooler(pooler, userId, fields);
+  }
+
   let url: string;
   let key: string;
   try {
@@ -198,9 +286,10 @@ export async function updateOrInsertProfile(
   });
 
   if (!postRes.ok) {
-    console.error("[supabase admin] profiles POST upsert:", await postRes.text());
+    const msg = await readPostgrestError(postRes);
+    console.error("[supabase admin] profiles POST upsert:", msg);
     return {
-      error: { message: hintSupabasePermissionDenied(await readPostgrestError(postRes)) },
+      error: { message: hintSupabasePermissionDenied(msg) },
     };
   }
 
