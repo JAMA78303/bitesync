@@ -2,6 +2,18 @@ import { createClient } from "@/lib/supabase/server";
 
 export type UserTier = "free" | "pro";
 
+/**
+ * Pro-gated features (TDEE, unlimited recipes, billing UI).
+ * Normalizes DB quirks; `past_due` still has subscription access until Stripe downgrades.
+ */
+export function isProSubscriptionStatus(
+  status: string | null | undefined,
+): boolean {
+  if (status == null || typeof status !== "string") return false;
+  const s = status.trim().toLowerCase();
+  return s === "pro" || s === "past_due";
+}
+
 export async function getUserTier(): Promise<UserTier> {
   const supabase = await createClient();
   const {
@@ -13,9 +25,9 @@ export async function getUserTier(): Promise<UserTier> {
     .from("profiles")
     .select("subscription_status")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
-  return data?.subscription_status === "pro" ? "pro" : "free";
+  return isProSubscriptionStatus(data?.subscription_status) ? "pro" : "free";
 }
 
 export async function canCreateRecipe(): Promise<boolean> {

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { isProSubscriptionStatus } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 import { calculateNutritionTargets, type TDEEFormValues } from "@/lib/utils/tdee";
 
@@ -15,9 +16,9 @@ export async function saveTDEEProfile(values: TDEEFormValues) {
     .from("profiles")
     .select("subscription_status")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (profile?.subscription_status !== "pro") {
+  if (!isProSubscriptionStatus(profile?.subscription_status)) {
     return { error: "Upgrade to Pro to set TDEE targets." };
   }
 
@@ -56,6 +57,7 @@ export async function getProfile() {
     .select(
       `
       subscription_status,
+      stripe_customer_id,
       weight_kg,
       height_cm,
       age,
@@ -67,7 +69,7 @@ export async function getProfile() {
     `,
     )
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
   return data;
 }

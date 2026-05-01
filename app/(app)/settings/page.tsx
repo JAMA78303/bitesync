@@ -3,11 +3,14 @@ import { Lock } from "lucide-react";
 import { logout } from "@/app/(app)/settings/actions";
 import { ThemeToggle } from "@/components/settings/ThemeToggle";
 import { TDEEForm } from "@/components/settings/TDEEForm";
+import { isProSubscriptionStatus } from "@/lib/subscription";
 import { getProfile } from "@/lib/supabase/profile";
+
+export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
   const profile = await getProfile();
-  const isPro = profile?.subscription_status === "pro";
+  const isPro = isProSubscriptionStatus(profile?.subscription_status);
 
   const defaultValues = profile?.weight_kg
     ? {
@@ -62,6 +65,18 @@ export default async function SettingsPage() {
             >
               Upgrade to Pro
             </Link>
+            {profile?.stripe_customer_id ? (
+              <p className="mt-4 text-xs leading-relaxed text-slate-500">
+                Already paid? Open{" "}
+                <Link
+                  href="/settings/billing"
+                  className="font-medium text-[#1A4731] underline underline-offset-2"
+                >
+                  Billing
+                </Link>{" "}
+                and use &quot;Sync subscription from Stripe&quot; so Pro unlocks here.
+              </p>
+            ) : null}
           </div>
         )}
       </div>

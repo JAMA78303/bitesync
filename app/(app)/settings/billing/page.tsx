@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { isProSubscriptionStatus } from "@/lib/subscription";
 import { BillingClient } from "@/components/settings/BillingClient";
 
 type Props = {
@@ -23,7 +24,7 @@ export default async function BillingPage({ searchParams }: Props) {
       .eq("id", user.id)
       .maybeSingle();
 
-    isPro = profile?.subscription_status === "pro";
+    isPro = isProSubscriptionStatus(profile?.subscription_status);
     hasStripeCustomer = Boolean(profile?.stripe_customer_id);
   }
 
