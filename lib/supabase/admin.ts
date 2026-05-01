@@ -9,26 +9,46 @@ export function createSupabaseAdmin(): SupabaseClient {
   return createClient(url, key);
 }
 
+/** Hint when PostgREST returns permission denied (wrong/missing service role on server). */
+export function hintSupabasePermissionDenied(message: string): string {
+  const lower = message.toLowerCase();
+  if (
+    !lower.includes("permission denied") &&
+    !lower.includes("42501") &&
+    !lower.includes("insufficient_privilege")
+  ) {
+    return message;
+  }
+  return `${message} — For server-side Stripe sync and webhooks, set SUPABASE_SERVICE_ROLE_KEY in Vercel to the service_role secret (Supabase Dashboard → Settings → API). Do not use the anon key.`;
+}
+
 /**
  * `.update()` succeeds even when zero rows match (no profile row yet).
  * Upsert creates `profiles` for `auth.users.id` when missing.
+ *
+ * Avoids `.update().select()` RETURNING: some DB setups reject RETURNING for the PostgREST role.
  */
 export async function updateOrInsertProfile(
   supabase: SupabaseClient,
   userId: string,
   fields: Record<string, string>,
 ): Promise<{ error: { message: string } | null }> {
-  const { data: updatedRows, error: updateError } = await supabase
+  const { error: updateError } = await supabase
     .from("profiles")
     .update(fields)
-    .eq("id", userId)
-    .select("id");
+    .eq("id", userId);
 
   if (updateError) {
-    return { error: { message: updateError.message } };
+    return { error: { message: hintSupabasePermissionDenied(updateError.message) } };
   }
 
-  if (updatedRows && updatedRows.length > 0) {
+  const { data: existing } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (existing) {
     return { error: null };
   }
 
@@ -38,7 +58,7 @@ export async function updateOrInsertProfile(
 
   if (upsertError) {
     console.error("[supabase admin] profiles upsert (no row to update):", upsertError);
-    return { error: { message: upsertError.message } };
+    return { error: { message: hintSupabasePermissionDenied(upsertError.message) } };
   }
 
   return { error: null };

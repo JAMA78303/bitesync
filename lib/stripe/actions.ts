@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getStripeServer } from "@/lib/stripe/server";
-import { createSupabaseAdmin, updateOrInsertProfile } from "@/lib/supabase/admin";
+import {
+  createSupabaseAdmin,
+  hintSupabasePermissionDenied,
+  updateOrInsertProfile,
+} from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export async function createCheckoutSession(
@@ -104,11 +108,24 @@ export async function syncSubscriptionFromStripe(): Promise<
     return { error: "You must be signed in." };
   }
 
-  const { data: profile } = await supabase
+  let admin;
+  try {
+    admin = createSupabaseAdmin();
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Missing Supabase admin configuration.";
+    return { error: hintSupabasePermissionDenied(msg) };
+  }
+
+  // Read with service role so RLS/column grants never hide stripe_customer_id from the sync path.
+  const { data: profile, error: profileReadError } = await admin
     .from("profiles")
     .select("stripe_customer_id")
     .eq("id", user.id)
     .maybeSingle();
+
+  if (profileReadError) {
+    return { error: hintSupabasePermissionDenied(profileReadError.message) };
+  }
 
   if (!profile?.stripe_customer_id) {
     return {
@@ -133,7 +150,6 @@ export async function syncSubscriptionFromStripe(): Promise<
     };
   }
 
-  const admin = createSupabaseAdmin();
   const { error } = await updateOrInsertProfile(admin, user.id, {
     subscription_status: "pro",
     stripe_customer_id: profile.stripe_customer_id,
