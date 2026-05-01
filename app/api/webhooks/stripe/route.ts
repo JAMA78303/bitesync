@@ -6,6 +6,38 @@ import { getStripeServer } from "@/lib/stripe/server";
 
 export const runtime = "nodejs";
 
+/** Browser GET shows nothing useful — return JSON so the URL is not a blank page. */
+export async function GET() {
+  return NextResponse.json({
+    ok: true,
+    service: "bitesync-stripe-webhook",
+    detail:
+      "This endpoint accepts POST requests from Stripe only. Open Stripe Dashboard → Webhooks to configure.",
+  });
+}
+
+function normalizeStripeId(value: unknown): string | null {
+  if (!value) return null;
+  if (typeof value === "string") return value;
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "id" in value &&
+    typeof (value as { id: unknown }).id === "string"
+  ) {
+    return (value as { id: string }).id;
+  }
+  return null;
+}
+
+function subscriptionStatusToProfileStatus(
+  status: Stripe.Subscription.Status,
+): "pro" | "free" | "past_due" {
+  if (status === "active" || status === "trialing") return "pro";
+  if (status === "past_due" || status === "unpaid") return "past_due";
+  return "free";
+}
+
 function getSupabaseAdmin() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -54,18 +86,47 @@ export async function POST(request: Request) {
   try {
     switch (event.type) {
       case "checkout.session.completed": {
-        const session = event.data.object as Stripe.Checkout.Session;
-        const userId = session.metadata?.supabase_user_id;
-        if (!userId) break;
+        const sessionThin = event.data.object as Stripe.Checkout.Session;
+        // Completed payloads often omit expanded IDs — retrieve full session.
+        const session = await stripe.checkout.sessions.retrieve(sessionThin.id, {
+          expand: ["subscription", "customer"],
+        });
 
-        await supabase
+        let userId = session.metadata?.supabase_user_id ?? null;
+        const customerId = normalizeStripeId(session.customer);
+        let subscriptionId = normalizeStripeId(session.subscription);
+
+        if (!userId && subscriptionId) {
+          const sub = await stripe.subscriptions.retrieve(subscriptionId);
+          userId = sub.metadata?.supabase_user_id ?? null;
+        }
+
+        if (!userId) {
+          console.error(
+            "[stripe webhook] checkout.session.completed: missing supabase_user_id",
+            session.id,
+          );
+          break;
+        }
+
+        const updatePayload: Record<string, string> = {
+          subscription_status: "pro",
+        };
+        if (customerId) updatePayload.stripe_customer_id = customerId;
+        if (subscriptionId) updatePayload.stripe_subscription_id = subscriptionId;
+
+        const { error } = await supabase
           .from("profiles")
-          .update({
-            subscription_status: "pro",
-            stripe_customer_id: session.customer as string,
-            stripe_subscription_id: session.subscription as string,
-          })
+          .update(updatePayload)
           .eq("id", userId);
+
+        if (error) {
+          console.error("[stripe webhook] profiles update failed:", error);
+          return NextResponse.json(
+            { error: error.message },
+            { status: 500 },
+          );
+        }
 
         break;
       }
@@ -78,13 +139,26 @@ export async function POST(request: Request) {
         const subscription = await stripe.subscriptions.retrieve(
           subscriptionId,
         );
-        const userId = subscription.metadata?.supabase_user_id;
+        let userId = subscription.metadata?.supabase_user_id ?? null;
+        if (!userId) {
+          const { data: row } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("stripe_subscription_id", subscription.id)
+            .maybeSingle();
+          userId = row?.id ?? null;
+        }
         if (!userId) break;
 
-        await supabase
+        const { error } = await supabase
           .from("profiles")
           .update({ subscription_status: "pro" })
           .eq("id", userId);
+
+        if (error) {
+          console.error("[stripe webhook] invoice.payment_succeeded:", error);
+          return NextResponse.json({ error: error.message }, { status: 500 });
+        }
         break;
       }
 
@@ -96,30 +170,53 @@ export async function POST(request: Request) {
         const subscription = await stripe.subscriptions.retrieve(
           subscriptionId,
         );
-        const userId = subscription.metadata?.supabase_user_id;
+        let userId = subscription.metadata?.supabase_user_id ?? null;
+        if (!userId) {
+          const { data: row } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("stripe_subscription_id", subscription.id)
+            .maybeSingle();
+          userId = row?.id ?? null;
+        }
         if (!userId) break;
 
-        await supabase
+        const { error } = await supabase
           .from("profiles")
           .update({ subscription_status: "past_due" })
           .eq("id", userId);
+
+        if (error) {
+          console.error("[stripe webhook] invoice.payment_failed:", error);
+          return NextResponse.json({ error: error.message }, { status: 500 });
+        }
         break;
       }
 
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
-        const userId = subscription.metadata?.supabase_user_id;
+        let userId = subscription.metadata?.supabase_user_id ?? null;
 
-        if (userId) {
-          await supabase
+        if (!userId) {
+          const { data: row } = await supabase
             .from("profiles")
-            .update({ subscription_status: "free" })
-            .eq("id", userId);
-        } else {
-          await supabase
-            .from("profiles")
-            .update({ subscription_status: "free" })
-            .eq("stripe_subscription_id", subscription.id);
+            .select("id")
+            .eq("stripe_subscription_id", subscription.id)
+            .maybeSingle();
+          userId = row?.id ?? null;
+        }
+
+        const query = userId
+          ? supabase.from("profiles").update({ subscription_status: "free" }).eq("id", userId)
+          : supabase
+              .from("profiles")
+              .update({ subscription_status: "free" })
+              .eq("stripe_subscription_id", subscription.id);
+
+        const { error } = await query;
+        if (error) {
+          console.error("[stripe webhook] customer.subscription.deleted:", error);
+          return NextResponse.json({ error: error.message }, { status: 500 });
         }
 
         break;
@@ -127,14 +224,34 @@ export async function POST(request: Request) {
 
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
-        const userId = subscription.metadata?.supabase_user_id;
+        let userId = subscription.metadata?.supabase_user_id ?? null;
+        if (!userId) {
+          const { data: row } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("stripe_subscription_id", subscription.id)
+            .maybeSingle();
+          userId = row?.id ?? null;
+        }
         if (!userId) break;
 
-        const status = subscription.status === "active" ? "pro" : "free";
-        await supabase
+        const profileStatus = subscriptionStatusToProfileStatus(subscription.status);
+        const patch: Record<string, string> = {
+          subscription_status: profileStatus,
+        };
+        patch.stripe_subscription_id = subscription.id;
+        const cid = normalizeStripeId(subscription.customer);
+        if (cid) patch.stripe_customer_id = cid;
+
+        const { error } = await supabase
           .from("profiles")
-          .update({ subscription_status: status })
+          .update(patch)
           .eq("id", userId);
+
+        if (error) {
+          console.error("[stripe webhook] subscription.updated profiles update:", error);
+          return NextResponse.json({ error: error.message }, { status: 500 });
+        }
         break;
       }
     }
