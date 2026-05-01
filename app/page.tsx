@@ -27,13 +27,13 @@ export default function LandingPage() {
 
           <div className="flex items-center gap-2">
             <Link
-              href="/auth/login"
+              href="/login"
               className="rounded-lg px-3 py-2 text-sm text-slate-500 transition-colors hover:text-slate-700"
             >
               Log in
             </Link>
             <Link
-              href="/auth/signup"
+              href="/signup"
               className="rounded-lg bg-[#1A4731] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#153928]"
             >
               Get started free
@@ -60,14 +60,14 @@ export default function LandingPage() {
 
         <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link
-            href="/auth/signup"
+            href="/signup"
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#1A4731] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-[#153928] sm:w-auto"
           >
             Start planning for free
             <ChevronRight className="h-4 w-4" />
           </Link>
           <Link
-            href="/auth/login"
+            href="/login"
             className="inline-flex w-full items-center justify-center rounded-xl border border-slate-200 px-6 py-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 sm:w-auto"
           >
             Log in
@@ -227,7 +227,7 @@ export default function LandingPage() {
               ))}
             </ul>
             <Link
-              href="/auth/signup"
+              href="/signup"
               className="block w-full rounded-xl border border-slate-200 py-2.5 text-center text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
             >
               Get started free
@@ -263,7 +263,7 @@ export default function LandingPage() {
               ))}
             </ul>
             <Link
-              href="/auth/signup"
+              href="/signup"
               className="block w-full rounded-xl bg-white py-2.5 text-center text-sm font-medium text-[#1A4731] transition-colors hover:bg-green-50"
             >
               Start free trial
@@ -282,7 +282,7 @@ export default function LandingPage() {
             required.
           </p>
           <Link
-            href="/auth/signup"
+            href="/signup"
             className="inline-flex items-center gap-2 rounded-xl bg-[#1A4731] px-8 py-3 font-medium text-white transition-colors hover:bg-[#153928]"
           >
             Get started free
@@ -303,10 +303,10 @@ export default function LandingPage() {
           </Link>
 
           <div className="flex items-center gap-6">
-            <Link href="/auth/login" className="text-xs text-slate-400 hover:text-slate-600">
+            <Link href="/login" className="text-xs text-slate-400 hover:text-slate-600">
               Log in
             </Link>
-            <Link href="/auth/signup" className="text-xs text-slate-400 hover:text-slate-600">
+            <Link href="/signup" className="text-xs text-slate-400 hover:text-slate-600">
               Sign up
             </Link>
           </div>
