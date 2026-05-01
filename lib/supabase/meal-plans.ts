@@ -76,20 +76,51 @@ export async function assignRecipeToSlot(
   meal_type: MealType,
 ) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const { data: plan } = await supabase
+    .from("meal_plans")
+    .select("id")
+    .eq("id", meal_plan_id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!plan) return { error: "Meal plan not found" };
+
+  const payload = {
+    meal_plan_id,
+    recipe_id,
+    day_of_week,
+    meal_type,
+    quick_add_name: null,
+    quick_add_calories: null,
+  };
+
   const { error } = await supabase
     .from("meal_plan_entries")
-    .upsert(
+    .upsert(payload, { onConflict: "meal_plan_id,day_of_week,meal_type" });
+
+  if (error) {
+    const missingQuickAddColumns =
+      error.message.includes("quick_add_name") || error.message.includes("quick_add_calories");
+    if (!missingQuickAddColumns) return { error: error.message };
+
+    // Backward-compatible retry for databases that have not yet added quick_add_* columns.
+    const { error: fallbackError } = await supabase.from("meal_plan_entries").upsert(
       {
         meal_plan_id,
         recipe_id,
         day_of_week,
         meal_type,
-        quick_add_name: null,
-        quick_add_calories: null,
       },
       { onConflict: "meal_plan_id,day_of_week,meal_type" },
     );
-  if (error) return { error: error.message };
+    if (fallbackError) return { error: fallbackError.message };
+  }
+
   revalidatePath("/planner");
   return { success: true };
 }

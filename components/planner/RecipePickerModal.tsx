@@ -40,7 +40,11 @@ export function RecipePickerModal({ open, onClose, mealPlanId, day, mealType, re
       const result = await assignRecipeToSlot(mealPlanId, recipe.id, day, mealType);
       setAssigningId(null);
       if (result?.error) {
-        toast({ title: "Failed to assign recipe", variant: "destructive" });
+        toast({
+          title: "Failed to assign recipe",
+          description: result.error,
+          variant: "destructive",
+        });
         return;
       }
       onClose();

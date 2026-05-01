@@ -10,6 +10,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { DAY_NAMES, MEAL_LABELS, MEAL_TYPES } from "@/types";
 import type { MealType } from "@/types";
 
+const WEEK_DAYS = [0, 1, 2, 3, 4, 5, 6] as const;
+
 type Props = {
   open: boolean;
   onClose: () => void;
@@ -20,8 +22,7 @@ type Props = {
 };
 
 export function DaySelectorModal({ open, onClose, mealPlanId, weekStart, filledDays, filledMealTypes }: Props) {
-  const orderedFilledDays = [...filledDays].sort((a, b) => a - b);
-  const [selected, setSelected] = useState<number[]>(filledDays);
+  const [selected, setSelected] = useState<number[]>([...WEEK_DAYS]);
   const [selectedMeals, setSelectedMeals] = useState<MealType[]>(filledMealTypes);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
@@ -29,17 +30,17 @@ export function DaySelectorModal({ open, onClose, mealPlanId, weekStart, filledD
 
   useEffect(() => {
     if (open) {
-      setSelected(filledDays);
+      setSelected([...WEEK_DAYS]);
       setSelectedMeals(filledMealTypes);
     }
-  }, [open, filledDays, filledMealTypes]);
+  }, [open, filledMealTypes]);
 
   function toggleDay(day: number) {
     setSelected((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]));
   }
 
   function selectAll() {
-    setSelected(orderedFilledDays);
+    setSelected([...WEEK_DAYS]);
   }
 
   function clearAll() {
@@ -47,7 +48,7 @@ export function DaySelectorModal({ open, onClose, mealPlanId, weekStart, filledD
   }
 
   function selectDayCount(count: number) {
-    setSelected(orderedFilledDays.slice(0, count));
+    setSelected([...WEEK_DAYS].slice(0, count));
   }
 
   function toggleMealType(mealType: MealType) {
@@ -97,7 +98,6 @@ export function DaySelectorModal({ open, onClose, mealPlanId, weekStart, filledD
               key={count}
               type="button"
               onClick={() => selectDayCount(count)}
-              disabled={orderedFilledDays.length < count}
               className="rounded-md border border-slate-200 px-2 py-1 text-[11px] text-slate-500 transition-colors hover:bg-slate-50 hover:text-[#1A4731] disabled:cursor-not-allowed disabled:opacity-40"
             >
               {count} day{count === 1 ? "" : "s"}
@@ -106,10 +106,9 @@ export function DaySelectorModal({ open, onClose, mealPlanId, weekStart, filledD
           <button
             type="button"
             onClick={selectAll}
-            disabled={orderedFilledDays.length === 0}
             className="rounded-md border border-slate-200 px-2 py-1 text-[11px] text-slate-500 transition-colors hover:bg-slate-50 hover:text-[#1A4731] disabled:cursor-not-allowed disabled:opacity-40"
           >
-            All planned
+            Full week
           </button>
         </div>
         <div className="grid grid-cols-7 gap-1">
@@ -120,18 +119,13 @@ export function DaySelectorModal({ open, onClose, mealPlanId, weekStart, filledD
               <button
                 key={day}
                 type="button"
-                onClick={() => hasMeals && toggleDay(day)}
-                disabled={!hasMeals}
+                onClick={() => toggleDay(day)}
                 className={`flex flex-col items-center rounded-lg px-1 py-2 text-center transition-all duration-150 ${
-                  !hasMeals
-                    ? "cursor-not-allowed bg-slate-50 opacity-30"
-                    : isSelected
-                      ? "bg-[#1A4731] text-white"
-                      : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                  isSelected ? "bg-[#1A4731] text-white" : "bg-slate-100 text-slate-500 hover:bg-slate-200"
                 }`}
               >
                 <span className="text-[9px] font-semibold uppercase tracking-wide">{DAY_NAMES[day].slice(0, 3)}</span>
-                {hasMeals ? <span className={`mt-0.5 text-[8px] ${isSelected ? "text-green-200" : "text-slate-400"}`}>●</span> : null}
+                <span className={`mt-0.5 text-[8px] ${isSelected ? "text-green-200" : "text-slate-400"}`}>{hasMeals ? "●" : "○"}</span>
               </button>
             );
           })}
@@ -145,7 +139,7 @@ export function DaySelectorModal({ open, onClose, mealPlanId, weekStart, filledD
             Clear all
           </button>
           <span className="ml-auto text-xs text-slate-400">
-            {selected.length} of {filledDays.length} days
+            {selected.length} of 7 days
           </span>
         </div>
         <p className="text-xs font-semibold text-slate-500">Meal types</p>
