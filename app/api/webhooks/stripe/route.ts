@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
@@ -43,6 +44,11 @@ function getSupabaseAdmin() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
+}
+
+function revalidateSubscriptionPages() {
+  revalidatePath("/settings/billing");
+  revalidatePath("/settings");
 }
 
 /**
@@ -157,6 +163,7 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: error.message }, { status: 500 });
         }
 
+        revalidateSubscriptionPages();
         break;
       }
 
@@ -187,6 +194,7 @@ export async function POST(request: Request) {
           console.error("[stripe webhook] invoice.payment_succeeded:", error);
           return NextResponse.json({ error: error.message }, { status: 500 });
         }
+        revalidateSubscriptionPages();
         break;
       }
 
@@ -217,6 +225,7 @@ export async function POST(request: Request) {
           console.error("[stripe webhook] invoice.payment_failed:", error);
           return NextResponse.json({ error: error.message }, { status: 500 });
         }
+        revalidateSubscriptionPages();
         break;
       }
 
@@ -246,6 +255,7 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: error.message }, { status: 500 });
         }
 
+        revalidateSubscriptionPages();
         break;
       }
 
@@ -276,6 +286,7 @@ export async function POST(request: Request) {
           console.error("[stripe webhook] subscription.updated profiles update:", error);
           return NextResponse.json({ error: error.message }, { status: 500 });
         }
+        revalidateSubscriptionPages();
         break;
       }
     }

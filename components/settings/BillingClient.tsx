@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Check, Loader2, Zap, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,8 +42,23 @@ export function BillingClient({
   monthlyPriceId,
   annualPriceId,
 }: Props) {
+  const router = useRouter();
   const [billing, setBilling] = useState<"monthly" | "annual">("annual");
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (!showSuccess || isPro) return;
+
+    let ticks = 0;
+    const maxTicks = 30;
+    const id = setInterval(() => {
+      router.refresh();
+      ticks += 1;
+      if (ticks >= maxTicks) clearInterval(id);
+    }, 2000);
+
+    return () => clearInterval(id);
+  }, [showSuccess, isPro, router]);
 
   function handleUpgrade() {
     startTransition(async () => {
@@ -68,7 +84,7 @@ export function BillingClient({
         </p>
       </div>
 
-      {showSuccess && (
+      {showSuccess && isPro && (
         <div className="mb-6 flex items-center gap-3 rounded-xl border border-[#6EE7B7] bg-[#D1FAE5] p-4">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1A4731]">
             <Check className="h-4 w-4 text-white" />
@@ -79,6 +95,21 @@ export function BillingClient({
             </p>
             <p className="text-xs text-[#1A4731] opacity-70">
               All Pro features are now unlocked.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {showSuccess && !isPro && (
+        <div className="mb-6 flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <Loader2 className="h-5 w-5 shrink-0 animate-spin text-amber-600" />
+          <div>
+            <p className="text-sm font-semibold text-amber-900">
+              Payment received — activating Pro
+            </p>
+            <p className="text-xs text-amber-800 opacity-80">
+              Your account updates as soon as Stripe confirms (usually a few seconds). This page
+              refreshes automatically.
             </p>
           </div>
         </div>

@@ -5,6 +5,8 @@ type Props = {
   searchParams: Promise<{ success?: string; cancelled?: string }>;
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function BillingPage({ searchParams }: Props) {
   const params = await searchParams;
   const supabase = await createClient();
