@@ -4,6 +4,11 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { MealType, PlannerGrid, MealPlanEntry } from "@/types";
 
+function isMissingQuickAddColumns(message?: string | null): boolean {
+  if (!message) return false;
+  return message.includes("quick_add_name") || message.includes("quick_add_calories");
+}
+
 export async function getOrCreateMealPlan(weekStartDate: string) {
   const supabase = await createClient();
   const {
@@ -58,7 +63,36 @@ export async function getMealPlanEntries(mealPlanId: string) {
     )
     .eq("meal_plan_id", mealPlanId);
 
-  return { data: data as MealPlanEntry[] | null, error };
+  if (!error) {
+    return { data: data as unknown as MealPlanEntry[] | null, error };
+  }
+
+  if (!isMissingQuickAddColumns(error.message)) {
+    return { data: null, error };
+  }
+
+  const { data: legacyData, error: legacyError } = await supabase
+    .from("meal_plan_entries")
+    .select(
+      `
+      id, meal_plan_id, recipe_id, day_of_week, meal_type,
+      recipe:recipes (
+        id, name,
+        recipe_nutrition ( calories, protein_g, carbs_g, fat_g, fibre_g, sugar_g, coverage_pct )
+      )
+    `,
+    )
+    .eq("meal_plan_id", mealPlanId);
+
+  if (legacyError) return { data: null, error: legacyError };
+
+  const normalized = (legacyData ?? []).map((entry) => ({
+    ...entry,
+    quick_add_name: null,
+    quick_add_calories: null,
+  }));
+
+  return { data: normalized as unknown as MealPlanEntry[], error: null };
 }
 
 export async function buildGrid(entries: MealPlanEntry[]): Promise<PlannerGrid> {
@@ -104,8 +138,7 @@ export async function assignRecipeToSlot(
     .upsert(payload, { onConflict: "meal_plan_id,day_of_week,meal_type" });
 
   if (error) {
-    const missingQuickAddColumns =
-      error.message.includes("quick_add_name") || error.message.includes("quick_add_calories");
+    const missingQuickAddColumns = isMissingQuickAddColumns(error.message);
     if (!missingQuickAddColumns) return { error: error.message };
 
     // Backward-compatible retry for databases that have not yet added quick_add_* columns.
@@ -159,7 +192,15 @@ export async function quickAddMeal(
     { onConflict: "meal_plan_id,day_of_week,meal_type" },
   );
 
-  if (error) return { error: error.message };
+  if (error) {
+    if (isMissingQuickAddColumns(error.message)) {
+      return {
+        error:
+          "Quick add requires the latest database migration. You can still add meals from your recipe library for now.",
+      };
+    }
+    return { error: error.message };
+  }
   revalidatePath("/planner");
   return { success: true };
 }
