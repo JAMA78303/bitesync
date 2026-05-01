@@ -15,6 +15,7 @@ export default async function BillingPage({ searchParams }: Props) {
   } = await supabase.auth.getUser();
 
   let isPro = false;
+  let hasStripeCustomer = false;
   if (user) {
     const { data: profile } = await supabase
       .from("profiles")
@@ -23,11 +24,13 @@ export default async function BillingPage({ searchParams }: Props) {
       .maybeSingle();
 
     isPro = profile?.subscription_status === "pro";
+    hasStripeCustomer = Boolean(profile?.stripe_customer_id);
   }
 
   return (
     <BillingClient
       isPro={isPro}
+      hasStripeCustomer={hasStripeCustomer}
       showSuccess={params.success === "true"}
       showCancelled={params.cancelled === "true"}
       monthlyPriceId={process.env.STRIPE_PRO_MONTHLY_PRICE_ID!}

@@ -2,8 +2,8 @@ import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { getStripeServer } from "@/lib/stripe/server";
+import { createSupabaseAdmin, updateOrInsertProfile } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
@@ -39,51 +39,9 @@ function subscriptionStatusToProfileStatus(
   return "free";
 }
 
-function getSupabaseAdmin() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
-
 function revalidateSubscriptionPages() {
   revalidatePath("/settings/billing");
   revalidatePath("/settings");
-}
-
-/**
- * `.update()` succeeds even when zero rows match (no profile row yet).
- * Upsert creates `profiles` for `auth.users.id` when missing.
- */
-async function updateOrInsertProfile(
-  supabase: SupabaseClient,
-  userId: string,
-  fields: Record<string, string>,
-): Promise<{ error: { message: string } | null }> {
-  const { data: updatedRows, error: updateError } = await supabase
-    .from("profiles")
-    .update(fields)
-    .eq("id", userId)
-    .select("id");
-
-  if (updateError) {
-    return { error: { message: updateError.message } };
-  }
-
-  if (updatedRows && updatedRows.length > 0) {
-    return { error: null };
-  }
-
-  const { error: upsertError } = await supabase
-    .from("profiles")
-    .upsert({ id: userId, ...fields }, { onConflict: "id" });
-
-  if (upsertError) {
-    console.error("[stripe webhook] profiles upsert (no row to update):", upsertError);
-    return { error: { message: upsertError.message } };
-  }
-
-  return { error: null };
 }
 
 function getInvoiceSubscriptionId(invoice: Stripe.Invoice): string | null {
@@ -122,7 +80,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  const supabase = getSupabaseAdmin();
+  const supabase = createSupabaseAdmin();
 
   try {
     switch (event.type) {

@@ -2,15 +2,17 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Loader2, Zap, CreditCard } from "lucide-react";
+import { Check, Loader2, Zap, CreditCard, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   createCheckoutSession,
   createCustomerPortalSession,
+  syncSubscriptionFromStripe,
 } from "@/lib/stripe/actions";
 
 type Props = {
   isPro: boolean;
+  hasStripeCustomer: boolean;
   showSuccess: boolean;
   showCancelled: boolean;
   monthlyPriceId: string;
@@ -37,6 +39,7 @@ const FREE_FEATURES = [
 
 export function BillingClient({
   isPro,
+  hasStripeCustomer,
   showSuccess,
   showCancelled,
   monthlyPriceId,
@@ -45,6 +48,8 @@ export function BillingClient({
   const router = useRouter();
   const [billing, setBilling] = useState<"monthly" | "annual">("annual");
   const [isPending, startTransition] = useTransition();
+  const [syncPending, setSyncPending] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!showSuccess || isPro) return;
@@ -75,6 +80,18 @@ export function BillingClient({
     });
   }
 
+  async function handleSyncFromStripe() {
+    setSyncMessage(null);
+    setSyncPending(true);
+    const result = await syncSubscriptionFromStripe();
+    setSyncPending(false);
+    if ("error" in result) {
+      setSyncMessage(result.error);
+    } else {
+      router.refresh();
+    }
+  }
+
   return (
     <div className="mx-auto max-w-lg px-4 pb-20">
       <div className="mb-6">
@@ -101,17 +118,44 @@ export function BillingClient({
       )}
 
       {showSuccess && !isPro && (
-        <div className="mb-6 flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
-          <Loader2 className="h-5 w-5 shrink-0 animate-spin text-amber-600" />
-          <div>
-            <p className="text-sm font-semibold text-amber-900">
-              Payment received — activating Pro
-            </p>
-            <p className="text-xs text-amber-800 opacity-80">
-              Your account updates as soon as Stripe confirms (usually a few seconds). This page
-              refreshes automatically.
-            </p>
+        <div className="mb-6 space-y-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <div className="flex items-center gap-3">
+            <Loader2 className="h-5 w-5 shrink-0 animate-spin text-amber-600" />
+            <div>
+              <p className="text-sm font-semibold text-amber-900">
+                Payment received — activating Pro
+              </p>
+              <p className="text-xs text-amber-800 opacity-80">
+                Your account updates as soon as Stripe confirms (usually a few seconds). This page
+                refreshes automatically.
+              </p>
+            </div>
           </div>
+          {hasStripeCustomer && (
+            <div className="border-t border-amber-200/80 pt-3">
+              <p className="mb-2 text-xs text-amber-900/90">
+                Still on Free after a minute? Pull your subscription state directly from Stripe.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="border-amber-300 bg-white text-amber-950 hover:bg-amber-50"
+                disabled={syncPending || isPending}
+                onClick={handleSyncFromStripe}
+              >
+                {syncPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                )}
+                Sync subscription from Stripe
+              </Button>
+              {syncMessage && (
+                <p className="mt-2 text-xs text-red-700">{syncMessage}</p>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -257,6 +301,36 @@ export function BillingClient({
               Cancel anytime - Secure payment by Stripe
             </p>
           </div>
+
+          {!isPro && hasStripeCustomer && !showSuccess && (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="mb-2 text-sm font-medium text-slate-700">
+                Paid but still seeing Free?
+              </p>
+              <p className="mb-3 text-xs text-slate-500">
+                Sync reads your live Stripe subscription and unlocks Pro here (same data webhooks
+                use).
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full sm:w-auto"
+                disabled={syncPending || isPending}
+                onClick={handleSyncFromStripe}
+              >
+                {syncPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                )}
+                Sync subscription from Stripe
+              </Button>
+              {syncMessage && (
+                <p className="mt-2 text-xs text-red-600">{syncMessage}</p>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

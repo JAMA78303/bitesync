@@ -1,7 +1,9 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getStripeServer } from "@/lib/stripe/server";
+import { createSupabaseAdmin, updateOrInsertProfile } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export async function createCheckoutSession(
@@ -84,4 +86,65 @@ export async function createCustomerPortalSession() {
   });
 
   redirect(portalSession.url);
+}
+
+/**
+ * Pulls subscription state from Stripe and updates Supabase (same source of truth as webhooks).
+ * Use when payment succeeded but Pro did not unlock yet (webhook delay or misconfiguration).
+ */
+export async function syncSubscriptionFromStripe(): Promise<
+  { ok: true } | { error: string }
+> {
+  const stripe = getStripeServer();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You must be signed in." };
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("stripe_customer_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!profile?.stripe_customer_id) {
+    return {
+      error:
+        "No Stripe customer linked yet. Use Upgrade to checkout once so your account is connected.",
+    };
+  }
+
+  const subs = await stripe.subscriptions.list({
+    customer: profile.stripe_customer_id,
+    status: "all",
+    limit: 20,
+  });
+
+  const active = subs.data.find(
+    (s) => s.status === "active" || s.status === "trialing",
+  );
+  if (!active) {
+    return {
+      error:
+        "Stripe shows no active subscription for this customer. Check Stripe Dashboard or use test/live keys that match your payment.",
+    };
+  }
+
+  const admin = createSupabaseAdmin();
+  const { error } = await updateOrInsertProfile(admin, user.id, {
+    subscription_status: "pro",
+    stripe_customer_id: profile.stripe_customer_id,
+    stripe_subscription_id: active.id,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/settings/billing");
+  revalidatePath("/settings");
+  return { ok: true };
 }
