@@ -67,7 +67,12 @@ export function createSupabaseAdmin(): SupabaseClient {
     );
   }
 
-  return createClient(url, trimmed);
+  // Critical: without `accessToken`, supabase-js uses `auth.getSession()` for REST calls when a
+  // browser/session cookie exists (e.g. Server Actions). That sends the user's JWT → RLS applies
+  // → permission denied on privileged writes. Pin REST auth to the service role key always.
+  return createClient(url, trimmed, {
+    accessToken: async () => trimmed,
+  });
 }
 
 /** Hint when PostgREST returns permission denied (wrong/missing service role on server). */
@@ -80,7 +85,7 @@ export function hintSupabasePermissionDenied(message: string): string {
   ) {
     return message;
   }
-  return `${message} — Fix: Vercel → Project → Settings → Environment Variables → exact name SUPABASE_SERVICE_ROLE_KEY = service_role secret from Supabase → Settings → API (same project as NEXT_PUBLIC_SUPABASE_URL). Enable for Production and Preview if you test previews; redeploy. If the error persists, the URL and service_role key are often from two different Supabase projects — recopy both from one dashboard.`;
+  return `${message} — If this persists after redeploy: confirm SUPABASE_SERVICE_ROLE_KEY is the service_role secret (same Supabase project as NEXT_PUBLIC_SUPABASE_URL). Legacy JWT or sb_secret_ both work when the key matches the project.`;
 }
 
 /**
