@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { ThemeProvider } from "next-themes";
 import "./globals.css";
 
 const inter = Inter({
@@ -53,8 +54,37 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning data-theme="light" className={`${inter.variable} ${inter.className} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${inter.className} h-full antialiased`}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function() {
+  try {
+    var storedTheme = localStorage.getItem("theme") || localStorage.getItem("bitesync-theme");
+    var theme = storedTheme;
+    if (!theme || theme === "system") {
+      theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+    var root = document.documentElement;
+    root.classList.remove("light", "dark");
+    root.classList.add(theme);
+    root.setAttribute("data-theme", theme);
+  } catch (e) {}
+})();`,
+          }}
+        />
+      </head>
+      <body className="min-h-full flex flex-col">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+          storageKey="theme"
+        >
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

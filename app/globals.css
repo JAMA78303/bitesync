@@ -1,13 +1,25 @@
 @import "tailwindcss";
 
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+html {
+  color-scheme: light dark;
+}
+
 :root {
-  color-scheme: light;
+  color-scheme: light dark;
   --background: #f8faf8;
   --foreground: #1f2937;
   --brand-sage: #1a4731;
   --brand-amber: #d97706;
 }
 
+:root.dark,
 :root[data-theme="dark"] {
   color-scheme: dark;
   --background: #0b1220;

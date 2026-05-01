@@ -2,29 +2,29 @@
 
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
-
-type ThemeMode = "light" | "dark";
-
-function applyTheme(theme: ThemeMode) {
-  document.documentElement.setAttribute("data-theme", theme);
-  localStorage.setItem("bitesync-theme", theme);
-}
+import { useTheme } from "next-themes";
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<ThemeMode>(() => {
-    if (typeof window === "undefined") return "light";
-    return localStorage.getItem("bitesync-theme") === "dark" ? "dark" : "light";
-  });
-  const isDark = theme === "dark";
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    applyTheme(theme);
-  }, [theme]);
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted || !resolvedTheme) return;
+    // Keep legacy selectors working while the app transitions to class-based theming.
+    document.documentElement.setAttribute("data-theme", resolvedTheme);
+    localStorage.setItem("bitesync-theme", resolvedTheme);
+  }, [mounted, resolvedTheme]);
+
+  if (!mounted) return null;
+
+  const isDark = resolvedTheme === "dark";
 
   function toggleTheme() {
-    const next: ThemeMode = isDark ? "light" : "dark";
-    setTheme(next);
-    applyTheme(next);
+    setTheme(isDark ? "light" : "dark");
   }
 
   return (
