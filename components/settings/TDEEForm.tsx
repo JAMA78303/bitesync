@@ -169,7 +169,7 @@ export function TDEEForm({ defaultValues }: Props) {
           <label className="mb-1.5 block text-sm font-medium text-slate-700">Sex</label>
           <select
             {...form.register("sex")}
-            className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm dark:border-gray-600 dark:bg-gray-900"
+            className="theme-aware-select h-10 w-full rounded-md border border-gray-300 px-3 text-sm"
             defaultValue={defaultValues?.sex}
           >
             <option value="">Select</option>
@@ -184,7 +184,7 @@ export function TDEEForm({ defaultValues }: Props) {
         <label className="mb-1.5 block text-sm font-medium text-slate-700">Activity level</label>
         <select
           {...form.register("activityLevel")}
-          className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm dark:border-gray-600 dark:bg-gray-900"
+          className="theme-aware-select h-10 w-full rounded-md border border-gray-300 px-3 text-sm"
           defaultValue={defaultValues?.activityLevel}
         >
           <option value="">How active are you?</option>
@@ -203,7 +203,7 @@ export function TDEEForm({ defaultValues }: Props) {
         <label className="mb-1.5 block text-sm font-medium text-slate-700">Goal</label>
         <select
           {...form.register("goal")}
-          className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm dark:border-gray-600 dark:bg-gray-900"
+          className="theme-aware-select h-10 w-full rounded-md border border-gray-300 px-3 text-sm"
           defaultValue={defaultValues?.goal}
         >
           <option value="">What is your goal?</option>

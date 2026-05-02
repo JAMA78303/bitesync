@@ -168,6 +168,19 @@ html[data-theme="dark"] body {
   border-color: #334155 !important;
 }
 
+/* Explicit theme-aware select styling for form controls that must track app theme reliably on mobile browsers */
+select.theme-aware-select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+:root[data-theme="dark"] select.theme-aware-select,
+:root.dark select.theme-aware-select {
+  background-color: #0f172a !important;
+  color: #e5e7eb !important;
+  border-color: #334155 !important;
+}
+
 :root[data-theme="dark"] button.bg-white {
   background-color: #1f2937 !important;
   color: #e5e7eb !important;
