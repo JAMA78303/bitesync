@@ -148,6 +148,10 @@ html[data-theme="dark"] body {
   border-color: #334155 !important;
 }
 
+:root[data-theme="dark"] .border-slate-200 {
+  border-color: #334155 !important;
+}
+
 :root[data-theme="dark"] .hover\:bg-gray-50:hover {
   background-color: #1f2a3d !important;
 }

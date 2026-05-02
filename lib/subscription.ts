@@ -1,3 +1,4 @@
+import { unstable_noStore as noStore } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
 export type UserTier = "free" | "pro";
@@ -15,6 +16,7 @@ export function isProSubscriptionStatus(
 }
 
 export async function getUserTier(): Promise<UserTier> {
+  noStore();
   const supabase = await createClient();
   const {
     data: { user },

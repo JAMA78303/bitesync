@@ -168,23 +168,26 @@ export function BillingClient({
       )}
 
       {isPro ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-5">
-          <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#D1FAE5]">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 text-slate-800 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100">
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#D1FAE5]">
               <Zap className="h-5 w-5 text-[#1A4731]" />
             </div>
-            <div>
-              <p className="font-semibold text-slate-800">BiteSync Pro</p>
-              <p className="text-xs text-slate-400">All features unlocked</p>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-slate-800 dark:text-slate-100">BiteSync Pro</p>
+              <p className="text-xs text-slate-400 dark:text-slate-400">All features unlocked</p>
             </div>
-            <span className="ml-auto rounded-full bg-[#D1FAE5] px-2.5 py-1 text-xs font-medium text-[#1A4731]">
+            <span className="ml-0 shrink-0 rounded-full bg-[#D1FAE5] px-2.5 py-1 text-xs font-medium text-[#1A4731] sm:ml-auto">
               Active
             </span>
           </div>
 
           <ul className="mb-6 space-y-2">
             {PRO_FEATURES.map((f, i) => (
-              <li key={i} className="flex items-center gap-2 text-sm text-slate-600">
+              <li
+                key={i}
+                className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300"
+              >
                 <Check className="h-4 w-4 shrink-0 text-[#1A4731]" />
                 {f}
               </li>
@@ -195,7 +198,7 @@ export function BillingClient({
             onClick={handleManage}
             disabled={isPending}
             variant="outline"
-            className="w-full"
+            className="w-full border-slate-300 dark:border-slate-600 dark:text-slate-100"
           >
             {isPending ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -205,7 +208,7 @@ export function BillingClient({
             Manage subscription
           </Button>
 
-          <p className="mt-3 text-center text-xs text-slate-400">
+          <p className="mt-3 text-center text-xs text-slate-400 dark:text-slate-400">
             Cancel anytime from the billing portal
           </p>
         </div>

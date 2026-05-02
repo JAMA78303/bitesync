@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 import { isProSubscriptionStatus } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 import { calculateNutritionTargets, type TDEEFormValues } from "@/lib/utils/tdee";
@@ -46,6 +46,7 @@ export async function saveTDEEProfile(values: TDEEFormValues) {
 }
 
 export async function getProfile() {
+  noStore();
   const supabase = await createClient();
   const {
     data: { user },
