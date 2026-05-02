@@ -232,19 +232,36 @@ function dayCaloriesTotal(
     .reduce((s, r) => s + (calById.get(r.recipe_id!) ?? 0), 0);
 }
 
-/** If a day exceeds maxRatio of daily kcal, drop snack slots (highest slot_index first) until within budget. */
-function trimSnacksIfDayOverCalorieCap(
+function dayProteinTotal(
+  rows: MealPlanInsertRow[],
+  day: number,
+  proById: Map<string, number>,
+): number {
+  return rows
+    .filter((r) => r.day_of_week === day && r.recipe_id)
+    .reduce((s, r) => s + (proById.get(r.recipe_id!) ?? 0), 0);
+}
+
+/**
+ * Drop snack slots (highest slot_index first) while the day exceeds
+ * maxRatio of daily calories OR daily protein (same cap as kcal).
+ */
+function trimSnacksIfDayOverMacroCaps(
   rows: MealPlanInsertRow[],
   day: number,
   dailyK: number,
+  dailyP: number,
   calById: Map<string, number>,
+  proById: Map<string, number>,
   maxRatio = 1.2,
 ): void {
-  const limit = dailyK * maxRatio;
+  const calLimit = dailyK * maxRatio;
+  const proLimit = dailyP * maxRatio;
 
   for (;;) {
-    const total = dayCaloriesTotal(rows, day, calById);
-    if (total <= limit) break;
+    const cal = dayCaloriesTotal(rows, day, calById);
+    const pro = dayProteinTotal(rows, day, proById);
+    if (cal <= calLimit && pro <= proLimit) break;
 
     let idx = -1;
     let bestSlot = -1;
@@ -259,18 +276,28 @@ function trimSnacksIfDayOverCalorieCap(
     }
     if (idx < 0) break;
 
-    const before = total;
+    const calBefore = cal;
+    const proBefore = pro;
     rows.splice(idx, 1);
-    const after = dayCaloriesTotal(rows, day, calById);
+    const calAfter = dayCaloriesTotal(rows, day, calById);
+    const proAfter = dayProteinTotal(rows, day, proById);
+    const overBits = [calBefore > calLimit ? "cal" : null, proBefore > proLimit ? "protein" : null].filter(Boolean);
     console.warn(
-      `[heuristic] day ${day}: ${Math.round(before)} kcal > ${Math.round(limit)} cap → removed snack (now ~${Math.round(after)} kcal)`,
+      `[heuristic] day ${day}: trim snack (${overBits.join("+")} over cap) — kcal ${Math.round(calBefore)}→${Math.round(calAfter)} (cap ~${Math.round(calLimit)}), ` +
+        `protein ${Math.round(proBefore * 10) / 10}g→${Math.round(proAfter * 10) / 10}g (cap ~${Math.round(proLimit * 10) / 10}g)`,
     );
   }
 
-  const finalTot = dayCaloriesTotal(rows, day, calById);
-  if (finalTot > dailyK + 300) {
+  const finalCal = dayCaloriesTotal(rows, day, calById);
+  const finalPro = dayProteinTotal(rows, day, proById);
+  if (finalCal > dailyK + 300) {
     console.warn(
-      `[heuristic] day ${day}: ${Math.round(finalTot)} kcal vs target ${dailyK} (still >300 kcal over) after snack trim`,
+      `[heuristic] day ${day}: ${Math.round(finalCal)} kcal vs target ${dailyK} (still >300 kcal over) after snack trim`,
+    );
+  }
+  if (finalPro > dailyP + 25) {
+    console.warn(
+      `[heuristic] day ${day}: ${Math.round(finalPro * 10) / 10}g protein vs target ${dailyP}g (still >25g over) after snack trim`,
     );
   }
 }
@@ -395,6 +422,7 @@ export async function generateAIWeekPlan(input: GenerateAIWeekPlanInput) {
     const usedCount = new Map<string, number>();
     const rows: MealPlanInsertRow[] = [];
     const calById = new Map(pool.map((r) => [r.id, r.calories]));
+    const proById = new Map(pool.map((r) => [r.id, r.protein]));
     const slotPlan = daySlotSpecs(snackCountPerDay);
 
     for (let day = 0; day < 7; day += 1) {
@@ -426,8 +454,19 @@ export async function generateAIWeekPlan(input: GenerateAIWeekPlanInput) {
       }
 
       const dayTot = dayCaloriesTotal(rows, day, calById);
-      console.warn(`[heuristic] day ${day}: planned ~${Math.round(dayTot)} kcal (target ${dailyCalorieTarget})`);
-      trimSnacksIfDayOverCalorieCap(rows, day, dailyCalorieTarget, calById);
+      const dayProt = dayProteinTotal(rows, day, proById);
+      console.warn(
+        `[heuristic] day ${day}: planned ~${Math.round(dayTot)} kcal (target ${dailyCalorieTarget}), ` +
+          `~${Math.round(dayProt * 10) / 10}g P (target ${dailyProteinTarget}g)`,
+      );
+      trimSnacksIfDayOverMacroCaps(
+        rows,
+        day,
+        dailyCalorieTarget,
+        dailyProteinTarget,
+        calById,
+        proById,
+      );
     }
 
     const { error: clearError } = await supabase
