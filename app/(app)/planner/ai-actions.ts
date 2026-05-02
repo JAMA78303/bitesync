@@ -269,6 +269,7 @@ export async function generateAIBasketForWeek(input: GenerateAIBasketInput) {
       pricedLineCount: priceMeta.pricedLineCount,
       unmatchedSample: priceMeta.unmatchedSample,
       catalogSize: priceMeta.catalogSize,
+      catalogLoadError: priceMeta.catalogLoadError,
     },
   };
 }

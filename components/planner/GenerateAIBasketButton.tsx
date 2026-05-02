@@ -69,9 +69,12 @@ export function GenerateAIBasketButton({ isPro, mealPlanId, weekStartDate, goals
       let note: string | null = null;
       if (best) {
         description = `Best current estimate: ${best.store.toUpperCase()} ~£${best.total.toFixed(2)}`;
+      } else if (pm.catalogLoadError) {
+        description = `Could not load price catalogue: ${pm.catalogLoadError}`;
+        note = `${description} If this is a permissions issue, run sql/2026-05-14_price_catalog_select_rls.sql in Supabase.`;
       } else if (pm.catalogSize === 0) {
         description =
-          "No price catalogue in the database yet. In Supabase, run sql/2026-05-09_canonical_items.sql, canonical_aliases, store_products, then sql/2026-05-09_seed_store_prices_mvp.sql.";
+          "The app loaded zero canonical price rows (tables exist but SELECT returned nothing). This is usually RLS blocking reads, or the seed was applied to a different Supabase project than production. Run sql/2026-05-14_price_catalog_select_rls.sql, then confirm sql/2026-05-09_seed_store_prices_mvp.sql was run on this same project.";
         note = description;
       } else {
         const sample = pm.unmatchedSample.length ? pm.unmatchedSample.slice(0, 5).join(", ") : "your ingredients";

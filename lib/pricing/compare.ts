@@ -12,8 +12,10 @@ export type EstimateStoreItemsMeta = {
   pricedLineCount: number;
   /** Ingredient names (from your recipes) that did not price — no canonical match or no store_products row. */
   unmatchedSample: string[];
-  /** Rows in canonical_items (0 means seed / migration not applied). */
+  /** Rows in canonical_items (0 with no error often means RLS blocked reads or wrong Supabase project). */
   catalogSize: number;
+  /** Set when the catalogue query failed (permissions, network, etc.). */
+  catalogLoadError: string | null;
 };
 
 export type EstimateStoreItemsResult = {
@@ -38,12 +40,14 @@ export async function estimateStoreItems(
   const aliases: CanonicalAliasRow[] = aliasRows ?? [];
 
   if (canonErr || aliasErr) {
+    const catalogLoadError = [canonErr?.message, aliasErr?.message].filter(Boolean).join(" · ") || "Unknown error";
     return {
       estimates: [],
       meta: {
         pricedLineCount: 0,
         unmatchedSample: ingredients.map((i) => i.name).filter((n, idx, a) => a.indexOf(n) === idx).slice(0, 12),
         catalogSize: 0,
+        catalogLoadError,
       },
     };
   }
@@ -91,6 +95,7 @@ export async function estimateStoreItems(
       pricedLineCount: pricedNames.size,
       unmatchedSample,
       catalogSize: catalog.length,
+      catalogLoadError: null,
     },
   };
 }
