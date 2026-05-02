@@ -74,6 +74,7 @@ export type MealPlanEntry = {
   recipe_id: string | null;
   day_of_week: number;
   meal_type: MealType;
+  slot_index?: number;
   quick_add_name: string | null;
   quick_add_calories: number | null;
   recipe?: {

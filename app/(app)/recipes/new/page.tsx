@@ -1,5 +1,6 @@
 import { RecipeForm } from "@/components/recipes/RecipeForm";
 import { RecipeLimitReached } from "@/components/recipes/RecipeLimitReached";
+import { getProfile } from "@/lib/supabase/profile";
 import { canCreateRecipe, getRecipeCount } from "@/lib/subscription";
 
 export default async function NewRecipePage() {
@@ -10,6 +11,15 @@ export default async function NewRecipePage() {
     return <RecipeLimitReached count={count} />;
   }
 
+  const profile = await getProfile();
+  const profileTargets =
+    profile != null
+      ? {
+          daily_calorie_target: profile.daily_calorie_target ?? null,
+          daily_protein_target: profile.daily_protein_target ?? null,
+        }
+      : null;
+
   return (
     <section className="space-y-4">
       <div>
@@ -18,7 +28,7 @@ export default async function NewRecipePage() {
           Build your ingredient list and BiteSync will estimate macro and micro totals live.
         </p>
       </div>
-      <RecipeForm />
+      <RecipeForm profileTargets={profileTargets} />
     </section>
   );
 }

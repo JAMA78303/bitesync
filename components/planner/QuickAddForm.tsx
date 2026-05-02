@@ -12,11 +12,12 @@ type Props = {
   mealPlanId: string;
   day: number;
   mealType: MealType;
+  slotIndex?: number;
   onDone: () => void;
   onSwitchToRecipe: () => void;
 };
 
-export function QuickAddForm({ mealPlanId, day, mealType, onDone, onSwitchToRecipe }: Props) {
+export function QuickAddForm({ mealPlanId, day, mealType, slotIndex = 0, onDone, onSwitchToRecipe }: Props) {
   const [name, setName] = useState("");
   const [calories, setCalories] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -32,6 +33,7 @@ export function QuickAddForm({ mealPlanId, day, mealType, onDone, onSwitchToReci
         mealType,
         name.trim(),
         Number.isNaN(parsedCalories as number) ? null : parsedCalories,
+        slotIndex,
       );
       if (result?.error) {
         toast({

@@ -25,6 +25,7 @@ type Props = {
   mealPlanId: string;
   day: number | null;
   mealType: MealType | null;
+  slotIndex?: number | null;
   recipes: Recipe[];
   dietPrefs?: ProfileDietPrefs | null;
   onAssigned: () => void;
@@ -36,6 +37,7 @@ export function RecipePickerModal({
   mealPlanId,
   day,
   mealType,
+  slotIndex,
   recipes,
   dietPrefs,
   onAssigned,
@@ -55,7 +57,7 @@ export function RecipePickerModal({
     if (day === null || !mealType) return;
     setAssigningId(recipe.id);
     startTransition(async () => {
-      const result = await assignRecipeToSlot(mealPlanId, recipe.id, day, mealType);
+      const result = await assignRecipeToSlot(mealPlanId, recipe.id, day, mealType, slotIndex ?? 0);
       setAssigningId(null);
       if (result?.error) {
         toast({

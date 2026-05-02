@@ -34,11 +34,17 @@ function isMissingQuickAddColumns(message?: string | null): boolean {
   return message.includes("quick_add_name") || message.includes("quick_add_calories");
 }
 
+function isMissingSlotIndexColumn(message?: string | null): boolean {
+  if (!message) return false;
+  return message.includes("slot_index");
+}
+
 function isQuickAddSchemaUnavailable(message?: string | null): boolean {
   if (!message) return false;
   const m = message.toLowerCase();
   return (
     isMissingQuickAddColumns(message) ||
+    isMissingSlotIndexColumn(message) ||
     (m.includes("recipe_id") && m.includes("null value")) ||
     (m.includes("recipe_id") && m.includes("not-null")) ||
     m.includes("entry_has_content")
@@ -90,7 +96,7 @@ export async function getMealPlanEntries(mealPlanId: string) {
     .from("meal_plan_entries")
     .select(
       `
-      id, meal_plan_id, recipe_id, day_of_week, meal_type, quick_add_name, quick_add_calories,
+      id, meal_plan_id, recipe_id, day_of_week, meal_type, slot_index, quick_add_name, quick_add_calories,
       recipe:recipes (
         id, name,
         fits_vegetarian, fits_vegan, fits_gluten_free
@@ -104,7 +110,9 @@ export async function getMealPlanEntries(mealPlanId: string) {
     return { data: enriched as MealPlanEntry[] | null, error };
   }
 
-  if (!isMissingQuickAddColumns(error.message)) {
+  const quickAddMissing = isMissingQuickAddColumns(error.message);
+  const slotMissing = isMissingSlotIndexColumn(error.message);
+  if (!quickAddMissing && !slotMissing) {
     return { data: null, error };
   }
 
@@ -125,6 +133,7 @@ export async function getMealPlanEntries(mealPlanId: string) {
 
   const normalized = (legacyData ?? []).map((entry) => ({
     ...entry,
+    slot_index: 0,
     quick_add_name: null,
     quick_add_calories: null,
   }));
@@ -139,7 +148,12 @@ export async function buildGrid(entries: MealPlanEntry[]): Promise<PlannerGrid> 
   for (let d = 0; d <= 6; d++) {
     grid[d] = { breakfast: null, lunch: null, dinner: null, snack: null };
   }
-  for (const entry of entries) grid[entry.day_of_week][entry.meal_type] = entry;
+  const sorted = [...entries].sort((a, b) => (a.slot_index ?? 0) - (b.slot_index ?? 0));
+  for (const entry of sorted) {
+    const slot = entry.slot_index ?? 0;
+    if (slot !== 0) continue;
+    grid[entry.day_of_week][entry.meal_type] = entry;
+  }
   return grid;
 }
 export async function assignRecipeToSlot(
@@ -147,6 +161,7 @@ export async function assignRecipeToSlot(
   recipe_id: string,
   day_of_week: number,
   meal_type: MealType,
+  slot_index = 0,
 ) {
   const supabase = await createClient();
   const {
@@ -168,17 +183,19 @@ export async function assignRecipeToSlot(
     recipe_id,
     day_of_week,
     meal_type,
+    slot_index,
     quick_add_name: null,
     quick_add_calories: null,
   };
 
   const { error } = await supabase
     .from("meal_plan_entries")
-    .upsert(payload, { onConflict: "meal_plan_id,day_of_week,meal_type" });
+    .upsert(payload, { onConflict: "meal_plan_id,day_of_week,meal_type,slot_index" });
 
   if (error) {
     const missingQuickAddColumns = isMissingQuickAddColumns(error.message);
-    if (!missingQuickAddColumns) return { error: error.message };
+    const missingSlot = isMissingSlotIndexColumn(error.message);
+    if (!missingQuickAddColumns && !missingSlot) return { error: error.message };
 
     // Backward-compatible retry for databases that have not yet added quick_add_* columns.
     const { error: fallbackError } = await supabase.from("meal_plan_entries").upsert(
@@ -187,8 +204,9 @@ export async function assignRecipeToSlot(
         recipe_id,
         day_of_week,
         meal_type,
+        ...(missingSlot ? {} : { slot_index }),
       },
-      { onConflict: "meal_plan_id,day_of_week,meal_type" },
+      { onConflict: missingSlot ? "meal_plan_id,day_of_week,meal_type" : "meal_plan_id,day_of_week,meal_type,slot_index" },
     );
     if (fallbackError) return { error: fallbackError.message };
   }
@@ -203,6 +221,7 @@ export async function quickAddMeal(
   meal_type: MealType,
   quick_add_name: string,
   quick_add_calories?: number | null,
+  slot_index = 0,
 ) {
   const supabase = await createClient();
   const {
@@ -225,13 +244,32 @@ export async function quickAddMeal(
       recipe_id: null,
       day_of_week,
       meal_type,
+      slot_index,
       quick_add_name: quick_add_name.trim(),
       quick_add_calories: quick_add_calories ?? null,
     },
-    { onConflict: "meal_plan_id,day_of_week,meal_type" },
+    { onConflict: "meal_plan_id,day_of_week,meal_type,slot_index" },
   );
 
   if (error) {
+    if (isMissingSlotIndexColumn(error.message)) {
+      const { error: fallbackSlotError } = await supabase.from("meal_plan_entries").upsert(
+        {
+          meal_plan_id,
+          recipe_id: null,
+          day_of_week,
+          meal_type,
+          quick_add_name: quick_add_name.trim(),
+          quick_add_calories: quick_add_calories ?? null,
+        },
+        { onConflict: "meal_plan_id,day_of_week,meal_type" },
+      );
+      if (!fallbackSlotError) {
+        revalidatePath("/planner");
+        return { success: true };
+      }
+    }
+
     if (isQuickAddSchemaUnavailable(error.message)) {
       return {
         error:

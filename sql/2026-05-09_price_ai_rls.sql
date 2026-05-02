@@ -54,3 +54,7 @@ $$;
 GRANT SELECT ON public.canonical_items TO anon, authenticated;
 GRANT SELECT ON public.canonical_aliases TO anon, authenticated;
 GRANT SELECT ON public.store_products TO anon, authenticated;
+
+-- Required for PostgREST / Supabase client inserts; RLS still restricts rows to auth.uid().
+GRANT SELECT, INSERT, DELETE ON public.basket_snapshots TO authenticated;
+GRANT ALL ON public.basket_snapshots TO service_role;

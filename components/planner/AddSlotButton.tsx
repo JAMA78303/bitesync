@@ -10,10 +10,11 @@ type Props = {
   mealType: MealType;
   dayLabel: string;
   mealPlanId: string;
-  onPickRecipe: (day: number, mealType: MealType) => void;
+  slotIndex?: number;
+  onPickRecipe: (day: number, mealType: MealType, slotIndex?: number) => void;
 };
 
-export function AddSlotButton({ day, mealType, dayLabel, mealPlanId, onPickRecipe }: Props) {
+export function AddSlotButton({ day, mealType, dayLabel, mealPlanId, slotIndex = 0, onPickRecipe }: Props) {
   const [mode, setMode] = useState<"idle" | "quickadd">("idle");
 
   if (mode === "quickadd") {
@@ -22,10 +23,11 @@ export function AddSlotButton({ day, mealType, dayLabel, mealPlanId, onPickRecip
         mealPlanId={mealPlanId}
         day={day}
         mealType={mealType}
+        slotIndex={slotIndex}
         onDone={() => setMode("idle")}
         onSwitchToRecipe={() => {
           setMode("idle");
-          onPickRecipe(day, mealType);
+          onPickRecipe(day, mealType, slotIndex);
         }}
       />
     );
@@ -53,7 +55,7 @@ export function AddSlotButton({ day, mealType, dayLabel, mealPlanId, onPickRecip
         </button>
         <button
           type="button"
-          onClick={() => onPickRecipe(day, mealType)}
+          onClick={() => onPickRecipe(day, mealType, slotIndex)}
           className="flex flex-1 items-center gap-2 px-3 text-xs text-slate-500 transition-colors hover:bg-[#F0FDF4] hover:text-[#1A4731]"
         >
           <BookOpen className="h-3 w-3 shrink-0" />

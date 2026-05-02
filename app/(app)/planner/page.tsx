@@ -82,11 +82,17 @@ export default async function PlannerPage({ searchParams }: Props) {
       }
     : null;
   const grid = await buildGrid(entries ?? []);
-  const filledDays = Array.from({ length: 7 }, (_, day) =>
-    Object.values(grid[day]).some((entry) => entry?.recipe_id != null) ? day : -1,
-  ).filter((d) => d !== -1);
+  const plannerEntries = entries ?? [];
+  const filledDays = Array.from({ length: 7 }, (_, day) => {
+    const hasEntry = plannerEntries.some(
+      (entry) => entry.day_of_week === day && (entry.recipe_id != null || !!entry.quick_add_name),
+    );
+    return hasEntry ? day : -1;
+  }).filter((d) => d !== -1);
   const filledMealTypes = MEAL_TYPES.filter((mealType) =>
-    Array.from({ length: 7 }, (_, day) => day).some((day) => grid[day][mealType]?.recipe_id != null),
+    plannerEntries.some(
+      (entry) => entry.meal_type === mealType && (entry.recipe_id != null || !!entry.quick_add_name),
+    ),
   );
 
   return (
@@ -98,18 +104,6 @@ export default async function PlannerPage({ searchParams }: Props) {
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
           <WeekNav weekStart={weekStart} />
-          <GenerateAIBasketButton
-            isPro={userTier === "pro"}
-            mealPlanId={mealPlan.id}
-            weekStartDate={weekStartISO}
-            goals={{
-              calorieTarget: dailyCalorieTarget,
-              proteinTarget: dailyProteinTarget,
-              followsVegetarian: Boolean(profile?.follows_vegetarian),
-              followsVegan: Boolean(profile?.follows_vegan),
-              followsGlutenFree: Boolean(profile?.follows_gluten_free),
-            }}
-          />
           <GenerateListButton
             mealPlanId={mealPlan.id}
             weekStart={weekStartISO}
@@ -120,9 +114,23 @@ export default async function PlannerPage({ searchParams }: Props) {
         </div>
       </div>
 
+      <GenerateAIBasketButton
+        isPro={userTier === "pro"}
+        mealPlanId={mealPlan.id}
+        weekStartDate={weekStartISO}
+        goals={{
+          calorieTarget: dailyCalorieTarget,
+          proteinTarget: dailyProteinTarget,
+          followsVegetarian: Boolean(profile?.follows_vegetarian),
+          followsVegan: Boolean(profile?.follows_vegan),
+          followsGlutenFree: Boolean(profile?.follows_gluten_free),
+        }}
+      />
+
       <Suspense fallback={<PlannerSkeleton />}>
         <PlannerGrid
           grid={grid}
+          entries={plannerEntries}
           mealPlanId={mealPlan.id}
           recipes={formattedRecipes}
           weekDates={weekDates}

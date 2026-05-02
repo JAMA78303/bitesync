@@ -12,7 +12,7 @@ import {
   type RecipeNutritionSummary,
 } from "@/lib/utils/recipe-nutrition";
 import { DAY_LABELS, MEAL_LABELS, MEAL_TYPES, getEntryCalories } from "@/types";
-import type { PlannerGrid as PlannerGridType, MealType } from "@/types";
+import type { PlannerGrid as PlannerGridType, MealPlanEntry, MealType } from "@/types";
 
 type Recipe = {
   id: string;
@@ -24,6 +24,7 @@ type Recipe = {
 };
 type Props = {
   grid: PlannerGridType;
+  entries: MealPlanEntry[];
   mealPlanId: string;
   recipes: Recipe[];
   weekDates: Date[];
@@ -35,6 +36,7 @@ type Props = {
 
 export function PlannerGrid({
   grid,
+  entries,
   mealPlanId,
   recipes,
   weekDates,
@@ -46,11 +48,25 @@ export function PlannerGrid({
   const [modalOpen, setModalOpen] = useState(false);
   const [activeDay, setActiveDay] = useState<number | null>(null);
   const [activeMeal, setActiveMeal] = useState<MealType | null>(null);
+  const [activeSlotIndex, setActiveSlotIndex] = useState<number | null>(0);
 
-  function openPicker(day: number, mealType: MealType) {
+  function openPicker(day: number, mealType: MealType, slotIndex = 0) {
     setActiveDay(day);
     setActiveMeal(mealType);
+    setActiveSlotIndex(slotIndex);
     setModalOpen(true);
+  }
+
+  function snackEntriesForDay(day: number): MealPlanEntry[] {
+    return entries
+      .filter((entry) => entry.day_of_week === day && entry.meal_type === "snack")
+      .sort((a, b) => (a.slot_index ?? 0) - (b.slot_index ?? 0));
+  }
+
+  function nextSnackSlotIndex(day: number): number {
+    const slots = snackEntriesForDay(day).map((e) => e.slot_index ?? 0);
+    if (!slots.length) return 0;
+    return Math.max(...slots) + 1;
   }
 
   function handleAssigned() {}
@@ -74,9 +90,37 @@ export function PlannerGrid({
               </div>
               {Array.from({ length: 7 }, (_, day) => {
                 const entry = grid[day][mealType];
+                const snackEntries = mealType === "snack" ? snackEntriesForDay(day) : [];
                 return (
                   <div key={`${mealType}-${day}`} className="border-b border-l border-gray-200 p-2">
-                    {entry ? (
+                    {mealType === "snack" ? (
+                      <div className="space-y-1">
+                        {snackEntries.length > 0 ? (
+                          snackEntries.map((snack) => (
+                            <RecipeSlotCard key={snack.id} entry={snack} dietPrefs={dietPrefs} />
+                          ))
+                        ) : (
+                          <AddSlotButton
+                            day={day}
+                            mealType={mealType}
+                            dayLabel={DAY_LABELS[day]}
+                            mealPlanId={mealPlanId}
+                            slotIndex={0}
+                            onPickRecipe={openPicker}
+                          />
+                        )}
+                        {snackEntries.length > 0 ? (
+                          <AddSlotButton
+                            day={day}
+                            mealType={mealType}
+                            dayLabel={DAY_LABELS[day]}
+                            mealPlanId={mealPlanId}
+                            slotIndex={nextSnackSlotIndex(day)}
+                            onPickRecipe={openPicker}
+                          />
+                        ) : null}
+                      </div>
+                    ) : entry ? (
                       <RecipeSlotCard entry={entry} dietPrefs={dietPrefs} />
                     ) : (
                       <AddSlotButton
@@ -103,6 +147,7 @@ export function PlannerGrid({
 
       <PlannerGridMobileInline
         grid={grid}
+        entries={entries}
         mealPlanId={mealPlanId}
         weekDates={weekDates}
         openPicker={openPicker}
@@ -118,6 +163,7 @@ export function PlannerGrid({
         mealPlanId={mealPlanId}
         day={activeDay}
         mealType={activeMeal}
+        slotIndex={activeSlotIndex}
         recipes={recipes}
         dietPrefs={dietPrefs}
         onAssigned={handleAssigned}
@@ -128,9 +174,10 @@ export function PlannerGrid({
 
 type MobileProps = {
   grid: PlannerGridType;
+  entries: MealPlanEntry[];
   mealPlanId: string;
   weekDates: Date[];
-  openPicker: (day: number, mealType: MealType) => void;
+  openPicker: (day: number, mealType: MealType, slotIndex?: number) => void;
   initialActiveDay: number;
   dailyCalorieTarget?: number | null;
   dailyProteinTarget?: number | null;
@@ -139,6 +186,7 @@ type MobileProps = {
 
 function PlannerGridMobileInline({
   grid,
+  entries,
   mealPlanId,
   weekDates,
   openPicker,
@@ -149,6 +197,10 @@ function PlannerGridMobileInline({
 }: MobileProps) {
   const [activeDay, setActiveDay] = useState(initialActiveDay);
   const hasTargets = !!dailyCalorieTarget && !!dailyProteinTarget;
+  const snackEntries = entries
+    .filter((entry) => entry.day_of_week === activeDay && entry.meal_type === "snack")
+    .sort((a, b) => (a.slot_index ?? 0) - (b.slot_index ?? 0));
+  const nextSnackSlot = snackEntries.length ? Math.max(...snackEntries.map((e) => e.slot_index ?? 0)) + 1 : 0;
 
   return (
     <div className="space-y-3 md:hidden">
@@ -174,7 +226,32 @@ function PlannerGridMobileInline({
           return (
             <div key={mealType} className="space-y-1 rounded-xl border border-gray-200 bg-white p-3">
               <p className="text-xs font-semibold uppercase text-gray-500">{MEAL_LABELS[mealType]}</p>
-              {entry ? (
+              {mealType === "snack" ? (
+                <div className="space-y-1">
+                  {snackEntries.length > 0 ? (
+                    snackEntries.map((snack) => <RecipeSlotCard key={snack.id} entry={snack} dietPrefs={dietPrefs} />)
+                  ) : (
+                    <AddSlotButton
+                      day={activeDay}
+                      mealType={mealType}
+                      dayLabel={DAY_LABELS[activeDay]}
+                      mealPlanId={mealPlanId}
+                      slotIndex={0}
+                      onPickRecipe={openPicker}
+                    />
+                  )}
+                  {snackEntries.length > 0 ? (
+                    <AddSlotButton
+                      day={activeDay}
+                      mealType={mealType}
+                      dayLabel={DAY_LABELS[activeDay]}
+                      mealPlanId={mealPlanId}
+                      slotIndex={nextSnackSlot}
+                      onPickRecipe={openPicker}
+                    />
+                  ) : null}
+                </div>
+              ) : entry ? (
                 <RecipeSlotCard entry={entry} dietPrefs={dietPrefs} />
               ) : (
                 <AddSlotButton

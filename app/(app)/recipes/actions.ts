@@ -4,7 +4,15 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { calculateRecipeNutrition, type RecipeIngredientInput } from "@/lib/nutrition/calculate";
+import {
+  buildGoalMatchedRecipeIngredients,
+  fractionForMealSlot,
+  GOAL_MEAL_KCAL_TOLERANCE,
+  mealLabel,
+  type GoalMealSlot,
+} from "@/lib/ai/goal-matched-recipe";
 import { canCreateRecipe, getRecipeCount, getUserTier } from "@/lib/subscription";
+import { getProfile } from "@/lib/supabase/profile";
 import type { ActionResult } from "@/types";
 
 type CreateRecipePayload = {
@@ -18,6 +26,8 @@ type CreateRecipePayload = {
 
 type UpdateRecipePayload = CreateRecipePayload & { recipeId: string };
 
+const GOAL_MEAL_SLOTS: GoalMealSlot[] = ["breakfast", "lunch", "dinner", "snack"];
+
 function toTitleCase(value: string): string {
   return value
     .toLowerCase()
@@ -25,6 +35,80 @@ function toTitleCase(value: string): string {
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+}
+
+export async function generateGoalMatchedRecipeDraft(payload: {
+  mealSlot: GoalMealSlot;
+  fitsVegan: boolean;
+  fitsVegetarian: boolean;
+  fitsGlutenFree: boolean;
+}): Promise<
+  ActionResult<{
+    name: string;
+    description: string;
+    ingredients: RecipeIngredientInput[];
+    targetMealCalories: number;
+    achievedCalories: number;
+    achievedProteinG: number;
+  }>
+> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  if (!GOAL_MEAL_SLOTS.includes(payload.mealSlot)) {
+    return { error: "Invalid meal slot." };
+  }
+
+  const profile = await getProfile();
+  const daily = profile?.daily_calorie_target;
+  if (daily == null || !Number.isFinite(Number(daily)) || daily < 800) {
+    return {
+      error: "Set a daily calorie target in Settings (TDEE) first. We use it to size each meal to about the right share of your day.",
+    };
+  }
+
+  const fraction = fractionForMealSlot(payload.mealSlot);
+  const targetMealCalories = Math.round(Number(daily) * fraction);
+  const vegan = payload.fitsVegan === true;
+  const vegetarian = payload.fitsVegetarian === true || vegan;
+  const glutenFree = payload.fitsGlutenFree === true;
+
+  const ingredients = buildGoalMatchedRecipeIngredients({
+    targetCalories: targetMealCalories,
+    mealSlot: payload.mealSlot,
+    vegan,
+    vegetarian,
+    glutenFree,
+  });
+
+  const totals = calculateRecipeNutrition(ingredients);
+  const delta = Math.round(totals.calories) - targetMealCalories;
+  const within = Math.abs(delta) <= GOAL_MEAL_KCAL_TOLERANCE;
+  const slotName = mealLabel(payload.mealSlot);
+  const name = `Goal-matched ${slotName}`;
+  const description = [
+    `Draft for ~${targetMealCalories} kcal (${Math.round(fraction * 100)}% of your ${Math.round(Number(daily))} kcal/day target).`,
+    `Estimated from your ingredient list: ${Math.round(totals.calories)} kcal, ${Math.round(totals.protein_g)}g protein.`,
+    within
+      ? `Within ±${GOAL_MEAL_KCAL_TOLERANCE} kcal of the meal target.`
+      : `Closest match within the nutrition database was ${delta >= 0 ? "+" : ""}${delta} kcal vs target (tweak portions if you like).`,
+    "Uses BiteSync nutrition data only — swap ingredients and save when you are happy.",
+  ].join(" ");
+
+  return {
+    success: true,
+    data: {
+      name,
+      description,
+      ingredients,
+      targetMealCalories,
+      achievedCalories: Math.round(totals.calories * 10) / 10,
+      achievedProteinG: Math.round(totals.protein_g * 10) / 10,
+    },
+  };
 }
 
 export async function createRecipe(

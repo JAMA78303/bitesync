@@ -1,21 +1,55 @@
 import { createClient } from "@/lib/supabase/server";
 import { basketCertaintyScore, estimateRange, itemConfidenceScore } from "@/lib/pricing/scoring";
 import type { BasketIngredient, StoreItemEstimate, StoreTotal } from "@/lib/pricing/types";
-import { matchIngredientToCanonical } from "@/lib/pricing/match";
+import { matchIngredientNameToCatalog, type CanonicalAliasRow, type CanonicalCatalogRow } from "@/lib/pricing/match";
 
 function rounded(v: number): number {
   return Math.round(v * 100) / 100;
 }
 
+export type EstimateStoreItemsMeta = {
+  /** Distinct ingredient lines that received at least one store price row. */
+  pricedLineCount: number;
+  /** Ingredient names (from your recipes) that did not price — no canonical match or no store_products row. */
+  unmatchedSample: string[];
+  /** Rows in canonical_items (0 means seed / migration not applied). */
+  catalogSize: number;
+};
+
+export type EstimateStoreItemsResult = {
+  estimates: StoreItemEstimate[];
+  meta: EstimateStoreItemsMeta;
+};
+
 export async function estimateStoreItems(
   ingredients: BasketIngredient[],
   stores: string[] = ["tesco", "asda", "aldi"],
-): Promise<StoreItemEstimate[]> {
+): Promise<EstimateStoreItemsResult> {
   const supabase = await createClient();
   const out: StoreItemEstimate[] = [];
+  const pricedNames = new Set<string>();
+
+  const [{ data: canonRows, error: canonErr }, { data: aliasRows, error: aliasErr }] = await Promise.all([
+    supabase.from("canonical_items").select("id,name"),
+    supabase.from("canonical_aliases").select("canonical_item_id,alias_text"),
+  ]);
+
+  const catalog: CanonicalCatalogRow[] = canonRows ?? [];
+  const aliases: CanonicalAliasRow[] = aliasRows ?? [];
+
+  if (canonErr || aliasErr) {
+    return {
+      estimates: [],
+      meta: {
+        pricedLineCount: 0,
+        unmatchedSample: ingredients.map((i) => i.name).filter((n, idx, a) => a.indexOf(n) === idx).slice(0, 12),
+        catalogSize: 0,
+      },
+    };
+  }
 
   for (const ingredient of ingredients) {
-    const match = await matchIngredientToCanonical(ingredient.name);
+    const match = matchIngredientNameToCatalog(ingredient.name, catalog, aliases);
     if (!match.canonicalItemId) continue;
 
     const { data: products } = await supabase
@@ -41,10 +75,24 @@ export async function estimateStoreItems(
         freshnessDays: 0,
         priceVolatility: (p.price_volatility as "low" | "medium" | "high") ?? "medium",
       });
+      pricedNames.add(ingredient.name);
     }
   }
 
-  return out;
+  const unmatchedSample = ingredients
+    .filter((ing) => !pricedNames.has(ing.name))
+    .map((ing) => ing.name)
+    .filter((name, i, arr) => arr.indexOf(name) === i)
+    .slice(0, 12);
+
+  return {
+    estimates: out,
+    meta: {
+      pricedLineCount: pricedNames.size,
+      unmatchedSample,
+      catalogSize: catalog.length,
+    },
+  };
 }
 
 export function summarizeStoreTotals(items: StoreItemEstimate[]): StoreTotal[] {
