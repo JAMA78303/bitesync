@@ -5,9 +5,11 @@ import { getMonday, toLocalISO, addDays, isCurrentWeek } from "@/lib/utils/dates
 import { fetchRecipeNutritionMap } from "@/lib/supabase/recipe-nutrition-query";
 import { getOrCreateMealPlan, getMealPlanEntries, buildGrid } from "@/lib/supabase/meal-plans";
 import { getProfile } from "@/lib/supabase/profile";
+import { getUserTier } from "@/lib/subscription";
 import { PlannerGrid } from "@/components/planner/PlannerGrid";
 import { WeekNav } from "@/components/planner/WeekNav";
 import { GenerateListButton } from "@/components/planner/GenerateListButton";
+import { GenerateAIBasketButton } from "@/components/planner/GenerateAIBasketButton";
 import { PlannerSkeleton } from "@/components/shared/skeletons";
 import { MEAL_TYPES } from "@/types";
 
@@ -69,6 +71,7 @@ export default async function PlannerPage({ searchParams }: Props) {
 
   const { data: entries } = await getMealPlanEntries(mealPlan.id);
   const profile = await getProfile();
+  const userTier = await getUserTier();
   const dailyCalorieTarget = profile?.daily_calorie_target ?? null;
   const dailyProteinTarget = profile?.daily_protein_target ?? null;
   const dietPrefs = profile
@@ -95,6 +98,18 @@ export default async function PlannerPage({ searchParams }: Props) {
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
           <WeekNav weekStart={weekStart} />
+          <GenerateAIBasketButton
+            isPro={userTier === "pro"}
+            mealPlanId={mealPlan.id}
+            weekStartDate={weekStartISO}
+            goals={{
+              calorieTarget: dailyCalorieTarget,
+              proteinTarget: dailyProteinTarget,
+              followsVegetarian: Boolean(profile?.follows_vegetarian),
+              followsVegan: Boolean(profile?.follows_vegan),
+              followsGlutenFree: Boolean(profile?.follows_gluten_free),
+            }}
+          />
           <GenerateListButton
             mealPlanId={mealPlan.id}
             weekStart={weekStartISO}
