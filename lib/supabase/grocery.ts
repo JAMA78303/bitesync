@@ -24,6 +24,26 @@ function schemaMissingColumn(message: string | null | undefined, column: string)
   );
 }
 
+function normalizeGroceryScopeDaysForStorage(selectedDays?: number[]): number[] | null {
+  if (!selectedDays?.length) return null;
+  const sorted = [...new Set(selectedDays)].sort((a, b) => a - b);
+  if (sorted.length >= 7) return null;
+  return sorted;
+}
+
+async function persistGroceryScopeDays(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  meal_plan_id: string,
+  selectedDays?: number[],
+): Promise<void> {
+  const scope = normalizeGroceryScopeDaysForStorage(selectedDays);
+  const { error } = await supabase
+    .from("meal_plans")
+    .update({ grocery_scope_days: scope })
+    .eq("id", meal_plan_id);
+  if (error && schemaMissingColumn(error.message, "grocery_scope_days")) return;
+}
+
 async function restoreManualGrocerySnapshot(
   supabase: Awaited<ReturnType<typeof createClient>>,
   meal_plan_id: string,
@@ -189,6 +209,11 @@ export async function generateGroceryList(meal_plan_id: string, selectedDays?: n
     p_items: merged,
   });
 
+  const finishGenerate = async () => {
+    await persistGroceryScopeDays(supabase, meal_plan_id, selectedDays);
+    revalidatePath("/grocery");
+  };
+
   if (error) {
     const shouldFallback =
       error.message.toLowerCase().includes("replace_grocery_items") ||
@@ -250,7 +275,7 @@ export async function generateGroceryList(meal_plan_id: string, selectedDays?: n
     if (!insertError) {
       const restore = await restoreManualGrocerySnapshot(supabase, meal_plan_id, manualRowsToRestore, archivedRecipeDerivedOnly);
       if (restore.error) return { error: restore.error };
-      revalidatePath("/grocery");
+      await finishGenerate();
       return { success: true };
     }
 
@@ -270,7 +295,7 @@ export async function generateGroceryList(meal_plan_id: string, selectedDays?: n
     if (restoreLegacy.error) return { error: restoreLegacy.error };
   }
 
-  revalidatePath("/grocery");
+  await finishGenerate();
   return { success: true };
 }
 
@@ -337,6 +362,8 @@ export async function deleteGroceryList(meal_plan_id: string) {
   } else if (error) {
     return { error: error.message };
   }
+
+  await supabase.from("meal_plans").update({ grocery_scope_days: null }).eq("id", meal_plan_id);
 
   revalidatePath("/grocery");
   return { success: true };

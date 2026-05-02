@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getMonday, toLocalISO, formatWeekLabel } from "@/lib/utils/dates";
+import { formatGrocerySubtitle } from "@/lib/utils/grocery-display";
 import { getMealPlanIdForWeek, getGroceryItems } from "@/lib/supabase/grocery";
 import { GroceryHeader } from "@/components/grocery/GroceryHeader";
 import { GroceryItem } from "@/components/grocery/GroceryItem";
@@ -30,15 +31,29 @@ export default async function GroceryPage({ searchParams }: Props) {
 
   const weekStart = params.week ? getMonday(new Date(`${params.week}T00:00:00`)) : getMonday(new Date());
   const weekStartISO = toLocalISO(weekStart);
-  const weekLabel = formatWeekLabel(weekStart);
   const mealPlanId = params.plan ?? (await getMealPlanIdForWeek(weekStartISO));
 
+  let scopeDays: number[] | null = null;
+  if (mealPlanId) {
+    const { data: planScopeRow, error: scopeErr } = await supabase
+      .from("meal_plans")
+      .select("grocery_scope_days")
+      .eq("id", mealPlanId)
+      .maybeSingle();
+    if (!scopeErr && planScopeRow) {
+      scopeDays = (planScopeRow.grocery_scope_days ?? null) as number[] | null;
+    }
+  }
+
+  const subtitle = formatGrocerySubtitle(weekStart, scopeDays);
+
   if (!mealPlanId) {
+    const fallbackSubtitle = formatWeekLabel(weekStart);
     return (
       <div className="pb-20">
         <div className="border-b border-slate-100 px-4 pb-3 pt-4">
           <h1 className="text-lg font-semibold text-slate-800">Grocery List</h1>
-          <p className="mt-0.5 text-xs text-slate-400">{weekLabel}</p>
+          <p className="mt-0.5 text-xs text-slate-400">{fallbackSubtitle}</p>
         </div>
         <GroceryEmptyState />
       </div>
@@ -70,7 +85,7 @@ export default async function GroceryPage({ searchParams }: Props) {
   if (total === 0) {
     return (
       <div className="pb-20">
-        <GroceryHeader weekLabel={weekLabel} total={0} checked={0} actions={headerActions} />
+        <GroceryHeader subtitle={subtitle} total={0} checked={0} actions={headerActions} />
         <GroceryEmptyState />
         <div className="px-4 pt-4">
           <ManualGroceryAdd mealPlanId={mealPlanId} />
@@ -84,7 +99,7 @@ export default async function GroceryPage({ searchParams }: Props) {
 
   return (
     <div className="pb-20">
-      <GroceryHeader weekLabel={weekLabel} total={total} checked={checked} actions={headerActions} />
+      <GroceryHeader subtitle={subtitle} total={total} checked={checked} actions={headerActions} />
       {allDone ? <GroceryDoneState /> : null}
       <div className="space-y-2 px-4 pt-4">
         {uncheckedItems.map((item) => (
