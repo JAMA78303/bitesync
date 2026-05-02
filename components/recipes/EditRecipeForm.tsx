@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { getSupportedUnits } from "@/lib/nutrition/convert";
 import { calculateRecipeNutrition, type RecipeIngredientInput } from "@/lib/nutrition/calculate";
-import { getAllFoodNames } from "@/lib/nutrition/lookup";
+import { getNutritionIngredientNames } from "@/lib/nutrition/lookup";
 import { NutritionPreview } from "@/components/recipes/NutritionPreview";
 import { updateRecipe } from "@/app/(app)/recipes/actions";
 
