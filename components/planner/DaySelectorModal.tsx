@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -84,12 +84,22 @@ export function DaySelectorModal({ open, onClose, mealPlanId, weekStart, filledD
   }
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+    <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>
-            <span className="text-sm font-semibold">Which days to include?</span>
-          </DialogTitle>
+          <div className="flex items-start justify-between gap-2">
+            <DialogTitle>
+              <span className="text-sm font-semibold">Which days to include?</span>
+            </DialogTitle>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close"
+              className="-mr-1 -mt-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </DialogHeader>
         <p className="-mt-2 text-xs text-slate-400">Only ingredients from selected days and meal types will be added</p>
         <div className="flex flex-wrap gap-2">
@@ -175,20 +185,32 @@ export function DaySelectorModal({ open, onClose, mealPlanId, weekStart, filledD
             Clear all
           </button>
         </div>
-        <Button
-          onClick={handleGenerate}
-          disabled={!selected.length || !selectedMeals.length || isPending}
-          className="w-full bg-[#1A4731] text-white hover:bg-[#153928]"
-        >
-          {isPending ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Generating...
-            </>
-          ) : (
-            `Generate list for ${selected.length} day${selected.length !== 1 ? "s" : ""} · ${selectedMeals.length} type${selectedMeals.length !== 1 ? "s" : ""}`
-          )}
-        </Button>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={isPending}
+            className="w-full border-gray-300 bg-white text-gray-800 hover:bg-gray-50 sm:order-1 sm:flex-1"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            onClick={handleGenerate}
+            disabled={!selected.length || !selectedMeals.length || isPending}
+            className="w-full bg-[#1A4731] text-white hover:bg-[#153928] sm:order-2 sm:flex-[2]"
+          >
+            {isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              `Generate list for ${selected.length} day${selected.length !== 1 ? "s" : ""} · ${selectedMeals.length} type${selectedMeals.length !== 1 ? "s" : ""}`
+            )}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
