@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChefHat } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { archiveRecipe, deleteRecipe, restoreRecipe } from "@/app/(app)/recipes/actions";
 import { fetchRecipeNutritionMap } from "@/lib/supabase/recipe-nutrition-query";
@@ -49,8 +50,11 @@ export default async function RecipesPage({ searchParams }: Props) {
     <section className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold text-gray-900">Recipes</h1>
-          <p className="text-gray-600">
+          <div className="flex items-center gap-2">
+            <ChefHat className="h-8 w-8 shrink-0 text-[var(--brand-sage)]" aria-hidden />
+            <h1 className="text-2xl font-semibold text-gray-900">Recipes</h1>
+          </div>
+          <p className="mt-1 text-gray-600">
             {showArchived
               ? "Archived recipes are hidden from planner until restored."
               : "Create recipes and preview nutrition as you add ingredients."}

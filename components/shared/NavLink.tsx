@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, CreditCard, ReceiptText, ShoppingBasket, Settings } from "lucide-react";
+import { CalendarDays, ChefHat, CreditCard, ShoppingBasket, Settings } from "lucide-react";
 
 type NavIcon = "planner" | "recipes" | "grocery" | "billing" | "settings";
 
 const iconMap = {
   planner: CalendarDays,
-  recipes: ReceiptText,
+  recipes: ChefHat,
   grocery: ShoppingBasket,
   billing: CreditCard,
   settings: Settings,
@@ -37,7 +37,7 @@ export function NavLink({ href, label, icon, compact = false }: NavLinkProps) {
           : "text-gray-700 hover:bg-gray-100"
       }`}
     >
-      <Icon className="h-4 w-4" aria-hidden="true" />
+      <Icon className={`shrink-0 text-current ${compact ? "h-5 w-5" : "h-4 w-4"}`} aria-hidden="true" />
       <span>{label}</span>
     </Link>
   );
