@@ -4,6 +4,10 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getStripeServer } from "@/lib/stripe/server";
 import { createSupabaseAdmin, updateOrInsertProfile } from "@/lib/supabase/admin";
+import {
+  normalizeStripeId,
+  stripeSubscriptionStatusToDbProfileStatus,
+} from "@/lib/stripe/subscription-sync";
 
 export const runtime = "nodejs";
 
@@ -15,28 +19,6 @@ export async function GET() {
     detail:
       "This endpoint accepts POST requests from Stripe only. Configure Stripe Dashboard > Developers > Webhooks.",
   });
-}
-
-function normalizeStripeId(value: unknown): string | null {
-  if (!value) return null;
-  if (typeof value === "string") return value;
-  if (
-    typeof value === "object" &&
-    value !== null &&
-    "id" in value &&
-    typeof (value as { id: unknown }).id === "string"
-  ) {
-    return (value as { id: string }).id;
-  }
-  return null;
-}
-
-function subscriptionStatusToProfileStatus(
-  status: Stripe.Subscription.Status,
-): "pro" | "free" | "past_due" {
-  if (status === "active" || status === "trialing") return "pro";
-  if (status === "past_due" || status === "unpaid") return "past_due";
-  return "free";
 }
 
 function revalidateSubscriptionPages() {
@@ -231,7 +213,7 @@ export async function POST(request: Request) {
         }
         if (!userId) break;
 
-        const profileStatus = subscriptionStatusToProfileStatus(subscription.status);
+        const profileStatus = stripeSubscriptionStatusToDbProfileStatus(subscription.status);
         const patch: Record<string, string> = {
           subscription_status: profileStatus,
         };

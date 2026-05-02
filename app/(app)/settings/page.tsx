@@ -5,12 +5,35 @@ import { ThemeToggle } from "@/components/settings/ThemeToggle";
 import { TDEEForm } from "@/components/settings/TDEEForm";
 import { DietPreferencesForm } from "@/components/settings/DietPreferencesForm";
 import { isProSubscriptionStatus } from "@/lib/subscription";
+import { reconcileBillingSubscriptionFromStripe } from "@/lib/stripe/reconcile-billing-subscription";
 import { getProfile } from "@/lib/supabase/profile";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  const profile = await getProfile();
+  let profile = await getProfile();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (
+    user &&
+    profile &&
+    !isProSubscriptionStatus(profile.subscription_status)
+  ) {
+    const reconciled = await reconcileBillingSubscriptionFromStripe({
+      userId: user.id,
+      subscriptionStatus: profile.subscription_status,
+      stripeCustomerId: profile.stripe_customer_id ?? null,
+      stripeSubscriptionId: profile.stripe_subscription_id ?? null,
+    });
+    if (reconciled.isPro) {
+      profile = await getProfile();
+    }
+  }
+
   const isPro = isProSubscriptionStatus(profile?.subscription_status);
 
   const defaultValues = profile?.weight_kg

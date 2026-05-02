@@ -90,6 +90,7 @@ export async function getProfile() {
       `
       subscription_status,
       stripe_customer_id,
+      stripe_subscription_id,
       weight_kg,
       height_cm,
       age,

@@ -1,6 +1,7 @@
 import { unstable_noStore } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { isProSubscriptionStatus } from "@/lib/subscription";
+import { reconcileBillingSubscriptionFromStripe } from "@/lib/stripe/reconcile-billing-subscription";
 import { BillingClient } from "@/components/settings/BillingClient";
 
 type Props = {
@@ -22,12 +23,27 @@ export default async function BillingPage({ searchParams }: Props) {
     unstable_noStore();
     const { data: profile } = await supabase
       .from("profiles")
-      .select("subscription_status, stripe_customer_id")
+      .select("subscription_status, stripe_customer_id, stripe_subscription_id")
       .eq("id", user.id)
       .maybeSingle();
 
     isPro = isProSubscriptionStatus(profile?.subscription_status);
-    hasStripeCustomer = Boolean(profile?.stripe_customer_id);
+    hasStripeCustomer = Boolean(profile?.stripe_customer_id?.trim());
+
+    if (!isPro) {
+      const reconciled = await reconcileBillingSubscriptionFromStripe({
+        userId: user.id,
+        subscriptionStatus: profile?.subscription_status,
+        stripeCustomerId: profile?.stripe_customer_id ?? null,
+        stripeSubscriptionId: profile?.stripe_subscription_id ?? null,
+      });
+      if (reconciled.isPro) {
+        isPro = true;
+      }
+      if (reconciled.hasStripeCustomer) {
+        hasStripeCustomer = true;
+      }
+    }
   }
 
   return (

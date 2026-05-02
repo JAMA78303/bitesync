@@ -12,7 +12,8 @@ export function isProSubscriptionStatus(
 ): boolean {
   if (status == null || typeof status !== "string") return false;
   const s = status.trim().toLowerCase();
-  return s === "pro" || s === "past_due";
+  // App stores `pro` / `past_due`; tolerate Stripe-native strings if DB was mis-written.
+  return s === "pro" || s === "past_due" || s === "active" || s === "trialing";
 }
 
 export async function getUserTier(): Promise<UserTier> {
