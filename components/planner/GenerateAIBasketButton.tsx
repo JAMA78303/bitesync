@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Sparkles } from "lucide-react";
+import { ChevronDown, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
@@ -229,64 +229,40 @@ export function GenerateAIBasketButton({
   const secondBest = ordered[1];
   const estimatedSavings = best && secondBest ? Math.max(0, secondBest.total - best.total) : null;
 
-  return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md border border-slate-200 bg-slate-50/80 px-3 py-2 text-xs text-slate-700">
-        <span className="font-medium text-slate-800">Compare prices at</span>
-        {ALL_PRICE_STORE_IDS.map((id) => (
-          <label key={id} className="inline-flex cursor-pointer items-center gap-1.5">
-            <input
-              type="checkbox"
-              className="h-3.5 w-3.5 rounded border-slate-300 text-[#1A4731] focus:ring-[#1A4731]"
-              checked={preferredPriceStores.includes(id)}
-              onChange={() => togglePriceStore(id)}
-            />
-            <span>{PRICE_STORE_LABEL[id]}</span>
-          </label>
-        ))}
-        <label className="inline-flex items-center gap-1.5">
-          <span className="font-medium text-slate-800">Generate for</span>
-          <select
-            value={daysToGenerate}
-            onChange={(event) => setDaysToGenerate(Number(event.target.value))}
-            className="h-7 rounded border border-slate-300 bg-white px-2 text-xs text-slate-700"
-          >
-            {[1, 2, 3, 4, 5, 6, 7].map((days) => (
-              <option key={days} value={days}>
-                {days} day{days === 1 ? "" : "s"}
-              </option>
-            ))}
-          </select>
+  const storeAndDaysRow = (
+    <div className="flex flex-nowrap items-center gap-x-4 gap-y-2 overflow-x-auto rounded-lg border border-slate-200 bg-slate-50/90 px-3 py-2 text-xs text-slate-700 [-webkit-overflow-scrolling:touch] md:flex-wrap md:overflow-visible">
+      <span className="shrink-0 font-medium text-slate-800">Stores</span>
+      {ALL_PRICE_STORE_IDS.map((id) => (
+        <label key={id} className="inline-flex shrink-0 cursor-pointer items-center gap-1.5">
+          <input
+            type="checkbox"
+            className="h-3.5 w-3.5 rounded border-slate-300 text-[#1A4731] focus:ring-[#1A4731]"
+            checked={preferredPriceStores.includes(id)}
+            onChange={() => togglePriceStore(id)}
+          />
+          <span>{PRICE_STORE_LABEL[id]}</span>
         </label>
-      </div>
-      <div className="flex items-center gap-2">
-        <Button
-          type="button"
-          onClick={runWeekPlan}
-          disabled={isPending}
-          variant="outline"
-          className="h-9 border-[#1A4731] text-[#1A4731] hover:bg-[#F0FDF4]"
+      ))}
+      <label className="inline-flex shrink-0 items-center gap-1.5 border-l border-slate-200 pl-3 md:border-l-0 md:pl-0">
+        <span className="font-medium text-slate-800">Grocery plan</span>
+        <select
+          value={daysToGenerate}
+          onChange={(event) => setDaysToGenerate(Number(event.target.value))}
+          className="h-7 rounded border border-slate-300 bg-white px-2 text-xs text-slate-700"
         >
-          <Sparkles className="mr-2 h-4 w-4" />
-          {isPending ? "Planning..." : "AI weekly plan"}
-        </Button>
-        <Button
-          type="button"
-          onClick={run}
-          disabled={isPending}
-          variant="outline"
-          className="h-9 border-[#1A4731] text-[#1A4731] hover:bg-[#F0FDF4]"
-        >
-          <Sparkles className="mr-2 h-4 w-4" />
-          {isPending ? "Generating..." : "AI grocery plan"}
-        </Button>
-        {lastSummary ? <span className="text-xs text-slate-500">{lastSummary}</span> : null}
-      </div>
+          {[1, 2, 3, 4, 5, 6, 7].map((days) => (
+            <option key={days} value={days}>
+              {days} day{days === 1 ? "" : "s"}
+            </option>
+          ))}
+        </select>
+      </label>
+    </div>
+  );
 
-      {priceMatchNote ? (
-        <p className="text-xs leading-relaxed text-amber-800">{priceMatchNote}</p>
-      ) : null}
-
+  const pricingBlock = (
+    <>
+      {priceMatchNote ? <p className="text-xs leading-relaxed text-amber-800">{priceMatchNote}</p> : null}
       {storeTotals.length > 0 ? (
         <>
           <div className="space-y-1">
@@ -295,7 +271,7 @@ export function GenerateAIBasketButton({
                 type="button"
                 onClick={applyToGrocery}
                 disabled={isPending || !snapshotId}
-                className="h-8 bg-[#1A4731] text-xs text-white hover:bg-[#153928]"
+                className="h-9 bg-[#1A4731] text-xs text-white hover:bg-[#153928] md:h-8"
               >
                 Apply to grocery list
               </Button>
@@ -310,6 +286,76 @@ export function GenerateAIBasketButton({
         </>
       ) : null}
       {suggestions.length > 0 ? <SubstitutionSuggestionsList suggestions={suggestions} /> : null}
+    </>
+  );
+
+  const hasCollapsibleContent =
+    Boolean(priceMatchNote) || storeTotals.length > 0 || suggestions.length > 0;
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm md:space-y-3 md:border-0 md:bg-transparent md:p-0 md:shadow-none">
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 md:hidden">AI &amp; prices</p>
+
+      <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center md:gap-2">
+        <Button
+          type="button"
+          onClick={runWeekPlan}
+          disabled={isPending}
+          variant="outline"
+          className="h-11 border-[#1A4731] text-sm text-[#1A4731] hover:bg-[#F0FDF4] md:h-9 md:text-sm"
+        >
+          <Sparkles className="mr-1.5 h-4 w-4 shrink-0 md:mr-2" />
+          <span className="text-center leading-tight md:truncate">
+            {isPending ? (
+              "Planning…"
+            ) : (
+              <>
+                <span className="md:hidden">Weekly plan</span>
+                <span className="hidden md:inline">AI weekly plan</span>
+              </>
+            )}
+          </span>
+        </Button>
+        <Button
+          type="button"
+          onClick={run}
+          disabled={isPending}
+          variant="outline"
+          className="h-11 border-[#1A4731] text-sm text-[#1A4731] hover:bg-[#F0FDF4] md:h-9 md:text-sm"
+        >
+          <Sparkles className="mr-1.5 h-4 w-4 shrink-0 md:mr-2" />
+          <span className="text-center leading-tight md:truncate">
+            {isPending ? (
+              "Working…"
+            ) : (
+              <>
+                <span className="md:hidden">Grocery &amp; £</span>
+                <span className="hidden md:inline">AI grocery plan</span>
+              </>
+            )}
+          </span>
+        </Button>
+      </div>
+
+      {lastSummary ? (
+        <p className="mt-2 line-clamp-2 text-[11px] text-slate-500 md:mt-0 md:line-clamp-none md:text-xs">{lastSummary}</p>
+      ) : null}
+
+      <div className="mt-2 md:mt-0">{storeAndDaysRow}</div>
+
+      {/* Mobile: tuck long pricing / apply / subs behind one disclosure */}
+      {hasCollapsibleContent ? (
+        <details className="group mt-3 rounded-lg border border-slate-200 bg-slate-50/60 md:hidden">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2.5 text-sm font-medium text-slate-800 [&::-webkit-details-marker]:hidden">
+            <span>Store totals &amp; more</span>
+            <ChevronDown className="h-4 w-4 shrink-0 text-slate-500 transition-transform group-open:rotate-180" />
+          </summary>
+          <div className="space-y-3 border-t border-slate-200 px-3 pb-3 pt-2">{pricingBlock}</div>
+        </details>
+      ) : null}
+
+      {/* Desktop: full stack always visible */}
+      <div className="mt-3 hidden space-y-3 md:block">{pricingBlock}</div>
     </div>
   );
 }

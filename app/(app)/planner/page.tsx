@@ -128,6 +128,20 @@ export default async function PlannerPage({ searchParams }: Props) {
         </div>
       </div>
 
+      <GenerateAIBasketButton
+        isPro={userTier === "pro"}
+        mealPlanId={mealPlan.id}
+        weekStartDate={weekStartISO}
+        goals={{
+          calorieTarget: dailyCalorieTarget,
+          proteinTarget: dailyProteinTarget,
+          followsVegetarian: Boolean(profile?.follows_vegetarian),
+          followsVegan: Boolean(profile?.follows_vegan),
+          followsGlutenFree: Boolean(profile?.follows_gluten_free),
+        }}
+        initialLivePricing={initialLivePricing}
+      />
+
       <Suspense fallback={<PlannerSkeleton />}>
         <PlannerGrid
           grid={grid}
@@ -142,20 +156,6 @@ export default async function PlannerPage({ searchParams }: Props) {
           dietPrefs={dietPrefs}
         />
       </Suspense>
-
-      <GenerateAIBasketButton
-        isPro={userTier === "pro"}
-        mealPlanId={mealPlan.id}
-        weekStartDate={weekStartISO}
-        goals={{
-          calorieTarget: dailyCalorieTarget,
-          proteinTarget: dailyProteinTarget,
-          followsVegetarian: Boolean(profile?.follows_vegetarian),
-          followsVegan: Boolean(profile?.follows_vegan),
-          followsGlutenFree: Boolean(profile?.follows_gluten_free),
-        }}
-        initialLivePricing={initialLivePricing}
-      />
     </section>
   );
 }
