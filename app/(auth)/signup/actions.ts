@@ -21,7 +21,7 @@ export async function signUp(formData: FormData) {
     email,
     password,
     options: {
-      emailRedirectTo: `${appUrl}/auth/callback`,
+      emailRedirectTo: `${appUrl}/auth/callback?next=/planner`,
     },
   });
 
