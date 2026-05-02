@@ -70,6 +70,60 @@ export function calculateNutritionTargets(input: TDEEInput): TDEEResult {
   return { bmr, tdee, dailyCalories, dailyProtein };
 }
 
+/** BMI — weight kg / height m² */
+export function calculateBMI(weightKg: number, heightCm: number): number {
+  const heightM = heightCm / 100;
+  if (heightM <= 0 || weightKg <= 0) return 0;
+  return Math.round((weightKg / (heightM * heightM)) * 10) / 10;
+}
+
+export type BMICategory = "underweight" | "healthy" | "overweight" | "obese";
+
+export function getBMICategory(bmi: number): BMICategory {
+  if (bmi < 18.5) return "underweight";
+  if (bmi < 25) return "healthy";
+  if (bmi < 30) return "overweight";
+  return "obese";
+}
+
+export function getBMILabel(category: BMICategory): string {
+  switch (category) {
+    case "underweight":
+      return "Underweight";
+    case "healthy":
+      return "Healthy weight";
+    case "overweight":
+      return "Overweight";
+    case "obese":
+      return "Obese";
+  }
+}
+
+/** Tailwind utility classes for BMI badge (light UI). */
+export function getBMIColour(category: BMICategory): string {
+  switch (category) {
+    case "underweight":
+      return "text-blue-600 bg-blue-50 dark:text-blue-200 dark:bg-blue-950/40";
+    case "healthy":
+      return "text-[#1A4731] bg-[#D1FAE5] dark:text-emerald-100 dark:bg-emerald-950/50";
+    case "overweight":
+      return "text-amber-600 bg-amber-50 dark:text-amber-100 dark:bg-amber-950/40";
+    case "obese":
+      return "text-red-600 bg-red-50 dark:text-red-100 dark:bg-red-950/40";
+  }
+}
+
+export function isSafeToLoseWeight(bmi: number): boolean {
+  return bmi >= 18.5;
+}
+
+/** NHS-style minimum daily calories — never go below without medical supervision */
+export function getMinimumCalories(sex: Sex): number {
+  return sex === "male" ? 1500 : 1200;
+}
+
+export type NutritionSafetyOverrideReason = "underweight" | "minimum_calories";
+
 export const tdeeSchema = z.object({
   weightKg: z.coerce.number().min(30, "Weight must be at least 30kg").max(300, "Please enter a valid weight"),
   heightCm: z.coerce.number().min(100, "Height must be at least 100cm").max(250, "Please enter a valid height"),
@@ -80,3 +134,57 @@ export const tdeeSchema = z.object({
 });
 
 export type TDEEFormValues = z.infer<typeof tdeeSchema>;
+
+/** Applies WHO underweight rule + calorie floor before persisting or previewing. */
+export function calculateNutritionTargetsWithSafety(values: TDEEFormValues): {
+  result: TDEEResult;
+  bmi: number;
+  storedGoal: Goal;
+  overrideApplied: boolean;
+  overrideReason: NutritionSafetyOverrideReason | null;
+  rawDailyCalories: number;
+} {
+  const bmi = calculateBMI(values.weightKg, values.heightCm);
+  let storedGoal: Goal = values.goal;
+  let overrideReason: NutritionSafetyOverrideReason | null = null;
+
+  const loseBlocked = values.goal === "lose" && !isSafeToLoseWeight(bmi);
+  const inputForCalc: TDEEInput = {
+    ...values,
+    goal: loseBlocked ? "maintain" : values.goal,
+  };
+
+  if (loseBlocked) {
+    storedGoal = "maintain";
+    overrideReason = "underweight";
+  }
+
+  const result = calculateNutritionTargets(inputForCalc);
+  const rawDailyCalories = result.dailyCalories;
+
+  const minCal = getMinimumCalories(values.sex);
+  let overrideApplied = loseBlocked;
+
+  if (result.dailyCalories < minCal) {
+    const clamped = { ...result, dailyCalories: minCal };
+    overrideApplied = true;
+    if (!overrideReason) overrideReason = "minimum_calories";
+    return {
+      result: clamped,
+      bmi,
+      storedGoal,
+      overrideApplied,
+      overrideReason,
+      rawDailyCalories,
+    };
+  }
+
+  return {
+    result,
+    bmi,
+    storedGoal,
+    overrideApplied,
+    overrideReason,
+    rawDailyCalories,
+  };
+}

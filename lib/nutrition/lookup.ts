@@ -26,3 +26,8 @@ export function getNutritionSeedSize(): number {
 export function getNutritionIngredientNames(): string[] {
   return NUTRITION_DB.map((entry) => entry.name).sort((a, b) => a.localeCompare(b));
 }
+
+/** Alias for autocomplete — full merged lookup list */
+export function getAllFoodNames(): string[] {
+  return getNutritionIngredientNames();
+}

@@ -1,7 +1,25 @@
 import type { NutritionLookupEntry } from "@/types";
+import { NUTRITION_DB_UK_EXPANSION } from "@/lib/nutrition/nutrition-db-uk-expansion";
+import { NUTRITION_DB_UK_EXPANSION_PART2 } from "@/lib/nutrition/nutrition-db-uk-expansion-part2";
+
+function mergeNutritionEntriesUnique(
+  core: NutritionLookupEntry[],
+  extra: NutritionLookupEntry[],
+): NutritionLookupEntry[] {
+  const seen = new Set(core.map((e) => e.name.toLowerCase().trim()));
+  const out = [...core];
+  for (const entry of extra) {
+    const k = entry.name.toLowerCase().trim();
+    if (!seen.has(k)) {
+      seen.add(k);
+      out.push(entry);
+    }
+  }
+  return out;
+}
 
 /** Expanded USDA-style seed data; use normalized lowercase names for matching. */
-export const NUTRITION_DB: NutritionLookupEntry[] = [
+const NUTRITION_DB_CORE: NutritionLookupEntry[] = [
   {
     name: "chicken breast",
     per_100g: {
@@ -1131,3 +1149,8 @@ export const NUTRITION_DB: NutritionLookupEntry[] = [
     },
   },
 ];
+
+export const NUTRITION_DB = mergeNutritionEntriesUnique(
+  mergeNutritionEntriesUnique(NUTRITION_DB_CORE, NUTRITION_DB_UK_EXPANSION),
+  NUTRITION_DB_UK_EXPANSION_PART2,
+);

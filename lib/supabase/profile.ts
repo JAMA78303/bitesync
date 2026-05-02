@@ -3,7 +3,7 @@
 import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 import { isProSubscriptionStatus } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
-import { calculateNutritionTargets, type TDEEFormValues } from "@/lib/utils/tdee";
+import { calculateNutritionTargetsWithSafety, type TDEEFormValues } from "@/lib/utils/tdee";
 
 export type DietPreferencesInput = {
   followsVegetarian: boolean;
@@ -52,7 +52,8 @@ export async function saveTDEEProfile(values: TDEEFormValues) {
     return { error: "Upgrade to Pro to set TDEE targets." };
   }
 
-  const result = calculateNutritionTargets(values);
+  const safe = calculateNutritionTargetsWithSafety(values);
+  const { result } = safe;
 
   const { error } = await supabase
     .from("profiles")
@@ -62,7 +63,7 @@ export async function saveTDEEProfile(values: TDEEFormValues) {
       age: values.age,
       sex: values.sex,
       activity_level: values.activityLevel,
-      goal: values.goal,
+      goal: safe.storedGoal,
       daily_calorie_target: result.dailyCalories,
       daily_protein_target: result.dailyProtein,
     })
@@ -73,7 +74,18 @@ export async function saveTDEEProfile(values: TDEEFormValues) {
   revalidatePath("/settings");
   revalidatePath("/billing");
   revalidatePath("/planner");
-  return { success: true, targets: result };
+  return {
+    success: true,
+    overrideApplied: safe.overrideApplied,
+    overrideReason: safe.overrideReason,
+    targets: {
+      bmr: result.bmr,
+      tdee: result.tdee,
+      dailyCalories: result.dailyCalories,
+      dailyProtein: result.dailyProtein,
+      bmi: safe.bmi,
+    },
+  };
 }
 
 export async function getProfile() {

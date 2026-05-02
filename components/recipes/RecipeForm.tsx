@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { getSupportedUnits } from "@/lib/nutrition/convert";
 import { calculateRecipeNutrition, type RecipeIngredientInput } from "@/lib/nutrition/calculate";
-import { getNutritionIngredientNames } from "@/lib/nutrition/lookup";
+import { getAllFoodNames } from "@/lib/nutrition/lookup";
 import { NutritionPreview } from "@/components/recipes/NutritionPreview";
 import { createRecipe } from "@/app/(app)/recipes/actions";
 
@@ -34,7 +34,7 @@ function createIngredientRow(): IngredientRow {
 }
 
 const units = getSupportedUnits();
-const ingredientSuggestions = getNutritionIngredientNames();
+const ingredientSuggestions = getAllFoodNames();
 
 export function RecipeForm() {
   const router = useRouter();
