@@ -11,6 +11,19 @@ function isMissingArchivedAtColumn(message?: string | null): boolean {
   return message.toLowerCase().includes("archived_at");
 }
 
+function schemaMissingColumn(message: string | null | undefined, column: string): boolean {
+  if (!message) return false;
+  const m = message.toLowerCase();
+  const c = column.toLowerCase();
+  if (!m.includes(c)) return false;
+  return (
+    m.includes("does not exist") ||
+    m.includes("unknown column") ||
+    m.includes("undefined column") ||
+    m.includes("could not find") /* PostgREST */
+  );
+}
+
 async function restoreManualGrocerySnapshot(
   supabase: Awaited<ReturnType<typeof createClient>>,
   meal_plan_id: string,
@@ -58,6 +71,17 @@ export async function getGroceryItems(meal_plan_id: string) {
       .from("grocery_items")
       .select("id, name, quantity, unit, is_checked, created_at")
       .eq("meal_plan_id", meal_plan_id)
+      .order("is_checked", { ascending: true })
+      .order("name", { ascending: true });
+    return { data: fallbackData, error: fallbackError };
+  }
+
+  if (schemaMissingColumn(error.message, "is_manual")) {
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from("grocery_items")
+      .select("id, name, quantity, unit, is_checked, created_at")
+      .eq("meal_plan_id", meal_plan_id)
+      .is("archived_at", null)
       .order("is_checked", { ascending: true })
       .order("name", { ascending: true });
     return { data: fallbackData, error: fallbackError };
@@ -168,7 +192,8 @@ export async function generateGroceryList(meal_plan_id: string, selectedDays?: n
   if (error) {
     const shouldFallback =
       error.message.toLowerCase().includes("replace_grocery_items") ||
-      isMissingArchivedAtColumn(error.message);
+      isMissingArchivedAtColumn(error.message) ||
+      schemaMissingColumn(error.message, "is_manual");
 
     if (!shouldFallback) return { error: error.message };
 

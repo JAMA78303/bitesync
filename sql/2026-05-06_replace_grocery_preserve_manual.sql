@@ -1,3 +1,7 @@
+-- Required for the function body below (also in 2026-04-30_flexible_input_and_selective_grocery.sql).
+ALTER TABLE public.grocery_items
+ADD COLUMN IF NOT EXISTS is_manual BOOLEAN DEFAULT FALSE;
+
 -- Regenerate grocery list from recipes without archiving manual rows.
 CREATE OR REPLACE FUNCTION public.replace_grocery_items(
   p_meal_plan_id uuid,
