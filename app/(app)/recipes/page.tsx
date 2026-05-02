@@ -76,7 +76,7 @@ export default async function RecipesPage({ searchParams }: Props) {
               : `${count} of 10 free recipes used`}
           </span>
           <Link
-            href="/settings/billing"
+            href="/billing"
             className="whitespace-nowrap text-xs font-semibold underline underline-offset-2"
           >
             Upgrade →

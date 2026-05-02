@@ -9,6 +9,7 @@ export function Sidebar() {
         <NavLink href="/planner" label="Planner" icon="planner" />
         <NavLink href="/recipes" label="Recipes" icon="recipes" />
         <NavLink href="/grocery" label="Grocery" icon="grocery" />
+        <NavLink href="/billing" label="Billing" icon="billing" />
         <NavLink href="/settings" label="Settings" icon="settings" />
       </nav>
     </aside>

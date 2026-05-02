@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, ReceiptText, ShoppingBasket, Settings } from "lucide-react";
+import { CalendarDays, CreditCard, ReceiptText, ShoppingBasket, Settings } from "lucide-react";
 
-type NavIcon = "planner" | "recipes" | "grocery" | "settings";
+type NavIcon = "planner" | "recipes" | "grocery" | "billing" | "settings";
 
 const iconMap = {
   planner: CalendarDays,
   recipes: ReceiptText,
   grocery: ShoppingBasket,
+  billing: CreditCard,
   settings: Settings,
 } as const;
 

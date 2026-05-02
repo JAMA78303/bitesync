@@ -46,8 +46,8 @@ export async function createCheckoutSession(
     mode: "subscription",
     payment_method_types: ["card"],
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings/billing?success=true`,
-    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings/billing?cancelled=true`,
+    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?success=true`,
+    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?cancelled=true`,
     metadata: { supabase_user_id: user.id, billing_period: billingPeriod },
     subscription_data: {
       metadata: { supabase_user_id: user.id, billing_period: billingPeriod },
@@ -77,12 +77,12 @@ export async function createCustomerPortalSession() {
     .maybeSingle();
 
   if (!profile?.stripe_customer_id) {
-    redirect("/settings/billing");
+    redirect("/billing");
   }
 
   const portalSession = await stripe.billingPortal.sessions.create({
     customer: profile.stripe_customer_id,
-    return_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings/billing`,
+    return_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing`,
   });
 
   redirect(portalSession.url);
@@ -142,6 +142,7 @@ export async function syncSubscriptionFromStripe(): Promise<
     return { error: error.message };
   }
 
+  revalidatePath("/billing");
   revalidatePath("/settings/billing");
   revalidatePath("/settings");
   return { ok: true };

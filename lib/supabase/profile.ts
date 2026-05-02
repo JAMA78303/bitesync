@@ -41,6 +41,7 @@ export async function saveTDEEProfile(values: TDEEFormValues) {
   if (error) return { error: error.message };
 
   revalidatePath("/settings");
+  revalidatePath("/billing");
   revalidatePath("/planner");
   return { success: true, targets: result };
 }

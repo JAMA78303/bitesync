@@ -40,6 +40,7 @@ function subscriptionStatusToProfileStatus(
 }
 
 function revalidateSubscriptionPages() {
+  revalidatePath("/billing");
   revalidatePath("/settings/billing");
   revalidatePath("/settings");
 }

@@ -60,7 +60,7 @@ export default async function SettingsPage() {
               Set calorie and protein targets based on body stats, activity level, and goal.
             </p>
             <Link
-              href="/settings/billing"
+              href="/billing"
               className="inline-block rounded-lg bg-[#1A4731] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#153928]"
             >
               Upgrade to Pro
@@ -69,7 +69,7 @@ export default async function SettingsPage() {
               <p className="mt-4 text-xs leading-relaxed text-slate-500">
                 Already paid? Open{" "}
                 <Link
-                  href="/settings/billing"
+                  href="/billing"
                   className="font-medium text-[#1A4731] underline underline-offset-2"
                 >
                   Billing
@@ -106,7 +106,7 @@ export default async function SettingsPage() {
             </p>
           </div>
           <Link
-            href="/settings/billing"
+            href="/billing"
             className="text-xs font-medium text-[#1A4731] hover:underline"
           >
             Manage →
