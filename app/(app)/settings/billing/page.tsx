@@ -1,3 +1,4 @@
+import { unstable_noStore } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { isProSubscriptionStatus } from "@/lib/subscription";
 import { BillingClient } from "@/components/settings/BillingClient";
@@ -18,6 +19,7 @@ export default async function BillingPage({ searchParams }: Props) {
   let isPro = false;
   let hasStripeCustomer = false;
   if (user) {
+    unstable_noStore();
     const { data: profile } = await supabase
       .from("profiles")
       .select("subscription_status, stripe_customer_id")
