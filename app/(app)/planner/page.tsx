@@ -10,6 +10,7 @@ import { PlannerGrid } from "@/components/planner/PlannerGrid";
 import { WeekNav } from "@/components/planner/WeekNav";
 import { GenerateListButton } from "@/components/planner/GenerateListButton";
 import { GenerateAIBasketButton } from "@/components/planner/GenerateAIBasketButton";
+import { getLiveStorePricingForMealPlan } from "@/app/(app)/planner/ai-actions";
 import { PlannerSkeleton } from "@/components/shared/skeletons";
 import { MEAL_TYPES } from "@/types";
 
@@ -95,6 +96,19 @@ export default async function PlannerPage({ searchParams }: Props) {
     ),
   );
 
+  const livePricing = await getLiveStorePricingForMealPlan({
+    mealPlanId: mealPlan.id,
+    selectedDays: [0, 1, 2, 3, 4, 5, 6],
+  });
+  const initialLivePricing =
+    "success" in livePricing && livePricing.success
+      ? {
+          storeTotals: livePricing.storeTotals,
+          estimates: livePricing.estimates,
+          priceMatchSummary: livePricing.priceMatchSummary,
+        }
+      : null;
+
   return (
     <section className="space-y-4">
       <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
@@ -125,6 +139,7 @@ export default async function PlannerPage({ searchParams }: Props) {
           followsVegan: Boolean(profile?.follows_vegan),
           followsGlutenFree: Boolean(profile?.follows_gluten_free),
         }}
+        initialLivePricing={initialLivePricing}
       />
 
       <Suspense fallback={<PlannerSkeleton />}>

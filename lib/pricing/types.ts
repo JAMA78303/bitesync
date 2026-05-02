@@ -27,6 +27,11 @@ export type StoreProduct = {
   unit_price_gbp: number;
   size_value: number;
   size_unit: string;
+  /** Smallest purchasable pack (same unit as recipe quantities when pack pricing applies). */
+  min_purchase_size?: number | null;
+  min_purchase_unit?: string | null;
+  /** Price for one min purchase unit (typically equals shelf price for that pack). */
+  min_purchase_price?: number | null;
   confidence: number;
   price_volatility: PriceVolatility;
   last_seen_at: string;
@@ -40,6 +45,8 @@ export type StoreItemEstimate = {
   confidence: number;
   freshnessDays: number;
   priceVolatility: PriceVolatility;
+  /** Short note when whole-pack pricing applies (e.g. multiple packs). */
+  displayNote?: string;
 };
 
 export type StoreTotal = {

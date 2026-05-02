@@ -109,11 +109,18 @@ export function RecipeForm({ profileTargets = null }: RecipeFormProps) {
     setFormError(null);
     setFormMessage(null);
     startTransition(async () => {
+      const variationSeed = Date.now() ^ Math.floor(Math.random() * 0x7fffffff);
+      const draftNonce =
+        typeof globalThis.crypto !== "undefined" && "randomUUID" in globalThis.crypto
+          ? globalThis.crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
       const result = await generateGoalMatchedRecipeDraft({
         mealSlot: aiMealSlot,
         fitsVegan,
         fitsVegetarian,
         fitsGlutenFree,
+        variationSeed,
+        draftNonce,
       });
       if ("error" in result) {
         setFormError(result.error);
@@ -124,12 +131,8 @@ export function RecipeForm({ profileTargets = null }: RecipeFormProps) {
         return;
       }
       const d = result.data;
-      setName(d.name);
-      setDescription(d.description);
       setIngredients(mapServerIngredientsToRows(d.ingredients));
-      setFormMessage(
-        `Draft applied: ~${d.achievedCalories} kcal vs meal target ${d.targetMealCalories} kcal (${d.achievedProteinG}g protein).`,
-      );
+      setFormMessage(`Draft applied: ~${d.achievedCalories} kcal · ${d.achievedProteinG}g protein`);
     });
   }
 
@@ -192,12 +195,6 @@ export function RecipeForm({ profileTargets = null }: RecipeFormProps) {
 
         {profileTargets?.daily_calorie_target ? (
           <div className="space-y-3 rounded-lg border border-emerald-100 bg-emerald-50/60 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-900">Goal-matched draft</p>
-            <p className="text-xs text-emerald-900/90">
-              Uses your daily calorie target ({Math.round(profileTargets.daily_calorie_target)} kcal) to draft one meal
-              within about ±100 kcal of your share for that time of day. Ingredients come from the nutrition database
-              (not a creative chef yet — wire Claude later for novel recipes).
-            </p>
             <div className="flex flex-wrap items-end gap-2">
               <label className="flex flex-col gap-1 text-xs text-emerald-900">
                 <span>Meal</span>

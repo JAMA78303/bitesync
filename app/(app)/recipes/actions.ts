@@ -7,10 +7,9 @@ import { calculateRecipeNutrition, type RecipeIngredientInput } from "@/lib/nutr
 import {
   buildGoalMatchedRecipeIngredients,
   fractionForMealSlot,
-  GOAL_MEAL_KCAL_TOLERANCE,
-  mealLabel,
   type GoalMealSlot,
 } from "@/lib/ai/goal-matched-recipe";
+import { randomInt } from "node:crypto";
 import { canCreateRecipe, getRecipeCount, getUserTier } from "@/lib/subscription";
 import { getProfile } from "@/lib/supabase/profile";
 import type { ActionResult } from "@/types";
@@ -28,6 +27,47 @@ type UpdateRecipePayload = CreateRecipePayload & { recipeId: string };
 
 const GOAL_MEAL_SLOTS: GoalMealSlot[] = ["breakfast", "lunch", "dinner", "snack"];
 
+function hashDraftNonce(uuid: string): number {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < uuid.length; i += 1) {
+    h ^= uuid.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  return h >>> 0;
+}
+
+function mixDraftVariantSeed(
+  mealSlot: GoalMealSlot,
+  flags: { vegan: boolean; vegetarian: boolean; glutenFree: boolean },
+  draftNonce: string | undefined,
+  variationSeed: number | undefined,
+): number {
+  const slotSalt =
+    mealSlot === "breakfast"
+      ? 0x9e3779b1
+      : mealSlot === "lunch"
+        ? 0x85ebca6b
+        : mealSlot === "dinner"
+          ? 0xc2b2ae35
+          : 0x27d4eb2d;
+  const dietSalt = (flags.vegan ? 0x51ed : 0) ^ (flags.vegetarian && !flags.vegan ? 0x1cef : 0) ^ (flags.glutenFree ? 0xbee5 : 0);
+
+  const trimmed = typeof draftNonce === "string" ? draftNonce.trim() : "";
+  const hasNonce = trimmed.length > 0;
+  const hasNumeric = typeof variationSeed === "number" && Number.isFinite(variationSeed);
+
+  let h: number;
+  if (hasNonce) {
+    h = hashDraftNonce(trimmed);
+    if (hasNumeric) h = (h ^ (Math.floor(Number(variationSeed)) >>> 0)) >>> 0;
+  } else if (hasNumeric) {
+    h = Math.floor(Number(variationSeed)) >>> 0;
+  } else {
+    h = randomInt(0, 0x7fff_fffe) >>> 0;
+  }
+  return (h ^ slotSalt ^ dietSalt) >>> 0;
+}
+
 function toTitleCase(value: string): string {
   return value
     .toLowerCase()
@@ -42,6 +82,10 @@ export async function generateGoalMatchedRecipeDraft(payload: {
   fitsVegan: boolean;
   fitsVegetarian: boolean;
   fitsGlutenFree: boolean;
+  /** Optional; XORed with draftNonce on the server for extra entropy. */
+  variationSeed?: number;
+  /** Fresh UUID each click so templates rotate reliably (server actions may reuse timing-only seeds). */
+  draftNonce?: string;
 }): Promise<
   ActionResult<{
     name: string;
@@ -76,33 +120,29 @@ export async function generateGoalMatchedRecipeDraft(payload: {
   const vegetarian = payload.fitsVegetarian === true || vegan;
   const glutenFree = payload.fitsGlutenFree === true;
 
+  const variantSeed = mixDraftVariantSeed(
+    payload.mealSlot,
+    { vegan, vegetarian, glutenFree },
+    payload.draftNonce,
+    payload.variationSeed,
+  );
+
   const ingredients = buildGoalMatchedRecipeIngredients({
     targetCalories: targetMealCalories,
     mealSlot: payload.mealSlot,
     vegan,
     vegetarian,
     glutenFree,
+    variantSeed,
   });
 
   const totals = calculateRecipeNutrition(ingredients);
-  const delta = Math.round(totals.calories) - targetMealCalories;
-  const within = Math.abs(delta) <= GOAL_MEAL_KCAL_TOLERANCE;
-  const slotName = mealLabel(payload.mealSlot);
-  const name = `Goal-matched ${slotName}`;
-  const description = [
-    `Draft for ~${targetMealCalories} kcal (${Math.round(fraction * 100)}% of your ${Math.round(Number(daily))} kcal/day target).`,
-    `Estimated from your ingredient list: ${Math.round(totals.calories)} kcal, ${Math.round(totals.protein_g)}g protein.`,
-    within
-      ? `Within ±${GOAL_MEAL_KCAL_TOLERANCE} kcal of the meal target.`
-      : `Closest match within the nutrition database was ${delta >= 0 ? "+" : ""}${delta} kcal vs target (tweak portions if you like).`,
-    "Uses BiteSync nutrition data only — swap ingredients and save when you are happy.",
-  ].join(" ");
 
   return {
     success: true,
     data: {
-      name,
-      description,
+      name: "",
+      description: "",
       ingredients,
       targetMealCalories,
       achievedCalories: Math.round(totals.calories * 10) / 10,

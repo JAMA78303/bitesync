@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getMonday, toLocalISO } from "@/lib/utils/dates";
-import { mergeIngredients } from "@/lib/utils/merge";
+import { mealPlanRecipeServings, mergeScaledRecipeIngredients } from "@/lib/utils/merge";
 import type { MealType } from "@/types";
 
 type GroceryReplaceItem = {
@@ -306,16 +306,20 @@ export async function generateGroceryList(meal_plan_id: string, selectedDays?: n
   if (!entries?.length) {
     return { error: "No meals with recipes in selected days." };
   }
-  const recipeIds = Array.from(new Set(entries.map((e) => e.recipe_id).filter(Boolean)));
+  const servingsByRecipe = mealPlanRecipeServings(entries);
+  const recipeIds = Array.from(servingsByRecipe.keys());
 
   const { data: ingredients } = await supabase
     .from("recipe_ingredients")
-    .select("name, quantity, unit")
+    .select("recipe_id, name, quantity, unit")
     .in("recipe_id", recipeIds);
 
   if (!ingredients?.length) return { error: "Your recipes have no ingredients." };
 
-  const merged = mergeIngredients(ingredients as { name: string; quantity: number; unit: string }[]);
+  const merged = mergeScaledRecipeIngredients(
+    ingredients as { recipe_id: string; name: string; quantity: number; unit: string }[],
+    servingsByRecipe,
+  );
   return replaceGroceryItemsWithMerged(meal_plan_id, merged, selectedDays);
 }
 
