@@ -156,6 +156,12 @@ export default async function RecipesPage({ searchParams }: Props) {
                   </form>
                 ) : (
                   <>
+                    <Link
+                      href={`/recipes/${recipe.id}/edit`}
+                      className="ml-2 mt-3 inline-flex h-8 items-center justify-center rounded-md border border-[#1A4731] bg-[#F0FDF4] px-3 text-xs font-medium text-[#1A4731] hover:bg-[#dcfce7]"
+                    >
+                      Edit
+                    </Link>
                     <form className="inline-block" action={archiveRecipe.bind(null, recipe.id)}>
                       <button
                         type="submit"

@@ -40,7 +40,6 @@ export function GroceryItem({ id, name, quantity, unit, is_checked }: Props) {
   }
 
   function handleDelete() {
-    if (!checked) return;
     startTransition(async () => {
       const result = await deleteGroceryItem(id);
       if (result && "error" in result) {
@@ -91,17 +90,15 @@ export function GroceryItem({ id, name, quantity, unit, is_checked }: Props) {
           </span>
         </div>
         </button>
-        {checked ? (
-          <button
-            type="button"
-            onClick={handleDelete}
-            disabled={isPending}
-            aria-label={`Delete ${name}`}
-            className="rounded-md p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        ) : null}
+        <button
+          type="button"
+          onClick={handleDelete}
+          disabled={isPending}
+          aria-label={`Delete ${name}`}
+          className="rounded-md p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
       </div>
     </div>
   );
