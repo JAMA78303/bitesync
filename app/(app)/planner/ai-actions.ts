@@ -20,7 +20,6 @@ import {
   generateSubstitutions,
   type ClaudeMealPlanResult,
 } from "@/lib/ai/client";
-import { fractionForMealSlot, type GoalMealSlot } from "@/lib/ai/goal-matched-recipe";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 type GenerateAIBasketInput = {
@@ -160,49 +159,120 @@ type RecipeWithNutrition = RecipeRow & {
   fat_g: number | null;
 };
 
-function pickHeuristicRecipeForSlot(
+/** Per-slot share of daily calories (sums to 1 with snacks split). */
+function daySlotSpecs(snackCountPerDay: number): Array<{
+  meal_type: MealPlanInsertRow["meal_type"];
+  slot_index: number;
+  calFrac: number;
+}> {
+  const n = Math.max(1, Math.min(2, snackCountPerDay));
+  const snackEach = 0.07 / n;
+  const slots: Array<{ meal_type: MealPlanInsertRow["meal_type"]; slot_index: number; calFrac: number }> = [
+    { meal_type: "breakfast", slot_index: 0, calFrac: 0.25 },
+    { meal_type: "lunch", slot_index: 0, calFrac: 0.33 },
+    { meal_type: "dinner", slot_index: 0, calFrac: 0.35 },
+  ];
+  for (let s = 0; s < n; s += 1) {
+    slots.push({ meal_type: "snack", slot_index: s, calFrac: snackEach });
+  }
+  return slots;
+}
+
+function scoreRecipeForDaySlot(
+  r: RecipeWithNutrition,
+  targetCal: number,
+  targetPro: number,
+): number {
+  const cal = r.calories;
+  const pro = r.protein;
+  const calDiff = Math.abs(cal - targetCal);
+  const proDiff = Math.abs(pro - targetPro);
+  let score = 0;
+  score -= calDiff + proDiff * 2;
+  if (cal > targetCal * 1.3) score -= 1000;
+  if (pro > targetPro * 1.3) score -= 500;
+  if (cal > targetCal) score -= (cal - targetCal) * 1.6;
+  if (pro > targetPro) score -= (pro - targetPro) * 2.2;
+  return score;
+}
+
+function pickRecipeWithBudgetAndUsage(
   pool: RecipeWithNutrition[],
-  slot: MealPlanInsertRow["meal_type"],
   usedCount: Map<string, number>,
-  dailyK: number,
-  dailyP: number,
-  snackCountPerDay: number,
-): string {
-  /** breakfast+lunch+dinner+snacks raw fractions sum to >1 (e.g. 1.05 or 1.17); normalize so daily targets add up. */
-  const sumFrac =
-    fractionForMealSlot("breakfast") +
-    fractionForMealSlot("lunch") +
-    fractionForMealSlot("dinner") +
-    fractionForMealSlot("snack") * Math.max(1, snackCountPerDay);
-  const slotKey: GoalMealSlot = slot === "snack" ? "snack" : slot;
-  const frac = fractionForMealSlot(slotKey) / Math.max(sumFrac, 0.01);
-  const targetK = dailyK * frac;
-  const targetP = dailyP * frac;
-  const score = (r: RecipeWithNutrition) => {
-    const dkOver = r.calories - targetK;
-    const dk =
-      dkOver > 0
-        ? (dkOver / Math.max(targetK, 40)) * 1.75
-        : (-dkOver / Math.max(targetK, 40)) * 0.85;
-    const dpOver = r.protein - targetP;
-    const dp =
-      dpOver > 0
-        ? (dpOver / Math.max(targetP, 4)) * 1.5
-        : (-dpOver / Math.max(targetP, 4)) * 0.85;
-    return dk + 0.55 * dp;
-  };
-  const ranked = [...pool].sort((a, b) => score(a) - score(b));
-  const top5 = ranked.slice(0, 5);
-  let candidates = top5.filter((r) => (usedCount.get(r.id) ?? 0) < 2);
-  if (!candidates.length) {
-    candidates = ranked.filter((r) => (usedCount.get(r.id) ?? 0) < 2).slice(0, 5);
-  }
-  if (!candidates.length) {
-    candidates = top5.length ? top5 : ranked.slice(0, 1);
-  }
-  const picked = candidates[Math.floor(Math.random() * candidates.length)]!;
+  targetCal: number,
+  targetPro: number,
+  remainingCal: number,
+  remainingPro: number,
+): RecipeWithNutrition {
+  const slotCalTarget = Math.max(targetCal, 0);
+  const slotProTarget = Math.max(targetPro, 0);
+  const effectiveCal = Math.min(slotCalTarget, Math.max(remainingCal, 0));
+  const effectivePro = Math.min(slotProTarget, Math.max(remainingPro, 0));
+
+  const available = pool.filter((r) => (usedCount.get(r.id) ?? 0) < 2);
+  const poolUse = available.length ? available : pool;
+
+  const scored = poolUse
+    .map((r) => ({ r, s: scoreRecipeForDaySlot(r, Math.max(effectiveCal, 1), Math.max(effectivePro, 0.5)) }))
+    .sort((a, b) => b.s - a.s);
+
+  const top = scored.slice(0, 3).map((x) => x.r);
+  const picked = top[Math.floor(Math.random() * Math.max(top.length, 1))] ?? scored[0]!.r;
   usedCount.set(picked.id, (usedCount.get(picked.id) ?? 0) + 1);
-  return picked.id;
+  return picked;
+}
+
+function dayCaloriesTotal(
+  rows: MealPlanInsertRow[],
+  day: number,
+  calById: Map<string, number>,
+): number {
+  return rows
+    .filter((r) => r.day_of_week === day && r.recipe_id)
+    .reduce((s, r) => s + (calById.get(r.recipe_id!) ?? 0), 0);
+}
+
+/** If a day exceeds maxRatio of daily kcal, drop snack slots (highest slot_index first) until within budget. */
+function trimSnacksIfDayOverCalorieCap(
+  rows: MealPlanInsertRow[],
+  day: number,
+  dailyK: number,
+  calById: Map<string, number>,
+  maxRatio = 1.2,
+): void {
+  const limit = dailyK * maxRatio;
+
+  for (;;) {
+    const total = dayCaloriesTotal(rows, day, calById);
+    if (total <= limit) break;
+
+    let idx = -1;
+    let bestSlot = -1;
+    for (let i = 0; i < rows.length; i += 1) {
+      const r = rows[i]!;
+      if (r.day_of_week !== day || r.meal_type !== "snack") continue;
+      const si = r.slot_index ?? 0;
+      if (si >= bestSlot) {
+        bestSlot = si;
+        idx = i;
+      }
+    }
+    if (idx < 0) break;
+
+    const before = total;
+    rows.splice(idx, 1);
+    const after = dayCaloriesTotal(rows, day, calById);
+    console.warn(
+      `[heuristic] day ${day}: ${Math.round(before)} kcal > ${Math.round(limit)} cap → removed snack (now ~${Math.round(after)} kcal)`,
+    );
+  }
+
+  const finalTot = dayCaloriesTotal(rows, day, calById);
+  if (finalTot > dailyK + 300) {
+    console.warn(
+      `[heuristic] day ${day}: ${Math.round(finalTot)} kcal vs target ${dailyK} (still >300 kcal over) after snack trim`,
+    );
+  }
 }
 
 function recipeMatchesGoals(recipe: RecipeRow, goals: GoalContext): boolean {
@@ -324,80 +394,40 @@ export async function generateAIWeekPlan(input: GenerateAIWeekPlanInput) {
     const pool = withNutrition as RecipeWithNutrition[];
     const usedCount = new Map<string, number>();
     const rows: MealPlanInsertRow[] = [];
+    const calById = new Map(pool.map((r) => [r.id, r.calories]));
+    const slotPlan = daySlotSpecs(snackCountPerDay);
 
     for (let day = 0; day < 7; day += 1) {
-      const breakfastId = pickHeuristicRecipeForSlot(
-        pool,
-        "breakfast",
-        usedCount,
-        dailyCalorieTarget,
-        dailyProteinTarget,
-        snackCountPerDay,
-      );
-      const lunchId = pickHeuristicRecipeForSlot(
-        pool,
-        "lunch",
-        usedCount,
-        dailyCalorieTarget,
-        dailyProteinTarget,
-        snackCountPerDay,
-      );
-      const dinnerId = pickHeuristicRecipeForSlot(
-        pool,
-        "dinner",
-        usedCount,
-        dailyCalorieTarget,
-        dailyProteinTarget,
-        snackCountPerDay,
-      );
+      let remainingCal = dailyCalorieTarget;
+      let remainingPro = dailyProteinTarget;
 
-      rows.push({
-        meal_plan_id: input.mealPlanId,
-        recipe_id: breakfastId,
-        day_of_week: day,
-        meal_type: "breakfast",
-        slot_index: 0,
-        quick_add_name: null,
-        quick_add_calories: null,
-      });
-      rows.push({
-        meal_plan_id: input.mealPlanId,
-        recipe_id: lunchId,
-        day_of_week: day,
-        meal_type: "lunch",
-        slot_index: 0,
-        quick_add_name: null,
-        quick_add_calories: null,
-      });
-      rows.push({
-        meal_plan_id: input.mealPlanId,
-        recipe_id: dinnerId,
-        day_of_week: day,
-        meal_type: "dinner",
-        slot_index: 0,
-        quick_add_name: null,
-        quick_add_calories: null,
-      });
-
-      for (let s = 0; s < snackCountPerDay; s += 1) {
-        const snackId = pickHeuristicRecipeForSlot(
+      for (const spec of slotPlan) {
+        const slotCalTarget = dailyCalorieTarget * spec.calFrac;
+        const slotProTarget = dailyProteinTarget * spec.calFrac;
+        const picked = pickRecipeWithBudgetAndUsage(
           pool,
-          "snack",
           usedCount,
-          dailyCalorieTarget,
-          dailyProteinTarget,
-          snackCountPerDay,
+          slotCalTarget,
+          slotProTarget,
+          remainingCal,
+          remainingPro,
         );
+        remainingCal -= picked.calories;
+        remainingPro -= picked.protein;
         rows.push({
           meal_plan_id: input.mealPlanId,
-          recipe_id: snackId,
+          recipe_id: picked.id,
           day_of_week: day,
-          meal_type: "snack",
-          slot_index: s,
+          meal_type: spec.meal_type,
+          slot_index: spec.slot_index,
           quick_add_name: null,
           quick_add_calories: null,
         });
       }
+
+      const dayTot = dayCaloriesTotal(rows, day, calById);
+      console.warn(`[heuristic] day ${day}: planned ~${Math.round(dayTot)} kcal (target ${dailyCalorieTarget})`);
+      trimSnacksIfDayOverCalorieCap(rows, day, dailyCalorieTarget, calById);
     }
 
     const { error: clearError } = await supabase

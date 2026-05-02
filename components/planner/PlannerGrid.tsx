@@ -75,7 +75,7 @@ export function PlannerGrid({
 
   return (
     <>
-      <div className="hidden overflow-x-auto rounded-xl border border-gray-200 bg-white md:block">
+      <div className="hidden overflow-x-auto rounded-xl border border-gray-200 bg-white sm:block">
         <div className="grid min-w-[900px] grid-cols-[120px_repeat(7,minmax(100px,1fr))]">
           <div className="border-b border-gray-200 p-2" />
           {Array.from({ length: 7 }, (_, day) => (
@@ -212,7 +212,7 @@ function PlannerGridMobileInline({
   const nextSnackSlot = snackEntries.length ? Math.max(...snackEntries.map((e) => e.slot_index ?? 0)) + 1 : 0;
 
   return (
-    <div className="space-y-3 md:hidden">
+    <div className="space-y-3 sm:hidden">
       <div className="grid grid-cols-7 gap-1 rounded-xl border border-gray-200 bg-white p-2">
         {Array.from({ length: 7 }, (_, day) => (
           <button

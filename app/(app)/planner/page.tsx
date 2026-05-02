@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { ShoppingCart } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getMonday, toLocalISO, addDays, isCurrentWeek } from "@/lib/utils/dates";
@@ -11,7 +10,6 @@ import { WeekNav } from "@/components/planner/WeekNav";
 import { GenerateListButton } from "@/components/planner/GenerateListButton";
 import { GenerateAIBasketButton } from "@/components/planner/GenerateAIBasketButton";
 import { getLiveStorePricingForMealPlan } from "@/app/(app)/planner/ai-actions";
-import { PlannerSkeleton } from "@/components/shared/skeletons";
 import { MEAL_TYPES } from "@/types";
 
 type Props = { searchParams: Promise<{ week?: string }> };
@@ -70,9 +68,18 @@ export default async function PlannerPage({ searchParams }: Props) {
     );
   }
 
-  const { data: entries } = await getMealPlanEntries(mealPlan.id);
   const profile = await getProfile();
   const userTier = await getUserTier();
+  const [{ data: entries }, livePricingResult] = await Promise.all([
+    getMealPlanEntries(mealPlan.id),
+    getLiveStorePricingForMealPlan({
+      mealPlanId: mealPlan.id,
+      selectedDays: [0, 1, 2, 3, 4, 5, 6],
+    }).catch((err: unknown) => ({
+      success: false as const,
+      error: err instanceof Error ? err.message : "Live pricing failed",
+    })),
+  ]);
   const dailyCalorieTarget = profile?.daily_calorie_target ?? null;
   const dailyProteinTarget = profile?.daily_protein_target ?? null;
   const dietPrefs = profile
@@ -96,16 +103,12 @@ export default async function PlannerPage({ searchParams }: Props) {
     ),
   );
 
-  const livePricing = await getLiveStorePricingForMealPlan({
-    mealPlanId: mealPlan.id,
-    selectedDays: [0, 1, 2, 3, 4, 5, 6],
-  });
   const initialLivePricing =
-    "success" in livePricing && livePricing.success
+    "success" in livePricingResult && livePricingResult.success
       ? {
-          storeTotals: livePricing.storeTotals,
-          estimates: livePricing.estimates,
-          priceMatchSummary: livePricing.priceMatchSummary,
+          storeTotals: livePricingResult.storeTotals,
+          estimates: livePricingResult.estimates,
+          priceMatchSummary: livePricingResult.priceMatchSummary,
         }
       : null;
 
@@ -142,20 +145,18 @@ export default async function PlannerPage({ searchParams }: Props) {
         initialLivePricing={initialLivePricing}
       />
 
-      <Suspense fallback={<PlannerSkeleton />}>
-        <PlannerGrid
-          grid={grid}
-          entries={plannerEntries}
-          mealPlanId={mealPlan.id}
-          recipes={formattedRecipes}
-          weekDates={weekDates}
-          weekStartIso={weekStartISO}
-          initialActiveDay={initialActiveDay}
-          dailyCalorieTarget={dailyCalorieTarget}
-          dailyProteinTarget={dailyProteinTarget}
-          dietPrefs={dietPrefs}
-        />
-      </Suspense>
+      <PlannerGrid
+        grid={grid}
+        entries={plannerEntries}
+        mealPlanId={mealPlan.id}
+        recipes={formattedRecipes}
+        weekDates={weekDates}
+        weekStartIso={weekStartISO}
+        initialActiveDay={initialActiveDay}
+        dailyCalorieTarget={dailyCalorieTarget}
+        dailyProteinTarget={dailyProteinTarget}
+        dietPrefs={dietPrefs}
+      />
     </section>
   );
 }

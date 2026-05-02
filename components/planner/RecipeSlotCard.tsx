@@ -19,7 +19,8 @@ export function RecipeSlotCard({ entry, dietPrefs }: Props) {
 
   const name = getEntryName(entry);
   const calories = getEntryCalories(entry);
-  const isQuickAdd = !entry.recipe_id;
+  const recipeIdForLink = entry.recipe_id ?? entry.recipe?.id ?? null;
+  const isQuickAdd = !recipeIdForLink;
   const recipe = entry.recipe;
   const dietWarnings =
     dietPrefs && recipe
@@ -69,9 +70,9 @@ export function RecipeSlotCard({ entry, dietPrefs }: Props) {
 
   return (
     <div className={shellClass}>
-      {entry.recipe_id && !isQuickAdd ? (
+      {recipeIdForLink && !isQuickAdd ? (
         <Link
-          href={`/recipes/${entry.recipe_id}`}
+          href={`/recipes/${encodeURIComponent(String(recipeIdForLink))}`}
           className="block min-h-[44px] outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-[#1A4731]"
           aria-label={`Open recipe ${name} to see ingredients`}
         >

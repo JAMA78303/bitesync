@@ -8,13 +8,15 @@ import { fetchRecipeNutritionForRecipe } from "@/lib/supabase/recipe-nutrition-q
 type RecipePageProps = { params: Promise<{ id: string }> };
 
 export default async function RecipeDetailPage({ params }: RecipePageProps) {
-  const { id } = await params;
+  const raw = (await params).id;
+  const id = typeof raw === "string" ? raw.trim() : "";
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) notFound();
+  if (!id) notFound();
 
   const { data: recipe } = await supabase
     .from("recipes")
