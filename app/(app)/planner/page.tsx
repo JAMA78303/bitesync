@@ -116,7 +116,7 @@ export default async function PlannerPage({ searchParams }: Props) {
           <h1 className="text-2xl font-semibold text-gray-900">Weekly Planner</h1>
           <p className="text-sm text-gray-600">Plan your meals, generate your list</p>
         </div>
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+        <div className="relative z-20 flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
           <WeekNav weekStart={weekStart} />
           <GenerateListButton
             mealPlanId={mealPlan.id}
@@ -127,6 +127,21 @@ export default async function PlannerPage({ searchParams }: Props) {
           <ShoppingCart className="hidden h-5 w-5 text-gray-400 md:block" />
         </div>
       </div>
+
+      <Suspense fallback={<PlannerSkeleton />}>
+        <PlannerGrid
+          grid={grid}
+          entries={plannerEntries}
+          mealPlanId={mealPlan.id}
+          recipes={formattedRecipes}
+          weekDates={weekDates}
+          weekStartIso={weekStartISO}
+          initialActiveDay={initialActiveDay}
+          dailyCalorieTarget={dailyCalorieTarget}
+          dailyProteinTarget={dailyProteinTarget}
+          dietPrefs={dietPrefs}
+        />
+      </Suspense>
 
       <GenerateAIBasketButton
         isPro={userTier === "pro"}
@@ -141,20 +156,6 @@ export default async function PlannerPage({ searchParams }: Props) {
         }}
         initialLivePricing={initialLivePricing}
       />
-
-      <Suspense fallback={<PlannerSkeleton />}>
-        <PlannerGrid
-          grid={grid}
-          entries={plannerEntries}
-          mealPlanId={mealPlan.id}
-          recipes={formattedRecipes}
-          weekDates={weekDates}
-          initialActiveDay={initialActiveDay}
-          dailyCalorieTarget={dailyCalorieTarget}
-          dailyProteinTarget={dailyProteinTarget}
-          dietPrefs={dietPrefs}
-        />
-      </Suspense>
     </section>
   );
 }

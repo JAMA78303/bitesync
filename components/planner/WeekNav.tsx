@@ -17,12 +17,28 @@ export function WeekNav({ weekStart }: Props) {
   }
 
   return (
-    <div className="flex w-full items-center justify-center gap-2 sm:w-auto">
-      <Button variant="outline" size="icon" onClick={() => navigate("prev")} aria-label="Previous week" className="h-8 w-8">
+    <div className="relative z-30 flex w-full shrink-0 items-center justify-center gap-2 sm:w-auto">
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        onClick={() => navigate("prev")}
+        aria-label="Previous week"
+        className="h-8 w-8 shrink-0 bg-white"
+      >
         <ChevronLeft className="h-4 w-4" />
       </Button>
-      <p className="text-center text-xs font-medium text-gray-800 sm:text-sm">{formatWeekLabel(weekStart)}</p>
-      <Button variant="outline" size="icon" onClick={() => navigate("next")} aria-label="Next week" className="h-8 w-8">
+      <p className="min-w-0 flex-1 text-center text-xs font-medium text-gray-800 sm:flex-none sm:text-sm">
+        {formatWeekLabel(weekStart)}
+      </p>
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        onClick={() => navigate("next")}
+        aria-label="Next week"
+        className="h-8 w-8 shrink-0 bg-white"
+      >
         <ChevronRight className="h-4 w-4" />
       </Button>
       {!current && (

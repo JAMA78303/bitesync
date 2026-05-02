@@ -1,6 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { removeSlotEntry } from "@/lib/supabase/meal-plans";
 import { useToast } from "@/components/ui/use-toast";
@@ -40,12 +41,12 @@ export function RecipeSlotCard({ entry, dietPrefs }: Props) {
     });
   }
 
-  return (
-    <div
-      className={`group relative flex min-h-[64px] w-full flex-col justify-between rounded-lg p-2 text-left transition-opacity duration-150 ${
-        isQuickAdd ? "border border-slate-200 bg-slate-50" : "border border-slate-200 bg-slate-50"
-      } ${isPending ? "opacity-50" : "opacity-100"}`}
-    >
+  const shellClass = `group relative flex min-h-[64px] w-full flex-col justify-between rounded-lg border border-slate-200 bg-slate-50 p-2 text-left transition-opacity duration-150 ${
+    isPending ? "opacity-50" : "opacity-100"
+  }`;
+
+  const body = (
+    <>
       <p className={`line-clamp-2 pr-5 text-xs font-semibold leading-tight ${isQuickAdd ? "text-slate-600" : "text-slate-700"}`}>
         {name}
       </p>
@@ -55,17 +56,40 @@ export function RecipeSlotCard({ entry, dietPrefs }: Props) {
           {isQuickAdd ? <span className="ml-1 text-slate-300">· quick add</span> : null}
         </p>
       ) : null}
+      {!isQuickAdd ? (
+        <p className="mt-1 text-[9px] font-medium text-[#1A4731]/90">View recipe & ingredients →</p>
+      ) : null}
       {dietWarnings.length > 0 ? (
         <p className="mt-1 line-clamp-2 text-[9px] font-medium text-amber-700" title={dietWarnings.join(" · ")}>
           {dietWarnings.join(" · ")}
         </p>
       ) : null}
+    </>
+  );
+
+  return (
+    <div className={shellClass}>
+      {entry.recipe_id && !isQuickAdd ? (
+        <Link
+          href={`/recipes/${entry.recipe_id}`}
+          className="block min-h-[44px] outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-[#1A4731]"
+          aria-label={`Open recipe ${name} to see ingredients`}
+        >
+          {body}
+        </Link>
+      ) : (
+        body
+      )}
       <button
         type="button"
-        onClick={handleRemove}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          handleRemove();
+        }}
         disabled={isPending}
         aria-label={`Remove ${name}`}
-        className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded bg-white/90 text-slate-500 opacity-80 transition-all duration-150 hover:bg-white hover:text-red-500 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100"
+        className="absolute right-1.5 top-1.5 z-10 flex h-5 w-5 items-center justify-center rounded bg-white/90 text-slate-500 opacity-80 transition-all duration-150 hover:bg-white hover:text-red-500 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100"
       >
         <X className="h-3 w-3" />
       </button>

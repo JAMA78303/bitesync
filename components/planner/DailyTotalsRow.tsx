@@ -12,7 +12,9 @@ type Props = {
 
 function getBarColour(actual: number, target: number): string {
   const pct = (actual / target) * 100;
-  if (pct >= 90 && pct <= 110) return "bg-[#1A4731]";
+  if (pct > 110) return "bg-red-500";
+  if (pct > 105) return "bg-amber-500";
+  if (pct >= 90 && pct <= 105) return "bg-[#1A4731]";
   if (pct >= 70) return "bg-amber-400";
   return "bg-red-400";
 }
@@ -39,8 +41,10 @@ export function DailyTotalsRow({ grid, dailyCalorieTarget, dailyProteinTarget }:
           return s + (n?.protein_g ?? 0);
         }, 0);
         const isEmpty = slots.length === 0;
-        const calPct = dailyCalorieTarget ? Math.min((calories / dailyCalorieTarget) * 100, 100) : 0;
-        const proPct = dailyProteinTarget ? Math.min((protein / dailyProteinTarget) * 100, 100) : 0;
+        const calRatio = dailyCalorieTarget ? calories / dailyCalorieTarget : 0;
+        const proRatio = dailyProteinTarget ? protein / dailyProteinTarget : 0;
+        const calPct = dailyCalorieTarget ? Math.min(calRatio * 100, 100) : 0;
+        const proPct = dailyProteinTarget ? Math.min(proRatio * 100, 100) : 0;
 
         return (
           <div key={`totals-${day}`} className="flex flex-col items-center justify-center border-t border-gray-200 px-1 py-2">
@@ -58,13 +62,13 @@ export function DailyTotalsRow({ grid, dailyCalorieTarget, dailyProteinTarget }:
                     <div className="h-1 overflow-hidden rounded-full bg-slate-100">
                       <div
                         className={`h-full rounded-full transition-all duration-300 ${getBarColour(calories, dailyCalorieTarget!)}`}
-                        style={{ width: `${calPct}%` }}
+                        style={{ width: `${calRatio > 1 ? 100 : calPct}%` }}
                       />
                     </div>
                     <div className="h-1 overflow-hidden rounded-full bg-slate-100">
                       <div
                         className={`h-full rounded-full transition-all duration-300 ${getBarColour(protein, dailyProteinTarget!)}`}
-                        style={{ width: `${proPct}%` }}
+                        style={{ width: `${proRatio > 1 ? 100 : proPct}%` }}
                       />
                     </div>
                   </div>

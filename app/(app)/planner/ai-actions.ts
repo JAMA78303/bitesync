@@ -166,14 +166,29 @@ function pickHeuristicRecipeForSlot(
   usedCount: Map<string, number>,
   dailyK: number,
   dailyP: number,
+  snackCountPerDay: number,
 ): string {
+  /** breakfast+lunch+dinner+snacks raw fractions sum to >1 (e.g. 1.05 or 1.17); normalize so daily targets add up. */
+  const sumFrac =
+    fractionForMealSlot("breakfast") +
+    fractionForMealSlot("lunch") +
+    fractionForMealSlot("dinner") +
+    fractionForMealSlot("snack") * Math.max(1, snackCountPerDay);
   const slotKey: GoalMealSlot = slot === "snack" ? "snack" : slot;
-  const frac = fractionForMealSlot(slotKey);
+  const frac = fractionForMealSlot(slotKey) / Math.max(sumFrac, 0.01);
   const targetK = dailyK * frac;
   const targetP = dailyP * frac;
   const score = (r: RecipeWithNutrition) => {
-    const dk = Math.abs(r.calories - targetK) / Math.max(targetK, 40);
-    const dp = Math.abs(r.protein - targetP) / Math.max(targetP, 4);
+    const dkOver = r.calories - targetK;
+    const dk =
+      dkOver > 0
+        ? (dkOver / Math.max(targetK, 40)) * 1.75
+        : (-dkOver / Math.max(targetK, 40)) * 0.85;
+    const dpOver = r.protein - targetP;
+    const dp =
+      dpOver > 0
+        ? (dpOver / Math.max(targetP, 4)) * 1.5
+        : (-dpOver / Math.max(targetP, 4)) * 0.85;
     return dk + 0.55 * dp;
   };
   const ranked = [...pool].sort((a, b) => score(a) - score(b));
@@ -311,9 +326,30 @@ export async function generateAIWeekPlan(input: GenerateAIWeekPlanInput) {
     const rows: MealPlanInsertRow[] = [];
 
     for (let day = 0; day < 7; day += 1) {
-      const breakfastId = pickHeuristicRecipeForSlot(pool, "breakfast", usedCount, dailyCalorieTarget, dailyProteinTarget);
-      const lunchId = pickHeuristicRecipeForSlot(pool, "lunch", usedCount, dailyCalorieTarget, dailyProteinTarget);
-      const dinnerId = pickHeuristicRecipeForSlot(pool, "dinner", usedCount, dailyCalorieTarget, dailyProteinTarget);
+      const breakfastId = pickHeuristicRecipeForSlot(
+        pool,
+        "breakfast",
+        usedCount,
+        dailyCalorieTarget,
+        dailyProteinTarget,
+        snackCountPerDay,
+      );
+      const lunchId = pickHeuristicRecipeForSlot(
+        pool,
+        "lunch",
+        usedCount,
+        dailyCalorieTarget,
+        dailyProteinTarget,
+        snackCountPerDay,
+      );
+      const dinnerId = pickHeuristicRecipeForSlot(
+        pool,
+        "dinner",
+        usedCount,
+        dailyCalorieTarget,
+        dailyProteinTarget,
+        snackCountPerDay,
+      );
 
       rows.push({
         meal_plan_id: input.mealPlanId,
@@ -344,7 +380,14 @@ export async function generateAIWeekPlan(input: GenerateAIWeekPlanInput) {
       });
 
       for (let s = 0; s < snackCountPerDay; s += 1) {
-        const snackId = pickHeuristicRecipeForSlot(pool, "snack", usedCount, dailyCalorieTarget, dailyProteinTarget);
+        const snackId = pickHeuristicRecipeForSlot(
+          pool,
+          "snack",
+          usedCount,
+          dailyCalorieTarget,
+          dailyProteinTarget,
+          snackCountPerDay,
+        );
         rows.push({
           meal_plan_id: input.mealPlanId,
           recipe_id: snackId,

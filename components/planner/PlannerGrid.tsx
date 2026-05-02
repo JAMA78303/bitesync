@@ -1,7 +1,6 @@
 "use client";
 
-import { Fragment } from "react";
-import { useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { RecipeSlotCard } from "@/components/planner/RecipeSlotCard";
 import { AddSlotButton } from "@/components/planner/AddSlotButton";
 import { DailyTotalsRow } from "@/components/planner/DailyTotalsRow";
@@ -28,6 +27,8 @@ type Props = {
   mealPlanId: string;
   recipes: Recipe[];
   weekDates: Date[];
+  /** Monday of this plan (ISO); resets mobile day picker when changing weeks. */
+  weekStartIso: string;
   initialActiveDay?: number;
   dailyCalorieTarget?: number | null;
   dailyProteinTarget?: number | null;
@@ -40,6 +41,7 @@ export function PlannerGrid({
   mealPlanId,
   recipes,
   weekDates,
+  weekStartIso,
   initialActiveDay = 0,
   dailyCalorieTarget,
   dailyProteinTarget,
@@ -150,6 +152,7 @@ export function PlannerGrid({
         entries={entries}
         mealPlanId={mealPlanId}
         weekDates={weekDates}
+        weekStartIso={weekStartIso}
         openPicker={openPicker}
         initialActiveDay={initialActiveDay}
         dailyCalorieTarget={dailyCalorieTarget}
@@ -177,6 +180,7 @@ type MobileProps = {
   entries: MealPlanEntry[];
   mealPlanId: string;
   weekDates: Date[];
+  weekStartIso: string;
   openPicker: (day: number, mealType: MealType, slotIndex?: number) => void;
   initialActiveDay: number;
   dailyCalorieTarget?: number | null;
@@ -189,6 +193,7 @@ function PlannerGridMobileInline({
   entries,
   mealPlanId,
   weekDates,
+  weekStartIso,
   openPicker,
   initialActiveDay,
   dailyCalorieTarget,
@@ -196,6 +201,10 @@ function PlannerGridMobileInline({
   dietPrefs,
 }: MobileProps) {
   const [activeDay, setActiveDay] = useState(initialActiveDay);
+
+  useEffect(() => {
+    setActiveDay(initialActiveDay);
+  }, [weekStartIso, initialActiveDay]);
   const hasTargets = !!dailyCalorieTarget && !!dailyProteinTarget;
   const snackEntries = entries
     .filter((entry) => entry.day_of_week === activeDay && entry.meal_type === "snack")
