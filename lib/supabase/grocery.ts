@@ -11,6 +11,36 @@ function isMissingArchivedAtColumn(message?: string | null): boolean {
   return message.toLowerCase().includes("archived_at");
 }
 
+async function restoreManualGrocerySnapshot(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  meal_plan_id: string,
+  manualRows: { name: string; quantity: number; unit: string; is_checked: boolean | null }[] | null | undefined,
+  archivedRecipeDerivedOnly: boolean,
+): Promise<{ error: string | null }> {
+  if (archivedRecipeDerivedOnly || !manualRows?.length) return { error: null };
+
+  const payload = manualRows.map((row) => ({
+    meal_plan_id,
+    name: row.name,
+    quantity: row.quantity,
+    unit: row.unit,
+    is_checked: row.is_checked ?? false,
+    archived_at: null as string | null,
+    is_manual: true,
+  }));
+
+  const { error } = await supabase.from("grocery_items").insert(payload);
+  if (!error) return { error: null };
+
+  if (error.message.toLowerCase().includes("is_manual")) {
+    const legacyPayload = payload.map(({ is_manual: _, ...rest }) => rest);
+    const { error: legacyError } = await supabase.from("grocery_items").insert(legacyPayload);
+    return { error: legacyError?.message ?? null };
+  }
+
+  return { error: error.message };
+}
+
 export async function getGroceryItems(meal_plan_id: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -111,7 +141,7 @@ export async function generateGroceryList(meal_plan_id: string, selectedDays?: n
   if (selectedDays && selectedDays.length > 0) {
     query = query.in("day_of_week", selectedDays);
   }
-  if (selectedMealTypes && selectedMealTypes.length > 0) {
+  if (selectedMealTypes?.length) {
     query = query.in("meal_type", selectedMealTypes);
   }
 
@@ -143,18 +173,42 @@ export async function generateGroceryList(meal_plan_id: string, selectedDays?: n
     if (!shouldFallback) return { error: error.message };
 
     const now = new Date().toISOString();
-    const { error: softDeleteError } = await supabase
+
+    const { data: manualRowsToRestore } = await supabase
+      .from("grocery_items")
+      .select("name, quantity, unit, is_checked")
+      .eq("meal_plan_id", meal_plan_id)
+      .eq("is_manual", true)
+      .is("archived_at", null);
+
+    const msgIsManualMissing = (message: string) => message.toLowerCase().includes("is_manual");
+
+    let archivedRecipeDerivedOnly = false;
+    const { error: softManualFiltered } = await supabase
       .from("grocery_items")
       .update({ archived_at: now })
-      .eq("meal_plan_id", meal_plan_id);
+      .eq("meal_plan_id", meal_plan_id)
+      .eq("is_manual", false);
 
-    if (softDeleteError && !isMissingArchivedAtColumn(softDeleteError.message)) {
-      return { error: softDeleteError.message };
-    }
+    if (!softManualFiltered) {
+      archivedRecipeDerivedOnly = true;
+    } else if (!msgIsManualMissing(softManualFiltered.message)) {
+      if (!isMissingArchivedAtColumn(softManualFiltered.message)) return { error: softManualFiltered.message };
 
-    if (softDeleteError && isMissingArchivedAtColumn(softDeleteError.message)) {
       const { error: hardDeleteError } = await supabase.from("grocery_items").delete().eq("meal_plan_id", meal_plan_id);
       if (hardDeleteError) return { error: hardDeleteError.message };
+      archivedRecipeDerivedOnly = false;
+    } else {
+      const { error: legacySoft } = await supabase
+        .from("grocery_items")
+        .update({ archived_at: now })
+        .eq("meal_plan_id", meal_plan_id);
+      if (legacySoft && !isMissingArchivedAtColumn(legacySoft.message)) return { error: legacySoft.message };
+      if (legacySoft && isMissingArchivedAtColumn(legacySoft.message)) {
+        const { error: hardDeleteError } = await supabase.from("grocery_items").delete().eq("meal_plan_id", meal_plan_id);
+        if (hardDeleteError) return { error: hardDeleteError.message };
+      }
+      archivedRecipeDerivedOnly = false;
     }
 
     const rows = merged.map((item) => ({
@@ -169,6 +223,8 @@ export async function generateGroceryList(meal_plan_id: string, selectedDays?: n
 
     const { error: insertError } = await supabase.from("grocery_items").insert(rows);
     if (!insertError) {
+      const restore = await restoreManualGrocerySnapshot(supabase, meal_plan_id, manualRowsToRestore, archivedRecipeDerivedOnly);
+      if (restore.error) return { error: restore.error };
       revalidatePath("/grocery");
       return { success: true };
     }
@@ -184,6 +240,9 @@ export async function generateGroceryList(meal_plan_id: string, selectedDays?: n
 
     const { error: legacyInsertError } = await supabase.from("grocery_items").insert(legacyRows);
     if (legacyInsertError) return { error: legacyInsertError.message };
+
+    const restoreLegacy = await restoreManualGrocerySnapshot(supabase, meal_plan_id, manualRowsToRestore, archivedRecipeDerivedOnly);
+    if (restoreLegacy.error) return { error: restoreLegacy.error };
   }
 
   revalidatePath("/grocery");

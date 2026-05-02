@@ -22,8 +22,11 @@ type Props = {
 };
 
 export function DaySelectorModal({ open, onClose, mealPlanId, weekStart, filledDays, filledMealTypes }: Props) {
+  const plannerHasRecipeSlots = filledMealTypes.length > 0;
   const [selected, setSelected] = useState<number[]>([...WEEK_DAYS]);
-  const [selectedMeals, setSelectedMeals] = useState<MealType[]>(filledMealTypes);
+  const [selectedMeals, setSelectedMeals] = useState<MealType[]>(
+    plannerHasRecipeSlots ? filledMealTypes : [...MEAL_TYPES],
+  );
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const router = useRouter();
@@ -31,7 +34,7 @@ export function DaySelectorModal({ open, onClose, mealPlanId, weekStart, filledD
   useEffect(() => {
     if (open) {
       setSelected([...WEEK_DAYS]);
-      setSelectedMeals(filledMealTypes);
+      setSelectedMeals(filledMealTypes.length ? [...filledMealTypes] : [...MEAL_TYPES]);
     }
   }, [open, filledMealTypes]);
 
@@ -47,28 +50,23 @@ export function DaySelectorModal({ open, onClose, mealPlanId, weekStart, filledD
     setSelected([]);
   }
 
-  function selectDayCount(count: number) {
-    setSelected([...WEEK_DAYS].slice(0, count));
-  }
-
   function toggleMealType(mealType: MealType) {
     setSelectedMeals((prev) => (prev.includes(mealType) ? prev.filter((m) => m !== mealType) : [...prev, mealType]));
   }
 
   function selectAllMeals() {
-    setSelectedMeals(filledMealTypes);
+    setSelectedMeals(filledMealTypes.length ? [...filledMealTypes] : [...MEAL_TYPES]);
   }
 
   function clearAllMeals() {
     setSelectedMeals([]);
   }
 
-  const dayCountOptions = Array.from({ length: 7 }, (_, i) => i + 1);
-
   function handleGenerate() {
     if (!selected.length || !selectedMeals.length) return;
     startTransition(async () => {
-      const result = await generateGroceryList(mealPlanId, selected, selectedMeals);
+      const mealTypesArg = plannerHasRecipeSlots ? selectedMeals : undefined;
+      const result = await generateGroceryList(mealPlanId, selected, mealTypesArg);
       if (result?.error) {
         toast({
           title: "Failed to generate",
@@ -102,25 +100,6 @@ export function DaySelectorModal({ open, onClose, mealPlanId, weekStart, filledD
           </div>
         </DialogHeader>
         <p className="-mt-2 text-xs text-slate-400">Only ingredients from selected days and meal types will be added</p>
-        <div className="flex flex-wrap gap-2">
-          {dayCountOptions.map((count) => (
-            <button
-              key={count}
-              type="button"
-              onClick={() => selectDayCount(count)}
-              className="rounded-md border border-slate-200 px-2 py-1 text-[11px] text-slate-500 transition-colors hover:bg-slate-50 hover:text-[#1A4731] disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {count} day{count === 1 ? "" : "s"}
-            </button>
-          ))}
-          <button
-            type="button"
-            onClick={selectAll}
-            className="rounded-md border border-slate-200 px-2 py-1 text-[11px] text-slate-500 transition-colors hover:bg-slate-50 hover:text-[#1A4731] disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Full week
-          </button>
-        </div>
         <div className="grid grid-cols-7 gap-1">
           {Array.from({ length: 7 }, (_, day) => {
             const hasMeals = filledDays.includes(day);
@@ -155,7 +134,7 @@ export function DaySelectorModal({ open, onClose, mealPlanId, weekStart, filledD
         <p className="text-xs font-semibold text-slate-500">Meal types</p>
         <div className="grid grid-cols-2 gap-2">
           {MEAL_TYPES.map((mealType) => {
-            const hasMeals = filledMealTypes.includes(mealType);
+            const hasMeals = !plannerHasRecipeSlots || filledMealTypes.includes(mealType);
             const isSelected = selectedMeals.includes(mealType);
             return (
               <button
