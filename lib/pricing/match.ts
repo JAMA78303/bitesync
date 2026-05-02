@@ -9,13 +9,40 @@ export type CatalogMatch = {
   method: string;
 };
 
+const LEADING_DESCRIPTORS = new Set([
+  "organic",
+  "fresh",
+  "diced",
+  "chopped",
+  "sliced",
+  "grated",
+  "raw",
+  "cooked",
+  "lean",
+  "boneless",
+  "skinless",
+  "extra",
+  "virgin",
+  "light",
+  "medium",
+  "large",
+  "small",
+  "whole",
+  "dried",
+]);
+
 function normalizeForCatalogMatch(raw: string): string {
-  return raw
+  let s = raw
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9,/]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+  const parts = s.split(/\s+/).filter(Boolean);
+  while (parts.length && LEADING_DESCRIPTORS.has(parts[0])) {
+    parts.shift();
+  }
+  return parts.join(" ").trim();
 }
 
 function tokenize(n: string): string[] {

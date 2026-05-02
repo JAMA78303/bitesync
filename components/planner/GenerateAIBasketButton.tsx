@@ -81,7 +81,7 @@ export function GenerateAIBasketButton({ isPro, mealPlanId, weekStartDate, goals
       setPriceMatchNote(best ? null : note);
 
       toast({
-        title: "AI estimate generated",
+        title: best ? "AI estimate generated" : "Basket saved — pricing",
         description,
       });
     });
