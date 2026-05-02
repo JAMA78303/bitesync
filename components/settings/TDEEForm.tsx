@@ -169,12 +169,13 @@ export function TDEEForm({ defaultValues }: Props) {
           <label className="mb-1.5 block text-sm font-medium text-slate-700">Sex</label>
           <select
             {...form.register("sex")}
-            className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm dark:border-gray-600 dark:bg-gray-900"
+            data-force-light
+            className="h-10 w-full rounded-md border border-gray-300 !bg-white px-3 text-sm !text-slate-900 dark:border-gray-600 dark:bg-gray-900 dark:text-slate-100"
             defaultValue={defaultValues?.sex}
           >
-            <option value="">Select</option>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
+            <option value="" className="bg-white text-slate-900">Select</option>
+            <option value="male" className="bg-white text-slate-900">Male</option>
+            <option value="female" className="bg-white text-slate-900">Female</option>
           </select>
           {form.formState.errors.sex ? <p className="mt-1 text-xs text-red-500">{form.formState.errors.sex.message}</p> : null}
         </div>
@@ -184,12 +185,13 @@ export function TDEEForm({ defaultValues }: Props) {
         <label className="mb-1.5 block text-sm font-medium text-slate-700">Activity level</label>
         <select
           {...form.register("activityLevel")}
-          className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm dark:border-gray-600 dark:bg-gray-900"
+          data-force-light
+          className="h-10 w-full rounded-md border border-gray-300 !bg-white px-3 text-sm !text-slate-900 dark:border-gray-600 dark:bg-gray-900 dark:text-slate-100"
           defaultValue={defaultValues?.activityLevel}
         >
-          <option value="">How active are you?</option>
+          <option value="" className="bg-white text-slate-900">How active are you?</option>
           {ACTIVITY_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
+            <option key={option.value} value={option.value} className="bg-white text-slate-900">
               {option.label}
             </option>
           ))}
@@ -203,15 +205,17 @@ export function TDEEForm({ defaultValues }: Props) {
         <label className="mb-1.5 block text-sm font-medium text-slate-700">Goal</label>
         <select
           {...form.register("goal")}
-          className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm dark:border-gray-600 dark:bg-gray-900"
+          data-force-light
+          className="h-10 w-full rounded-md border border-gray-300 !bg-white px-3 text-sm !text-slate-900 dark:border-gray-600 dark:bg-gray-900 dark:text-slate-100"
           defaultValue={defaultValues?.goal}
         >
-          <option value="">What is your goal?</option>
+          <option value="" className="bg-white text-slate-900">What is your goal?</option>
           {GOAL_OPTIONS.map((option) => (
             <option
               key={option.value}
               value={option.value}
               disabled={option.value === "lose" && bmiPreview != null && bmiPreview > 0 && !isSafeToLoseWeight(bmiPreview)}
+              className="bg-white text-slate-900"
             >
               {option.label}
             </option>

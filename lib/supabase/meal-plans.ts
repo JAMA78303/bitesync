@@ -34,6 +34,17 @@ function isMissingQuickAddColumns(message?: string | null): boolean {
   return message.includes("quick_add_name") || message.includes("quick_add_calories");
 }
 
+function isQuickAddSchemaUnavailable(message?: string | null): boolean {
+  if (!message) return false;
+  const m = message.toLowerCase();
+  return (
+    isMissingQuickAddColumns(message) ||
+    (m.includes("recipe_id") && m.includes("null value")) ||
+    (m.includes("recipe_id") && m.includes("not-null")) ||
+    m.includes("entry_has_content")
+  );
+}
+
 export async function getOrCreateMealPlan(weekStartDate: string) {
   const supabase = await createClient();
   const {
@@ -221,10 +232,10 @@ export async function quickAddMeal(
   );
 
   if (error) {
-    if (isMissingQuickAddColumns(error.message)) {
+    if (isQuickAddSchemaUnavailable(error.message)) {
       return {
         error:
-          "Quick add requires the latest database migration. You can still add meals from your recipe library for now.",
+          "Quick add requires the latest planner migration (quick_add columns + nullable recipe_id). Run sql/2026-04-30_flexible_input_and_selective_grocery.sql, then try again.",
       };
     }
     return { error: error.message };

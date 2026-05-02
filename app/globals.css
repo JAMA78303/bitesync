@@ -8,11 +8,11 @@
 }
 
 html {
-  color-scheme: light dark;
+  color-scheme: light;
 }
 
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
   --background: #f8faf8;
   --foreground: #1f2937;
   --brand-sage: #1a4731;
@@ -160,9 +160,9 @@ html[data-theme="dark"] body {
   background-color: #273247 !important;
 }
 
-:root[data-theme="dark"] input,
-:root[data-theme="dark"] textarea,
-:root[data-theme="dark"] select {
+:root[data-theme="dark"] input:not([data-force-light]),
+:root[data-theme="dark"] textarea:not([data-force-light]),
+:root[data-theme="dark"] select:not([data-force-light]) {
   background-color: #0f172a !important;
   color: #e5e7eb !important;
   border-color: #334155 !important;
