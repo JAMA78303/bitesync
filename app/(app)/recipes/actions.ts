@@ -11,6 +11,9 @@ type CreateRecipePayload = {
   name: string;
   description: string;
   ingredients: RecipeIngredientInput[];
+  fitsVegetarian?: boolean;
+  fitsVegan?: boolean;
+  fitsGlutenFree?: boolean;
 };
 
 type UpdateRecipePayload = CreateRecipePayload & { recipeId: string };
@@ -69,6 +72,9 @@ export async function createRecipe(
       name,
       description: description || null,
       servings: 1,
+      fits_vegetarian: payload.fitsVegetarian === true ? true : null,
+      fits_vegan: payload.fitsVegan === true ? true : null,
+      fits_gluten_free: payload.fitsGlutenFree === true ? true : null,
     })
     .select("id")
     .single();
@@ -138,7 +144,14 @@ export async function updateRecipe(payload: UpdateRecipePayload): Promise<Action
 
   const { error: recipeError } = await supabase
     .from("recipes")
-    .update({ name, description: description || null, updated_at: new Date().toISOString() })
+    .update({
+      name,
+      description: description || null,
+      updated_at: new Date().toISOString(),
+      fits_vegetarian: payload.fitsVegetarian === true ? true : null,
+      fits_vegan: payload.fitsVegan === true ? true : null,
+      fits_gluten_free: payload.fitsGlutenFree === true ? true : null,
+    })
     .eq("id", recipeId)
     .eq("user_id", user.id);
   if (recipeError) return { error: recipeError.message };

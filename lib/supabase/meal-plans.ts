@@ -1,8 +1,33 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { fetchRecipeNutritionMap } from "@/lib/supabase/recipe-nutrition-query";
 import type { MealType, PlannerGrid, MealPlanEntry } from "@/types";
+
+async function enrichEntriesWithNutrition(
+  supabase: SupabaseClient,
+  entries: MealPlanEntry[] | null,
+): Promise<MealPlanEntry[] | null> {
+  if (!entries?.length) return entries;
+  const ids = [...new Set(entries.map((e) => e.recipe_id).filter(Boolean))] as string[];
+  if (!ids.length) return entries;
+  const map = await fetchRecipeNutritionMap(supabase, ids);
+  return entries.map((entry) => {
+    const rid = entry.recipe_id;
+    if (!rid || !entry.recipe) return entry;
+    const n = map.get(rid);
+    if (!n) return entry;
+    return {
+      ...entry,
+      recipe: {
+        ...entry.recipe,
+        recipe_nutrition: n,
+      },
+    };
+  });
+}
 
 function isMissingQuickAddColumns(message?: string | null): boolean {
   if (!message) return false;
@@ -57,14 +82,15 @@ export async function getMealPlanEntries(mealPlanId: string) {
       id, meal_plan_id, recipe_id, day_of_week, meal_type, quick_add_name, quick_add_calories,
       recipe:recipes (
         id, name,
-        recipe_nutrition ( calories, protein_g, carbs_g, fat_g, fibre_g, sugar_g, coverage_pct )
+        fits_vegetarian, fits_vegan, fits_gluten_free
       )
     `,
     )
     .eq("meal_plan_id", mealPlanId);
 
   if (!error) {
-    return { data: data as unknown as MealPlanEntry[] | null, error };
+    const enriched = await enrichEntriesWithNutrition(supabase, data as unknown as MealPlanEntry[] | null);
+    return { data: enriched as MealPlanEntry[] | null, error };
   }
 
   if (!isMissingQuickAddColumns(error.message)) {
@@ -78,7 +104,7 @@ export async function getMealPlanEntries(mealPlanId: string) {
       id, meal_plan_id, recipe_id, day_of_week, meal_type,
       recipe:recipes (
         id, name,
-        recipe_nutrition ( calories, protein_g, carbs_g, fat_g, fibre_g, sugar_g, coverage_pct )
+        fits_vegetarian, fits_vegan, fits_gluten_free
       )
     `,
     )
@@ -92,7 +118,9 @@ export async function getMealPlanEntries(mealPlanId: string) {
     quick_add_calories: null,
   }));
 
-  return { data: normalized as unknown as MealPlanEntry[], error: null };
+  const enriched = await enrichEntriesWithNutrition(supabase, normalized as unknown as MealPlanEntry[]);
+
+  return { data: enriched as MealPlanEntry[] | null, error: null };
 }
 
 export async function buildGrid(entries: MealPlanEntry[]): Promise<PlannerGrid> {

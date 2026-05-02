@@ -21,41 +21,54 @@ export default async function SignupPage({
           </div>
         </div>
         {success ? (
-          <p className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-800">
-            {success}
-          </p>
+          <div className="space-y-3 rounded-md border border-green-300 bg-green-50 px-3 py-3 text-sm text-green-900">
+            <p>{success}</p>
+            <p className="text-xs leading-relaxed text-green-800">
+              If nothing arrives in a few minutes, check your spam folder.
+            </p>
+            <Link
+              href="/login"
+              className="inline-flex text-sm font-medium text-green-900 underline underline-offset-2"
+            >
+              Go to log in
+            </Link>
+          </div>
         ) : null}
         {error ? (
           <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
             {error}
           </p>
         ) : null}
-        <form action={signUp} className="space-y-4">
-          <input
-            type="email"
-            name="email"
-            required
-            placeholder="Email"
-            autoComplete="email"
-            className="h-11 w-full rounded-md border border-gray-300 px-3 text-sm"
-          />
-          <input
-            type="password"
-            name="password"
-            required
-            minLength={8}
-            placeholder="Password"
-            autoComplete="new-password"
-            className="h-11 w-full rounded-md border border-gray-300 px-3 text-sm"
-          />
-          <AuthSubmitButton label="Sign Up" />
-        </form>
-        <p className="text-sm text-gray-600">
-          Already have an account?{" "}
-          <Link href="/login" className="font-medium text-[var(--brand-sage)]">
-            Log in
-          </Link>
-        </p>
+        {!success ? (
+          <>
+            <form action={signUp} className="space-y-4">
+              <input
+                type="email"
+                name="email"
+                required
+                placeholder="Email"
+                autoComplete="email"
+                className="h-11 w-full rounded-md border border-gray-300 px-3 text-sm"
+              />
+              <input
+                type="password"
+                name="password"
+                required
+                minLength={8}
+                placeholder="Password"
+                autoComplete="new-password"
+                className="h-11 w-full rounded-md border border-gray-300 px-3 text-sm"
+              />
+              <AuthSubmitButton label="Sign Up" />
+            </form>
+            <p className="text-sm text-gray-600">
+              Already have an account?{" "}
+              <Link href="/login" className="font-medium text-[var(--brand-sage)]">
+                Log in
+              </Link>
+            </p>
+          </>
+        ) : null}
       </div>
     </main>
   );

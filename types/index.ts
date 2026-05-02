@@ -13,9 +13,15 @@ export type NutritionPer100g = {
   saturated_fat_g: number;
 };
 
+import { normalizeRecipeNutritionEmbed, type RecipeNutritionSummary } from "@/lib/utils/recipe-nutrition";
+
 export type NutritionLookupEntry = {
   name: string;
   per_100g: NutritionPer100g;
+  /** Average grams per whole unit when quantity uses "piece" or "item" (e.g. one medium apple). */
+  typical_piece_g?: number;
+  /** Average grams per slice when quantity uses "slice" (e.g. sandwich bread). */
+  typical_slice_g?: number;
 };
 
 export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
@@ -41,6 +47,7 @@ export const ALLOWED_UNITS = [
   "cup",
   "fl oz",
   "piece",
+  "item",
   "slice",
   "handful",
   "clove",
@@ -55,6 +62,12 @@ export type MealPlan = {
   created_at: string;
 };
 
+export type RecipeDietFlags = {
+  fits_vegetarian: boolean | null;
+  fits_vegan: boolean | null;
+  fits_gluten_free: boolean | null;
+};
+
 export type MealPlanEntry = {
   id: string;
   meal_plan_id: string;
@@ -66,15 +79,31 @@ export type MealPlanEntry = {
   recipe?: {
     id: string;
     name: string;
-    recipe_nutrition?: {
-      calories: number | null;
-      protein_g: number | null;
-      carbs_g?: number | null;
-      fat_g?: number | null;
-      fibre_g?: number | null;
-      sugar_g?: number | null;
-      coverage_pct: number;
-    } | null;
+    fits_vegetarian?: boolean | null;
+    fits_vegan?: boolean | null;
+    fits_gluten_free?: boolean | null;
+    recipe_nutrition?:
+      | {
+          calories: number | null;
+          protein_g: number | null;
+          carbs_g?: number | null;
+          fat_g?: number | null;
+          fibre_g?: number | null;
+          sugar_g?: number | null;
+          sodium_mg?: number | null;
+          saturated_fat_g?: number | null;
+          coverage_pct?: number | null;
+        }
+      | Array<{
+          calories: number | null;
+          protein_g: number | null;
+          carbs_g?: number | null;
+          fat_g?: number | null;
+          fibre_g?: number | null;
+          sugar_g?: number | null;
+          coverage_pct?: number | null;
+        }>
+      | null;
   };
 };
 
@@ -83,7 +112,10 @@ export function getEntryName(entry: MealPlanEntry): string {
 }
 
 export function getEntryCalories(entry: MealPlanEntry): number | null {
-  return entry.recipe?.recipe_nutrition?.calories ?? entry.quick_add_calories ?? null;
+  const row = normalizeRecipeNutritionEmbed(
+    entry.recipe?.recipe_nutrition as RecipeNutritionSummary | RecipeNutritionSummary[] | null | undefined,
+  );
+  return row?.calories ?? entry.quick_add_calories ?? null;
 }
 
 export type PlannerGrid = {

@@ -4,12 +4,13 @@ import { X } from "lucide-react";
 import { useState, useTransition } from "react";
 import { removeSlotEntry } from "@/lib/supabase/meal-plans";
 import { useToast } from "@/components/ui/use-toast";
+import { recipeDietWarnings, type ProfileDietPrefs } from "@/lib/utils/diet";
 import { getEntryCalories, getEntryName } from "@/types";
 import type { MealPlanEntry } from "@/types";
 
-type Props = { entry: MealPlanEntry };
+type Props = { entry: MealPlanEntry; dietPrefs?: ProfileDietPrefs | null };
 
-export function RecipeSlotCard({ entry }: Props) {
+export function RecipeSlotCard({ entry, dietPrefs }: Props) {
   const [isPending, startTransition] = useTransition();
   const [removed, setRemoved] = useState(false);
   const { toast } = useToast();
@@ -18,6 +19,15 @@ export function RecipeSlotCard({ entry }: Props) {
   const name = getEntryName(entry);
   const calories = getEntryCalories(entry);
   const isQuickAdd = !entry.recipe_id;
+  const recipe = entry.recipe;
+  const dietWarnings =
+    dietPrefs && recipe
+      ? recipeDietWarnings(dietPrefs, {
+          fits_vegetarian: recipe.fits_vegetarian ?? null,
+          fits_vegan: recipe.fits_vegan ?? null,
+          fits_gluten_free: recipe.fits_gluten_free ?? null,
+        })
+      : [];
 
   function handleRemove() {
     setRemoved(true);
@@ -43,6 +53,11 @@ export function RecipeSlotCard({ entry }: Props) {
         <p className={`mt-1 text-[10px] ${isQuickAdd ? "text-slate-400" : "text-slate-500"}`}>
           {Math.round(calories)} kcal
           {isQuickAdd ? <span className="ml-1 text-slate-300">· quick add</span> : null}
+        </p>
+      ) : null}
+      {dietWarnings.length > 0 ? (
+        <p className="mt-1 line-clamp-2 text-[9px] font-medium text-amber-700" title={dietWarnings.join(" · ")}>
+          {dietWarnings.join(" · ")}
         </p>
       ) : null}
       <button

@@ -16,7 +16,7 @@ export default async function EditRecipePage({ params }: EditPageProps) {
 
   const { data: recipe } = await supabase
     .from("recipes")
-    .select("id,name,description")
+    .select("id,name,description,fits_vegetarian,fits_vegan,fits_gluten_free")
     .eq("id", id)
     .eq("user_id", user.id)
     .is("archived_at", null)
@@ -39,6 +39,9 @@ export default async function EditRecipePage({ params }: EditPageProps) {
         initialName={recipe.name}
         initialDescription={recipe.description ?? ""}
         initialIngredients={(ingredients as IngredientRow[] | null) ?? []}
+        initialFitsVegetarian={recipe.fits_vegetarian === true}
+        initialFitsVegan={recipe.fits_vegan === true}
+        initialFitsGlutenFree={recipe.fits_gluten_free === true}
       />
     </section>
   );

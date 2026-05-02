@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { archiveRecipe, deleteRecipe, restoreRecipe } from "@/app/(app)/recipes/actions";
+import { fetchRecipeNutritionMap } from "@/lib/supabase/recipe-nutrition-query";
 import { getUserTier, getRecipeCount } from "@/lib/subscription";
 
 type RecipeRow = {
@@ -8,7 +9,9 @@ type RecipeRow = {
   name: string;
   description: string | null;
   archived_at?: string | null;
-  recipe_nutrition: { calories: number | null; protein_g: number | null; coverage_pct: number | null }[] | null;
+  fits_vegetarian?: boolean | null;
+  fits_vegan?: boolean | null;
+  fits_gluten_free?: boolean | null;
 };
 
 type Props = { searchParams: Promise<{ view?: string }> };
@@ -27,17 +30,25 @@ export default async function RecipesPage({ searchParams }: Props) {
   if (user) {
     let query = supabase
       .from("recipes")
-      .select("id,name,description,archived_at,recipe_nutrition(calories,protein_g,coverage_pct)")
+      .select("id,name,description,archived_at,fits_vegetarian,fits_vegan,fits_gluten_free")
       .order("created_at", { ascending: false });
     query = showArchived ? query.not("archived_at", "is", null) : query.is("archived_at", null);
     const { data } = await query;
     recipes = (data as RecipeRow[] | null) ?? [];
   }
 
+  const nutritionByRecipeId =
+    recipes.length > 0
+      ? await fetchRecipeNutritionMap(
+          supabase,
+          recipes.map((r) => r.id),
+        )
+      : new Map();
+
   return (
     <section className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-2xl font-semibold text-gray-900">Recipes</h1>
           <p className="text-gray-600">
             {showArchived
@@ -45,17 +56,17 @@ export default async function RecipesPage({ searchParams }: Props) {
               : "Create recipes and preview nutrition as you add ingredients."}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 flex-wrap gap-2">
           <Link
             href={showArchived ? "/recipes" : "/recipes?view=archived"}
-            className="inline-flex h-10 items-center justify-center rounded-md border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="inline-flex h-10 flex-1 items-center justify-center rounded-md border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 sm:flex-initial"
           >
             {showArchived ? "Active recipes" : "Archived recipes"}
           </Link>
           {!showArchived ? (
             <Link
               href="/recipes/new"
-              className="inline-flex h-10 items-center justify-center rounded-md bg-[var(--brand-sage)] px-4 text-sm font-medium text-white hover:opacity-95"
+              className="inline-flex h-10 flex-1 items-center justify-center rounded-md bg-[var(--brand-sage)] px-4 text-sm font-medium text-white hover:opacity-95 sm:flex-initial"
             >
               New Recipe
             </Link>
@@ -92,17 +103,37 @@ export default async function RecipesPage({ searchParams }: Props) {
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
           {recipes.map((recipe) => {
-            const nutrition = recipe.recipe_nutrition?.[0];
+            const nutrition = nutritionByRecipeId.get(recipe.id) ?? null;
             return (
               <article key={recipe.id} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                <h3 className="text-lg font-semibold text-gray-900">{recipe.name}</h3>
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <h3 className="text-lg font-semibold text-gray-900">{recipe.name}</h3>
+                  <div className="flex flex-wrap gap-1">
+                    {recipe.fits_vegan ? (
+                      <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-800">
+                        Vegan
+                      </span>
+                    ) : recipe.fits_vegetarian ? (
+                      <span className="rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-medium text-green-800">
+                        Vegetarian
+                      </span>
+                    ) : null}
+                    {recipe.fits_gluten_free ? (
+                      <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-900">
+                        Gluten-free
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
                 <p className="mt-1 text-sm text-gray-600">{recipe.description ?? "No description"}</p>
                 <p className="mt-3 text-sm text-gray-700">
-                  Calories: {nutrition?.calories?.toFixed(1) ?? "0.0"} | Protein:{" "}
-                  {nutrition?.protein_g?.toFixed(1) ?? "0.0"}g
+                  Calories:{" "}
+                  {nutrition?.calories != null ? nutrition.calories.toFixed(1) : "—"} | Protein:{" "}
+                  {nutrition?.protein_g != null ? `${nutrition.protein_g.toFixed(1)}g` : "—"}
                 </p>
                 <p className="text-xs text-gray-500">
-                  Total kcal intake: {nutrition?.calories?.toFixed(1) ?? "0.0"} kcal
+                  Total kcal intake:{" "}
+                  {nutrition?.calories != null ? `${nutrition.calories.toFixed(1)} kcal` : "—"}
                 </p>
                 <Link
                   href={`/recipes/${recipe.id}`}

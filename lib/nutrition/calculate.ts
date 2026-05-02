@@ -1,5 +1,5 @@
+import { ingredientGrams } from "@/lib/nutrition/convert";
 import { lookupNutrition } from "@/lib/nutrition/lookup";
-import { toGrams } from "@/lib/nutrition/convert";
 
 export type RecipeIngredientInput = {
   name: string;
@@ -46,8 +46,8 @@ export function calculateRecipeNutrition(
   let matched = 0;
 
   for (const ingredient of validIngredients) {
-    const grams = toGrams(ingredient.quantity, ingredient.unit);
     const nutrition = lookupNutrition(ingredient.name);
+    const grams = ingredientGrams(ingredient.quantity, ingredient.unit, nutrition);
 
     if (!grams || !nutrition) {
       continue;

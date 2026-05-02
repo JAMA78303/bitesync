@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { ShoppingCart } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getMonday, toLocalISO, addDays, isCurrentWeek } from "@/lib/utils/dates";
+import { fetchRecipeNutritionMap } from "@/lib/supabase/recipe-nutrition-query";
 import { getOrCreateMealPlan, getMealPlanEntries, buildGrid } from "@/lib/supabase/meal-plans";
 import { getProfile } from "@/lib/supabase/profile";
 import { PlannerGrid } from "@/components/planner/PlannerGrid";
@@ -32,15 +33,24 @@ export default async function PlannerPage({ searchParams }: Props) {
 
   const { data: recipes } = await supabase
     .from("recipes")
-    .select("id,name,recipe_nutrition(calories)")
+    .select("id,name,fits_vegetarian,fits_vegan,fits_gluten_free")
     .is("archived_at", null)
     .order("name");
 
-  const formattedRecipes = (recipes ?? []).map((r: { id: string; name: string; recipe_nutrition?: { calories: number | null }[] }) => ({
-    id: r.id,
-    name: r.name,
-    calories: r.recipe_nutrition?.[0]?.calories ?? null,
-  }));
+  const nutritionMap =
+    recipes && recipes.length > 0 ? await fetchRecipeNutritionMap(supabase, recipes.map((r) => r.id)) : new Map();
+
+  const formattedRecipes = (recipes ?? []).map((r) => {
+    const n = nutritionMap.get(r.id);
+    return {
+      id: r.id,
+      name: r.name,
+      calories: n?.calories ?? null,
+      fits_vegetarian: r.fits_vegetarian,
+      fits_vegan: r.fits_vegan,
+      fits_gluten_free: r.fits_gluten_free,
+    };
+  });
 
   const { data: mealPlan, error } = await getOrCreateMealPlan(weekStartISO);
   if (error || !mealPlan) {
@@ -61,6 +71,13 @@ export default async function PlannerPage({ searchParams }: Props) {
   const profile = await getProfile();
   const dailyCalorieTarget = profile?.daily_calorie_target ?? null;
   const dailyProteinTarget = profile?.daily_protein_target ?? null;
+  const dietPrefs = profile
+    ? {
+        follows_vegetarian: Boolean(profile.follows_vegetarian),
+        follows_vegan: Boolean(profile.follows_vegan),
+        follows_gluten_free: Boolean(profile.follows_gluten_free),
+      }
+    : null;
   const grid = await buildGrid(entries ?? []);
   const filledDays = Array.from({ length: 7 }, (_, day) =>
     Object.values(grid[day]).some((entry) => entry?.recipe_id != null) ? day : -1,
@@ -97,6 +114,7 @@ export default async function PlannerPage({ searchParams }: Props) {
           initialActiveDay={initialActiveDay}
           dailyCalorieTarget={dailyCalorieTarget}
           dailyProteinTarget={dailyProteinTarget}
+          dietPrefs={dietPrefs}
         />
       </Suspense>
     </section>

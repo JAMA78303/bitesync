@@ -14,6 +14,9 @@ type EditRecipeFormProps = {
   initialName: string;
   initialDescription: string;
   initialIngredients: IngredientSeed[];
+  initialFitsVegetarian: boolean;
+  initialFitsVegan: boolean;
+  initialFitsGlutenFree: boolean;
 };
 
 type IngredientRow = { id: string; name: string; quantity: string; unit: string };
@@ -38,12 +41,23 @@ function seedToRows(seeds: IngredientSeed[]): IngredientRow[] {
   }));
 }
 
-export function EditRecipeForm({ recipeId, initialName, initialDescription, initialIngredients }: EditRecipeFormProps) {
+export function EditRecipeForm({
+  recipeId,
+  initialName,
+  initialDescription,
+  initialIngredients,
+  initialFitsVegetarian,
+  initialFitsVegan,
+  initialFitsGlutenFree,
+}: EditRecipeFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [name, setName] = useState(initialName);
   const [description, setDescription] = useState(initialDescription);
   const [ingredients, setIngredients] = useState<IngredientRow[]>(() => seedToRows(initialIngredients));
+  const [fitsVegetarian, setFitsVegetarian] = useState(initialFitsVegetarian);
+  const [fitsVegan, setFitsVegan] = useState(initialFitsVegan);
+  const [fitsGlutenFree, setFitsGlutenFree] = useState(initialFitsGlutenFree);
   const [formError, setFormError] = useState<string | null>(null);
 
   const parsedIngredients: RecipeIngredientInput[] = useMemo(
@@ -80,6 +94,9 @@ export function EditRecipeForm({ recipeId, initialName, initialDescription, init
         name,
         description,
         ingredients: parsedIngredients,
+        fitsVegetarian: fitsVegetarian ? true : undefined,
+        fitsVegan: fitsVegan ? true : undefined,
+        fitsGlutenFree: fitsGlutenFree ? true : undefined,
       });
       if ("error" in result) {
         setFormError(result.error);
@@ -112,6 +129,40 @@ export function EditRecipeForm({ recipeId, initialName, initialDescription, init
             className="w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-sm"
           />
         </div>
+        <div className="space-y-2 rounded-lg border border-slate-100 bg-slate-50/80 p-3">
+          <p className="text-xs font-medium text-slate-600">Diet labels (optional)</p>
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={fitsVegetarian}
+              onChange={(e) => setFitsVegetarian(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-300"
+            />
+            Vegetarian-friendly
+          </label>
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={fitsVegan}
+              onChange={(e) => {
+                const v = e.target.checked;
+                setFitsVegan(v);
+                if (v) setFitsVegetarian(true);
+              }}
+              className="h-4 w-4 rounded border-slate-300"
+            />
+            Vegan-friendly
+          </label>
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={fitsGlutenFree}
+              onChange={(e) => setFitsGlutenFree(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-300"
+            />
+            Gluten-free friendly
+          </label>
+        </div>
         <div className="space-y-3">
           <h3 className="font-medium text-gray-900">Ingredients</h3>
           {ingredients.map((ingredient) => (
@@ -128,6 +179,8 @@ export function EditRecipeForm({ recipeId, initialName, initialDescription, init
                 type="number"
                 min="0"
                 step="0.1"
+                placeholder="e.g. 1 for one apple"
+                title="Use unit “piece” or “item” for whole fruit"
                 value={ingredient.quantity}
                 onChange={(event) => updateIngredient(ingredient.id, "quantity", event.target.value)}
                 className="h-10 rounded-md border border-gray-300 px-3 text-sm"

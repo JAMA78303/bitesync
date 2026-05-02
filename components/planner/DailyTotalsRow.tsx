@@ -1,3 +1,7 @@
+import {
+  normalizeRecipeNutritionEmbed,
+  type RecipeNutritionSummary,
+} from "@/lib/utils/recipe-nutrition";
 import type { PlannerGrid } from "@/types";
 
 type Props = {
@@ -22,8 +26,18 @@ export function DailyTotalsRow({ grid, dailyCalorieTarget, dailyProteinTarget }:
       </div>
       {Array.from({ length: 7 }, (_, day) => {
         const slots = Object.values(grid[day]).filter(Boolean);
-        const calories = slots.reduce((s, e) => s + (e!.recipe?.recipe_nutrition?.calories ?? 0), 0);
-        const protein = slots.reduce((s, e) => s + (e!.recipe?.recipe_nutrition?.protein_g ?? 0), 0);
+        const calories = slots.reduce((s, e) => {
+          const n = normalizeRecipeNutritionEmbed(
+            e!.recipe?.recipe_nutrition as RecipeNutritionSummary | RecipeNutritionSummary[] | null | undefined,
+          );
+          return s + (n?.calories ?? 0);
+        }, 0);
+        const protein = slots.reduce((s, e) => {
+          const n = normalizeRecipeNutritionEmbed(
+            e!.recipe?.recipe_nutrition as RecipeNutritionSummary | RecipeNutritionSummary[] | null | undefined,
+          );
+          return s + (n?.protein_g ?? 0);
+        }, 0);
         const isEmpty = slots.length === 0;
         const calPct = dailyCalorieTarget ? Math.min((calories / dailyCalorieTarget) * 100, 100) : 0;
         const proPct = dailyProteinTarget ? Math.min((protein / dailyProteinTarget) * 100, 100) : 0;

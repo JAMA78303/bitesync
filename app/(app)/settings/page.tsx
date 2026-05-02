@@ -3,6 +3,7 @@ import { Lock } from "lucide-react";
 import { logout } from "@/app/(app)/settings/actions";
 import { ThemeToggle } from "@/components/settings/ThemeToggle";
 import { TDEEForm } from "@/components/settings/TDEEForm";
+import { DietPreferencesForm } from "@/components/settings/DietPreferencesForm";
 import { isProSubscriptionStatus } from "@/lib/subscription";
 import { getProfile } from "@/lib/supabase/profile";
 
@@ -32,6 +33,22 @@ export default async function SettingsPage() {
 
       <div className="flex flex-wrap items-center gap-3">
         <ThemeToggle />
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-white p-5">
+        <div className="mb-4">
+          <h2 className="text-sm font-semibold text-slate-700">Diet preferences</h2>
+          <p className="mt-0.5 text-xs text-slate-400">
+            Tag how you eat — used when planning meals and labeling recipes
+          </p>
+        </div>
+        <DietPreferencesForm
+          initialValues={{
+            followsVegetarian: Boolean(profile?.follows_vegetarian),
+            followsVegan: Boolean(profile?.follows_vegan),
+            followsGlutenFree: Boolean(profile?.follows_gluten_free),
+          }}
+        />
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-white p-5">

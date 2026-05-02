@@ -14,7 +14,10 @@ export async function signUp(formData: FormData) {
   const supabase = await createClient();
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
-  const { error } = await supabase.auth.signUp({
+  // Confirmation emails: Supabase → Authentication → Providers → Email → enable "Confirm email".
+  // Add Redirect URLs: `${NEXT_PUBLIC_APP_URL}` and `${NEXT_PUBLIC_APP_URL}/auth/callback`.
+  // For production deliverability, configure SMTP (Authentication → SMTP Settings) or use a custom domain.
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -24,6 +27,10 @@ export async function signUp(formData: FormData) {
 
   if (error) {
     redirect(`/signup?error=${encodeURIComponent(error.message)}`);
+  }
+
+  if (data.session) {
+    redirect("/planner");
   }
 
   redirect("/signup?success=Check%20your%20email%20for%20a%20confirmation%20link");

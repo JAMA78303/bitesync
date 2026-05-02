@@ -7,10 +7,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { assignRecipeToSlot } from "@/lib/supabase/meal-plans";
 import { useToast } from "@/components/ui/use-toast";
+import { recipeDietWarnings, type ProfileDietPrefs } from "@/lib/utils/diet";
 import { DAY_NAMES } from "@/types";
 import type { MealType } from "@/types";
 
-type Recipe = { id: string; name: string; calories?: number | null };
+type Recipe = {
+  id: string;
+  name: string;
+  calories?: number | null;
+  fits_vegetarian?: boolean | null;
+  fits_vegan?: boolean | null;
+  fits_gluten_free?: boolean | null;
+};
 type Props = {
   open: boolean;
   onClose: () => void;
@@ -18,10 +26,20 @@ type Props = {
   day: number | null;
   mealType: MealType | null;
   recipes: Recipe[];
+  dietPrefs?: ProfileDietPrefs | null;
   onAssigned: () => void;
 };
 
-export function RecipePickerModal({ open, onClose, mealPlanId, day, mealType, recipes, onAssigned }: Props) {
+export function RecipePickerModal({
+  open,
+  onClose,
+  mealPlanId,
+  day,
+  mealType,
+  recipes,
+  dietPrefs,
+  onAssigned,
+}: Props) {
   const [query, setQuery] = useState("");
   const [isPending, startTransition] = useTransition();
   const [assigningId, setAssigningId] = useState<string | null>(null);
@@ -110,23 +128,38 @@ export function RecipePickerModal({ open, onClose, mealPlanId, day, mealType, re
           ) : filtered.length === 0 ? (
             <p className="p-4 text-center text-sm text-gray-600">No recipes match &quot;{query}&quot;</p>
           ) : (
-            filtered.map((recipe) => (
-              <button
-                key={recipe.id}
-                type="button"
-                onClick={() => handleSelect(recipe)}
-                disabled={isPending}
-                className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors duration-100 hover:bg-[#F0FDF4] disabled:opacity-50"
-              >
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{recipe.name}</p>
-                  {recipe.calories != null && <p className="text-xs text-gray-500">{Math.round(recipe.calories)} kcal</p>}
-                </div>
-                <span className="text-xs text-gray-500">
-                  {assigningId === recipe.id ? "Adding..." : <Plus className="h-4 w-4" />}
-                </span>
-              </button>
-            ))
+            filtered.map((recipe) => {
+              const warnings =
+                dietPrefs != null
+                  ? recipeDietWarnings(dietPrefs, {
+                      fits_vegetarian: recipe.fits_vegetarian ?? null,
+                      fits_vegan: recipe.fits_vegan ?? null,
+                      fits_gluten_free: recipe.fits_gluten_free ?? null,
+                    })
+                  : [];
+              return (
+                <button
+                  key={recipe.id}
+                  type="button"
+                  onClick={() => handleSelect(recipe)}
+                  disabled={isPending}
+                  className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors duration-100 hover:bg-[#F0FDF4] disabled:opacity-50"
+                >
+                  <div className="min-w-0 pr-2">
+                    <p className="text-sm font-medium text-gray-900">{recipe.name}</p>
+                    {recipe.calories != null ? (
+                      <p className="text-xs text-gray-500">{Math.round(recipe.calories)} kcal</p>
+                    ) : null}
+                    {warnings.length > 0 ? (
+                      <p className="mt-0.5 text-[11px] text-amber-700">{warnings.join(" · ")}</p>
+                    ) : null}
+                  </div>
+                  <span className="shrink-0 text-xs text-gray-500">
+                    {assigningId === recipe.id ? "Adding..." : <Plus className="h-4 w-4" />}
+                  </span>
+                </button>
+              );
+            })
           )}
         </div>
         <div className="mt-3 flex justify-end">

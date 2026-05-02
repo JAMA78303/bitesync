@@ -6,10 +6,22 @@ import { RecipeSlotCard } from "@/components/planner/RecipeSlotCard";
 import { AddSlotButton } from "@/components/planner/AddSlotButton";
 import { DailyTotalsRow } from "@/components/planner/DailyTotalsRow";
 import { RecipePickerModal } from "@/components/planner/RecipePickerModal";
+import type { ProfileDietPrefs } from "@/lib/utils/diet";
+import {
+  normalizeRecipeNutritionEmbed,
+  type RecipeNutritionSummary,
+} from "@/lib/utils/recipe-nutrition";
 import { DAY_LABELS, MEAL_LABELS, MEAL_TYPES, getEntryCalories } from "@/types";
 import type { PlannerGrid as PlannerGridType, MealType } from "@/types";
 
-type Recipe = { id: string; name: string; calories?: number | null };
+type Recipe = {
+  id: string;
+  name: string;
+  calories?: number | null;
+  fits_vegetarian?: boolean | null;
+  fits_vegan?: boolean | null;
+  fits_gluten_free?: boolean | null;
+};
 type Props = {
   grid: PlannerGridType;
   mealPlanId: string;
@@ -18,6 +30,7 @@ type Props = {
   initialActiveDay?: number;
   dailyCalorieTarget?: number | null;
   dailyProteinTarget?: number | null;
+  dietPrefs?: ProfileDietPrefs | null;
 };
 
 export function PlannerGrid({
@@ -28,6 +41,7 @@ export function PlannerGrid({
   initialActiveDay = 0,
   dailyCalorieTarget,
   dailyProteinTarget,
+  dietPrefs,
 }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
   const [activeDay, setActiveDay] = useState<number | null>(null);
@@ -63,7 +77,7 @@ export function PlannerGrid({
                 return (
                   <div key={`${mealType}-${day}`} className="border-b border-l border-gray-200 p-2">
                     {entry ? (
-                      <RecipeSlotCard entry={entry} />
+                      <RecipeSlotCard entry={entry} dietPrefs={dietPrefs} />
                     ) : (
                       <AddSlotButton
                         day={day}
@@ -95,6 +109,7 @@ export function PlannerGrid({
         initialActiveDay={initialActiveDay}
         dailyCalorieTarget={dailyCalorieTarget}
         dailyProteinTarget={dailyProteinTarget}
+        dietPrefs={dietPrefs}
       />
 
       <RecipePickerModal
@@ -104,6 +119,7 @@ export function PlannerGrid({
         day={activeDay}
         mealType={activeMeal}
         recipes={recipes}
+        dietPrefs={dietPrefs}
         onAssigned={handleAssigned}
       />
     </>
@@ -118,6 +134,7 @@ type MobileProps = {
   initialActiveDay: number;
   dailyCalorieTarget?: number | null;
   dailyProteinTarget?: number | null;
+  dietPrefs?: ProfileDietPrefs | null;
 };
 
 function PlannerGridMobileInline({
@@ -128,6 +145,7 @@ function PlannerGridMobileInline({
   initialActiveDay,
   dailyCalorieTarget,
   dailyProteinTarget,
+  dietPrefs,
 }: MobileProps) {
   const [activeDay, setActiveDay] = useState(initialActiveDay);
   const hasTargets = !!dailyCalorieTarget && !!dailyProteinTarget;
@@ -157,7 +175,7 @@ function PlannerGridMobileInline({
             <div key={mealType} className="space-y-1 rounded-xl border border-gray-200 bg-white p-3">
               <p className="text-xs font-semibold uppercase text-gray-500">{MEAL_LABELS[mealType]}</p>
               {entry ? (
-                <RecipeSlotCard entry={entry} />
+                <RecipeSlotCard entry={entry} dietPrefs={dietPrefs} />
               ) : (
                 <AddSlotButton
                   day={activeDay}
@@ -175,11 +193,26 @@ function PlannerGridMobileInline({
           {(() => {
             const slots = Object.values(grid[activeDay]).filter(Boolean);
             const cal = slots.reduce((s, e) => s + (getEntryCalories(e!) ?? 0), 0);
-            const pro = slots.reduce((s, e) => s + (e!.recipe?.recipe_nutrition?.protein_g ?? 0), 0);
-            const carbs = slots.reduce((s, e) => s + (e!.recipe?.recipe_nutrition?.carbs_g ?? 0), 0);
-            const fat = slots.reduce((s, e) => s + (e!.recipe?.recipe_nutrition?.fat_g ?? 0), 0);
-            const fibre = slots.reduce((s, e) => s + (e!.recipe?.recipe_nutrition?.fibre_g ?? 0), 0);
-            const sugar = slots.reduce((s, e) => s + (e!.recipe?.recipe_nutrition?.sugar_g ?? 0), 0);
+            const pro = slots.reduce((s, e) => {
+              const n = normalizeRecipeNutritionEmbed(e!.recipe?.recipe_nutrition as RecipeNutritionSummary | RecipeNutritionSummary[] | null | undefined);
+              return s + (n?.protein_g ?? 0);
+            }, 0);
+            const carbs = slots.reduce((s, e) => {
+              const n = normalizeRecipeNutritionEmbed(e!.recipe?.recipe_nutrition as RecipeNutritionSummary | RecipeNutritionSummary[] | null | undefined);
+              return s + (n?.carbs_g ?? 0);
+            }, 0);
+            const fat = slots.reduce((s, e) => {
+              const n = normalizeRecipeNutritionEmbed(e!.recipe?.recipe_nutrition as RecipeNutritionSummary | RecipeNutritionSummary[] | null | undefined);
+              return s + (n?.fat_g ?? 0);
+            }, 0);
+            const fibre = slots.reduce((s, e) => {
+              const n = normalizeRecipeNutritionEmbed(e!.recipe?.recipe_nutrition as RecipeNutritionSummary | RecipeNutritionSummary[] | null | undefined);
+              return s + (n?.fibre_g ?? 0);
+            }, 0);
+            const sugar = slots.reduce((s, e) => {
+              const n = normalizeRecipeNutritionEmbed(e!.recipe?.recipe_nutrition as RecipeNutritionSummary | RecipeNutritionSummary[] | null | undefined);
+              return s + (n?.sugar_g ?? 0);
+            }, 0);
             if (slots.length === 0) return <p className="text-sm text-gray-500">No meals planned</p>;
             return (
               <div className="grid grid-cols-2 gap-3 text-sm">
