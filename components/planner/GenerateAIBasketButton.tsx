@@ -302,18 +302,11 @@ export function GenerateAIBasketButton({
           onClick={runWeekPlan}
           disabled={isPending}
           variant="outline"
-          className="h-11 border-[#1A4731] text-sm text-[#1A4731] hover:bg-[#F0FDF4] md:h-9 md:text-sm"
+          className="h-11 border-[#1A4731] text-[#1A4731] hover:bg-[#F0FDF4] md:h-9 md:text-sm"
         >
           <Sparkles className="mr-1.5 h-4 w-4 shrink-0 md:mr-2" />
-          <span className="text-center leading-tight md:truncate">
-            {isPending ? (
-              "Planning…"
-            ) : (
-              <>
-                <span className="md:hidden">Weekly plan</span>
-                <span className="hidden md:inline">AI weekly plan</span>
-              </>
-            )}
+          <span className="text-center text-[11px] font-medium leading-snug sm:text-xs md:text-sm md:truncate">
+            {isPending ? "Planning…" : "AI weekly plan"}
           </span>
         </Button>
         <Button
@@ -321,18 +314,11 @@ export function GenerateAIBasketButton({
           onClick={run}
           disabled={isPending}
           variant="outline"
-          className="h-11 border-[#1A4731] text-sm text-[#1A4731] hover:bg-[#F0FDF4] md:h-9 md:text-sm"
+          className="h-11 border-[#1A4731] text-[#1A4731] hover:bg-[#F0FDF4] md:h-9 md:text-sm"
         >
           <Sparkles className="mr-1.5 h-4 w-4 shrink-0 md:mr-2" />
-          <span className="text-center leading-tight md:truncate">
-            {isPending ? (
-              "Working…"
-            ) : (
-              <>
-                <span className="md:hidden">Grocery &amp; £</span>
-                <span className="hidden md:inline">AI grocery plan</span>
-              </>
-            )}
+          <span className="text-center text-[11px] font-medium leading-snug sm:text-xs md:text-sm md:truncate">
+            {isPending ? "Working…" : "AI grocery plan"}
           </span>
         </Button>
       </div>
