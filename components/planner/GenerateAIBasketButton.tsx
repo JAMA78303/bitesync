@@ -204,6 +204,12 @@ export function GenerateAIBasketButton({
         title: "AI weekly plan applied",
         description: `${src}: 7 days, ${result.snackCountPerDay} snack slot(s)/day, ${result.recipePool} recipes.${note}`,
       });
+      if ("heuristicWarning" in result && result.heuristicWarning) {
+        toast({
+          title: "Calorie goal note",
+          description: result.heuristicWarning,
+        });
+      }
       router.refresh();
     });
   }
