@@ -126,6 +126,32 @@ function buildGoalMatchedRecipeIngredientsRaw(opts: GoalMatchedRecipeOptions): R
   const seed = opts.variantSeed;
 
   if (opts.vegan) {
+    if (opts.mealSlot === "breakfast") {
+      const v = pickVariant(seed, 5);
+      const v2 = pickVariantAlt(seed, 2);
+      const carb = opts.glutenFree
+        ? { name: "rice" as const, minG: 0, maxG: 100 }
+        : { name: "oats" as const, minG: 25, maxG: 100 };
+      const fruit = v2 === 0 ? "banana" : "apple";
+      if (v === 0) {
+        const base = [ing("tofu", 70, "g"), ing(fruit, 100, "g"), ing("blueberries", 60, "g")];
+        return findBestCarbAdjustment(base, carb, target);
+      }
+      if (v === 1) {
+        const base = [ing("banana", 100, "g"), ing("chia seeds", 12, "g")];
+        return findBestCarbAdjustment(base, carb, target);
+      }
+      if (v === 2) {
+        const base = [ing("tofu", 75, "g"), ing("spinach", 80, "g"), ing("tomato", 80, "g")];
+        return findBestCarbAdjustment(base, carb, target);
+      }
+      if (v === 3) {
+        const base = [ing("chickpeas", 70, "g"), ing("apple", 110, "g")];
+        return findBestCarbAdjustment(base, carb, target);
+      }
+      const base = [ing("peanut butter", 22, "g"), ing("banana", 100, "g")];
+      return findBestCarbAdjustment(base, carb, target);
+    }
     if (opts.mealSlot === "snack") {
       const v = pickVariant(seed, 4);
       const v2 = pickVariantAlt(seed, 2);
@@ -225,6 +251,41 @@ function buildGoalMatchedRecipeIngredientsRaw(opts: GoalMatchedRecipeOptions): R
     }
     const base = [ing("tuna", 120, "g"), ing("bell pepper", 70, "g")];
     return findBestCarbAdjustment(base, { name: "rice", minG: 0, maxG: 130 }, target);
+  }
+
+  if (opts.mealSlot === "breakfast") {
+    const v = pickVariant(seed, 7);
+    const carb = opts.glutenFree
+      ? { name: "rice" as const, minG: 0, maxG: 90 }
+      : { name: "oats" as const, minG: 20, maxG: 100 };
+    const v2 = pickVariantAlt(seed, 2);
+    const fruit = v2 === 0 ? "banana" : "apple";
+    if (v === 0) {
+      const base = [ing("egg", 2, "piece"), ing(fruit, 100, "g")];
+      return findBestCarbAdjustment(base, carb, target);
+    }
+    if (v === 1) {
+      const base = [ing("egg", 3, "piece"), ing("blueberries", 80, "g")];
+      return findBestCarbAdjustment(base, carb, target);
+    }
+    if (v === 2) {
+      const base = [ing("greek yogurt", 160, "g"), ing("strawberries", 90, "g")];
+      return findBestCarbAdjustment(base, carb, target);
+    }
+    if (v === 3) {
+      const base = [ing("cottage cheese", 130, "g"), ing("apple", 120, "g")];
+      return findBestCarbAdjustment(base, carb, target);
+    }
+    if (v === 4) {
+      const base = [ing("chicken breast", 75, "g"), ing("egg", 1, "piece"), ing("spinach", 70, "g")];
+      return findBestCarbAdjustment(base, carb, target);
+    }
+    if (v === 5) {
+      const base = [ing("peanut butter", 28, "g"), ing("banana", 110, "g"), ing("chia seeds", 10, "g")];
+      return findBestCarbAdjustment(base, carb, target);
+    }
+    const base = [ing("egg", 2, "piece"), ing("greek yogurt", 90, "g")];
+    return findBestCarbAdjustment(base, carb, target);
   }
 
   const v = pickVariant(seed, 8);
