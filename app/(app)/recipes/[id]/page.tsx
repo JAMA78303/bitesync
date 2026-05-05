@@ -28,6 +28,14 @@ export default async function RecipeDetailPage({ params }: RecipePageProps) {
 
   if (!recipe) notFound();
 
+  const { data: ingredientRows } = await supabase
+    .from("recipe_ingredients")
+    .select("id,name,quantity,unit")
+    .eq("recipe_id", recipe.id)
+    .order("id", { ascending: true });
+
+  const ingredients = (ingredientRows ?? []) as { id: string; name: string; quantity: number; unit: string }[];
+
   const nutrition = await fetchRecipeNutritionForRecipe(supabase, recipe.id);
 
   const fmt = (value: number | null | undefined) => (value == null ? "—" : value.toFixed(1));
@@ -49,6 +57,33 @@ export default async function RecipeDetailPage({ params }: RecipePageProps) {
         <h1 className="break-words text-2xl font-semibold text-gray-900">{recipe.name}</h1>
         <p className="mt-1 text-sm text-gray-600">{recipe.description ?? "No description"}</p>
       </div>
+
+      <article className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <h2 className="mb-3 text-lg font-semibold text-gray-900">Ingredients</h2>
+        {ingredients.length > 0 ? (
+          <ul className="list-inside list-disc space-y-1.5 text-sm text-gray-800">
+            {ingredients.map((row) => (
+              <li key={row.id} className="pl-1 marker:text-[#1A4731]">
+                <span className="font-medium tabular-nums">
+                  {row.quantity} {row.unit}
+                </span>{" "}
+                {row.name}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-gray-500">
+            No ingredients saved for this recipe yet.{" "}
+            <Link href={`/recipes/${recipe.id}/edit`} className="font-medium text-[var(--brand-sage)] underline">
+              Add ingredients in edit
+            </Link>
+            .
+          </p>
+        )}
+        {recipe.servings != null && Number(recipe.servings) > 0 ? (
+          <p className="mt-3 text-xs text-gray-500">Servings: {recipe.servings}</p>
+        ) : null}
+      </article>
 
       <div className="flex w-full min-w-0 flex-wrap gap-2 px-0.5">
         <Link
