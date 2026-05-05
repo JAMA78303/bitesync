@@ -1,4 +1,5 @@
-import { ShoppingCart } from "lucide-react";
+import Link from "next/link";
+import { Lock, ShoppingCart } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getMonday, toLocalISO, addDays, isCurrentWeek } from "@/lib/utils/dates";
 import { fetchRecipeNutritionMap } from "@/lib/supabase/recipe-nutrition-query";
@@ -9,7 +10,9 @@ import { PlannerGrid } from "@/components/planner/PlannerGrid";
 import { WeekNav } from "@/components/planner/WeekNav";
 import { GenerateListButton } from "@/components/planner/GenerateListButton";
 import { GenerateAIBasketButton } from "@/components/planner/GenerateAIBasketButton";
-import { getLiveStorePricingForMealPlan } from "@/app/(app)/planner/ai-actions";
+import { DeficiencyRecommendations } from "@/components/planner/DeficiencyRecommendations";
+import { MicronutrientPanel } from "@/components/planner/MicronutrientPanel";
+import { getWeeklyMicroAnalysis } from "@/lib/supabase/nutrition";
 import { MEAL_TYPES } from "@/types";
 
 type Props = { searchParams: Promise<{ week?: string }> };
@@ -70,16 +73,7 @@ export default async function PlannerPage({ searchParams }: Props) {
 
   const profile = await getProfile();
   const userTier = await getUserTier();
-  const [{ data: entries }, livePricingResult] = await Promise.all([
-    getMealPlanEntries(mealPlan.id),
-    getLiveStorePricingForMealPlan({
-      mealPlanId: mealPlan.id,
-      selectedDays: [0, 1, 2, 3, 4, 5, 6],
-    }).catch((err: unknown) => ({
-      success: false as const,
-      error: err instanceof Error ? err.message : "Live pricing failed",
-    })),
-  ]);
+  const { data: entries } = await getMealPlanEntries(mealPlan.id);
   const dailyCalorieTarget = profile?.daily_calorie_target ?? null;
   const dailyProteinTarget = profile?.daily_protein_target ?? null;
   const dietPrefs = profile
@@ -102,15 +96,15 @@ export default async function PlannerPage({ searchParams }: Props) {
       (entry) => entry.meal_type === mealType && (entry.recipe_id != null || !!entry.quick_add_name),
     ),
   );
-
-  const initialLivePricing =
-    "success" in livePricingResult && livePricingResult.success
-      ? {
-          storeTotals: livePricingResult.storeTotals,
-          estimates: livePricingResult.estimates,
-          priceMatchSummary: livePricingResult.priceMatchSummary,
-        }
-      : null;
+  let microAnalysis: Awaited<ReturnType<typeof getWeeklyMicroAnalysis>> = null;
+  if (userTier === "pro") {
+    try {
+      const sex = profile?.sex === "female" ? "female" : "male";
+      microAnalysis = await getWeeklyMicroAnalysis(mealPlan.id, weekStartISO, sex);
+    } catch (err) {
+      console.error("Micro analysis failed:", err);
+    }
+  }
 
   return (
     <section className="space-y-4">
@@ -142,7 +136,6 @@ export default async function PlannerPage({ searchParams }: Props) {
           followsVegan: Boolean(profile?.follows_vegan),
           followsGlutenFree: Boolean(profile?.follows_gluten_free),
         }}
-        initialLivePricing={initialLivePricing}
       />
 
       <PlannerGrid
@@ -157,6 +150,51 @@ export default async function PlannerPage({ searchParams }: Props) {
         dailyProteinTarget={dailyProteinTarget}
         dietPrefs={dietPrefs}
       />
+
+      {userTier === "free" ? (
+        <div className="relative mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white p-6 text-center">
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white/80 backdrop-blur-sm">
+            <Lock className="h-6 w-6 text-slate-400" />
+            <p className="text-sm font-semibold text-slate-700">Pro feature</p>
+            <p className="max-w-xs text-xs text-slate-400">
+              Upgrade to Pro to see your weekly micronutrient analysis vs UK government dietary reference values
+            </p>
+            <Link href="/settings/billing" className="rounded-lg bg-[#1A4731] px-4 py-2 text-xs text-white">
+              Upgrade to Pro
+            </Link>
+          </div>
+          <div className="pointer-events-none blur-sm">
+            <p className="mb-2 text-sm font-semibold">Weekly nutrition analysis</p>
+            <div className="space-y-2">
+              {["Vitamin D", "Iron", "Calcium", "Vitamin B12"].map((n) => (
+                <div key={n} className="flex items-center gap-3">
+                  <div className="h-2.5 w-2.5 rounded-full bg-slate-200" />
+                  <span className="w-28 text-sm text-slate-300">{n}</span>
+                  <div className="h-1.5 flex-1 rounded-full bg-slate-100">
+                    <div className="h-1.5 w-3/4 rounded-full bg-slate-200" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {userTier === "pro" && microAnalysis ? (
+        <div className="mt-6 space-y-4">
+          <MicronutrientPanel analysis={microAnalysis} />
+          <DeficiencyRecommendations
+            deficiencies={microAnalysis.must_hit.filter((n) => n.traffic === "red")}
+            excesses={microAnalysis.must_limit.filter((n) => n.traffic === "red")}
+          />
+        </div>
+      ) : null}
+
+      {userTier === "pro" && !microAnalysis ? (
+        <div className="mt-6 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center">
+          <p className="text-sm text-slate-400">Add meals to your planner to see your weekly nutrition analysis</p>
+        </div>
+      ) : null}
     </section>
   );
 }

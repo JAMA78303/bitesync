@@ -35,6 +35,13 @@ export default async function SettingsPage() {
   }
 
   const isPro = isProSubscriptionStatus(profile?.subscription_status);
+  const isAdmin =
+    !!user &&
+    (process.env.ADMIN_USER_ID ?? "")
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean)
+      .includes(user.id);
 
   const defaultValues = profile?.weight_kg
     ? {
@@ -153,6 +160,20 @@ export default async function SettingsPage() {
           </Link>
         </div>
       </div>
+
+      {isAdmin ? (
+        <div className="mt-4 rounded-xl bg-slate-800 p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-white">Admin</p>
+              <p className="mt-0.5 text-xs text-slate-400">Internal tools</p>
+            </div>
+            <Link href="/admin/prices" className="text-xs text-slate-300 transition-colors hover:text-white">
+              Price manager →
+            </Link>
+          </div>
+        </div>
+      ) : null}
 
       <form action={logout}>
         <button

@@ -3,6 +3,10 @@ import { updateSession } from "@/lib/supabase/middleware";
 
 const PROTECTED_ROUTES = ["/planner", "/recipes", "/grocery", "/settings", "/billing"];
 const AUTH_ROUTES = ["/login", "/signup"];
+const ADMIN_USER_IDS = (process.env.ADMIN_USER_ID ?? "")
+  .split(",")
+  .map((v) => v.trim())
+  .filter(Boolean);
 
 export async function proxy(request: NextRequest) {
   const { user, response } = await updateSession(request);
@@ -14,6 +18,12 @@ export async function proxy(request: NextRequest) {
 
   if (AUTH_ROUTES.some((route) => path.startsWith(route)) && user) {
     return NextResponse.redirect(new URL("/planner", request.url));
+  }
+
+  if (path.startsWith("/admin")) {
+    if (!user || !ADMIN_USER_IDS.includes(user.id)) {
+      return NextResponse.redirect(new URL("/planner", request.url));
+    }
   }
 
   return response;
