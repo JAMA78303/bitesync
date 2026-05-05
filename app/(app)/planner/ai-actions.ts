@@ -202,8 +202,134 @@ type RecipeWithNutrition = RecipeRow & {
   ingredientNames: string[];
 };
 
-const SNACK_MAX_CALORIES = 250;
+const SNACK_MAX_CALORIES = 300;
 const SNACK_MIN_CALORIES = 80;
+const AI_BREAKFAST_BLOCKED = [
+  "beef",
+  "beef mince",
+  "lamb",
+  "lamb chops",
+  "lamb mince",
+  "pork",
+  "pork chops",
+  "pork mince",
+  "steak",
+  "sirloin",
+  "ribeye",
+  "chorizo",
+  "bacon",
+  "salmon",
+  "salmon fillet",
+  "smoked salmon",
+  "cod",
+  "cod fillet",
+  "haddock",
+  "mackerel",
+  "sardines",
+  "tuna steak",
+  "prawns",
+  "king prawns",
+  "shrimp",
+  "sea bass",
+  "tilapia",
+  "mussels",
+  "white rice",
+  "brown rice",
+  "basmati rice",
+  "pasta",
+  "spaghetti",
+  "penne",
+  "wholemeal pasta",
+  "noodles",
+  "rice noodles",
+  "couscous",
+  "chicken thigh",
+  "chicken drumstick",
+  "chicken wings",
+] as const;
+const AI_BREAKFAST_ALLOWED = [
+  "oats",
+  "porridge",
+  "granola",
+  "wholemeal bread",
+  "bread",
+  "bagel",
+  "sourdough",
+  "pitta",
+  "eggs",
+  "egg",
+  "egg white",
+  "greek yoghurt",
+  "natural yoghurt",
+  "low fat yoghurt",
+  "milk",
+  "whole milk",
+  "skimmed milk",
+  "semi skimmed milk",
+  "oat milk",
+  "almond milk",
+  "soy milk",
+  "cottage cheese",
+  "cream cheese",
+  "banana",
+  "apple",
+  "blueberries",
+  "strawberries",
+  "raspberries",
+  "mango",
+  "pineapple",
+  "peach",
+  "kiwi",
+  "grapes",
+  "orange",
+  "chia seeds",
+  "flaxseeds",
+  "almonds",
+  "walnuts",
+  "peanut butter",
+  "sunflower seeds",
+  "pumpkin seeds",
+  "protein powder",
+  "whey protein",
+  "chicken breast",
+  "honey",
+  "maple syrup",
+  "vanilla",
+  "cinnamon",
+] as const;
+const AI_SNACK_APPROPRIATE = [
+  "apple",
+  "banana",
+  "blueberries",
+  "strawberries",
+  "raspberries",
+  "grapes",
+  "orange",
+  "pear",
+  "peach",
+  "kiwi",
+  "mango",
+  "pineapple",
+  "greek yoghurt",
+  "natural yoghurt",
+  "almonds",
+  "walnuts",
+  "cashews",
+  "peanut butter",
+  "chia seeds",
+  "oats",
+  "granola",
+  "rice cakes",
+  "crackers",
+  "cottage cheese",
+  "cream cheese",
+  "protein powder",
+  "whey protein",
+  "almond milk",
+  "oat milk",
+  "honey",
+  "dark chocolate",
+] as const;
 
 /** Per-slot share of daily calories (sums to 1 with snacks split). */
 function daySlotSpecs(snackCountPerDay: number): Array<{
@@ -315,6 +441,24 @@ function getMealTypeMultiplier(recipeTypes: string[], targetSlot: MealPlanInsert
   return 0.5;
 }
 
+function matchByIncludes(ingredients: string[], needles: readonly string[]): boolean {
+  return ingredients.some((ing) =>
+    needles.some((n) => ing.includes(n) || n.includes(ing)),
+  );
+}
+
+function isRecipeAIBreakfastSafe(ingredients: string[]): boolean {
+  const ings = ingredients.map((i) => i.toLowerCase().trim());
+  if (matchByIncludes(ings, AI_BREAKFAST_BLOCKED)) return false;
+  return matchByIncludes(ings, AI_BREAKFAST_ALLOWED);
+}
+
+function isRecipeAISnackAppropriate(calories: number | null, ingredients: string[]): boolean {
+  if (calories != null && calories > 300) return false;
+  const ings = ingredients.map((i) => i.toLowerCase().trim());
+  return matchByIncludes(ings, AI_SNACK_APPROPRIATE);
+}
+
 /** Higher is better: overshooting calories/protein is penalised much more than undershooting. */
 function scoreRecipeForDaySlot(
   r: RecipeWithNutrition,
@@ -343,7 +487,7 @@ function pickRecipeWithBudgetAndUsage(
   remainingPro: number,
   strictAffordableMisses: { count: number },
   logCtx: { day: number; meal_type: MealPlanInsertRow["meal_type"]; slot_index: number },
-): RecipeWithNutrition {
+): RecipeWithNutrition | null {
   const slotCalTarget = Math.max(targetCal, 0);
   const slotProTarget = Math.max(targetPro, 0);
   const effectiveCal = Math.min(slotCalTarget, Math.max(remainingCal, 0));
@@ -354,9 +498,22 @@ function pickRecipeWithBudgetAndUsage(
 
   const headroomKcal = 100;
   const slotPool =
-    logCtx.meal_type === "snack"
-      ? poolUse.filter((r) => (r.calories ?? 999) <= SNACK_MAX_CALORIES && (r.calories ?? 0) >= SNACK_MIN_CALORIES)
-      : poolUse;
+    logCtx.meal_type === "breakfast"
+      ? poolUse.filter((r) => isRecipeAIBreakfastSafe(r.ingredientNames ?? []))
+      : logCtx.meal_type === "snack"
+        ? poolUse.filter(
+            (r) =>
+              (r.calories ?? 999) <= SNACK_MAX_CALORIES &&
+              (r.calories ?? 0) >= SNACK_MIN_CALORIES &&
+              isRecipeAISnackAppropriate(r.calories, r.ingredientNames ?? []),
+          )
+        : poolUse;
+  if ((logCtx.meal_type === "breakfast" || logCtx.meal_type === "snack") && slotPool.length === 0) {
+    console.warn(
+      `[heuristic] day ${logCtx.day} ${logCtx.meal_type}#${logCtx.slot_index}: no appropriate recipes found, leaving slot empty`,
+    );
+    return null;
+  }
   const consideredPool = slotPool.length ? slotPool : poolUse;
   const affordable = consideredPool.filter((r) => (r.calories ?? 0) <= Math.max(remainingCal - headroomKcal, 0));
   let pickPool: RecipeWithNutrition[];
@@ -708,6 +865,9 @@ export async function generateAIWeekPlan(input: GenerateAIWeekPlanInput) {
           strictAffordableMisses,
           { day, meal_type: spec.meal_type, slot_index: spec.slot_index },
         );
+        if (!picked) {
+          continue;
+        }
         remainingCal -= picked.calories;
         remainingPro -= picked.protein;
         console.warn(

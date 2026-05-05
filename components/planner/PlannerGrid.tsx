@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
+import Link from "next/link";
 import { RecipeSlotCard } from "@/components/planner/RecipeSlotCard";
 import { AddSlotButton } from "@/components/planner/AddSlotButton";
 import { DailyTotalsRow } from "@/components/planner/DailyTotalsRow";
@@ -125,13 +126,23 @@ export function PlannerGrid({
                     ) : entry ? (
                       <RecipeSlotCard entry={entry} dietPrefs={dietPrefs} />
                     ) : (
-                      <AddSlotButton
-                        day={day}
-                        mealType={mealType}
-                        dayLabel={DAY_LABELS[day]}
-                        mealPlanId={mealPlanId}
-                        onPickRecipe={openPicker}
-                      />
+                      <div className="space-y-1">
+                        <AddSlotButton
+                          day={day}
+                          mealType={mealType}
+                          dayLabel={DAY_LABELS[day]}
+                          mealPlanId={mealPlanId}
+                          onPickRecipe={openPicker}
+                        />
+                        {mealType === "breakfast" ? (
+                          <p className="text-[11px] text-amber-700">
+                            No breakfast recipes found.{" "}
+                            <Link href="/recipes/new" className="font-medium underline underline-offset-2">
+                              Add one →
+                            </Link>
+                          </p>
+                        ) : null}
+                      </div>
                     )}
                   </div>
                 );
@@ -263,13 +274,23 @@ function PlannerGridMobileInline({
               ) : entry ? (
                 <RecipeSlotCard entry={entry} dietPrefs={dietPrefs} />
               ) : (
-                <AddSlotButton
-                  day={activeDay}
-                  mealType={mealType}
-                  dayLabel={DAY_LABELS[activeDay]}
-                  mealPlanId={mealPlanId}
-                  onPickRecipe={openPicker}
-                />
+                <div className="space-y-1">
+                  <AddSlotButton
+                    day={activeDay}
+                    mealType={mealType}
+                    dayLabel={DAY_LABELS[activeDay]}
+                    mealPlanId={mealPlanId}
+                    onPickRecipe={openPicker}
+                  />
+                  {mealType === "breakfast" ? (
+                    <p className="text-[11px] text-amber-700">
+                      No breakfast recipes found.{" "}
+                      <Link href="/recipes/new" className="font-medium underline underline-offset-2">
+                        Add one →
+                      </Link>
+                    </p>
+                  ) : null}
+                </div>
               )}
             </div>
           );

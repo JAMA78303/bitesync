@@ -16,6 +16,25 @@ type RecipeRow = {
 };
 
 type Props = { searchParams: Promise<{ view?: string }> };
+const BREAKFAST_SUGGESTIONS = [
+  "Overnight oats with banana and blueberries",
+  "Scrambled eggs with spinach on wholemeal toast",
+  "Greek yoghurt bowl with berries and chia seeds",
+  "Porridge with honey and mixed berries",
+  "Avocado toast with poached eggs",
+  "Protein smoothie with banana and oat milk",
+] as const;
+const BREAKFAST_KEYWORDS = [
+  "oat",
+  "porridge",
+  "egg",
+  "yoghurt",
+  "yogurt",
+  "smoothie",
+  "toast",
+  "granola",
+  "overnight",
+] as const;
 
 export default async function RecipesPage({ searchParams }: Props) {
   const params = await searchParams;
@@ -49,6 +68,9 @@ export default async function RecipesPage({ searchParams }: Props) {
           recipes.map((r) => r.id),
         )
       : new Map();
+  const hasBreakfastFriendlyRecipe = recipes.some((recipe) =>
+    BREAKFAST_KEYWORDS.some((keyword) => recipe.name.toLowerCase().includes(keyword)),
+  );
 
   return (
     <section className="space-y-4">
@@ -104,12 +126,43 @@ export default async function RecipesPage({ searchParams }: Props) {
       ) : null}
       {!recipes.length ? (
         <div className="rounded-xl border border-dashed border-gray-300 bg-white p-6 text-sm text-gray-600">
-          {showArchived
-            ? "No archived recipes yet."
-            : "No recipes yet. Create your first one to start planning meals."}
+          {showArchived ? "No archived recipes yet." : "No recipes yet. Create your first one to start planning meals."}
+          {!showArchived ? (
+            <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-800">
+              <p className="text-sm font-semibold">Add breakfast recipes for better AI planning</p>
+              <p className="mt-1 text-xs">
+                Your recipe library does not have any breakfast-appropriate recipes yet. Try adding one of these:
+              </p>
+              <ul className="mt-2 space-y-1 text-xs">
+                {BREAKFAST_SUGGESTIONS.map((suggestion) => (
+                  <li key={suggestion}>- {suggestion}</li>
+                ))}
+              </ul>
+              <Link href="/recipes/new" className="mt-3 inline-block text-xs font-medium underline underline-offset-2">
+                Create a breakfast recipe →
+              </Link>
+            </div>
+          ) : null}
         </div>
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="space-y-3">
+          {!showArchived && !hasBreakfastFriendlyRecipe ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
+              <p className="text-sm font-semibold">Add breakfast recipes for better AI planning</p>
+              <p className="mt-1 text-xs">
+                Your recipe names do not currently look breakfast-focused. Add one of these to improve AI breakfast picks:
+              </p>
+              <ul className="mt-2 space-y-1 text-xs">
+                {BREAKFAST_SUGGESTIONS.map((suggestion) => (
+                  <li key={suggestion}>- {suggestion}</li>
+                ))}
+              </ul>
+              <Link href="/recipes/new" className="mt-3 inline-block text-xs font-medium underline underline-offset-2">
+                Create a breakfast recipe →
+              </Link>
+            </div>
+          ) : null}
+          <div className="grid gap-3 md:grid-cols-2">
           {recipes.map((recipe) => {
             const nutrition = nutritionByRecipeId.get(recipe.id) ?? null;
             return (
@@ -187,6 +240,7 @@ export default async function RecipesPage({ searchParams }: Props) {
               </article>
             );
           })}
+          </div>
         </div>
       )}
     </section>
