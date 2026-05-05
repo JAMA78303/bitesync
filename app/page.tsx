@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   CalendarDays,
+  HelpCircle,
   ShoppingCart,
   Flame,
   Target,
@@ -85,23 +86,25 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
             {[
               {
-                emoji: "😩",
+                icon: <HelpCircle className="h-5 w-5 text-[#1A4731]" />,
                 title: '"What should I eat this week?"',
                 desc: "Deciding meals every single day is exhausting. There has to be a better way.",
               },
               {
-                emoji: "🛒",
+                icon: <ShoppingCart className="h-5 w-5 text-[#1A4731]" />,
                 title: "Buying food with no plan",
                 desc: "You shop without a list, buy things you don't need, and forget what you actually wanted.",
               },
               {
-                emoji: "📊",
+                icon: <BarChart3 className="h-5 w-5 text-[#1A4731]" />,
                 title: "No idea what you're eating",
                 desc: "Calories, protein, macros - you care but tracking everything manually never sticks.",
               },
             ].map((item, i) => (
               <div key={i} className="rounded-xl border border-slate-200 bg-white p-5">
-                <div className="mb-3 text-2xl">{item.emoji}</div>
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#D1FAE5]">
+                  {item.icon}
+                </div>
                 <h3 className="mb-2 text-sm font-semibold text-slate-700">{item.title}</h3>
                 <p className="text-sm leading-relaxed text-slate-400">{item.desc}</p>
               </div>
