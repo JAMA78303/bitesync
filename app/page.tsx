@@ -10,9 +10,52 @@ import {
   Utensils,
   BarChart3,
   Zap,
+  BookOpen,
+  ChevronDown,
+  Smartphone,
+  Shield,
 } from "lucide-react";
 
 export default function LandingPage() {
+  const faqItems = [
+    {
+      q: "Does BiteSync work on my phone?",
+      a: "Yes. BiteSync is a web app that works on any device including iPhone and Android. No download needed.",
+    },
+    {
+      q: "Do I need to create recipes from scratch?",
+      a: "You build your own recipe library, but it is quick. Add a recipe name and ingredients, and BiteSync calculates nutrition automatically. Recipe importing from popular recipe sites is coming soon.",
+    },
+    {
+      q: "What is the difference between Free and Pro nutrition tracking?",
+      a: "Free users see calories and protein per meal. Pro users get all four macros plus micronutrient analysis against UK dietary reference values.",
+    },
+    {
+      q: "Is my data private?",
+      a: "Yes. Your recipes, meal plans, and nutrition data are private to your account. Payments are handled securely by Stripe.",
+    },
+    {
+      q: "What supermarkets do you compare?",
+      a: "Currently Tesco, Asda, and Aldi. Prices are manually verified and shown as estimates.",
+    },
+    {
+      q: "Can I cancel my Pro subscription?",
+      a: "Yes. Cancel anytime from settings and keep access until the current billing period ends.",
+    },
+    {
+      q: "Is BiteSync only for people in the UK?",
+      a: "BiteSync is built for UK users with GBP pricing and UK nutrition references.",
+    },
+    {
+      q: "What happens when I reach the 10 recipe limit on Free?",
+      a: "You will see a warning as you approach the limit. Archive older recipes to free up space or upgrade to Pro.",
+    },
+    {
+      q: "Can I import recipes from other websites?",
+      a: "Not yet. Recipe importing is on the roadmap. Sign up free and you can use it as soon as it launches.",
+    },
+  ] as const;
+
   return (
     <div className="min-h-screen bg-white">
       <nav className="sticky top-0 z-50 border-b border-slate-100 bg-white/90 backdrop-blur-sm">
@@ -191,12 +234,30 @@ export default function LandingPage() {
                 title: "Weekly nutrition overview",
                 desc: "See your total weekly nutrition at a glance. Know if you're on track before the week even starts.",
               },
+              {
+                icon: <BookOpen className="h-5 w-5" />,
+                title: "Recipe import - coming soon",
+                desc: "Paste a URL from popular recipe websites and BiteSync will import ingredients automatically. Sign up free to get notified at launch.",
+                comingSoon: true,
+              },
             ].map((feature, i) => (
-              <div key={i} className="rounded-xl border border-white/10 bg-white/10 p-5">
-                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 text-white">
-                  {feature.icon}
+              <div
+                key={i}
+                className={`rounded-xl border p-5 ${
+                  feature.comingSoon ? "border-white/5 bg-white/5 opacity-80" : "border-white/10 bg-white/10"
+                }`}
+              >
+                <div className="mb-3 flex items-start justify-between gap-2">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 text-white">
+                    {feature.icon}
+                  </div>
+                  {feature.comingSoon ? (
+                    <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
+                      Coming soon
+                    </span>
+                  ) : null}
                 </div>
-                <h3 className="mb-2 font-semibold text-white">{feature.title}</h3>
+                <h3 className="mb-2 font-semibold text-white">{feature.comingSoon ? "Recipe import" : feature.title}</h3>
                 <p className="text-sm leading-relaxed text-green-200">{feature.desc}</p>
               </div>
             ))}
@@ -272,6 +333,78 @@ export default function LandingPage() {
               Start free trial
             </Link>
           </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-4xl px-4 pb-16">
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-center text-sm text-slate-600">
+          Free is perfect for getting started. Pro is for people who want full macro and micronutrient coverage.
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-4xl px-4 pb-20">
+        <div className="mb-8 text-center">
+          <h2 className="mb-2 text-2xl font-bold text-slate-900 sm:text-3xl">Questions answered</h2>
+          <p className="text-sm text-slate-500">Everything you need to know before you get started.</p>
+        </div>
+        <div className="space-y-3">
+          {faqItems.map((item) => (
+            <details key={item.q} className="group rounded-xl border border-slate-200 bg-white px-4 py-3">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-slate-800 transition-colors group-hover:text-[#1A4731]">
+                {item.q}
+                <ChevronDown className="h-4 w-4 shrink-0 text-slate-500 transition-transform duration-200 group-open:rotate-180" />
+              </summary>
+              <p className="mt-3 pr-6 text-sm leading-relaxed text-slate-600">{item.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-5xl px-4 pb-20">
+        <div className="rounded-2xl border border-slate-700 bg-slate-900 p-8 text-white">
+          <span className="inline-flex rounded-full bg-amber-400/20 px-3 py-1 text-xs font-semibold text-amber-300">
+            Coming soon
+          </span>
+          <h2 className="mt-4 text-2xl font-bold sm:text-3xl">Import recipes from any website</h2>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-300">
+            Found a recipe you like online? Paste the URL and BiteSync will import the ingredients automatically, calculate nutrition, and make it ready for planning.
+          </p>
+          <div className="mt-5 flex flex-wrap gap-2">
+            {["Popular recipe sites", "Food blogs", "Healthy cooking sites", "Any recipe website"].map((site) => (
+              <span key={site} className="rounded-full border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs text-slate-200">
+                {site}
+              </span>
+            ))}
+          </div>
+          <div className="mt-6 flex flex-wrap items-center gap-4">
+            <Link href="/signup" className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900">
+              Sign up free - get notified at launch
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+            <Link href="/login" className="text-sm text-slate-300 underline underline-offset-2 hover:text-white">
+              Already have an account? Log in →
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-5xl px-4 pb-20">
+        <div className="mb-8 text-center">
+          <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">From the BiteSync blog</h2>
+          <p className="mt-2 text-sm text-slate-500">Planning tips, nutrition guides, and product updates.</p>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {[
+            { icon: <Smartphone className="h-4 w-4" />, title: "Meal planning on mobile", desc: "Set up your full week in minutes from your phone." },
+            { icon: <Shield className="h-4 w-4" />, title: "Balanced nutrition made simple", desc: "How to use weekly metrics without overcomplicating food." },
+            { icon: <BarChart3 className="h-4 w-4" />, title: "How to hit macro goals consistently", desc: "A practical approach to daily planning with real food." },
+          ].map((post) => (
+            <article key={post.title} className="rounded-xl border border-slate-200 bg-white p-4">
+              <div className="mb-2 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700">{post.icon}</div>
+              <h3 className="text-sm font-semibold text-slate-800">{post.title}</h3>
+              <p className="mt-1 text-sm text-slate-500">{post.desc}</p>
+            </article>
+          ))}
         </div>
       </section>
 
