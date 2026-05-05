@@ -3,6 +3,7 @@ import { ChevronLeft } from "lucide-react";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { archiveRecipe, deleteRecipe } from "@/app/(app)/recipes/actions";
+import { formatIngredientWeightSuffix } from "@/lib/nutrition/convert";
 import { fetchRecipeNutritionForRecipe } from "@/lib/supabase/recipe-nutrition-query";
 
 type RecipePageProps = { params: Promise<{ id: string }> };
@@ -62,14 +63,18 @@ export default async function RecipeDetailPage({ params }: RecipePageProps) {
         <h2 className="mb-3 text-lg font-semibold text-gray-900">Ingredients</h2>
         {ingredients.length > 0 ? (
           <ul className="list-inside list-disc space-y-1.5 text-sm text-gray-800">
-            {ingredients.map((row) => (
-              <li key={row.id} className="pl-1 marker:text-[#1A4731]">
-                <span className="font-medium tabular-nums">
-                  {row.quantity} {row.unit}
-                </span>{" "}
-                {row.name}
-              </li>
-            ))}
+            {ingredients.map((row) => {
+              const weightHint = formatIngredientWeightSuffix(row.quantity, row.unit, row.name);
+              return (
+                <li key={row.id} className="pl-1 marker:text-[#1A4731]">
+                  <span className="font-medium tabular-nums">
+                    {row.quantity} {row.unit}
+                  </span>{" "}
+                  {row.name}
+                  {weightHint ? <span className="text-gray-500"> {weightHint}</span> : null}
+                </li>
+              );
+            })}
           </ul>
         ) : (
           <p className="text-sm text-gray-500">

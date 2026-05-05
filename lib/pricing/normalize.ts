@@ -12,5 +12,5 @@ export function normalizeIngredientQuantity(
   ingredient: BasketIngredient,
   nutritionEntry: NutritionLookupEntry | null,
 ): number | null {
-  return ingredientGrams(ingredient.quantity, ingredient.unit, nutritionEntry);
+  return ingredientGrams(ingredient.quantity, ingredient.unit, nutritionEntry, ingredient.name);
 }

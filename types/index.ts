@@ -47,11 +47,20 @@ export const ALLOWED_UNITS = [
   "cup",
   "fl oz",
   "piece",
+  "pieces",
   "item",
+  "items",
+  "whole",
+  "unit",
+  "units",
+  "each",
   "slice",
+  "slices",
   "handful",
   "clove",
+  "cloves",
   "rasher",
+  "rashers",
 ] as const;
 export type Unit = (typeof ALLOWED_UNITS)[number];
 

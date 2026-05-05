@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { Check, Trash2 } from "lucide-react";
+import { formatGroceryQuantitySubtitle } from "@/lib/nutrition/convert";
 import { deleteGroceryItem, toggleGroceryItem } from "@/lib/supabase/grocery";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -86,7 +87,7 @@ export function GroceryItem({ id, name, quantity, unit, is_checked }: Props) {
             {name}
           </span>
           <span className="mt-0.5 block text-sm text-slate-400">
-            {formatQty(quantity)} {unit}
+            {formatGroceryQuantitySubtitle(quantity, unit, name, formatQty)}
           </span>
         </div>
         </button>

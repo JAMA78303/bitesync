@@ -35,7 +35,7 @@ export function calculateRecipeNutrition(
   ingredients: RecipeIngredientInput[],
 ): NutritionTotals {
   const validIngredients = ingredients.filter(
-    (ingredient) => ingredient.name.trim() && ingredient.quantity > 0 && ingredient.unit.trim(),
+    (ingredient) => ingredient.name.trim() && ingredient.quantity > 0,
   );
 
   if (!validIngredients.length) {
@@ -47,7 +47,7 @@ export function calculateRecipeNutrition(
 
   for (const ingredient of validIngredients) {
     const nutrition = lookupNutrition(ingredient.name);
-    const grams = ingredientGrams(ingredient.quantity, ingredient.unit, nutrition);
+    const grams = ingredientGrams(ingredient.quantity, ingredient.unit, nutrition, ingredient.name);
 
     if (!grams || !nutrition) {
       continue;

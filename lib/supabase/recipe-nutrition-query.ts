@@ -84,7 +84,7 @@ async function fillNutritionFromIngredients(
     list.push({
       name: String(row.name ?? ""),
       quantity: Number.isFinite(qty) ? qty : 0,
-      unit: String(row.unit ?? "g"),
+      unit: String(row.unit ?? ""),
     });
     byRecipe.set(rid, list);
   }

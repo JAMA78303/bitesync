@@ -1,7 +1,19 @@
 import { createClient } from "@/lib/supabase/server";
+import { ingredientGrams } from "@/lib/nutrition/convert";
+import { lookupNutrition } from "@/lib/nutrition/lookup";
 import { basketCertaintyScore, estimateRange, itemConfidenceScore } from "@/lib/pricing/scoring";
 import type { BasketIngredient, StoreItemEstimate, StoreTotal } from "@/lib/pricing/types";
 import { matchIngredientNameToCatalog, type CanonicalAliasRow, type CanonicalCatalogRow } from "@/lib/pricing/match";
+
+/** Approximate total grams for pack shopping math when units are piece-like or unknown. */
+export function getIngredientWeightGramsApprox(
+  quantity: number,
+  unit: string,
+  ingredientName: string,
+): number {
+  const grams = ingredientGrams(quantity, unit, lookupNutrition(ingredientName), ingredientName);
+  return grams ?? quantity * 100;
+}
 
 function rounded(v: number): number {
   return Math.round(v * 100) / 100;

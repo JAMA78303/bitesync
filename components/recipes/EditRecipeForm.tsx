@@ -2,9 +2,9 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { getSupportedUnits } from "@/lib/nutrition/convert";
+import { formatIngredientWeightSuffix, getSupportedUnits } from "@/lib/nutrition/convert";
 import { calculateRecipeNutrition, type RecipeIngredientInput } from "@/lib/nutrition/calculate";
-import { getNutritionIngredientNames } from "@/lib/nutrition/lookup";
+import { getIngredientAutocompleteLabel, getNutritionIngredientNames } from "@/lib/nutrition/lookup";
 import { NutritionPreview } from "@/components/recipes/NutritionPreview";
 import { updateRecipe } from "@/app/(app)/recipes/actions";
 
@@ -165,50 +165,62 @@ export function EditRecipeForm({
         </div>
         <div className="space-y-3">
           <h3 className="font-medium text-gray-900">Ingredients</h3>
-          {ingredients.map((ingredient) => (
-            <div key={ingredient.id} className="grid gap-2 md:grid-cols-[1fr_120px_120px_40px]">
-              <input
-                type="text"
-                value={ingredient.name}
-                onChange={(event) => updateIngredient(ingredient.id, "name", event.target.value)}
-                list="nutrition-ingredient-suggestions"
-                autoComplete="off"
-                className="h-10 rounded-md border border-gray-300 px-3 text-sm"
-              />
-              <input
-                type="number"
-                min="0"
-                step="0.1"
-                placeholder="e.g. 1 for one apple"
-                title="Use unit “piece” or “item” for whole fruit"
-                value={ingredient.quantity}
-                onChange={(event) => updateIngredient(ingredient.id, "quantity", event.target.value)}
-                className="h-10 rounded-md border border-gray-300 px-3 text-sm"
-              />
-              <select
-                value={ingredient.unit}
-                onChange={(event) => updateIngredient(ingredient.id, "unit", event.target.value)}
-                className="h-10 rounded-md border border-gray-300 px-3 text-sm"
-              >
-                {units.map((unit) => (
-                  <option key={unit} value={unit}>
-                    {unit}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={() => removeIngredient(ingredient.id)}
-                className="h-10 rounded-md border border-gray-300 bg-white px-0 text-lg leading-none text-gray-700 hover:bg-gray-50"
-              >
-                ×
-              </button>
-            </div>
-          ))}
+          {ingredients.map((ingredient) => {
+            const qty = Number.parseFloat(ingredient.quantity);
+            const weightHint =
+              Number.isFinite(qty) && qty > 0 && ingredient.name.trim()
+                ? formatIngredientWeightSuffix(qty, ingredient.unit || "", ingredient.name)
+                : null;
+            return (
+              <div key={ingredient.id} className="space-y-1">
+                <div className="grid gap-2 md:grid-cols-[1fr_120px_120px_40px]">
+                  <input
+                    type="text"
+                    value={ingredient.name}
+                    onChange={(event) => updateIngredient(ingredient.id, "name", event.target.value)}
+                    list="nutrition-ingredient-suggestions"
+                    autoComplete="off"
+                    className="h-10 rounded-md border border-gray-300 px-3 text-sm"
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    placeholder="e.g. 1 for one apple"
+                    title="Use unit “piece”, “item”, or “each” for whole foods"
+                    value={ingredient.quantity}
+                    onChange={(event) => updateIngredient(ingredient.id, "quantity", event.target.value)}
+                    className="h-10 rounded-md border border-gray-300 px-3 text-sm"
+                  />
+                  <select
+                    value={ingredient.unit}
+                    onChange={(event) => updateIngredient(ingredient.id, "unit", event.target.value)}
+                    className="h-10 rounded-md border border-gray-300 px-3 text-sm"
+                  >
+                    {units.map((unit) => (
+                      <option key={unit} value={unit}>
+                        {unit}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => removeIngredient(ingredient.id)}
+                    className="h-10 rounded-md border border-gray-300 bg-white px-0 text-lg leading-none text-gray-700 hover:bg-gray-50"
+                  >
+                    ×
+                  </button>
+                </div>
+                {weightHint ? <p className="text-xs text-slate-500 md:pl-1">{weightHint}</p> : null}
+              </div>
+            );
+          })}
         </div>
         <datalist id="nutrition-ingredient-suggestions">
           {ingredientSuggestions.map((suggestion) => (
-            <option key={suggestion} value={suggestion} />
+            <option key={suggestion} value={suggestion}>
+              {getIngredientAutocompleteLabel(suggestion)}
+            </option>
           ))}
         </datalist>
         <button

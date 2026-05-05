@@ -1,4 +1,5 @@
-import { toGrams } from "@/lib/nutrition/convert";
+import { ingredientGrams } from "@/lib/nutrition/convert";
+import { lookupNutrition } from "@/lib/nutrition/lookup";
 import { NUTRIENT_LABELS, UK_DRVS, getTrafficLight, getTrafficLightLabel, type Sex, type TrafficLight } from "@/lib/nutrition/drv";
 import { lookupMicros, scaleMicros, sumMicros } from "@/lib/nutrition/micros";
 import { createClient } from "@/lib/supabase/server";
@@ -53,7 +54,13 @@ export async function getWeeklyMicroAnalysis(
     .map((ing) => {
       const micros = lookupMicros(String(ing.name ?? ""));
       if (!micros) return null;
-      const grams = toGrams(Number(ing.quantity ?? 0), String(ing.unit ?? ""));
+      const name = String(ing.name ?? "");
+      const grams = ingredientGrams(
+        Number(ing.quantity ?? 0),
+        String(ing.unit ?? ""),
+        lookupNutrition(name),
+        name,
+      );
       if (!grams) return null;
       return scaleMicros(micros, grams);
     })
