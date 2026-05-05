@@ -90,6 +90,23 @@ export async function getOrCreateMealPlan(weekStartDate: string) {
   return { data: plan, error: null };
 }
 
+export async function getMealPlanForWeek(weekStartDate: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data } = await supabase
+    .from("meal_plans")
+    .select("id,week_start_date,user_id")
+    .eq("user_id", user.id)
+    .eq("week_start_date", weekStartDate)
+    .maybeSingle();
+
+  return data ?? null;
+}
+
 export async function getMealPlanEntries(mealPlanId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase

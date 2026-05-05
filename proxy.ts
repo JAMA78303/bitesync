@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
-const PROTECTED_ROUTES = ["/planner", "/recipes", "/grocery", "/settings", "/billing"];
+const PROTECTED_ROUTES = ["/planner", "/recipes", "/grocery", "/nutrition", "/settings", "/billing"];
 const AUTH_ROUTES = ["/login", "/signup"];
 const ADMIN_USER_IDS = (process.env.ADMIN_USER_ID ?? "")
   .split(",")

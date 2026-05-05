@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Lock, ShoppingCart } from "lucide-react";
+import { Activity, ShoppingCart } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getMonday, toLocalISO, addDays, isCurrentWeek } from "@/lib/utils/dates";
 import { fetchRecipeNutritionMap } from "@/lib/supabase/recipe-nutrition-query";
@@ -10,8 +10,6 @@ import { PlannerGrid } from "@/components/planner/PlannerGrid";
 import { WeekNav } from "@/components/planner/WeekNav";
 import { GenerateListButton } from "@/components/planner/GenerateListButton";
 import { GenerateAIBasketButton } from "@/components/planner/GenerateAIBasketButton";
-import { DeficiencyRecommendations } from "@/components/planner/DeficiencyRecommendations";
-import { MicronutrientPanel } from "@/components/planner/MicronutrientPanel";
 import { getWeeklyMicroAnalysis } from "@/lib/supabase/nutrition";
 import { MEAL_TYPES } from "@/types";
 
@@ -151,49 +149,49 @@ export default async function PlannerPage({ searchParams }: Props) {
         dietPrefs={dietPrefs}
       />
 
-      {userTier === "free" ? (
-        <div className="relative mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white p-6 text-center">
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white/80 backdrop-blur-sm">
-            <Lock className="h-6 w-6 text-slate-400" />
-            <p className="text-sm font-semibold text-slate-700">Pro feature</p>
-            <p className="max-w-xs text-xs text-slate-400">
-              Upgrade to Pro to see your weekly micronutrient analysis vs UK government dietary reference values
-            </p>
-            <Link href="/settings/billing" className="rounded-lg bg-[#1A4731] px-4 py-2 text-xs text-white">
-              Upgrade to Pro
-            </Link>
-          </div>
-          <div className="pointer-events-none blur-sm">
-            <p className="mb-2 text-sm font-semibold">Weekly nutrition analysis</p>
-            <div className="space-y-2">
-              {["Vitamin D", "Iron", "Calcium", "Vitamin B12"].map((n) => (
-                <div key={n} className="flex items-center gap-3">
-                  <div className="h-2.5 w-2.5 rounded-full bg-slate-200" />
-                  <span className="w-28 text-sm text-slate-300">{n}</span>
-                  <div className="h-1.5 flex-1 rounded-full bg-slate-100">
-                    <div className="h-1.5 w-3/4 rounded-full bg-slate-200" />
-                  </div>
-                </div>
-              ))}
+      {microAnalysis ? (
+        <Link
+          href={`/nutrition?week=${weekStartISO}`}
+          className="group mt-4 flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 transition-all hover:border-[#6EE7B7] hover:bg-[#F0FDF4]"
+        >
+          <div className="flex items-center gap-3">
+            <Activity className="h-4 w-4 text-[#1A4731]" />
+            <div>
+              <p className="text-sm font-semibold text-slate-800">Weekly nutrition</p>
+              <p className="text-xs text-slate-500">
+                {(() => {
+                  const reds = [
+                    ...microAnalysis.must_hit.filter((n) => n.traffic === "red"),
+                    ...microAnalysis.must_limit.filter((n) => n.traffic === "red"),
+                  ];
+                  if (reds.length === 0) return "All nutrients on track this week";
+                  const names = reds
+                    .slice(0, 2)
+                    .map((n) => n.label)
+                    .join(" and ");
+                  return `${names} need${reds.length === 1 ? "s" : ""} attention`;
+                })()}
+              </p>
             </div>
           </div>
-        </div>
+          <div className="flex items-center gap-1 text-xs text-slate-400">
+            {[...microAnalysis.must_hit, ...microAnalysis.must_limit].slice(0, 6).map((n) => (
+              <div
+                key={n.key}
+                className={`h-2 w-2 rounded-full ${
+                  n.traffic === "green" ? "bg-green-500" : n.traffic === "amber" ? "bg-amber-400" : "bg-red-500"
+                }`}
+              />
+            ))}
+            →
+          </div>
+        </Link>
       ) : null}
 
-      {userTier === "pro" && microAnalysis ? (
-        <div className="mt-6 space-y-4">
-          <MicronutrientPanel analysis={microAnalysis} />
-          <DeficiencyRecommendations
-            deficiencies={microAnalysis.must_hit.filter((n) => n.traffic === "red")}
-            excesses={microAnalysis.must_limit.filter((n) => n.traffic === "red")}
-          />
-        </div>
-      ) : null}
-
-      {userTier === "pro" && !microAnalysis ? (
-        <div className="mt-6 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center">
-          <p className="text-sm text-slate-400">Add meals to your planner to see your weekly nutrition analysis</p>
-        </div>
+      {!microAnalysis && userTier === "pro" ? (
+        <Link href={`/nutrition?week=${weekStartISO}`} className="mt-4 block text-sm font-medium text-[#1A4731]">
+          Add meals to see nutrition analysis →
+        </Link>
       ) : null}
     </section>
   );

@@ -2,10 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getMonday, toLocalISO, formatWeekLabel } from "@/lib/utils/dates";
 import { formatGrocerySubtitle } from "@/lib/utils/grocery-display";
 import { getMealPlanIdForWeek, getGroceryItems } from "@/lib/supabase/grocery";
-import { getUserTier } from "@/lib/subscription";
 import {
   getLiveStorePricingForMealPlan,
-  getSubstitutionSuggestionsForMealPlan,
 } from "@/app/(app)/planner/ai-actions";
 import { GroceryHeader } from "@/components/grocery/GroceryHeader";
 import { GroceryItem } from "@/components/grocery/GroceryItem";
@@ -14,8 +12,7 @@ import { GroceryDoneState } from "@/components/grocery/GroceryDoneState";
 import { ManualGroceryAdd } from "@/components/grocery/ManualGroceryAdd";
 import { GroceryListActions } from "@/components/grocery/GroceryListActions";
 import { GroceryBasketSnapshotSection } from "@/components/grocery/GroceryBasketSnapshotSection";
-import { SubstitutionSuggestionsList } from "@/components/grocery/SubstitutionSuggestionsList";
-import type { StoreItemEstimate, StoreTotal, SubstitutionSuggestion } from "@/lib/pricing/types";
+import type { StoreItemEstimate, StoreTotal } from "@/lib/pricing/types";
 import { MEAL_TYPES } from "@/types";
 
 type Props = {
@@ -62,10 +59,9 @@ export default async function GroceryPage({ searchParams }: Props) {
   } | null = null;
   let liveStoreTotals: StoreTotal[] = [];
   let liveEstimates: StoreItemEstimate[] = [];
-  let grocerySubstitutionSuggestions: SubstitutionSuggestion[] = [];
 
   if (mealPlanId) {
-    const [{ data: snap }, tier, livePricing] = await Promise.all([
+    const [{ data: snap }, livePricing] = await Promise.all([
       supabase
         .from("basket_snapshots")
         .select("recommended_store, estimated_total_gbp, created_at")
@@ -74,7 +70,6 @@ export default async function GroceryPage({ searchParams }: Props) {
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
-      getUserTier(),
       getLiveStorePricingForMealPlan({
         mealPlanId,
         selectedDays: scopeDays?.length ? scopeDays : undefined,
@@ -84,10 +79,6 @@ export default async function GroceryPage({ searchParams }: Props) {
     if ("success" in livePricing && livePricing.success) {
       liveStoreTotals = livePricing.storeTotals;
       liveEstimates = livePricing.estimates;
-    }
-    if (tier === "pro") {
-      const sub = await getSubstitutionSuggestionsForMealPlan(mealPlanId, scopeDays);
-      if ("success" in sub) grocerySubstitutionSuggestions = sub.suggestions;
     }
   }
 
@@ -154,9 +145,6 @@ export default async function GroceryPage({ searchParams }: Props) {
               liveEstimates={liveEstimates}
               lastSnapshot={lastSnapshot}
             />
-            <div className="px-4">
-              <SubstitutionSuggestionsList suggestions={grocerySubstitutionSuggestions} />
-            </div>
           </>
         ) : null}
       </div>
@@ -212,9 +200,6 @@ export default async function GroceryPage({ searchParams }: Props) {
               liveEstimates={liveEstimates}
               lastSnapshot={lastSnapshot}
             />
-            <div className="px-4">
-              <SubstitutionSuggestionsList suggestions={grocerySubstitutionSuggestions} />
-            </div>
           </>
         ) : null}
       </div>

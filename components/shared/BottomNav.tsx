@@ -13,7 +13,7 @@ export function BottomNav() {
         <NavLink href="/grocery" label="Grocery" icon="grocery" compact />
       </div>
       <div className="flex justify-center">
-        <NavLink href="/billing" label="Billing" icon="billing" compact />
+        <NavLink href="/nutrition" label="Nutrition" icon="nutrition" compact />
       </div>
       <div className="flex justify-center">
         <NavLink href="/settings" label="Settings" icon="settings" compact />
