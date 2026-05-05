@@ -45,18 +45,6 @@ export default async function PlannerPage({ searchParams }: Props) {
   ]);
   const { data: mealPlan, error } = mealPlanResult;
 
-  const formattedRecipes = (recipes ?? []).map((r) => {
-    const n = nutritionMap.get(r.id);
-    return {
-      id: r.id,
-      name: r.name,
-      calories: n?.calories ?? null,
-      fits_vegetarian: r.fits_vegetarian,
-      fits_vegan: r.fits_vegan,
-      fits_gluten_free: r.fits_gluten_free,
-    };
-  });
-
   if (error || !mealPlan) {
     return (
       <section className="space-y-3">
@@ -75,6 +63,18 @@ export default async function PlannerPage({ searchParams }: Props) {
     recipes && recipes.length > 0 ? fetchRecipeNutritionMap(supabase, recipes.map((r) => r.id)) : new Map(),
     getMealPlanEntries(mealPlan.id),
   ]);
+
+  const formattedRecipes = (recipes ?? []).map((r) => {
+    const n = nutritionMap.get(r.id);
+    return {
+      id: r.id,
+      name: r.name,
+      calories: n?.calories ?? null,
+      fits_vegetarian: r.fits_vegetarian,
+      fits_vegan: r.fits_vegan,
+      fits_gluten_free: r.fits_gluten_free,
+    };
+  });
   const dailyCalorieTarget = profile?.daily_calorie_target ?? null;
   const dailyProteinTarget = profile?.daily_protein_target ?? null;
   const dietPrefs = profile
