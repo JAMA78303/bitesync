@@ -80,8 +80,13 @@ async function replacePlanDaysWithClaudePlan(
   aiPlan: ClaudeMealPlanResult,
   snackCountPerDay: number,
   allowedRecipeIds: Set<string>,
-): Promise<{ error: string } | { success: true }> {
+  pool: RecipeWithNutrition[],
+  dailyCalorieTarget: number,
+  dailyProteinTarget: number,
+): Promise<{ error: string } | { success: true; warning?: string }> {
   const rows: MealPlanInsertRow[] = [];
+  const calById = new Map(pool.map((r) => [r.id, r.calories]));
+  const proById = new Map(pool.map((r) => [r.id, r.protein]));
   const plan = aiPlan.plan.slice(0, selectedDays.length);
   for (let i = 0; i < plan.length; i += 1) {
     const p = plan[i]!;
@@ -111,6 +116,43 @@ async function replacePlanDaysWithClaudePlan(
     return { error: "Claude did not return any valid recipe IDs for the selected days." };
   }
 
+  for (const day of selectedDays) {
+    trimSnacksWhileDayCaloriesExceedRatio(rows, day, dailyCalorieTarget, calById, 1.1);
+    if (dayCaloriesTotal(rows, day, calById) > dailyCalorieTarget * 1.15) {
+      replaceDinnerWithLowestCalRecipe(rows, day, pool);
+    }
+    trimSnacksIfDayOverMacroCaps(
+      rows,
+      day,
+      dailyCalorieTarget,
+      dailyProteinTarget,
+      calById,
+      proById,
+    );
+  }
+
+  let warning: string | undefined;
+  const minPoolCal = Math.min(...pool.map((r) => r.calories ?? 0));
+  let worstDayCal = 0;
+  let minDayCal = Infinity;
+  for (const d of selectedDays) {
+    const dayCal = dayCaloriesTotal(rows, d, calById);
+    worstDayCal = Math.max(worstDayCal, dayCal);
+    minDayCal = Math.min(minDayCal, dayCal);
+  }
+  const worstRatio = dailyCalorieTarget > 0 ? worstDayCal / dailyCalorieTarget : 1;
+  const minRatio =
+    dailyCalorieTarget > 0 && minDayCal !== Infinity ? minDayCal / dailyCalorieTarget : 1;
+  if (
+    worstRatio > 1.2 ||
+    minRatio < 0.8 ||
+    (minPoolCal > dailyCalorieTarget * 0.35 && worstRatio > 1.1)
+  ) {
+    warning =
+      `Your recipe library may not have enough lighter meals to land near your ${dailyCalorieTarget} kcal/day goal ` +
+      `(worst day ~${Math.round(worstRatio * 100)}% of target). Try adding salads, soups, or smaller portions.`;
+  }
+
   const { error: delError } = await supabase
     .from("meal_plan_entries")
     .delete()
@@ -119,7 +161,7 @@ async function replacePlanDaysWithClaudePlan(
   if (delError) return { error: delError.message };
 
   const { error: insertError } = await supabase.from("meal_plan_entries").insert(rows);
-  if (!insertError) return { success: true as const };
+  if (!insertError) return { success: true as const, warning };
 
   if (insertError.message.toLowerCase().includes("slot_index")) {
     const legacyRows = rows
@@ -134,7 +176,7 @@ async function replacePlanDaysWithClaudePlan(
       }));
     const { error: legacyInsertError } = await supabase.from("meal_plan_entries").insert(legacyRows);
     if (legacyInsertError) return { error: legacyInsertError.message };
-    return { success: true as const };
+    return { success: true as const, warning };
   }
   return { error: insertError.message };
 }
@@ -443,6 +485,7 @@ export async function generateAIWeekPlan(input: GenerateAIWeekPlanInput) {
   const allowedIds = new Set(eligible.map((r) => r.id));
   let claudeSucceeded = false;
   let claudeNotes: string | undefined;
+  let heuristicWarning: string | undefined;
 
   if (isAnthropicMealAiEnabled()) {
     try {
@@ -469,18 +512,20 @@ export async function generateAIWeekPlan(input: GenerateAIWeekPlanInput) {
           aiPlan,
           snackCountPerDay,
           allowedIds,
+          withNutrition as RecipeWithNutrition[],
+          dailyCalorieTarget,
+          dailyProteinTarget,
         );
         if ("success" in applied && applied.success) {
           claudeSucceeded = true;
           claudeNotes = aiPlan.notes;
+          heuristicWarning = applied.warning;
         }
       }
     } catch {
       /* heuristic fallback below */
     }
   }
-
-  let heuristicWarning: string | undefined;
 
   if (!claudeSucceeded) {
     const pool = withNutrition as RecipeWithNutrition[];
@@ -857,6 +902,9 @@ export async function generateAIBasketForWeek(input: GenerateAIBasketInput) {
           aiPlan,
           snackCountPerDay,
           allowedIds,
+          withNutrition as RecipeWithNutrition[],
+          dailyCalorieTarget,
+          dailyProteinTarget,
         );
         if ("success" in applied && applied.success) {
           goalContextRecord.planSource = "claude";
