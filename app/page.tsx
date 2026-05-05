@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { LucideIcon } from "lucide-react";
 import {
   CalendarDays,
   HelpCircle,
@@ -15,6 +16,112 @@ import {
   Shield,
 } from "lucide-react";
 import { LandingFaq } from "@/components/landing/LandingFaq";
+
+const PAIN_POINTS: { Icon: LucideIcon; title: string; desc: string }[] = [
+  {
+    Icon: HelpCircle,
+    title: '"What should I eat this week?"',
+    desc: "Deciding meals every single day is exhausting. There has to be a better way.",
+  },
+  {
+    Icon: ShoppingCart,
+    title: "Buying food with no plan",
+    desc: "You shop without a list, buy things you don't need, and forget what you actually wanted.",
+  },
+  {
+    Icon: BarChart3,
+    title: "No idea what you're eating",
+    desc: "Calories, protein, macros - you care but tracking everything manually never sticks.",
+  },
+];
+
+const HOW_IT_WORKS: { step: string; Icon: LucideIcon; title: string; desc: string }[] = [
+  {
+    step: "01",
+    Icon: Utensils,
+    title: "Build your recipe library",
+    desc: "Add your favourite meals with ingredients. BiteSync calculates the full nutrition automatically - calories, protein, carbs, fat and more.",
+  },
+  {
+    step: "02",
+    Icon: CalendarDays,
+    title: "Plan your week",
+    desc: "Drag meals onto your weekly planner. See your daily calorie and protein totals update in real time as you plan.",
+  },
+  {
+    step: "03",
+    Icon: ShoppingCart,
+    title: "Generate and shop",
+    desc: "Pick which days you're cooking for. BiteSync merges all your ingredients into one clean grocery list. Check items off as you shop.",
+  },
+];
+
+const FEATURES: { Icon: LucideIcon; title: string; desc: string; comingSoon?: boolean }[] = [
+  {
+    Icon: Flame,
+    title: "Automatic nutrition tracking",
+    desc: "Calories, protein, carbs, fat, fibre, sodium - calculated instantly from your ingredients. No manual logging.",
+  },
+  {
+    Icon: Target,
+    title: "Personal calorie targets",
+    desc: "Set your TDEE based on your weight, height, activity level and goal. See daily progress bars in your planner.",
+  },
+  {
+    Icon: ShoppingCart,
+    title: "Smart grocery list",
+    desc: "Ingredients merged automatically. Choose which days to shop for. Check items off on your phone in the supermarket.",
+  },
+  {
+    Icon: BarChart3,
+    title: "Weekly nutrition overview",
+    desc: "See your total weekly nutrition at a glance. Know if you're on track before the week even starts.",
+  },
+  {
+    Icon: BookOpen,
+    title: "Recipe import - coming soon",
+    desc: "Paste a URL from popular recipe websites and BiteSync will import ingredients automatically. Sign up free to get notified at launch.",
+    comingSoon: true,
+  },
+];
+
+const BLOG_TEASERS: { Icon: LucideIcon; title: string; desc: string }[] = [
+  {
+    Icon: Smartphone,
+    title: "Meal planning on mobile",
+    desc: "Set up your full week in minutes from your phone.",
+  },
+  {
+    Icon: Shield,
+    title: "Balanced nutrition made simple",
+    desc: "How to use weekly metrics without overcomplicating food.",
+  },
+  {
+    Icon: BarChart3,
+    title: "How to hit macro goals consistently",
+    desc: "A practical approach to daily planning with real food.",
+  },
+];
+
+const COMING_SOON_SITES = ["Popular recipe sites", "Food blogs", "Healthy cooking sites", "Any recipe website"] as const;
+
+const FREE_FEATURES = [
+  "Up to 10 recipes",
+  "Weekly meal planner",
+  "Grocery list generation",
+  "Basic macro tracking",
+  "2 weeks of history",
+] as const;
+
+const PRO_FEATURES = [
+  "Unlimited recipes",
+  "Full nutrition (macros + micros)",
+  "TDEE calculator + targets",
+  "Personal macro goals",
+  "Unlimited history",
+  "Grocery list by day",
+  "Priority support",
+] as const;
 
 export default function LandingPage() {
   return (
@@ -88,29 +195,13 @@ export default function LandingPage() {
             Sound familiar?
           </p>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-            {[
-              {
-                icon: <HelpCircle className="h-5 w-5 text-[#1A4731]" />,
-                title: '"What should I eat this week?"',
-                desc: "Deciding meals every single day is exhausting. There has to be a better way.",
-              },
-              {
-                icon: <ShoppingCart className="h-5 w-5 text-[#1A4731]" />,
-                title: "Buying food with no plan",
-                desc: "You shop without a list, buy things you don't need, and forget what you actually wanted.",
-              },
-              {
-                icon: <BarChart3 className="h-5 w-5 text-[#1A4731]" />,
-                title: "No idea what you're eating",
-                desc: "Calories, protein, macros - you care but tracking everything manually never sticks.",
-              },
-            ].map((item, i) => (
+            {PAIN_POINTS.map(({ Icon, title, desc }, i) => (
               <div key={i} className="rounded-xl border border-slate-200 bg-white p-5">
                 <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#D1FAE5]">
-                  {item.icon}
+                  <Icon className="h-5 w-5 text-[#1A4731]" aria-hidden />
                 </div>
-                <h3 className="mb-2 text-sm font-semibold text-slate-700">{item.title}</h3>
-                <p className="text-sm leading-relaxed text-slate-400">{item.desc}</p>
+                <h3 className="mb-2 text-sm font-semibold text-slate-700">{title}</h3>
+                <p className="text-sm leading-relaxed text-slate-400">{desc}</p>
               </div>
             ))}
           </div>
@@ -129,35 +220,16 @@ export default function LandingPage() {
         </div>
 
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
-          {[
-            {
-              step: "01",
-              icon: <Utensils className="h-5 w-5 text-[#1A4731]" />,
-              title: "Build your recipe library",
-              desc: "Add your favourite meals with ingredients. BiteSync calculates the full nutrition automatically - calories, protein, carbs, fat and more.",
-            },
-            {
-              step: "02",
-              icon: <CalendarDays className="h-5 w-5 text-[#1A4731]" />,
-              title: "Plan your week",
-              desc: "Drag meals onto your weekly planner. See your daily calorie and protein totals update in real time as you plan.",
-            },
-            {
-              step: "03",
-              icon: <ShoppingCart className="h-5 w-5 text-[#1A4731]" />,
-              title: "Generate and shop",
-              desc: "Pick which days you're cooking for. BiteSync merges all your ingredients into one clean grocery list. Check items off as you shop.",
-            },
-          ].map((item, i) => (
+          {HOW_IT_WORKS.map(({ step, Icon, title, desc }, i) => (
             <div key={i} className="relative">
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#D1FAE5]">
-                  {item.icon}
+                  <Icon className="h-5 w-5 text-[#1A4731]" aria-hidden />
                 </div>
-                <span className="text-xs font-bold tracking-widest text-slate-300">{item.step}</span>
+                <span className="text-xs font-bold tracking-widest text-slate-300">{step}</span>
               </div>
-              <h3 className="mb-2 font-semibold text-slate-800">{item.title}</h3>
-              <p className="text-sm leading-relaxed text-slate-500">{item.desc}</p>
+              <h3 className="mb-2 font-semibold text-slate-800">{title}</h3>
+              <p className="text-sm leading-relaxed text-slate-500">{desc}</p>
             </div>
           ))}
         </div>
@@ -174,52 +246,25 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {[
-              {
-                icon: <Flame className="h-5 w-5" />,
-                title: "Automatic nutrition tracking",
-                desc: "Calories, protein, carbs, fat, fibre, sodium - calculated instantly from your ingredients. No manual logging.",
-              },
-              {
-                icon: <Target className="h-5 w-5" />,
-                title: "Personal calorie targets",
-                desc: "Set your TDEE based on your weight, height, activity level and goal. See daily progress bars in your planner.",
-              },
-              {
-                icon: <ShoppingCart className="h-5 w-5" />,
-                title: "Smart grocery list",
-                desc: "Ingredients merged automatically. Choose which days to shop for. Check items off on your phone in the supermarket.",
-              },
-              {
-                icon: <BarChart3 className="h-5 w-5" />,
-                title: "Weekly nutrition overview",
-                desc: "See your total weekly nutrition at a glance. Know if you're on track before the week even starts.",
-              },
-              {
-                icon: <BookOpen className="h-5 w-5" />,
-                title: "Recipe import - coming soon",
-                desc: "Paste a URL from popular recipe websites and BiteSync will import ingredients automatically. Sign up free to get notified at launch.",
-                comingSoon: true,
-              },
-            ].map((feature, i) => (
+            {FEATURES.map(({ Icon, title, desc, comingSoon }, i) => (
               <div
                 key={i}
                 className={`rounded-xl border p-5 ${
-                  feature.comingSoon ? "border-white/5 bg-white/5 opacity-80" : "border-white/10 bg-white/10"
+                  comingSoon ? "border-white/5 bg-white/5 opacity-80" : "border-white/10 bg-white/10"
                 }`}
               >
                 <div className="mb-3 flex items-start justify-between gap-2">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 text-white">
-                    {feature.icon}
+                    <Icon className="h-5 w-5" aria-hidden />
                   </div>
-                  {feature.comingSoon ? (
+                  {comingSoon ? (
                     <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
                       Coming soon
                     </span>
                   ) : null}
                 </div>
-                <h3 className="mb-2 font-semibold text-white">{feature.comingSoon ? "Recipe import" : feature.title}</h3>
-                <p className="text-sm leading-relaxed text-green-200">{feature.desc}</p>
+                <h3 className="mb-2 font-semibold text-white">{comingSoon ? "Recipe import" : title}</h3>
+                <p className="text-sm leading-relaxed text-green-200">{desc}</p>
               </div>
             ))}
           </div>
@@ -238,15 +283,9 @@ export default function LandingPage() {
             <div className="mb-1 text-3xl font-bold text-slate-900">£0</div>
             <p className="mb-6 text-xs text-slate-400">Forever free</p>
             <ul className="mb-8 space-y-3">
-              {[
-                "Up to 10 recipes",
-                "Weekly meal planner",
-                "Grocery list generation",
-                "Basic macro tracking",
-                "2 weeks of history",
-              ].map((item, i) => (
+              {FREE_FEATURES.map((item, i) => (
                 <li key={i} className="flex items-center gap-2 text-sm text-slate-600">
-                  <Check className="h-4 w-4 shrink-0 text-[#1A4731]" />
+                  <Check className="h-4 w-4 shrink-0 text-[#1A4731]" aria-hidden />
                   {item}
                 </li>
               ))}
@@ -272,17 +311,9 @@ export default function LandingPage() {
             </div>
             <p className="mb-6 text-xs text-green-300">or £59/year - save 30%</p>
             <ul className="mb-8 space-y-3">
-              {[
-                "Unlimited recipes",
-                "Full nutrition (macros + micros)",
-                "TDEE calculator + targets",
-                "Personal macro goals",
-                "Unlimited history",
-                "Grocery list by day",
-                "Priority support",
-              ].map((item, i) => (
+              {PRO_FEATURES.map((item, i) => (
                 <li key={i} className="flex items-center gap-2 text-sm text-green-100">
-                  <Check className="h-4 w-4 shrink-0 text-green-300" />
+                  <Check className="h-4 w-4 shrink-0 text-green-300" aria-hidden />
                   {item}
                 </li>
               ))}
@@ -315,7 +346,7 @@ export default function LandingPage() {
             Found a recipe you like online? Paste the URL and BiteSync will import the ingredients automatically, calculate nutrition, and make it ready for planning.
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
-            {["Popular recipe sites", "Food blogs", "Healthy cooking sites", "Any recipe website"].map((site) => (
+            {COMING_SOON_SITES.map((site) => (
               <span key={site} className="rounded-full border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs text-slate-200">
                 {site}
               </span>
@@ -339,15 +370,13 @@ export default function LandingPage() {
           <p className="mt-2 text-sm text-slate-500">Planning tips, nutrition guides, and product updates.</p>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {[
-            { icon: <Smartphone className="h-4 w-4" />, title: "Meal planning on mobile", desc: "Set up your full week in minutes from your phone." },
-            { icon: <Shield className="h-4 w-4" />, title: "Balanced nutrition made simple", desc: "How to use weekly metrics without overcomplicating food." },
-            { icon: <BarChart3 className="h-4 w-4" />, title: "How to hit macro goals consistently", desc: "A practical approach to daily planning with real food." },
-          ].map((post) => (
-            <article key={post.title} className="rounded-xl border border-slate-200 bg-white p-4">
-              <div className="mb-2 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700">{post.icon}</div>
-              <h3 className="text-sm font-semibold text-slate-800">{post.title}</h3>
-              <p className="mt-1 text-sm text-slate-500">{post.desc}</p>
+          {BLOG_TEASERS.map(({ Icon, title, desc }) => (
+            <article key={title} className="rounded-xl border border-slate-200 bg-white p-4">
+              <div className="mb-2 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+                <Icon className="h-4 w-4" aria-hidden />
+              </div>
+              <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
+              <p className="mt-1 text-sm text-slate-500">{desc}</p>
             </article>
           ))}
         </div>
