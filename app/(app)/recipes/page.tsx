@@ -34,6 +34,17 @@ const BREAKFAST_KEYWORDS = [
   "toast",
   "granola",
   "overnight",
+  "pancake",
+  "waffle",
+  "bagel",
+  "muffin",
+  "cereal",
+  "avocado",
+  "chia",
+  "berries",
+  "bircher",
+  "breakfast",
+  "morning",
 ] as const;
 
 export default async function RecipesPage({ searchParams }: Props) {

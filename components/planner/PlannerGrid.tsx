@@ -1,7 +1,6 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
-import Link from "next/link";
 import { RecipeSlotCard } from "@/components/planner/RecipeSlotCard";
 import { AddSlotButton } from "@/components/planner/AddSlotButton";
 import { DailyTotalsRow } from "@/components/planner/DailyTotalsRow";
@@ -135,11 +134,8 @@ export function PlannerGrid({
                           onPickRecipe={openPicker}
                         />
                         {mealType === "breakfast" ? (
-                          <p className="text-[11px] text-amber-700">
-                            No breakfast recipes found.{" "}
-                            <Link href="/recipes/new" className="font-medium underline underline-offset-2">
-                              Add one →
-                            </Link>
+                          <p className="text-[11px] text-slate-500">
+                            Tip: add recipes whose names mention oats, eggs, yoghurt… so hints and AI picks align better.
                           </p>
                         ) : null}
                       </div>
@@ -283,11 +279,8 @@ function PlannerGridMobileInline({
                     onPickRecipe={openPicker}
                   />
                   {mealType === "breakfast" ? (
-                    <p className="text-[11px] text-amber-700">
-                      No breakfast recipes found.{" "}
-                      <Link href="/recipes/new" className="font-medium underline underline-offset-2">
-                        Add one →
-                      </Link>
+                    <p className="text-[11px] text-slate-500">
+                      Tip: breakfast-named recipes help AI fill this slot automatically.
                     </p>
                   ) : null}
                 </div>

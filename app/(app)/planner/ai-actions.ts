@@ -283,6 +283,10 @@ const AI_BREAKFAST_ALLOWED = [
   "grapes",
   "orange",
   "chia seeds",
+  "yogurt",
+  "berries",
+  "avocado",
+  "spinach",
   "flaxseeds",
   "almonds",
   "walnuts",
@@ -379,6 +383,17 @@ function classifyRecipeMealType(
     "banana",
     "berry",
     "berries",
+    "yogurt",
+    "avocado",
+    "spinach",
+    "chia",
+    "bowl",
+    "bircher",
+    "cocoa",
+    "matcha",
+    "coffee",
+    "latte",
+    "croissant",
   ];
   const snackKeywords = [
     "snack",
@@ -447,9 +462,11 @@ function matchByIncludes(ingredients: string[], needles: readonly string[]): boo
   );
 }
 
-function isRecipeAIBreakfastSafe(ingredients: string[]): boolean {
+function isRecipeAIBreakfastSafe(recipeName: string, ingredients: string[]): boolean {
   const ings = ingredients.map((i) => i.toLowerCase().trim());
   if (matchByIncludes(ings, AI_BREAKFAST_BLOCKED)) return false;
+  const classified = classifyRecipeMealType(recipeName, ingredients);
+  if (classified.includes("breakfast")) return true;
   return matchByIncludes(ings, AI_BREAKFAST_ALLOWED);
 }
 
@@ -499,7 +516,7 @@ function pickRecipeWithBudgetAndUsage(
   const headroomKcal = 100;
   const slotPool =
     logCtx.meal_type === "breakfast"
-      ? poolUse.filter((r) => isRecipeAIBreakfastSafe(r.ingredientNames ?? []))
+      ? poolUse.filter((r) => isRecipeAIBreakfastSafe(r.name, r.ingredientNames ?? []))
       : logCtx.meal_type === "snack"
         ? poolUse.filter(
             (r) =>

@@ -9,6 +9,16 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { saveTDEEProfile } from "@/lib/supabase/profile";
 import {
+  cmToFtIn,
+  cmToM,
+  ftInToCm,
+  kgToLb,
+  kgToStLb,
+  lbToKg,
+  mToCm,
+  stLbToKg,
+} from "@/lib/utils/body-measures";
+import {
   ACTIVITY_OPTIONS,
   GOAL_OPTIONS,
   calculateBMI,
@@ -23,6 +33,9 @@ import {
   type TDEEResult,
 } from "@/lib/utils/tdee";
 
+type WeightUnit = "kg" | "lb" | "st_lb";
+type HeightUnit = "cm" | "m" | "ft_in";
+
 type Props = {
   defaultValues?: Partial<TDEEFormValues>;
 };
@@ -30,6 +43,12 @@ type Props = {
 export function TDEEForm({ defaultValues }: Props) {
   const [isPending, startTransition] = useTransition();
   const [preview, setPreview] = useState<(TDEEResult & { bmi: number; rawDailyCalories: number }) | null>(null);
+  const [weightUnit, setWeightUnit] = useState<WeightUnit>("kg");
+  const [heightUnit, setHeightUnit] = useState<HeightUnit>("cm");
+  const [stStr, setStStr] = useState("");
+  const [lbStr, setLbStr] = useState("");
+  const [ftStr, setFtStr] = useState("");
+  const [inStr, setInStr] = useState("");
   const { toast } = useToast();
 
   const form = useForm<TDEEFormValues>({
@@ -42,6 +61,26 @@ export function TDEEForm({ defaultValues }: Props) {
   const heightCm = form.watch("heightCm");
   const goal = form.watch("goal");
   const sex = form.watch("sex");
+
+  function onWeightUnitChange(next: WeightUnit) {
+    const kg = Number(form.getValues("weightKg"));
+    setWeightUnit(next);
+    if (next === "st_lb" && Number.isFinite(kg) && kg > 0) {
+      const { st, lb } = kgToStLb(kg);
+      setStStr(String(st));
+      setLbStr(lb % 1 === 0 ? String(lb) : String(Math.round(lb * 10) / 10));
+    }
+  }
+
+  function onHeightUnitChange(next: HeightUnit) {
+    const cm = Number(form.getValues("heightCm"));
+    setHeightUnit(next);
+    if (next === "ft_in" && Number.isFinite(cm) && cm > 0) {
+      const { ft, inch } = cmToFtIn(cm);
+      setFtStr(String(ft));
+      setInStr(inch % 1 === 0 ? String(inch) : String(Math.round(inch * 10) / 10));
+    }
+  }
 
   function updatePreview() {
     const parsed = tdeeSchema.safeParse(form.getValues());
@@ -106,32 +145,208 @@ export function TDEEForm({ defaultValues }: Props) {
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} onChange={updatePreview} className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-slate-700">Weight (kg)</label>
-          <Input
-            {...form.register("weightKg")}
-            type="number"
-            placeholder="75"
-            min="30"
-            max="300"
-            step="0.1"
-            onKeyDown={(e) => ["e", "E", "+", "-"].includes(e.key) && e.preventDefault()}
-          />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-slate-700">Weight</label>
+          <select
+            value={weightUnit}
+            onChange={(e) => onWeightUnitChange(e.target.value as WeightUnit)}
+            className="theme-aware-select h-10 w-full rounded-md border border-gray-300 px-3 text-sm"
+          >
+            <option value="kg">Kilograms (kg)</option>
+            <option value="lb">Pounds (lb)</option>
+            <option value="st_lb">Stones + pounds</option>
+          </select>
+          {weightUnit === "kg" ? (
+            <>
+              <Input
+                {...form.register("weightKg")}
+                type="number"
+                placeholder="75"
+                min="30"
+                max="300"
+                step="0.1"
+                onKeyDown={(e) => ["e", "E", "+", "-"].includes(e.key) && e.preventDefault()}
+              />
+              <p className="text-[11px] text-slate-500">Stored internally as kg for TDEE.</p>
+            </>
+          ) : weightUnit === "lb" ? (
+            <>
+              <Input
+                type="number"
+                placeholder="165"
+                min={66}
+                max={661}
+                step="0.1"
+                value={
+                  Number.isFinite(Number(weightKg)) && Number(weightKg) >= 30
+                    ? Math.round(kgToLb(Number(weightKg)) * 10) / 10
+                    : ""
+                }
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  if (raw === "") return;
+                  const lb = Number.parseFloat(raw);
+                  if (Number.isFinite(lb)) {
+                    form.setValue("weightKg", lbToKg(lb), { shouldValidate: true, shouldDirty: true });
+                  }
+                }}
+                onKeyDown={(e) => ["e", "E", "+", "-"].includes(e.key) && e.preventDefault()}
+              />
+              <p className="text-[11px] text-slate-500">1 lb ≈ 0.454 kg</p>
+            </>
+          ) : (
+            <>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <label className="mb-1 block text-xs text-slate-500">Stones</label>
+                  <Input
+                    type="number"
+                    placeholder="12"
+                    min={4}
+                    max={47}
+                    step={1}
+                    value={stStr}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setStStr(v);
+                      const st = Number.parseFloat(v);
+                      const lb = Number.parseFloat(lbStr) || 0;
+                      if (Number.isFinite(st)) {
+                        form.setValue("weightKg", stLbToKg(st, lb), { shouldValidate: true, shouldDirty: true });
+                      }
+                    }}
+                    onKeyDown={(e) => ["e", "E", "+", "-"].includes(e.key) && e.preventDefault()}
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="mb-1 block text-xs text-slate-500">Pounds</label>
+                  <Input
+                    type="number"
+                    placeholder="4"
+                    min={0}
+                    max={13.99}
+                    step={0.1}
+                    value={lbStr}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setLbStr(v);
+                      const lb = Number.parseFloat(v);
+                      const st = Number.parseFloat(stStr) || 0;
+                      if (Number.isFinite(lb)) {
+                        form.setValue("weightKg", stLbToKg(st, lb), { shouldValidate: true, shouldDirty: true });
+                      }
+                    }}
+                    onKeyDown={(e) => ["e", "E", "+", "-"].includes(e.key) && e.preventDefault()}
+                  />
+                </div>
+              </div>
+              <p className="text-[11px] text-slate-500">14 lb = 1 stone</p>
+            </>
+          )}
           {form.formState.errors.weightKg ? (
             <p className="mt-1 text-xs text-red-500">{form.formState.errors.weightKg.message}</p>
           ) : null}
         </div>
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-slate-700">Height (cm)</label>
-          <Input
-            {...form.register("heightCm")}
-            type="number"
-            placeholder="175"
-            min="100"
-            max="250"
-            onKeyDown={(e) => ["e", "E", "+", "-"].includes(e.key) && e.preventDefault()}
-          />
+
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-slate-700">Height</label>
+          <select
+            value={heightUnit}
+            onChange={(e) => onHeightUnitChange(e.target.value as HeightUnit)}
+            className="theme-aware-select h-10 w-full rounded-md border border-gray-300 px-3 text-sm"
+          >
+            <option value="cm">Centimetres (cm)</option>
+            <option value="m">Metres (m)</option>
+            <option value="ft_in">Feet + inches</option>
+          </select>
+          {heightUnit === "cm" ? (
+            <>
+              <Input
+                {...form.register("heightCm")}
+                type="number"
+                placeholder="175"
+                min="100"
+                max="250"
+                step={1}
+                onKeyDown={(e) => ["e", "E", "+", "-"].includes(e.key) && e.preventDefault()}
+              />
+              <p className="text-[11px] text-slate-500">Stored internally as cm for TDEE.</p>
+            </>
+          ) : heightUnit === "m" ? (
+            <>
+              <Input
+                type="number"
+                placeholder="1.75"
+                min={1}
+                max={2.5}
+                step={0.01}
+                value={
+                  Number.isFinite(Number(heightCm)) && Number(heightCm) >= 100
+                    ? cmToM(Number(heightCm))
+                    : ""
+                }
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  if (raw === "") return;
+                  const m = Number.parseFloat(raw);
+                  if (Number.isFinite(m)) {
+                    form.setValue("heightCm", mToCm(m), { shouldValidate: true, shouldDirty: true });
+                  }
+                }}
+                onKeyDown={(e) => ["e", "E", "+", "-"].includes(e.key) && e.preventDefault()}
+              />
+              <p className="text-[11px] text-slate-500">1 m = 100 cm</p>
+            </>
+          ) : (
+            <>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <label className="mb-1 block text-xs text-slate-500">Feet</label>
+                  <Input
+                    type="number"
+                    placeholder="5"
+                    min={3}
+                    max={8}
+                    step={1}
+                    value={ftStr}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setFtStr(v);
+                      const ft = Number.parseFloat(v);
+                      const inch = Number.parseFloat(inStr) || 0;
+                      if (Number.isFinite(ft)) {
+                        form.setValue("heightCm", ftInToCm(ft, inch), { shouldValidate: true, shouldDirty: true });
+                      }
+                    }}
+                    onKeyDown={(e) => ["e", "E", "+", "-"].includes(e.key) && e.preventDefault()}
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="mb-1 block text-xs text-slate-500">Inches</label>
+                  <Input
+                    type="number"
+                    placeholder="9"
+                    min={0}
+                    max={11.99}
+                    step={0.1}
+                    value={inStr}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setInStr(v);
+                      const inch = Number.parseFloat(v);
+                      const ft = Number.parseFloat(ftStr) || 0;
+                      if (Number.isFinite(inch)) {
+                        form.setValue("heightCm", ftInToCm(ft, inch), { shouldValidate: true, shouldDirty: true });
+                      }
+                    }}
+                    onKeyDown={(e) => ["e", "E", "+", "-"].includes(e.key) && e.preventDefault()}
+                  />
+                </div>
+              </div>
+              <p className="text-[11px] text-slate-500">12 inches = 1 foot</p>
+            </>
+          )}
           {form.formState.errors.heightCm ? (
             <p className="mt-1 text-xs text-red-500">{form.formState.errors.heightCm.message}</p>
           ) : null}
