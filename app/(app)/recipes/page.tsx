@@ -21,11 +21,15 @@ export default async function RecipesPage({ searchParams }: Props) {
   const params = await searchParams;
   const showArchived = params.view === "archived";
   const supabase = await createClient();
-  const [tier, count] = await Promise.all([getUserTier(), getRecipeCount()]);
+  const [tier, count, auth] = await Promise.all([
+    getUserTier(),
+    getRecipeCount(),
+    supabase.auth.getUser(),
+  ]);
   const showLimitWarning = tier === "free" && count >= 8;
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = auth;
 
   let recipes: RecipeRow[] = [];
   if (user) {

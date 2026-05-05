@@ -33,14 +33,17 @@ export default async function PlannerPage({ searchParams }: Props) {
   const currentWeek = isCurrentWeek(weekStart);
   const initialActiveDay = currentWeek ? (today.getDay() === 0 ? 6 : today.getDay() - 1) : 0;
 
-  const { data: recipes } = await supabase
-    .from("recipes")
-    .select("id,name,fits_vegetarian,fits_vegan,fits_gluten_free")
-    .is("archived_at", null)
-    .order("name");
-
-  const nutritionMap =
-    recipes && recipes.length > 0 ? await fetchRecipeNutritionMap(supabase, recipes.map((r) => r.id)) : new Map();
+  const [{ data: recipes }, mealPlanResult, profile, userTier] = await Promise.all([
+    supabase
+      .from("recipes")
+      .select("id,name,fits_vegetarian,fits_vegan,fits_gluten_free")
+      .is("archived_at", null)
+      .order("name"),
+    getOrCreateMealPlan(weekStartISO),
+    getProfile(),
+    getUserTier(),
+  ]);
+  const { data: mealPlan, error } = mealPlanResult;
 
   const formattedRecipes = (recipes ?? []).map((r) => {
     const n = nutritionMap.get(r.id);
@@ -54,7 +57,6 @@ export default async function PlannerPage({ searchParams }: Props) {
     };
   });
 
-  const { data: mealPlan, error } = await getOrCreateMealPlan(weekStartISO);
   if (error || !mealPlan) {
     return (
       <section className="space-y-3">
@@ -69,9 +71,10 @@ export default async function PlannerPage({ searchParams }: Props) {
     );
   }
 
-  const profile = await getProfile();
-  const userTier = await getUserTier();
-  const { data: entries } = await getMealPlanEntries(mealPlan.id);
+  const [nutritionMap, { data: entries }] = await Promise.all([
+    recipes && recipes.length > 0 ? fetchRecipeNutritionMap(supabase, recipes.map((r) => r.id)) : new Map(),
+    getMealPlanEntries(mealPlan.id),
+  ]);
   const dailyCalorieTarget = profile?.daily_calorie_target ?? null;
   const dailyProteinTarget = profile?.daily_protein_target ?? null;
   const dietPrefs = profile

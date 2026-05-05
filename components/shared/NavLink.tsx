@@ -29,6 +29,7 @@ export function NavLink({ href, label, icon, compact = false }: NavLinkProps) {
   return (
     <Link
       href={href}
+      prefetch={true}
       className={`flex items-center rounded-full font-medium transition ${
         compact ? "w-auto flex-col gap-1 px-2 py-1 text-xs" : "w-full gap-2 px-3 py-2 text-sm"
       } ${

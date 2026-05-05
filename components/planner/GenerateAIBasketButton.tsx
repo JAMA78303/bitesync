@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { ChevronDown, Sparkles } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2, Sparkles, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
@@ -79,6 +79,8 @@ export function GenerateAIBasketButton({
   const [suggestions, setSuggestions] = useState<SubstitutionSuggestion[]>([]);
   const [snapshotId, setSnapshotId] = useState<string | null>(null);
   const [priceMatchNote, setPriceMatchNote] = useState<string | null>(null);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [isPanelMinimised, setIsPanelMinimised] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -121,6 +123,8 @@ export function GenerateAIBasketButton({
       return;
     }
     startTransition(async () => {
+      setIsPanelOpen(true);
+      setIsPanelMinimised(false);
       const selectedDays = Array.from({ length: Math.min(Math.max(daysToGenerate, 1), 7) }, (_, i) => i);
       const result = await generateAIBasketForWeek({
         mealPlanId,
@@ -131,6 +135,7 @@ export function GenerateAIBasketButton({
       });
       if ("error" in result) {
         toast({ title: "AI generation failed", description: result.error, variant: "destructive" });
+        setIsPanelOpen(false);
         return;
       }
       const best = [...result.storeTotals].sort((a, b) => a.total - b.total)[0];
@@ -230,6 +235,17 @@ export function GenerateAIBasketButton({
     });
   }
 
+  function closePanel() {
+    setIsPanelOpen(false);
+    setIsPanelMinimised(false);
+    setLastSummary(null);
+    setStoreTotals([]);
+    setEstimates([]);
+    setSuggestions([]);
+    setSnapshotId(null);
+    setPriceMatchNote(null);
+  }
+
   const ordered = [...storeTotals].sort((a, b) => a.total - b.total);
   const best = ordered[0];
   const secondBest = ordered[1];
@@ -296,7 +312,7 @@ export function GenerateAIBasketButton({
   );
 
   const hasCollapsibleContent =
-    Boolean(priceMatchNote) || storeTotals.length > 0 || suggestions.length > 0;
+    Boolean(priceMatchNote) || storeTotals.length > 0 || suggestions.length > 0 || isPending;
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm md:space-y-3 md:border-0 md:bg-transparent md:p-0 md:shadow-none">
@@ -329,25 +345,58 @@ export function GenerateAIBasketButton({
         </Button>
       </div>
 
-      {lastSummary ? (
-        <p className="mt-2 line-clamp-2 text-[11px] text-slate-500 md:mt-0 md:line-clamp-none md:text-xs">{lastSummary}</p>
+      {isPanelOpen ? (
+        <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50/60">
+          <div className="flex items-center justify-between px-3 py-2.5">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-slate-800">AI grocery plan</span>
+              {isPending ? (
+                <span className="inline-flex items-center gap-1 text-xs text-slate-500">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Generating...
+                </span>
+              ) : null}
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setIsPanelMinimised((v) => !v)}
+                className="rounded p-1 text-slate-500 hover:bg-slate-200/70"
+                aria-label={isPanelMinimised ? "Expand panel" : "Minimise panel"}
+              >
+                {isPanelMinimised ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+              </button>
+              <button
+                type="button"
+                onClick={closePanel}
+                className="rounded p-1 text-slate-500 hover:bg-slate-200/70"
+                aria-label="Close panel"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          {!isPanelMinimised ? (
+            <div className="space-y-3 border-t border-slate-200 px-3 pb-3 pt-2">
+              {lastSummary ? (
+                <p className="line-clamp-2 text-[11px] text-slate-500 md:line-clamp-none md:text-xs">{lastSummary}</p>
+              ) : null}
+              <div>{storeAndDaysRow}</div>
+              {hasCollapsibleContent ? (
+                <details className="group rounded-lg border border-slate-200 bg-white/70 md:hidden">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2.5 text-sm font-medium text-slate-800 [&::-webkit-details-marker]:hidden">
+                    <span>Store totals &amp; more</span>
+                    <ChevronDown className="h-4 w-4 shrink-0 text-slate-500 transition-transform group-open:rotate-180" />
+                  </summary>
+                  <div className="space-y-3 border-t border-slate-200 px-3 pb-3 pt-2">{pricingBlock}</div>
+                </details>
+              ) : null}
+              <div className="hidden space-y-3 md:block">{pricingBlock}</div>
+            </div>
+          ) : null}
+        </div>
       ) : null}
-
-      <div className="mt-2 md:mt-0">{storeAndDaysRow}</div>
-
-      {/* Mobile: tuck long pricing / apply / subs behind one disclosure */}
-      {hasCollapsibleContent ? (
-        <details className="group mt-3 rounded-lg border border-slate-200 bg-slate-50/60 md:hidden">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2.5 text-sm font-medium text-slate-800 [&::-webkit-details-marker]:hidden">
-            <span>Store totals &amp; more</span>
-            <ChevronDown className="h-4 w-4 shrink-0 text-slate-500 transition-transform group-open:rotate-180" />
-          </summary>
-          <div className="space-y-3 border-t border-slate-200 px-3 pb-3 pt-2">{pricingBlock}</div>
-        </details>
-      ) : null}
-
-      {/* Desktop: full stack always visible */}
-      <div className="mt-3 hidden space-y-3 md:block">{pricingBlock}</div>
     </div>
   );
 }

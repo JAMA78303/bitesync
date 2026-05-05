@@ -12,11 +12,11 @@ import { createClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  let profile = await getProfile();
   const supabase = await createClient();
+  let [profile, auth] = await Promise.all([getProfile(), supabase.auth.getUser()]);
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = auth;
 
   if (
     user &&

@@ -21,19 +21,19 @@ export default async function NutritionPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("sex,daily_calorie_target,daily_protein_target")
-    .eq("id", user.id)
-    .single();
-
   const weekStart = params.week ? getMonday(new Date(`${params.week}T00:00:00`)) : getMonday(new Date());
   const weekStartISO = toLocalISO(weekStart);
   const prevWeekISO = toLocalISO(new Date(weekStart.getTime() - 7 * 86400000));
   const nextWeekISO = toLocalISO(new Date(weekStart.getTime() + 7 * 86400000));
-
-  const mealPlan = await getMealPlanForWeek(weekStartISO);
-  const tier = await getUserTier();
+  const [{ data: profile }, mealPlan, tier] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("sex,daily_calorie_target,daily_protein_target")
+      .eq("id", user.id)
+      .single(),
+    getMealPlanForWeek(weekStartISO),
+    getUserTier(),
+  ]);
 
   let microAnalysis: Awaited<ReturnType<typeof getWeeklyMicroAnalysis>> = null;
   if (tier === "pro" && mealPlan) {
