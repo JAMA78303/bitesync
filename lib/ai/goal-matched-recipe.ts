@@ -79,6 +79,31 @@ function pickVariantAlt(seed: number, modulo: number): number {
   return pickVariant((seed >>> 13) ^ (seed << 3), modulo);
 }
 
+/** Gluten-free breakfast carbs — avoids defaulting every draft to rice or oats. Names must match the nutrition DB. */
+function glutenFreeBreakfastCarbTune(seed: number): { name: string; minG: number; maxG: number } {
+  const tunings = [
+    { name: "quinoa", minG: 25, maxG: 115 },
+    { name: "sweet potato", minG: 70, maxG: 185 },
+    { name: "potato", minG: 90, maxG: 210 },
+    { name: "buckwheat groats", minG: 22, maxG: 88 },
+    { name: "rice cake", minG: 22, maxG: 72 },
+    { name: "cornflakes", minG: 30, maxG: 95 },
+  ] as const;
+  return tunings[pickVariant(seed ^ 0xa54cc641, tunings.length)];
+}
+
+/** Lighter GF carbs for vegetarian snack templates (still no wheat/oats pasta). */
+function glutenFreeSnackCarbTune(seed: number): { name: string; minG: number; maxG: number } {
+  const tunings = [
+    { name: "quinoa", minG: 18, maxG: 130 },
+    { name: "rice cake", minG: 18, maxG: 65 },
+    { name: "sweet potato", minG: 55, maxG: 150 },
+    { name: "buckwheat groats", minG: 18, maxG: 75 },
+    { name: "cornflakes", minG: 25, maxG: 80 },
+  ] as const;
+  return tunings[pickVariant(seed ^ 0x61d14cff, tunings.length)];
+}
+
 function titleCaseWords(s: string): string {
   return s
     .toLowerCase()
@@ -96,6 +121,11 @@ export function buildGoalMatchedRecipeTitle(ingredients: RecipeIngredientInput[]
     "quinoa",
     "white rice",
     "pasta",
+    "sweet potato",
+    "potato",
+    "buckwheat",
+    "rice cake",
+    "cornflakes",
   ]);
   const ordered = [...ingredients].sort((a, b) => b.quantity - a.quantity);
   const highlights = ordered
@@ -129,9 +159,7 @@ function buildGoalMatchedRecipeIngredientsRaw(opts: GoalMatchedRecipeOptions): R
     if (opts.mealSlot === "breakfast") {
       const v = pickVariant(seed, 5);
       const v2 = pickVariantAlt(seed, 2);
-      const carb = opts.glutenFree
-        ? { name: "rice" as const, minG: 0, maxG: 100 }
-        : { name: "oats" as const, minG: 25, maxG: 100 };
+      const carb = opts.glutenFree ? glutenFreeBreakfastCarbTune(seed) : { name: "oats" as const, minG: 25, maxG: 100 };
       const fruit = v2 === 0 ? "banana" : "apple";
       if (v === 0) {
         const base = [ing("tofu", 70, "g"), ing(fruit, 100, "g"), ing("blueberries", 60, "g")];
@@ -199,7 +227,9 @@ function buildGoalMatchedRecipeIngredientsRaw(opts: GoalMatchedRecipeOptions): R
           ? [ing("egg", 2, "piece"), ing("banana", 100, "g")]
           : [ing("egg", 2, "piece"), ing("greek yogurt", 100, "g")];
       const carb = opts.glutenFree
-        ? { name: "rice" as const, minG: 0, maxG: 150 }
+        ? opts.mealSlot === "breakfast"
+          ? glutenFreeBreakfastCarbTune(seed)
+          : glutenFreeSnackCarbTune(seed)
         : { name: "oats" as const, minG: 15, maxG: 120 };
       const out = findBestCarbAdjustment(base, carb, target);
       const p = calculateRecipeNutrition(out).protein_g;
@@ -255,9 +285,7 @@ function buildGoalMatchedRecipeIngredientsRaw(opts: GoalMatchedRecipeOptions): R
 
   if (opts.mealSlot === "breakfast") {
     const v = pickVariant(seed, 7);
-    const carb = opts.glutenFree
-      ? { name: "rice" as const, minG: 0, maxG: 90 }
-      : { name: "oats" as const, minG: 20, maxG: 100 };
+    const carb = opts.glutenFree ? glutenFreeBreakfastCarbTune(seed ^ 0x2c7e9f31) : { name: "oats" as const, minG: 20, maxG: 100 };
     const v2 = pickVariantAlt(seed, 2);
     const fruit = v2 === 0 ? "banana" : "apple";
     if (v === 0) {
@@ -365,7 +393,20 @@ const VEG_FRUIT_KEYWORDS = [
   "grape",
   "avocado",
 ];
-const CARB_KEYWORDS = ["rice", "oats", "quinoa", "pasta", "bread", "potato", "wrap", "tortilla"];
+const CARB_KEYWORDS = [
+  "rice",
+  "oats",
+  "quinoa",
+  "pasta",
+  "bread",
+  "potato",
+  "sweet potato",
+  "buckwheat",
+  "rice cake",
+  "cornflakes",
+  "wrap",
+  "tortilla",
+];
 const FAT_KEYWORDS = ["olive oil", "avocado", "almonds", "walnuts", "peanut butter", "chia"];
 
 function hasKeyword(ings: RecipeIngredientInput[], keywords: string[]): boolean {
@@ -390,14 +431,24 @@ function ensureIngredient(ings: RecipeIngredientInput[], name: string, quantity:
 function ensureDraftStructure(
   mealSlot: GoalMealSlot,
   ingredients: RecipeIngredientInput[],
+  ctx?: { glutenFree?: boolean; variantSeed?: number },
 ): RecipeIngredientInput[] {
   const out = cloneIngs(ingredients);
+  const seed = ctx?.variantSeed ?? 0;
 
   if (!hasKeyword(out, PROTEIN_KEYWORDS)) {
     ensureIngredient(out, mealSlot === "snack" || mealSlot === "breakfast" ? "greek yogurt" : "chicken breast", mealSlot === "snack" ? 80 : 120, "g");
   }
   if (!hasKeyword(out, CARB_KEYWORDS)) {
-    ensureIngredient(out, mealSlot === "breakfast" ? "oats" : "brown rice", mealSlot === "snack" ? 20 : 60, "g");
+    if (ctx?.glutenFree && mealSlot === "breakfast") {
+      const c = glutenFreeBreakfastCarbTune(seed ^ 0x4f2b6d19);
+      ensureIngredient(out, c.name, Math.round((c.minG + c.maxG) / 2), "g");
+    } else if (ctx?.glutenFree && mealSlot === "snack") {
+      const c = glutenFreeSnackCarbTune(seed ^ 0x38f1a203);
+      ensureIngredient(out, c.name, Math.round((c.minG + c.maxG) / 2), "g");
+    } else {
+      ensureIngredient(out, mealSlot === "breakfast" ? "oats" : "brown rice", mealSlot === "snack" ? 20 : 60, "g");
+    }
   }
   if (!hasKeyword(out, FAT_KEYWORDS)) {
     ensureIngredient(out, "olive oil", mealSlot === "snack" ? 5 : 10, "ml");
@@ -435,7 +486,10 @@ function ensureDraftStructure(
 
 export function buildGoalMatchedRecipeIngredients(opts: GoalMatchedRecipeOptions): RecipeIngredientInput[] {
   const raw = buildGoalMatchedRecipeIngredientsRaw(opts);
-  return ensureDraftStructure(opts.mealSlot, raw);
+  return ensureDraftStructure(opts.mealSlot, raw, {
+    glutenFree: opts.glutenFree,
+    variantSeed: opts.variantSeed,
+  });
 }
 
 export function mealLabel(slot: GoalMealSlot): string {
