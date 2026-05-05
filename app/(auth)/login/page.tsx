@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/shared/Logo";
-import { login } from "@/app/(auth)/login/actions";
-import { AuthSubmitButton } from "@/components/shared/AuthSubmitButton";
+import { LoginForm } from "@/components/auth/LoginForm";
 
 export default async function LoginPage({
   searchParams,
@@ -9,6 +8,7 @@ export default async function LoginPage({
   searchParams: Promise<{ error?: string; next?: string }>;
 }) {
   const { error, next } = await searchParams;
+  const redirectTo = next?.startsWith("/") ? next : "/planner";
 
   return (
     <main className="mx-auto flex min-h-screen w-full flex-col justify-center px-6">
@@ -25,26 +25,7 @@ export default async function LoginPage({
             {error}
           </p>
         ) : null}
-        <form action={login} className="space-y-4">
-          <input type="hidden" name="next" value={next?.startsWith("/") ? next : "/planner"} />
-          <input
-            type="email"
-            name="email"
-            required
-            placeholder="Email"
-            autoComplete="email"
-            className="h-11 w-full rounded-md border border-gray-300 px-3 text-sm"
-          />
-          <input
-            type="password"
-            name="password"
-            required
-            placeholder="Password"
-            autoComplete="current-password"
-            className="h-11 w-full rounded-md border border-gray-300 px-3 text-sm"
-          />
-          <AuthSubmitButton label="Log In" />
-        </form>
+        <LoginForm redirectTo={redirectTo} />
         <p className="text-sm text-gray-600">
           Forgot password?{" "}
           <Link href="/reset" className="font-medium text-[var(--brand-sage)]">
