@@ -112,6 +112,9 @@ async function replacePlanDaysWithClaudePlan(
       push("snack", p.snack_b ?? null, 1);
     }
   }
+
+  sanitizeAiPlanBreakfastSlots(rows, pool, selectedDays, mealPlanId, allowedRecipeIds);
+
   if (!rows.length) {
     return { error: "Claude did not return any valid recipe IDs for the selected days." };
   }
@@ -358,6 +361,33 @@ function classifyRecipeMealType(
   recipeName: string,
   ingredients: string[],
 ): Array<"breakfast" | "lunch" | "dinner" | "snack" | "any"> {
+  const allTextEarly = [recipeName, ...ingredients].join(" ").toLowerCase();
+  if (/\bbreakfast\b/i.test(recipeName) || /\bbrunch\b/i.test(recipeName)) {
+    const outEarly: Array<"breakfast" | "lunch" | "dinner" | "snack" | "any"> = ["breakfast"];
+    const snackHints = [
+      "snack",
+      "bar",
+      "bite",
+      "ball",
+      "bliss ball",
+      "protein ball",
+      "rice cake",
+      "cracker",
+      "hummus",
+      "dip",
+      "handful",
+      "mixed nuts",
+      "apple",
+      "fruit",
+      "yoghurt",
+      "yogurt",
+      "smoothie",
+      "shake",
+    ];
+    if (snackHints.some((k) => allTextEarly.includes(k))) outEarly.push("snack");
+    return outEarly;
+  }
+
   const breakfastKeywords = [
     "oat",
     "porridge",
@@ -449,6 +479,14 @@ function classifyRecipeMealType(
 
 function getMealTypeMultiplier(recipeTypes: string[], targetSlot: MealPlanInsertRow["meal_type"]): number {
   if (recipeTypes.includes(targetSlot)) return 1.0;
+  const hasMain = recipeTypes.includes("lunch") || recipeTypes.includes("dinner");
+  if (
+    (targetSlot === "lunch" || targetSlot === "dinner") &&
+    recipeTypes.includes("breakfast") &&
+    !hasMain
+  ) {
+    return 0.06;
+  }
   if (targetSlot === "lunch" && recipeTypes.includes("dinner")) return 0.8;
   if (targetSlot === "dinner" && recipeTypes.includes("lunch")) return 0.8;
   if (targetSlot === "breakfast" && !recipeTypes.includes("breakfast")) return 0.1;
@@ -460,6 +498,92 @@ function matchByIncludes(ingredients: string[], needles: readonly string[]): boo
   return ingredients.some((ing) =>
     needles.some((n) => ing.includes(n) || n.includes(ing)),
   );
+}
+
+/** Recipe titles like "English breakfast" must never fill lunch/dinner/snack in the heuristic planner. */
+function recipeNameImpliesBreakfastSlot(recipeName: string): boolean {
+  const n = recipeName.trim().toLowerCase();
+  return /\bbreakfast\b/.test(n) || /\bbrunch\b/.test(n);
+}
+
+/** Wider breakfast pool when strict matcher finds nothing (still excludes typical dinner ingredients). */
+function isRecipeAIBreakfastSafeRelaxed(recipeName: string, ingredients: string[]): boolean {
+  const ings = ingredients.map((i) => i.toLowerCase().trim());
+  if (matchByIncludes(ings, AI_BREAKFAST_BLOCKED)) return false;
+  return true;
+}
+
+function fixMisplacedBreakfastRecipesForDay(rows: MealPlanInsertRow[], day: number, nameById: Map<string, string>): void {
+  for (;;) {
+    const bfIdx = rows.findIndex((r) => r.day_of_week === day && r.meal_type === "breakfast");
+    const misIdx = rows.findIndex(
+      (r) =>
+        r.day_of_week === day &&
+        r.meal_type !== "breakfast" &&
+        recipeNameImpliesBreakfastSlot(nameById.get(r.recipe_id) ?? ""),
+    );
+    if (misIdx < 0) break;
+
+    if (bfIdx < 0) {
+      rows[misIdx] = {
+        ...rows[misIdx]!,
+        meal_type: "breakfast",
+        slot_index: 0,
+      };
+      continue;
+    }
+
+    const temp = rows[bfIdx]!.recipe_id;
+    rows[bfIdx] = { ...rows[bfIdx]!, recipe_id: rows[misIdx]!.recipe_id };
+    rows[misIdx] = { ...rows[misIdx]!, recipe_id: temp };
+  }
+}
+
+/** Fix Claude mis-placements and fill missing breakfast rows when the library has suitable recipes. */
+function sanitizeAiPlanBreakfastSlots(
+  rows: MealPlanInsertRow[],
+  pool: RecipeWithNutrition[],
+  selectedDays: number[],
+  mealPlanId: string,
+  allowedRecipeIds: Set<string>,
+): void {
+  const nameById = new Map(pool.map((r) => [r.id, r.name]));
+
+  for (const day of selectedDays) {
+    fixMisplacedBreakfastRecipesForDay(rows, day, nameById);
+
+    const hasBreakfast = rows.some((r) => r.day_of_week === day && r.meal_type === "breakfast");
+    if (hasBreakfast) continue;
+
+    const usedIds = new Set(
+      rows.filter((r) => r.day_of_week === day && r.recipe_id).map((r) => r.recipe_id),
+    );
+
+    const pickFirst = (pred: (r: RecipeWithNutrition) => boolean) =>
+      pool.find((r) => allowedRecipeIds.has(r.id) && !usedIds.has(r.id) && pred(r));
+
+    const picked =
+      pickFirst((r) => isRecipeAIBreakfastSafe(r.name, r.ingredientNames ?? [])) ??
+      pickFirst((r) => isRecipeAIBreakfastSafeRelaxed(r.name, r.ingredientNames ?? [])) ??
+      pickFirst((r) => {
+        const cal = r.calories ?? 0;
+        const ings = (r.ingredientNames ?? []).map((x) => x.toLowerCase().trim());
+        return cal >= 100 && cal <= 720 && !matchByIncludes(ings, AI_BREAKFAST_BLOCKED);
+      }) ??
+      pool.find((r) => allowedRecipeIds.has(r.id) && !usedIds.has(r.id));
+
+    if (picked) {
+      rows.push({
+        meal_plan_id: mealPlanId,
+        recipe_id: picked.id,
+        day_of_week: day,
+        meal_type: "breakfast",
+        slot_index: 0,
+        quick_add_name: null,
+        quick_add_calories: null,
+      });
+    }
+  }
 }
 
 function isRecipeAIBreakfastSafe(recipeName: string, ingredients: string[]): boolean {
@@ -512,26 +636,55 @@ function pickRecipeWithBudgetAndUsage(
 
   const available = pool.filter((r) => (usedCount.get(r.id) ?? 0) < 2);
   const poolUse = available.length ? available : pool;
+  const poolNoBreakfastTitle = poolUse.filter((r) => !recipeNameImpliesBreakfastSlot(r.name));
 
   const headroomKcal = 100;
-  const slotPool =
-    logCtx.meal_type === "breakfast"
-      ? poolUse.filter((r) => isRecipeAIBreakfastSafe(r.name, r.ingredientNames ?? []))
-      : logCtx.meal_type === "snack"
-        ? poolUse.filter(
-            (r) =>
-              (r.calories ?? 999) <= SNACK_MAX_CALORIES &&
-              (r.calories ?? 0) >= SNACK_MIN_CALORIES &&
-              isRecipeAISnackAppropriate(r.calories, r.ingredientNames ?? []),
-          )
-        : poolUse;
-  if ((logCtx.meal_type === "breakfast" || logCtx.meal_type === "snack") && slotPool.length === 0) {
-    console.warn(
-      `[heuristic] day ${logCtx.day} ${logCtx.meal_type}#${logCtx.slot_index}: no appropriate recipes found, leaving slot empty`,
+
+  let consideredPool: RecipeWithNutrition[];
+
+  if (logCtx.meal_type === "breakfast") {
+    const strict = poolUse.filter((r) => isRecipeAIBreakfastSafe(r.name, r.ingredientNames ?? []));
+    const relaxed = poolUse.filter((r) => isRecipeAIBreakfastSafeRelaxed(r.name, r.ingredientNames ?? []));
+    const light = poolUse.filter((r) => {
+      const cal = r.calories ?? 0;
+      const ings = (r.ingredientNames ?? []).map((x) => x.toLowerCase().trim());
+      return cal >= 100 && cal <= 720 && !matchByIncludes(ings, AI_BREAKFAST_BLOCKED);
+    });
+    if (strict.length) {
+      consideredPool = strict;
+    } else if (relaxed.length) {
+      consideredPool = relaxed;
+      console.warn(
+        `[heuristic] day ${logCtx.day} breakfast#${logCtx.slot_index}: relaxed breakfast matcher (${relaxed.length} in pool)`,
+      );
+    } else if (light.length) {
+      consideredPool = light;
+      console.warn(
+        `[heuristic] day ${logCtx.day} breakfast#${logCtx.slot_index}: light-calorie fallback (${light.length} in pool)`,
+      );
+    } else {
+      consideredPool = poolUse;
+      console.warn(
+        `[heuristic] day ${logCtx.day} breakfast#${logCtx.slot_index}: full pool fallback — add oats/eggs/yoghurt-style recipes for better matches`,
+      );
+    }
+  } else if (logCtx.meal_type === "snack") {
+    consideredPool = poolUse.filter(
+      (r) =>
+        !recipeNameImpliesBreakfastSlot(r.name) &&
+        (r.calories ?? 999) <= SNACK_MAX_CALORIES &&
+        (r.calories ?? 0) >= SNACK_MIN_CALORIES &&
+        isRecipeAISnackAppropriate(r.calories, r.ingredientNames ?? []),
     );
-    return null;
+    if (consideredPool.length === 0) {
+      console.warn(
+        `[heuristic] day ${logCtx.day} snack#${logCtx.slot_index}: no appropriate recipes found, leaving slot empty`,
+      );
+      return null;
+    }
+  } else {
+    consideredPool = poolNoBreakfastTitle.length ? poolNoBreakfastTitle : poolUse;
   }
-  const consideredPool = slotPool.length ? slotPool : poolUse;
   const affordable = consideredPool.filter((r) => (r.calories ?? 0) <= Math.max(remainingCal - headroomKcal, 0));
   let pickPool: RecipeWithNutrition[];
   if (affordable.length > 0) {
@@ -625,7 +778,8 @@ function replaceDinnerWithLowestCalRecipe(
 ): void {
   const ix = rows.findIndex((r) => r.day_of_week === day && r.meal_type === "dinner");
   if (ix < 0) return;
-  const sorted = [...pool].sort((a, b) => a.calories - b.calories);
+  const mainsOk = pool.filter((r) => !recipeNameImpliesBreakfastSlot(r.name));
+  const sorted = [...(mainsOk.length ? mainsOk : pool)].sort((a, b) => a.calories - b.calories);
   const best = sorted[0];
   if (!best) return;
   const prevId = rows[ix]!.recipe_id;

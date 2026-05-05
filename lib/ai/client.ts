@@ -98,6 +98,12 @@ CRITICAL RULES:
 - Vary meals across the week
 - Return ONLY valid JSON, no explanation, no markdown
 
+MEAL SLOT RULES (mandatory):
+- If a recipe NAME contains "breakfast" or "brunch" (any capitalisation), assign it ONLY to the breakfast field for that day — never to lunch, dinner, or snack.
+- Prefer typical breakfast foods (oats, eggs, yoghurt, toast, smoothies, fruit bowls) for breakfast; use main-meal recipes (curries, hearty salads, pasta dinners, roasts) for lunch and dinner.
+- Do not use null for breakfast if the library contains any recipe suitable for breakfast (including names with "breakfast"/"brunch" or common breakfast ingredients).
+- Lunch and dinner should normally be different recipes from breakfast unless the library is very small.
+
 UK NHS Guidelines:
 - Safe weight loss: max 0.5kg/week (500 kcal deficit)
 - Minimum calories: 1200 kcal/day women, 1500 kcal/day men`,
