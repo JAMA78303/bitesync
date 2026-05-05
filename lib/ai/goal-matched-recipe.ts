@@ -120,7 +120,7 @@ export function buildGoalMatchedRecipeTitle(ingredients: RecipeIngredientInput[]
 }
 
 /** Builds ingredient rows from the in-app nutrition DB; calories should land within ±100 kcal of target when possible. */
-export function buildGoalMatchedRecipeIngredients(opts: GoalMatchedRecipeOptions): RecipeIngredientInput[] {
+function buildGoalMatchedRecipeIngredientsRaw(opts: GoalMatchedRecipeOptions): RecipeIngredientInput[] {
   const target = clampTarget(opts.targetCalories);
   const carbName = opts.glutenFree ? "rice" : "oats";
   const seed = opts.variantSeed;
@@ -258,6 +258,123 @@ export function buildGoalMatchedRecipeIngredients(opts: GoalMatchedRecipeOptions
   }
   const base = [ing("shrimp", 140, "g"), ing("broccoli", 110, "g"), ing("bell pepper", 70, "g")];
   return findBestCarbAdjustment(base, { name: "rice", minG: 0, maxG: 260 }, target);
+}
+
+const PROTEIN_KEYWORDS = [
+  "chicken",
+  "salmon",
+  "tuna",
+  "beef",
+  "turkey",
+  "shrimp",
+  "egg",
+  "yogurt",
+  "tofu",
+  "lentils",
+  "chickpeas",
+  "beans",
+  "protein",
+];
+const VEG_FRUIT_KEYWORDS = [
+  "broccoli",
+  "spinach",
+  "kale",
+  "lettuce",
+  "rocket",
+  "cucumber",
+  "tomato",
+  "onion",
+  "carrot",
+  "celery",
+  "pepper",
+  "mushroom",
+  "cauliflower",
+  "cabbage",
+  "leek",
+  "asparagus",
+  "green bean",
+  "peas",
+  "sweet potato",
+  "banana",
+  "apple",
+  "orange",
+  "strawberr",
+  "blueberr",
+  "raspberr",
+  "grape",
+  "avocado",
+];
+const CARB_KEYWORDS = ["rice", "oats", "quinoa", "pasta", "bread", "potato", "wrap", "tortilla"];
+const FAT_KEYWORDS = ["olive oil", "avocado", "almonds", "walnuts", "peanut butter", "chia"];
+
+function hasKeyword(ings: RecipeIngredientInput[], keywords: string[]): boolean {
+  return ings.some((ingr) => {
+    const n = ingr.name.toLowerCase();
+    return keywords.some((k) => n.includes(k));
+  });
+}
+
+function vegFruitCount(ings: RecipeIngredientInput[]): number {
+  return ings.filter((ingr) => {
+    const n = ingr.name.toLowerCase();
+    return VEG_FRUIT_KEYWORDS.some((k) => n.includes(k));
+  }).length;
+}
+
+function ensureIngredient(ings: RecipeIngredientInput[], name: string, quantity: number, unit: string): void {
+  const exists = ings.some((i) => i.name.toLowerCase().trim() === name.toLowerCase().trim());
+  if (!exists) ings.push(ing(name, quantity, unit));
+}
+
+function ensureDraftStructure(
+  mealSlot: GoalMealSlot,
+  ingredients: RecipeIngredientInput[],
+): RecipeIngredientInput[] {
+  const out = cloneIngs(ingredients);
+
+  if (!hasKeyword(out, PROTEIN_KEYWORDS)) {
+    ensureIngredient(out, mealSlot === "snack" || mealSlot === "breakfast" ? "greek yogurt" : "chicken breast", mealSlot === "snack" ? 80 : 120, "g");
+  }
+  if (!hasKeyword(out, CARB_KEYWORDS)) {
+    ensureIngredient(out, mealSlot === "breakfast" ? "oats" : "brown rice", mealSlot === "snack" ? 20 : 60, "g");
+  }
+  if (!hasKeyword(out, FAT_KEYWORDS)) {
+    ensureIngredient(out, "olive oil", mealSlot === "snack" ? 5 : 10, "ml");
+  }
+
+  const vegTarget = mealSlot === "lunch" || mealSlot === "dinner" ? 2 : 1;
+  const addables =
+    mealSlot === "breakfast" || mealSlot === "snack"
+      ? [
+          ["banana", 100, "g"],
+          ["blueberries", 80, "g"],
+          ["apple", 120, "g"],
+        ]
+      : [
+          ["broccoli", 100, "g"],
+          ["spinach", 80, "g"],
+          ["carrots", 90, "g"],
+          ["tomatoes", 100, "g"],
+          ["red pepper", 80, "g"],
+        ];
+  while (vegFruitCount(out) < vegTarget) {
+    const next = addables.find(([n]) => !out.some((i) => i.name.toLowerCase() === String(n).toLowerCase()));
+    if (!next) break;
+    ensureIngredient(out, String(next[0]), Number(next[1]), String(next[2]));
+  }
+
+  while (out.length < 5) {
+    const filler = addables.find(([n]) => !out.some((i) => i.name.toLowerCase() === String(n).toLowerCase()));
+    if (!filler) break;
+    ensureIngredient(out, String(filler[0]), Number(filler[1]), String(filler[2]));
+  }
+
+  return out;
+}
+
+export function buildGoalMatchedRecipeIngredients(opts: GoalMatchedRecipeOptions): RecipeIngredientInput[] {
+  const raw = buildGoalMatchedRecipeIngredientsRaw(opts);
+  return ensureDraftStructure(opts.mealSlot, raw);
 }
 
 export function mealLabel(slot: GoalMealSlot): string {

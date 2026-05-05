@@ -377,6 +377,13 @@ export async function deleteGroceryList(meal_plan_id: string) {
 
   if (!plan) return { error: "Not found" };
 
+  const { data: mealPlanRow } = await supabase
+    .from("meal_plans")
+    .select("week_start_date")
+    .eq("id", meal_plan_id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
   const now = new Date().toISOString();
   const { error } = await supabase.from("grocery_items").update({ archived_at: now }).eq("meal_plan_id", meal_plan_id);
 
@@ -388,6 +395,13 @@ export async function deleteGroceryList(meal_plan_id: string) {
   }
 
   await supabase.from("meal_plans").update({ grocery_scope_days: null }).eq("id", meal_plan_id);
+  if (mealPlanRow?.week_start_date) {
+    await supabase
+      .from("basket_snapshots")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("week_start_date", mealPlanRow.week_start_date);
+  }
 
   revalidatePath("/grocery");
   return { success: true };

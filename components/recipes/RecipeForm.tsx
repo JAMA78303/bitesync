@@ -36,6 +36,52 @@ function createIngredientRow(): IngredientRow {
 
 const units = getSupportedUnits();
 const ingredientSuggestions = getAllFoodNames();
+const FRUIT_AND_VEG = [
+  "broccoli",
+  "spinach",
+  "kale",
+  "lettuce",
+  "rocket",
+  "cucumber",
+  "tomatoes",
+  "tomato",
+  "onion",
+  "carrots",
+  "carrot",
+  "celery",
+  "peppers",
+  "red pepper",
+  "green pepper",
+  "courgette",
+  "aubergine",
+  "mushrooms",
+  "cauliflower",
+  "cabbage",
+  "leeks",
+  "asparagus",
+  "green beans",
+  "peas",
+  "sweetcorn",
+  "beetroot",
+  "butternut squash",
+  "sweet potato",
+  "banana",
+  "apple",
+  "orange",
+  "mango",
+  "strawberries",
+  "blueberries",
+  "raspberries",
+  "grapes",
+  "pineapple",
+  "watermelon",
+  "avocado",
+  "lemon",
+  "lime",
+  "pear",
+  "peach",
+  "kiwi",
+];
 
 export type RecipeFormProfileTargets = {
   daily_calorie_target: number | null;
@@ -81,6 +127,13 @@ export function RecipeForm({ profileTargets = null }: RecipeFormProps) {
   const nutrition = useMemo(
     () => calculateRecipeNutrition(parsedIngredients),
     [parsedIngredients],
+  );
+  const fruitAndVegCount = useMemo(
+    () =>
+      ingredients.filter((ing) =>
+        FRUIT_AND_VEG.some((fv) => ing.name.toLowerCase().includes(fv)),
+      ).length,
+    [ingredients],
   );
 
   function updateIngredient(id: string, key: keyof IngredientRow, value: string) {
@@ -224,6 +277,9 @@ export function RecipeForm({ profileTargets = null }: RecipeFormProps) {
             Set your calorie target in Settings to enable goal-matched recipe drafts (±100 kcal per meal slot).
           </p>
         )}
+        <p className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+          UK guidelines recommend 5 portions of fruit and veg per day. Aim for 2 vegetables per main meal and 1 fruit per breakfast or snack.
+        </p>
 
         <div className="space-y-2 rounded-lg border border-slate-100 bg-slate-50/80 p-3">
           <p className="text-xs font-medium text-slate-600">Diet labels (optional)</p>
@@ -311,6 +367,27 @@ export function RecipeForm({ profileTargets = null }: RecipeFormProps) {
             <option key={suggestion} value={suggestion} />
           ))}
         </datalist>
+
+        {ingredients.length > 0 ? (
+          <div
+            className={`mt-2 flex items-center gap-2 rounded-lg border px-3 py-2 text-xs ${
+              fruitAndVegCount >= 2
+                ? "border-[#6EE7B7] bg-[#D1FAE5] text-[#1A4731]"
+                : "border-amber-200 bg-amber-50 text-amber-700"
+            }`}
+          >
+            <span>{fruitAndVegCount} fruit/veg</span>
+            <span>{fruitAndVegCount >= 2 ? "✓ Good variety" : "· Aim for 2+ per meal towards 5-a-day"}</span>
+            <a
+              href="https://www.nhs.uk/live-well/eat-well/5-a-day/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ml-auto underline opacity-70"
+            >
+              NHS 5-a-day
+            </a>
+          </div>
+        ) : null}
 
         <button
           type="button"

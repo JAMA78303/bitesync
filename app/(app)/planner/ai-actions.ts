@@ -199,7 +199,11 @@ type RecipeWithNutrition = RecipeRow & {
   protein: number;
   carbs_g: number | null;
   fat_g: number | null;
+  ingredientNames: string[];
 };
+
+const SNACK_MAX_CALORIES = 250;
+const SNACK_MIN_CALORIES = 80;
 
 /** Per-slot share of daily calories (sums to 1 with snacks split). */
 function daySlotSpecs(snackCountPerDay: number): Array<{
@@ -220,15 +224,114 @@ function daySlotSpecs(snackCountPerDay: number): Array<{
   return slots;
 }
 
+function classifyRecipeMealType(
+  recipeName: string,
+  ingredients: string[],
+): Array<"breakfast" | "lunch" | "dinner" | "snack" | "any"> {
+  const breakfastKeywords = [
+    "oat",
+    "porridge",
+    "egg",
+    "toast",
+    "cereal",
+    "yoghurt",
+    "yogurt",
+    "granola",
+    "smoothie",
+    "pancake",
+    "waffle",
+    "bagel",
+    "muffin",
+    "scrambled",
+    "omelette",
+    "omelet",
+    "frittata",
+    "breakfast",
+    "morning",
+    "avocado toast",
+    "fruit",
+    "banana",
+    "berry",
+    "berries",
+  ];
+  const snackKeywords = [
+    "snack",
+    "bar",
+    "bite",
+    "ball",
+    "bliss ball",
+    "protein ball",
+    "rice cake",
+    "cracker",
+    "hummus",
+    "dip",
+    "handful",
+    "mixed nuts",
+    "apple",
+    "fruit",
+    "yoghurt",
+    "yogurt",
+    "smoothie",
+    "shake",
+  ];
+  const dinnerKeywords = [
+    "curry",
+    "stew",
+    "roast",
+    "casserole",
+    "lasagne",
+    "pasta bake",
+    "stir fry",
+    "bolognese",
+    "chilli",
+    "tagine",
+    "soup",
+    "pie",
+    "burger",
+    "salmon fillet",
+    "chicken breast",
+    "beef",
+    "lamb",
+  ];
+
+  const allText = [recipeName, ...ingredients].join(" ").toLowerCase();
+  const out: Array<"breakfast" | "lunch" | "dinner" | "snack" | "any"> = [];
+  const hasBreakfast = breakfastKeywords.some((k) => allText.includes(k));
+  const hasSnack = snackKeywords.some((k) => allText.includes(k));
+  const hasDinner = dinnerKeywords.some((k) => allText.includes(k));
+  if (hasBreakfast) out.push("breakfast");
+  if (hasSnack) out.push("snack");
+  if (hasDinner) out.push("dinner", "lunch");
+  if (out.length === 0) out.push("lunch", "dinner");
+  return out;
+}
+
+function getMealTypeMultiplier(recipeTypes: string[], targetSlot: MealPlanInsertRow["meal_type"]): number {
+  if (recipeTypes.includes(targetSlot)) return 1.0;
+  if (targetSlot === "lunch" && recipeTypes.includes("dinner")) return 0.8;
+  if (targetSlot === "dinner" && recipeTypes.includes("lunch")) return 0.8;
+  if (targetSlot === "breakfast" && !recipeTypes.includes("breakfast")) return 0.1;
+  if (targetSlot === "snack" && !recipeTypes.includes("snack")) return 0.2;
+  return 0.5;
+}
+
 /** Higher is better: overshooting calories/protein is penalised much more than undershooting. */
-function scoreRecipeForDaySlot(r: RecipeWithNutrition, targetCal: number, targetPro: number): number {
+function scoreRecipeForDaySlot(
+  r: RecipeWithNutrition,
+  targetSlot: MealPlanInsertRow["meal_type"],
+  targetCal: number,
+  targetPro: number,
+): number {
   const cal = r.calories;
   const pro = r.protein;
   const calOver = Math.max(0, cal - targetCal);
   const calUnder = Math.max(0, targetCal - cal);
   const proOver = Math.max(0, pro - targetPro);
   const proUnder = Math.max(0, targetPro - pro);
-  return -(calOver * 5 + calUnder + proOver * 3 + proUnder);
+  const baseScore = -(calOver * 5 + calUnder + proOver * 3 + proUnder);
+  const types = classifyRecipeMealType(r.name, r.ingredientNames ?? []);
+  const mult = getMealTypeMultiplier(types, targetSlot);
+  return baseScore * mult;
 }
 
 function pickRecipeWithBudgetAndUsage(
@@ -250,20 +353,32 @@ function pickRecipeWithBudgetAndUsage(
   const poolUse = available.length ? available : pool;
 
   const headroomKcal = 100;
-  const affordable = poolUse.filter((r) => (r.calories ?? 0) <= Math.max(remainingCal - headroomKcal, 0));
+  const slotPool =
+    logCtx.meal_type === "snack"
+      ? poolUse.filter((r) => (r.calories ?? 999) <= SNACK_MAX_CALORIES && (r.calories ?? 0) >= SNACK_MIN_CALORIES)
+      : poolUse;
+  const consideredPool = slotPool.length ? slotPool : poolUse;
+  const affordable = consideredPool.filter((r) => (r.calories ?? 0) <= Math.max(remainingCal - headroomKcal, 0));
   let pickPool: RecipeWithNutrition[];
   if (affordable.length > 0) {
     pickPool = affordable;
   } else {
     strictAffordableMisses.count += 1;
-    pickPool = [...poolUse].sort((a, b) => a.calories - b.calories).slice(0, Math.min(5, poolUse.length));
-    if (pickPool.length === 0) pickPool = [...poolUse];
+    pickPool = [...consideredPool]
+      .sort((a, b) => (a.calories ?? 999) - (b.calories ?? 999))
+      .slice(0, Math.min(logCtx.meal_type === "snack" ? 3 : 5, consideredPool.length));
+    if (pickPool.length === 0) pickPool = [...consideredPool];
   }
 
   const scored = pickPool
     .map((r) => ({
       r,
-      s: scoreRecipeForDaySlot(r, Math.max(effectiveCal, 1), Math.max(effectivePro, 0.5)),
+      s: scoreRecipeForDaySlot(
+        r,
+        logCtx.meal_type,
+        Math.max(effectiveCal, 1),
+        Math.max(effectivePro, 0.5),
+      ),
     }))
     .sort((a, b) => b.s - a.s);
 
@@ -450,6 +565,18 @@ export async function generateAIWeekPlan(input: GenerateAIWeekPlanInput) {
     supabase,
     eligible.map((r) => r.id),
   );
+  const { data: ingredientRows } = await supabase
+    .from("recipe_ingredients")
+    .select("recipe_id,name")
+    .in("recipe_id", eligible.map((r) => r.id));
+  const ingredientNamesByRecipe = new Map<string, string[]>();
+  for (const row of ingredientRows ?? []) {
+    const rid = String(row.recipe_id ?? "");
+    if (!rid) continue;
+    const cur = ingredientNamesByRecipe.get(rid) ?? [];
+    cur.push(String(row.name ?? ""));
+    ingredientNamesByRecipe.set(rid, cur);
+  }
   const withNutrition = eligible
     .map((r) => {
       const n = nutritionMap.get(r.id);
@@ -459,6 +586,7 @@ export async function generateAIWeekPlan(input: GenerateAIWeekPlanInput) {
         protein: n?.protein_g ?? 0,
         carbs_g: n?.carbs_g ?? null,
         fat_g: n?.fat_g ?? null,
+        ingredientNames: ingredientNamesByRecipe.get(r.id) ?? [],
       };
     })
     .sort((a, b) => (b.protein - a.protein) || (b.calories - a.calories));
@@ -848,6 +976,18 @@ export async function generateAIBasketForWeek(input: GenerateAIBasketInput) {
     supabase,
     eligible.map((r) => r.id),
   );
+  const { data: ingredientRows } = await supabase
+    .from("recipe_ingredients")
+    .select("recipe_id,name")
+    .in("recipe_id", eligible.map((r) => r.id));
+  const ingredientNamesByRecipe = new Map<string, string[]>();
+  for (const row of ingredientRows ?? []) {
+    const rid = String(row.recipe_id ?? "");
+    if (!rid) continue;
+    const cur = ingredientNamesByRecipe.get(rid) ?? [];
+    cur.push(String(row.name ?? ""));
+    ingredientNamesByRecipe.set(rid, cur);
+  }
   const withNutrition = eligible
     .map((r) => {
       const n = nutritionMap.get(r.id);
@@ -857,6 +997,7 @@ export async function generateAIBasketForWeek(input: GenerateAIBasketInput) {
         protein: n?.protein_g ?? 0,
         carbs_g: n?.carbs_g ?? null,
         fat_g: n?.fat_g ?? null,
+        ingredientNames: ingredientNamesByRecipe.get(r.id) ?? [],
       };
     })
     .sort((a, b) => (b.protein - a.protein) || (b.calories - a.calories));

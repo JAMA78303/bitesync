@@ -138,15 +138,6 @@ export default async function GroceryPage({ searchParams }: Props) {
         <div className="px-4 pt-4">
           <ManualGroceryAdd mealPlanId={mealPlanId} />
         </div>
-        {liveStoreTotals.length > 0 ? (
-          <>
-            <GroceryBasketSnapshotSection
-              liveStoreTotals={liveStoreTotals}
-              liveEstimates={liveEstimates}
-              lastSnapshot={lastSnapshot}
-            />
-          </>
-        ) : null}
       </div>
     );
   }
@@ -193,7 +184,7 @@ export default async function GroceryPage({ searchParams }: Props) {
             <ManualGroceryAdd mealPlanId={mealPlanId} />
           </div>
         ) : null}
-        {liveStoreTotals.length > 0 ? (
+        {total > 0 && liveStoreTotals.length > 0 ? (
           <>
             <GroceryBasketSnapshotSection
               liveStoreTotals={liveStoreTotals}
