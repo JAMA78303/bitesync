@@ -483,7 +483,13 @@ function ensureDraftStructure(
     }
   }
   if (!hasKeyword(out, FAT_KEYWORDS)) {
-    ensureIngredient(out, "olive oil", mealSlot === "snack" ? 5 : 10, "ml");
+    if (mealSlot === "breakfast") {
+      ensureIngredient(out, "chia seeds", 10, "g");
+    } else if (mealSlot === "snack") {
+      ensureIngredient(out, "peanut butter", 8, "g");
+    } else {
+      ensureIngredient(out, "olive oil", 10, "ml");
+    }
   }
 
   const vegTarget = mealSlot === "lunch" || mealSlot === "dinner" ? 2 : 1;
