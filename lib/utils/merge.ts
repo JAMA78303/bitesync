@@ -47,3 +47,60 @@ export function mergeIngredients(ingredients: Ingredient[]): Ingredient[] {
   }
   return Array.from(map.values());
 }
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+function normalizeUnitLabel(unit: string): string {
+  const u = unit.toLowerCase().trim();
+  if (!u) return "piece";
+  if (["pieces", "each", "item", "items", "whole", "unit", "units"].includes(u)) return "piece";
+  if (u === "kgs") return "kg";
+  if (u === "grams") return "g";
+  if (u === "millilitres" || u === "milliliters") return "ml";
+  if (u === "litres" || u === "liters") return "l";
+  if (u === "slices") return "slice";
+  if (u === "cloves") return "clove";
+  if (u === "loaves") return "loaf";
+  return u;
+}
+
+function breadLikeName(name: string): boolean {
+  return /\b(bread|toast|sourdough|loaf|bagel|pitta|pita|brioche|ciabatta)\b/i.test(name);
+}
+
+/** Convert recipe-level prep units into realistic grocery buying units. */
+function toShoppingLine(input: Ingredient): Ingredient {
+  const name = input.name.trim();
+  const rawQty = Number(input.quantity);
+  const qty = Number.isFinite(rawQty) ? Math.max(0, rawQty) : 0;
+  const unit = normalizeUnitLabel(input.unit);
+
+  if (unit === "kg") return { name, quantity: round2(qty * 1000), unit: "g" };
+  if (unit === "mg") return { name, quantity: round2(qty / 1000), unit: "g" };
+  if (unit === "l") return { name, quantity: round2(qty * 1000), unit: "ml" };
+  if (unit === "cl") return { name, quantity: round2(qty * 10), unit: "ml" };
+  if (unit === "tsp") return { name, quantity: round2(qty * 5), unit: "ml" };
+  if (unit === "tbsp") return { name, quantity: round2(qty * 15), unit: "ml" };
+  if (unit === "cup") return { name, quantity: round2(qty * 240), unit: "ml" };
+  if (unit === "fl oz") return { name, quantity: round2(qty * 29.57), unit: "ml" };
+
+  // Prevent impossible lines like "1 slice toast": buy loaves for bread-like items.
+  if (unit === "slice" && breadLikeName(name)) {
+    const loaves = Math.max(1, Math.ceil(qty / 20));
+    return { name, quantity: loaves, unit: "loaf" };
+  }
+
+  // Garlic is bought as bulbs in practice.
+  if (unit === "clove" && /\bgarlic\b/i.test(name)) {
+    const bulbs = Math.max(1, Math.ceil(qty / 8));
+    return { name, quantity: bulbs, unit: "bulb" };
+  }
+
+  return { name, quantity: round2(qty), unit };
+}
+
+export function normalizeIngredientsForShopping(ingredients: Ingredient[]): Ingredient[] {
+  return mergeIngredients(ingredients.map(toShoppingLine));
+}

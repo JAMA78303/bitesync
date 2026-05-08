@@ -20,6 +20,7 @@ type Recipe = {
   fits_vegetarian?: boolean | null;
   fits_vegan?: boolean | null;
   fits_gluten_free?: boolean | null;
+  ingredientNames?: string[];
 };
 type Props = {
   grid: PlannerGridType;

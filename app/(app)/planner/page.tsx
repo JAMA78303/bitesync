@@ -59,10 +59,23 @@ export default async function PlannerPage({ searchParams }: Props) {
     );
   }
 
-  const [nutritionMap, { data: entries }] = await Promise.all([
-    recipes && recipes.length > 0 ? fetchRecipeNutritionMap(supabase, recipes.map((r) => r.id)) : new Map(),
+  const recipeIds = (recipes ?? []).map((r) => r.id);
+  const [nutritionMap, { data: entries }, ingResult] = await Promise.all([
+    recipes && recipes.length > 0 ? fetchRecipeNutritionMap(supabase, recipeIds) : new Map(),
     getMealPlanEntries(mealPlan.id),
+    recipeIds.length
+      ? supabase.from("recipe_ingredients").select("recipe_id,name").in("recipe_id", recipeIds)
+      : Promise.resolve({ data: [] as { recipe_id: string; name: string }[] | null }),
   ]);
+
+  const ingredientNamesByRecipe = new Map<string, string[]>();
+  for (const row of ingResult.data ?? []) {
+    const rid = String(row.recipe_id ?? "");
+    if (!rid) continue;
+    const cur = ingredientNamesByRecipe.get(rid) ?? [];
+    cur.push(String(row.name ?? ""));
+    ingredientNamesByRecipe.set(rid, cur);
+  }
 
   const formattedRecipes = (recipes ?? []).map((r) => {
     const n = nutritionMap.get(r.id);
@@ -73,6 +86,7 @@ export default async function PlannerPage({ searchParams }: Props) {
       fits_vegetarian: r.fits_vegetarian,
       fits_vegan: r.fits_vegan,
       fits_gluten_free: r.fits_gluten_free,
+      ingredientNames: ingredientNamesByRecipe.get(r.id) ?? [],
     };
   });
   const dailyCalorieTarget = profile?.daily_calorie_target ?? null;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { Search, Plus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { assignRecipeToSlot } from "@/lib/supabase/meal-plans";
 import { useToast } from "@/components/ui/use-toast";
 import { recipeDietWarnings, type ProfileDietPrefs } from "@/lib/utils/diet";
+import { recipeMatchesPlannerSlot } from "@/lib/planner/meal-slot-eligibility";
 import { DAY_NAMES } from "@/types";
 import type { MealType } from "@/types";
 
@@ -18,6 +19,7 @@ type Recipe = {
   fits_vegetarian?: boolean | null;
   fits_vegan?: boolean | null;
   fits_gluten_free?: boolean | null;
+  ingredientNames?: string[];
 };
 type Props = {
   open: boolean;
@@ -48,8 +50,15 @@ export function RecipePickerModal({
   const { toast } = useToast();
   const router = useRouter();
 
-  const filtered = recipes.filter((r) => r.name.toLowerCase().includes(query.toLowerCase()));
-  const recipeSuggestions = recipes
+  const slotRecipes = useMemo(() => {
+    if (!mealType) return recipes;
+    return recipes.filter((r) =>
+      recipeMatchesPlannerSlot(r.name, r.ingredientNames ?? [], mealType, r.calories ?? null),
+    );
+  }, [recipes, mealType]);
+
+  const filtered = slotRecipes.filter((r) => r.name.toLowerCase().includes(query.toLowerCase()));
+  const recipeSuggestions = slotRecipes
     .map((recipe) => recipe.name)
     .sort((a, b) => a.localeCompare(b));
 
@@ -126,6 +135,13 @@ export function RecipePickerModal({
               >
                 Create your first recipe →
               </button>
+            </div>
+          ) : slotRecipes.length === 0 ? (
+            <div className="p-4 text-center text-sm text-gray-600">
+              <p>No recipes in your library match this meal slot yet.</p>
+              <p className="mt-2 text-xs text-gray-500">
+                Breakfast expects foods like oats, eggs, yoghurt; lunch/dinner expect mains (curry, pasta, etc.).
+              </p>
             </div>
           ) : filtered.length === 0 ? (
             <p className="p-4 text-center text-sm text-gray-600">No recipes match &quot;{query}&quot;</p>

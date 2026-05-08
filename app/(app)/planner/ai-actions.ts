@@ -21,6 +21,20 @@ import {
   type ClaudeMealPlanResult,
 } from "@/lib/ai/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  AI_BREAKFAST_BLOCKED,
+  SNACK_MAX_CALORIES,
+  SNACK_MIN_CALORIES,
+  classifyRecipeMealType,
+  excludeFromMainMealSlots,
+  getMealTypeMultiplier,
+  isRecipeAISnackAppropriate,
+  matchByIncludes,
+  recipeMatchesPlannerSlot,
+  shouldOccupyBreakfastSlot,
+  suitableForBreakfastSlot,
+  suitableForBreakfastSlotRelaxed,
+} from "@/lib/planner/meal-slot-eligibility";
 
 type GenerateAIBasketInput = {
   mealPlanId: string;
@@ -114,6 +128,8 @@ async function replacePlanDaysWithClaudePlan(
   }
 
   sanitizeAiPlanBreakfastSlots(rows, pool, selectedDays, mealPlanId, allowedRecipeIds);
+  rebalanceInappropriateBreakfastAssignments(rows, pool, selectedDays);
+  enforceAiMealSlotSeparation(rows, pool, selectedDays, allowedRecipeIds);
 
   if (!rows.length) {
     return { error: "Claude did not return any valid recipe IDs for the selected days." };
@@ -205,139 +221,6 @@ type RecipeWithNutrition = RecipeRow & {
   ingredientNames: string[];
 };
 
-const SNACK_MAX_CALORIES = 300;
-const SNACK_MIN_CALORIES = 80;
-const AI_BREAKFAST_BLOCKED = [
-  "beef",
-  "beef mince",
-  "lamb",
-  "lamb chops",
-  "lamb mince",
-  "pork",
-  "pork chops",
-  "pork mince",
-  "steak",
-  "sirloin",
-  "ribeye",
-  "chorizo",
-  "bacon",
-  "salmon",
-  "salmon fillet",
-  "smoked salmon",
-  "cod",
-  "cod fillet",
-  "haddock",
-  "mackerel",
-  "sardines",
-  "tuna steak",
-  "prawns",
-  "king prawns",
-  "shrimp",
-  "sea bass",
-  "tilapia",
-  "mussels",
-  "white rice",
-  "brown rice",
-  "basmati rice",
-  "pasta",
-  "spaghetti",
-  "penne",
-  "wholemeal pasta",
-  "noodles",
-  "rice noodles",
-  "couscous",
-  "chicken thigh",
-  "chicken drumstick",
-  "chicken wings",
-] as const;
-const AI_BREAKFAST_ALLOWED = [
-  "oats",
-  "porridge",
-  "granola",
-  "wholemeal bread",
-  "bread",
-  "bagel",
-  "sourdough",
-  "pitta",
-  "eggs",
-  "egg",
-  "egg white",
-  "greek yoghurt",
-  "natural yoghurt",
-  "low fat yoghurt",
-  "milk",
-  "whole milk",
-  "skimmed milk",
-  "semi skimmed milk",
-  "oat milk",
-  "almond milk",
-  "soy milk",
-  "cottage cheese",
-  "cream cheese",
-  "banana",
-  "apple",
-  "blueberries",
-  "strawberries",
-  "raspberries",
-  "mango",
-  "pineapple",
-  "peach",
-  "kiwi",
-  "grapes",
-  "orange",
-  "chia seeds",
-  "yogurt",
-  "berries",
-  "avocado",
-  "spinach",
-  "flaxseeds",
-  "almonds",
-  "walnuts",
-  "peanut butter",
-  "sunflower seeds",
-  "pumpkin seeds",
-  "protein powder",
-  "whey protein",
-  "chicken breast",
-  "honey",
-  "maple syrup",
-  "vanilla",
-  "cinnamon",
-] as const;
-const AI_SNACK_APPROPRIATE = [
-  "apple",
-  "banana",
-  "blueberries",
-  "strawberries",
-  "raspberries",
-  "grapes",
-  "orange",
-  "pear",
-  "peach",
-  "kiwi",
-  "mango",
-  "pineapple",
-  "greek yoghurt",
-  "natural yoghurt",
-  "almonds",
-  "walnuts",
-  "cashews",
-  "peanut butter",
-  "chia seeds",
-  "oats",
-  "granola",
-  "rice cakes",
-  "crackers",
-  "cottage cheese",
-  "cream cheese",
-  "protein powder",
-  "whey protein",
-  "almond milk",
-  "oat milk",
-  "honey",
-  "dark chocolate",
-] as const;
-
 /** Per-slot share of daily calories (sums to 1 with snacks split). */
 function daySlotSpecs(snackCountPerDay: number): Array<{
   meal_type: MealPlanInsertRow["meal_type"];
@@ -357,171 +240,15 @@ function daySlotSpecs(snackCountPerDay: number): Array<{
   return slots;
 }
 
-function classifyRecipeMealType(
-  recipeName: string,
-  ingredients: string[],
-): Array<"breakfast" | "lunch" | "dinner" | "snack" | "any"> {
-  const allTextEarly = [recipeName, ...ingredients].join(" ").toLowerCase();
-  if (/\bbreakfast\b/i.test(recipeName) || /\bbrunch\b/i.test(recipeName)) {
-    const outEarly: Array<"breakfast" | "lunch" | "dinner" | "snack" | "any"> = ["breakfast"];
-    const snackHints = [
-      "snack",
-      "bar",
-      "bite",
-      "ball",
-      "bliss ball",
-      "protein ball",
-      "rice cake",
-      "cracker",
-      "hummus",
-      "dip",
-      "handful",
-      "mixed nuts",
-      "apple",
-      "fruit",
-      "yoghurt",
-      "yogurt",
-      "smoothie",
-      "shake",
-    ];
-    if (snackHints.some((k) => allTextEarly.includes(k))) outEarly.push("snack");
-    return outEarly;
-  }
-
-  const breakfastKeywords = [
-    "oat",
-    "porridge",
-    "egg",
-    "toast",
-    "cereal",
-    "yoghurt",
-    "yogurt",
-    "granola",
-    "smoothie",
-    "pancake",
-    "waffle",
-    "bagel",
-    "muffin",
-    "scrambled",
-    "omelette",
-    "omelet",
-    "frittata",
-    "breakfast",
-    "morning",
-    "avocado toast",
-    "fruit",
-    "banana",
-    "berry",
-    "berries",
-    "yogurt",
-    "avocado",
-    "spinach",
-    "chia",
-    "bowl",
-    "bircher",
-    "cocoa",
-    "matcha",
-    "coffee",
-    "latte",
-    "croissant",
-  ];
-  const snackKeywords = [
-    "snack",
-    "bar",
-    "bite",
-    "ball",
-    "bliss ball",
-    "protein ball",
-    "rice cake",
-    "cracker",
-    "hummus",
-    "dip",
-    "handful",
-    "mixed nuts",
-    "apple",
-    "fruit",
-    "yoghurt",
-    "yogurt",
-    "smoothie",
-    "shake",
-  ];
-  const dinnerKeywords = [
-    "curry",
-    "stew",
-    "roast",
-    "casserole",
-    "lasagne",
-    "pasta bake",
-    "stir fry",
-    "bolognese",
-    "chilli",
-    "tagine",
-    "soup",
-    "pie",
-    "burger",
-    "salmon fillet",
-    "chicken breast",
-    "beef",
-    "lamb",
-  ];
-
-  const allText = [recipeName, ...ingredients].join(" ").toLowerCase();
-  const out: Array<"breakfast" | "lunch" | "dinner" | "snack" | "any"> = [];
-  const hasBreakfast = breakfastKeywords.some((k) => allText.includes(k));
-  const hasSnack = snackKeywords.some((k) => allText.includes(k));
-  const hasDinner = dinnerKeywords.some((k) => allText.includes(k));
-  if (hasBreakfast) out.push("breakfast");
-  if (hasSnack) out.push("snack");
-  if (hasDinner) out.push("dinner", "lunch");
-  if (out.length === 0) out.push("lunch", "dinner");
-  return out;
-}
-
-function getMealTypeMultiplier(recipeTypes: string[], targetSlot: MealPlanInsertRow["meal_type"]): number {
-  if (recipeTypes.includes(targetSlot)) return 1.0;
-  const hasMain = recipeTypes.includes("lunch") || recipeTypes.includes("dinner");
-  if (
-    (targetSlot === "lunch" || targetSlot === "dinner") &&
-    recipeTypes.includes("breakfast") &&
-    !hasMain
-  ) {
-    return 0.06;
-  }
-  if (targetSlot === "lunch" && recipeTypes.includes("dinner")) return 0.8;
-  if (targetSlot === "dinner" && recipeTypes.includes("lunch")) return 0.8;
-  if (targetSlot === "breakfast" && !recipeTypes.includes("breakfast")) return 0.1;
-  if (targetSlot === "snack" && !recipeTypes.includes("snack")) return 0.2;
-  return 0.5;
-}
-
-function matchByIncludes(ingredients: string[], needles: readonly string[]): boolean {
-  return ingredients.some((ing) =>
-    needles.some((n) => ing.includes(n) || n.includes(ing)),
-  );
-}
-
-/** Recipe titles like "English breakfast" must never fill lunch/dinner/snack in the heuristic planner. */
-function recipeNameImpliesBreakfastSlot(recipeName: string): boolean {
-  const n = recipeName.trim().toLowerCase();
-  return /\bbreakfast\b/.test(n) || /\bbrunch\b/.test(n);
-}
-
-/** Wider breakfast pool when strict matcher finds nothing (still excludes typical dinner ingredients). */
-function isRecipeAIBreakfastSafeRelaxed(recipeName: string, ingredients: string[]): boolean {
-  const ings = ingredients.map((i) => i.toLowerCase().trim());
-  if (matchByIncludes(ings, AI_BREAKFAST_BLOCKED)) return false;
-  return true;
-}
-
-function fixMisplacedBreakfastRecipesForDay(rows: MealPlanInsertRow[], day: number, nameById: Map<string, string>): void {
+function fixMisplacedBreakfastRecipesForDay(rows: MealPlanInsertRow[], day: number, pool: RecipeWithNutrition[]): void {
+  const meta = new Map(pool.map((r) => [r.id, r]));
   for (;;) {
     const bfIdx = rows.findIndex((r) => r.day_of_week === day && r.meal_type === "breakfast");
-    const misIdx = rows.findIndex(
-      (r) =>
-        r.day_of_week === day &&
-        r.meal_type !== "breakfast" &&
-        recipeNameImpliesBreakfastSlot(nameById.get(r.recipe_id) ?? ""),
-    );
+    const misIdx = rows.findIndex((r) => {
+      if (r.day_of_week !== day || r.meal_type === "breakfast") return false;
+      const m = meta.get(r.recipe_id);
+      return shouldOccupyBreakfastSlot(m?.name ?? "", m?.ingredientNames ?? []);
+    });
     if (misIdx < 0) break;
 
     if (bfIdx < 0) {
@@ -547,10 +274,8 @@ function sanitizeAiPlanBreakfastSlots(
   mealPlanId: string,
   allowedRecipeIds: Set<string>,
 ): void {
-  const nameById = new Map(pool.map((r) => [r.id, r.name]));
-
   for (const day of selectedDays) {
-    fixMisplacedBreakfastRecipesForDay(rows, day, nameById);
+    fixMisplacedBreakfastRecipesForDay(rows, day, pool);
 
     const hasBreakfast = rows.some((r) => r.day_of_week === day && r.meal_type === "breakfast");
     if (hasBreakfast) continue;
@@ -563,12 +288,15 @@ function sanitizeAiPlanBreakfastSlots(
       pool.find((r) => allowedRecipeIds.has(r.id) && !usedIds.has(r.id) && pred(r));
 
     const picked =
-      pickFirst((r) => isRecipeAIBreakfastSafe(r.name, r.ingredientNames ?? [])) ??
-      pickFirst((r) => isRecipeAIBreakfastSafeRelaxed(r.name, r.ingredientNames ?? [])) ??
+      pickFirst((r) => suitableForBreakfastSlot(r.name, r.ingredientNames ?? [])) ??
+      pickFirst((r) => suitableForBreakfastSlotRelaxed(r.name, r.ingredientNames ?? [])) ??
       pickFirst((r) => {
         const cal = r.calories ?? 0;
-        const ings = (r.ingredientNames ?? []).map((x) => x.toLowerCase().trim());
-        return cal >= 100 && cal <= 720 && !matchByIncludes(ings, AI_BREAKFAST_BLOCKED);
+        const ings = r.ingredientNames ?? [];
+        if (cal < 100 || cal > 720) return false;
+        if (matchByIncludes(ings.map((x) => x.toLowerCase().trim()), AI_BREAKFAST_BLOCKED)) return false;
+        const types = classifyRecipeMealType(r.name, ings);
+        return !(types.includes("lunch") || types.includes("dinner"));
       }) ??
       pool.find((r) => allowedRecipeIds.has(r.id) && !usedIds.has(r.id));
 
@@ -586,18 +314,106 @@ function sanitizeAiPlanBreakfastSlots(
   }
 }
 
-function isRecipeAIBreakfastSafe(recipeName: string, ingredients: string[]): boolean {
-  const ings = ingredients.map((i) => i.toLowerCase().trim());
-  if (matchByIncludes(ings, AI_BREAKFAST_BLOCKED)) return false;
-  const classified = classifyRecipeMealType(recipeName, ingredients);
-  if (classified.includes("breakfast")) return true;
-  return matchByIncludes(ings, AI_BREAKFAST_ALLOWED);
+/** If breakfast holds a main (e.g. grilled chicken) but lunch/dinner holds oats/eggs, swap them. */
+function rebalanceInappropriateBreakfastAssignments(
+  rows: MealPlanInsertRow[],
+  pool: RecipeWithNutrition[],
+  selectedDays: number[],
+): void {
+  const meta = new Map(pool.map((r) => [r.id, r]));
+  for (const day of selectedDays) {
+    const bfIdx = rows.findIndex((r) => r.day_of_week === day && r.meal_type === "breakfast");
+    if (bfIdx < 0) continue;
+    const bfMeta = meta.get(rows[bfIdx]!.recipe_id);
+    if (!bfMeta) continue;
+    if (suitableForBreakfastSlot(bfMeta.name, bfMeta.ingredientNames ?? [])) continue;
+
+    const swapIdx = rows.findIndex((r) => {
+      if (r.day_of_week !== day || (r.meal_type !== "lunch" && r.meal_type !== "dinner"))
+        return false;
+      const m = meta.get(r.recipe_id);
+      if (!m) return false;
+      return suitableForBreakfastSlot(m.name, m.ingredientNames ?? []);
+    });
+    if (swapIdx < 0) continue;
+
+    const tmp = rows[bfIdx]!.recipe_id;
+    rows[bfIdx] = { ...rows[bfIdx]!, recipe_id: rows[swapIdx]!.recipe_id };
+    rows[swapIdx] = { ...rows[swapIdx]!, recipe_id: tmp };
+  }
 }
 
-function isRecipeAISnackAppropriate(calories: number | null, ingredients: string[]): boolean {
-  if (calories != null && calories > 300) return false;
-  const ings = ingredients.map((i) => i.toLowerCase().trim());
-  return matchByIncludes(ings, AI_SNACK_APPROPRIATE);
+/** Final guard so AI output cannot place breakfast/main recipes into the wrong slot. */
+function enforceAiMealSlotSeparation(
+  rows: MealPlanInsertRow[],
+  pool: RecipeWithNutrition[],
+  selectedDays: number[],
+  allowedRecipeIds: Set<string>,
+): void {
+  const meta = new Map(pool.map((r) => [r.id, r]));
+  const mainsPool = pool.filter((r) => !excludeFromMainMealSlots(r.name, r.ingredientNames ?? []));
+  const breakfastPool = pool.filter((r) => suitableForBreakfastSlot(r.name, r.ingredientNames ?? []));
+
+  for (const day of selectedDays) {
+    const used = new Set(rows.filter((r) => r.day_of_week === day).map((r) => r.recipe_id));
+
+    for (let i = 0; i < rows.length; i += 1) {
+      const row = rows[i]!;
+      if (row.day_of_week !== day) continue;
+      if (row.meal_type === "snack") continue;
+
+      const current = meta.get(row.recipe_id);
+      const currentOk =
+        !!current &&
+        recipeMatchesPlannerSlot(
+          current.name,
+          current.ingredientNames ?? [],
+          row.meal_type,
+          current.calories ?? null,
+        );
+      if (currentOk) continue;
+
+      const swapIdx = rows.findIndex((candidate, ci) => {
+        if (ci === i || candidate.day_of_week !== day || candidate.meal_type === "snack") return false;
+        const candMeta = meta.get(candidate.recipe_id);
+        if (!candMeta) return false;
+        const candFitsCurrent = recipeMatchesPlannerSlot(
+          candMeta.name,
+          candMeta.ingredientNames ?? [],
+          row.meal_type,
+          candMeta.calories ?? null,
+        );
+        if (!candFitsCurrent) return false;
+        if (!current) return true;
+        return recipeMatchesPlannerSlot(
+          current.name,
+          current.ingredientNames ?? [],
+          candidate.meal_type,
+          current.calories ?? null,
+        );
+      });
+
+      if (swapIdx >= 0) {
+        const temp = rows[i]!.recipe_id;
+        rows[i] = { ...rows[i]!, recipe_id: rows[swapIdx]!.recipe_id };
+        rows[swapIdx] = { ...rows[swapIdx]!, recipe_id: temp };
+        continue;
+      }
+
+      const replacementPool =
+        row.meal_type === "breakfast" ? breakfastPool : mainsPool.length ? mainsPool : pool;
+      const replacement = replacementPool.find(
+        (r) =>
+          allowedRecipeIds.has(r.id) &&
+          !used.has(r.id) &&
+          recipeMatchesPlannerSlot(r.name, r.ingredientNames ?? [], row.meal_type, r.calories ?? null),
+      );
+      if (!replacement) continue;
+      used.delete(row.recipe_id);
+      rows[i] = { ...row, recipe_id: replacement.id };
+      used.add(replacement.id);
+    }
+  }
 }
 
 /** Higher is better: overshooting calories/protein is penalised much more than undershooting. */
@@ -636,19 +452,22 @@ function pickRecipeWithBudgetAndUsage(
 
   const available = pool.filter((r) => (usedCount.get(r.id) ?? 0) < 2);
   const poolUse = available.length ? available : pool;
-  const poolNoBreakfastTitle = poolUse.filter((r) => !recipeNameImpliesBreakfastSlot(r.name));
+  const poolMainMeals = poolUse.filter((r) => !excludeFromMainMealSlots(r.name, r.ingredientNames ?? []));
 
   const headroomKcal = 100;
 
   let consideredPool: RecipeWithNutrition[];
 
   if (logCtx.meal_type === "breakfast") {
-    const strict = poolUse.filter((r) => isRecipeAIBreakfastSafe(r.name, r.ingredientNames ?? []));
-    const relaxed = poolUse.filter((r) => isRecipeAIBreakfastSafeRelaxed(r.name, r.ingredientNames ?? []));
+    const strict = poolUse.filter((r) => suitableForBreakfastSlot(r.name, r.ingredientNames ?? []));
+    const relaxed = poolUse.filter((r) => suitableForBreakfastSlotRelaxed(r.name, r.ingredientNames ?? []));
     const light = poolUse.filter((r) => {
       const cal = r.calories ?? 0;
-      const ings = (r.ingredientNames ?? []).map((x) => x.toLowerCase().trim());
-      return cal >= 100 && cal <= 720 && !matchByIncludes(ings, AI_BREAKFAST_BLOCKED);
+      const ings = r.ingredientNames ?? [];
+      if (cal < 100 || cal > 720) return false;
+      if (matchByIncludes(ings.map((x) => x.toLowerCase().trim()), AI_BREAKFAST_BLOCKED)) return false;
+      const types = classifyRecipeMealType(r.name, ings);
+      return !(types.includes("lunch") || types.includes("dinner"));
     });
     if (strict.length) {
       consideredPool = strict;
@@ -671,7 +490,7 @@ function pickRecipeWithBudgetAndUsage(
   } else if (logCtx.meal_type === "snack") {
     consideredPool = poolUse.filter(
       (r) =>
-        !recipeNameImpliesBreakfastSlot(r.name) &&
+        !excludeFromMainMealSlots(r.name, r.ingredientNames ?? []) &&
         (r.calories ?? 999) <= SNACK_MAX_CALORIES &&
         (r.calories ?? 0) >= SNACK_MIN_CALORIES &&
         isRecipeAISnackAppropriate(r.calories, r.ingredientNames ?? []),
@@ -683,7 +502,7 @@ function pickRecipeWithBudgetAndUsage(
       return null;
     }
   } else {
-    consideredPool = poolNoBreakfastTitle.length ? poolNoBreakfastTitle : poolUse;
+    consideredPool = poolMainMeals.length ? poolMainMeals : poolUse;
   }
   const affordable = consideredPool.filter((r) => (r.calories ?? 0) <= Math.max(remainingCal - headroomKcal, 0));
   let pickPool: RecipeWithNutrition[];
@@ -778,7 +597,7 @@ function replaceDinnerWithLowestCalRecipe(
 ): void {
   const ix = rows.findIndex((r) => r.day_of_week === day && r.meal_type === "dinner");
   if (ix < 0) return;
-  const mainsOk = pool.filter((r) => !recipeNameImpliesBreakfastSlot(r.name));
+  const mainsOk = pool.filter((r) => !excludeFromMainMealSlots(r.name, r.ingredientNames ?? []));
   const sorted = [...(mainsOk.length ? mainsOk : pool)].sort((a, b) => a.calories - b.calories);
   const best = sorted[0];
   if (!best) return;
@@ -1080,6 +899,7 @@ export async function generateAIWeekPlan(input: GenerateAIWeekPlanInput) {
         proById,
       );
     }
+    enforceAiMealSlotSeparation(rows, pool, selectedDaysFullWeek, allowedIds);
 
     const mealOrder: Record<string, number> = { breakfast: 0, lunch: 1, dinner: 2, snack: 3 };
     const nameById = new Map(pool.map((r) => [r.id, r.name]));

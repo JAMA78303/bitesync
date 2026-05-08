@@ -100,6 +100,7 @@ CRITICAL RULES:
 
 MEAL SLOT RULES (mandatory):
 - If a recipe NAME contains "breakfast" or "brunch" (any capitalisation), assign it ONLY to the breakfast field for that day — never to lunch, dinner, or snack.
+- Never assign plain chicken/turkey/fish mains, curry, pasta dinners, rice bowls, or stir-fries to breakfast unless the recipe name explicitly says breakfast or brunch.
 - Prefer typical breakfast foods (oats, eggs, yoghurt, toast, smoothies, fruit bowls) for breakfast; use main-meal recipes (curries, hearty salads, pasta dinners, roasts) for lunch and dinner.
 - Do not use null for breakfast if the library contains any recipe suitable for breakfast (including names with "breakfast"/"brunch" or common breakfast ingredients).
 - Lunch and dinner should normally be different recipes from breakfast unless the library is very small.

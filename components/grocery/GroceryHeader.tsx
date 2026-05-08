@@ -20,6 +20,9 @@ export function GroceryHeader({ subtitle, total, checked, actions }: Props) {
         {actions}
       </div>
       <GroceryProgressBar total={total} checked={checked} />
+      <p className="mt-2 text-[11px] text-slate-500">
+        Quantities are converted to shopping units (for example, slices {"->"} loaf and cloves {"->"} bulb).
+      </p>
     </div>
   );
 }

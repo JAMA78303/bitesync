@@ -242,7 +242,7 @@ function buildGoalMatchedRecipeIngredientsRaw(opts: GoalMatchedRecipeOptions): R
       }
       return out;
     }
-    const v = pickVariant(seed, 4);
+    const v = pickVariant(seed, 5);
     if (v === 0) {
       const base = [ing("lentils", 100, "g"), ing("broccoli", 100, "g")];
       return findBestCarbAdjustment(base, { name: "rice", minG: 0, maxG: 280 }, target);
@@ -254,6 +254,16 @@ function buildGoalMatchedRecipeIngredientsRaw(opts: GoalMatchedRecipeOptions): R
     if (v === 2) {
       const base = [ing("lentils", 90, "g"), ing("tomato", 150, "g"), ing("onion", 60, "g")];
       return findBestCarbAdjustment(base, { name: "pasta", minG: 40, maxG: 200 }, target);
+    }
+    if (v === 3) {
+      const base = [
+        ing("feta cheese", 55, "g"),
+        ing("chickpeas", 95, "g"),
+        ing("lettuce", 120, "g"),
+        ing("cucumber", 90, "g"),
+        ing("tomato", 120, "g"),
+      ];
+      return findBestCarbAdjustment(base, { name: "quinoa", minG: 0, maxG: 180 }, target);
     }
     const base = [ing("chickpeas", 95, "g"), ing("bell pepper", 100, "g"), ing("carrot", 70, "g")];
     return findBestCarbAdjustment(base, { name: "rice", minG: 0, maxG: 260 }, target);
@@ -316,7 +326,7 @@ function buildGoalMatchedRecipeIngredientsRaw(opts: GoalMatchedRecipeOptions): R
     return findBestCarbAdjustment(base, carb, target);
   }
 
-  const v = pickVariant(seed, 8);
+  const v = pickVariant(seed, 10);
   if (v === 0) {
     const base = [ing("chicken breast", 140, "g"), ing("broccoli", 100, "g")];
     return findBestCarbAdjustment(base, { name: "rice", minG: 0, maxG: 320 }, target);
@@ -344,6 +354,28 @@ function buildGoalMatchedRecipeIngredientsRaw(opts: GoalMatchedRecipeOptions): R
   if (v === 6) {
     const base = [ing("tuna", 150, "g"), ing("carrot", 100, "g"), ing("peas", 80, "g")];
     return findBestCarbAdjustment(base, { name: "rice", minG: 0, maxG: 280 }, target);
+  }
+  if (v === 7) {
+    const base = [
+      ing("chicken breast", 140, "g"),
+      ing("feta cheese", 45, "g"),
+      ing("lettuce", 140, "g"),
+      ing("cucumber", 100, "g"),
+      ing("tomato", 120, "g"),
+      ing("olive oil", 10, "ml"),
+    ];
+    return findBestCarbAdjustment(base, { name: "quinoa", minG: 0, maxG: 140 }, target);
+  }
+  if (v === 8) {
+    const base = [
+      ing("tuna", 130, "g"),
+      ing("feta cheese", 35, "g"),
+      ing("rocket", 100, "g"),
+      ing("cucumber", 100, "g"),
+      ing("tomato", 120, "g"),
+      ing("olive oil", 8, "ml"),
+    ];
+    return findBestCarbAdjustment(base, { name: "quinoa", minG: 0, maxG: 120 }, target);
   }
   const base = [ing("shrimp", 140, "g"), ing("broccoli", 110, "g"), ing("bell pepper", 70, "g")];
   return findBestCarbAdjustment(base, { name: "rice", minG: 0, maxG: 260 }, target);
