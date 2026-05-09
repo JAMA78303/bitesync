@@ -1,14 +1,17 @@
 import Link from "next/link";
-import { ChefHat } from "lucide-react";
+import { ChefHat, ExternalLink } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { archiveRecipe, deleteRecipe, restoreRecipe } from "@/app/(app)/recipes/actions";
 import { fetchRecipeNutritionMap } from "@/lib/supabase/recipe-nutrition-query";
 import { getUserTier, getRecipeCount } from "@/lib/subscription";
+import { ImportRecipeButton } from "@/components/recipes/ImportRecipeButton";
 
 type RecipeRow = {
   id: string;
   name: string;
   description: string | null;
+  source_url?: string | null;
+  source_domain?: string | null;
   archived_at?: string | null;
   fits_vegetarian?: boolean | null;
   fits_vegan?: boolean | null;
@@ -65,7 +68,7 @@ export default async function RecipesPage({ searchParams }: Props) {
   if (user) {
     let query = supabase
       .from("recipes")
-      .select("id,name,description,archived_at,fits_vegetarian,fits_vegan,fits_gluten_free")
+      .select("id,name,description,source_url,source_domain,archived_at,fits_vegetarian,fits_vegan,fits_gluten_free")
       .order("created_at", { ascending: false });
     query = showArchived ? query.not("archived_at", "is", null) : query.is("archived_at", null);
     const { data } = await query;
@@ -105,12 +108,15 @@ export default async function RecipesPage({ searchParams }: Props) {
             {showArchived ? "Active recipes" : "Archived recipes"}
           </Link>
           {!showArchived ? (
-            <Link
-              href="/recipes/new"
-              className="inline-flex h-10 flex-1 items-center justify-center rounded-md bg-[var(--brand-sage)] px-4 text-sm font-medium text-white hover:opacity-95 sm:flex-initial"
-            >
-              New Recipe
-            </Link>
+            <>
+              <ImportRecipeButton />
+              <Link
+                href="/recipes/new"
+                className="inline-flex h-10 flex-1 items-center justify-center rounded-md bg-[var(--brand-sage)] px-4 text-sm font-medium text-white hover:opacity-95 sm:flex-initial"
+              >
+                New Recipe
+              </Link>
+            </>
           ) : null}
         </div>
       </div>
@@ -198,6 +204,17 @@ export default async function RecipesPage({ searchParams }: Props) {
                   </div>
                 </div>
                 <p className="mt-1 text-sm text-gray-600">{recipe.description ?? "No description"}</p>
+                {recipe.source_domain && recipe.source_url ? (
+                  <a
+                    href={recipe.source_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 inline-flex items-center gap-1 text-xs text-gray-400 hover:text-[#1A4731]"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    {recipe.source_domain}
+                  </a>
+                ) : null}
                 <p className="mt-3 text-sm text-gray-700">
                   Calories:{" "}
                   {nutrition?.calories != null ? nutrition.calories.toFixed(1) : "—"} | Protein:{" "}

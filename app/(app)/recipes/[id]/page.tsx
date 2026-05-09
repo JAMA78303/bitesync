@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, ExternalLink } from "lucide-react";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { archiveRecipe, deleteRecipe } from "@/app/(app)/recipes/actions";
@@ -21,7 +21,7 @@ export default async function RecipeDetailPage({ params }: RecipePageProps) {
 
   const { data: recipe } = await supabase
     .from("recipes")
-    .select("id,name,description,servings")
+    .select("id,name,description,servings,source_url,source_domain")
     .eq("id", id)
     .eq("user_id", user.id)
     .is("archived_at", null)
@@ -57,6 +57,17 @@ export default async function RecipeDetailPage({ params }: RecipePageProps) {
       <div className="min-w-0 px-0.5">
         <h1 className="break-words text-2xl font-semibold text-gray-900">{recipe.name}</h1>
         <p className="mt-1 text-sm text-gray-600">{recipe.description ?? "No description"}</p>
+        {recipe.source_domain && recipe.source_url ? (
+          <a
+            href={recipe.source_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 inline-flex items-center gap-1 text-xs text-gray-500 hover:text-[#1A4731]"
+          >
+            <ExternalLink className="h-3 w-3" />
+            View original recipe on {recipe.source_domain}
+          </a>
+        ) : null}
       </div>
 
       <article className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">

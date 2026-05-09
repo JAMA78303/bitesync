@@ -21,6 +21,9 @@ type CreateRecipePayload = {
   fitsVegetarian?: boolean;
   fitsVegan?: boolean;
   fitsGlutenFree?: boolean;
+  sourceUrl?: string;
+  sourceDomain?: string;
+  importedAt?: string;
 };
 
 type UpdateRecipePayload = CreateRecipePayload & { recipeId: string };
@@ -199,6 +202,9 @@ export async function createRecipe(
       fits_vegetarian: payload.fitsVegetarian === true ? true : null,
       fits_vegan: payload.fitsVegan === true ? true : null,
       fits_gluten_free: payload.fitsGlutenFree === true ? true : null,
+      source_url: payload.sourceUrl?.trim() || null,
+      source_domain: payload.sourceDomain?.trim() || null,
+      imported_at: payload.importedAt?.trim() || null,
     })
     .select("id")
     .single();
