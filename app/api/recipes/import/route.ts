@@ -67,22 +67,39 @@ function parseFractionPart(token: string): number {
 function parseQuantity(token: string): number | undefined {
   const clean = token.trim();
   if (!clean) return undefined;
+  const rangeMatch = clean.match(/^(.+?)\s*[-–]\s*(.+)$/);
+  if (rangeMatch) {
+    const low = parseQuantity(rangeMatch[1] ?? "");
+    if (low != null) return low;
+  }
   const parts = clean.split(/\s+/);
   const total = parts.reduce((s, p) => s + parseFractionPart(p), 0);
   return Number.isFinite(total) && total > 0 ? total : undefined;
 }
 
 function parseIngredientString(raw: string): ParsedIngredient {
-  const cleaned = raw.replace(/\s+/g, " ").trim();
-  const match = cleaned.match(
-    /^(\d+(?:\s+\d+\/\d+)?|\d*\/\d+|[½¼¾⅓⅔⅛])?\s*(tbsp|tsp|g|kg|ml|l|oz|lb|cup|cups|handful|pinch|slice|slices|clove|cloves|piece|pieces)?\s*(.+)$/i,
+  const cleaned = raw
+    .replace(/\u00a0/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/^[•\-*]\s*/, "")
+    .trim();
+  const qtyMatch = cleaned.match(
+    /^((?:\d+(?:\.\d+)?(?:\s+\d+\/\d+)?|\d+\/\d+|[½¼¾⅓⅔⅛])(?:\s*[-–]\s*(?:\d+(?:\.\d+)?|\d+\/\d+|[½¼¾⅓⅔⅛]))?)/,
   );
-  if (!match) {
-    return { rawText: cleaned, name: cleaned };
-  }
-  const quantity = match[1] ? parseQuantity(match[1]) : undefined;
-  const unit = match[2]?.toLowerCase();
-  const name = (match[3] ?? "").trim();
+  const quantity = qtyMatch?.[1] ? parseQuantity(qtyMatch[1]) : undefined;
+  const restAfterQty = qtyMatch ? cleaned.slice(qtyMatch[0].length).trim() : cleaned;
+  const unitMatch = restAfterQty.match(
+    /^(tbsp|tsp|kg|g|ml|l|oz|lb|cups|cup|handful|pinch|slices|slice|cloves|clove|pieces|piece|large|medium|small)\b/i,
+  );
+  const unitRaw = unitMatch?.[1]?.toLowerCase();
+  const unit =
+    unitRaw === "cups" ? "cup" : unitRaw === "cloves" ? "clove" : unitRaw === "pieces" ? "piece" : unitRaw;
+  let name = unitMatch ? restAfterQty.slice(unitMatch[0].length).trim() : restAfterQty;
+  name = name
+    .replace(/\s*\([^)]*\)\s*$/g, "")
+    .replace(/\s*,\s*(to serve|for serving|optional|plus extra.*)$/i, "")
+    .trim();
+  if (!name) name = cleaned;
   return { rawText: cleaned, name, quantity, unit };
 }
 
@@ -130,22 +147,26 @@ function parseRecipe(html: string, sourceUrl: string) {
   }
 
   if (!rawIngredients.length) {
+    const candidateLists: string[][] = [];
     const selectors = [
       '[itemprop="recipeIngredient"]',
-      '[class*="ingredient"] li',
       ".ingredients li",
       ".recipe-ingredients li",
+      "[data-testid*='ingredient'] li",
       "li[class*='ingredient']",
     ];
     for (const sel of selectors) {
       const collected = $(sel)
         .toArray()
         .map((el) => $(el).text().replace(/\s+/g, " ").trim())
-        .filter((t) => t.length > 1 && t.length < 200);
-      if (collected.length) {
-        rawIngredients = collected;
-        break;
-      }
+        .filter((t) => t.length > 2 && t.length < 200)
+        .filter((t) => !/^(ingredients?|method|instructions?)$/i.test(t));
+      if (collected.length) candidateLists.push(collected);
+    }
+    if (candidateLists.length) {
+      rawIngredients = candidateLists
+        .sort((a, b) => b.length - a.length)[0]
+        ?.filter((line, idx, arr) => arr.indexOf(line) === idx) ?? [];
     }
   }
 
@@ -153,7 +174,10 @@ function parseRecipe(html: string, sourceUrl: string) {
     name = $("h1").first().text().trim() || $("title").text().trim() || "Imported Recipe";
   }
 
-  const ingredients = rawIngredients.map(parseIngredientString).filter((i) => i.name.length > 0);
+  const ingredients = rawIngredients
+    .map(parseIngredientString)
+    .filter((i) => i.name.length > 0)
+    .filter((i) => !/^(ingredients?|method|instructions?)$/i.test(i.name));
   if (!ingredients.length) {
     throw new Error("no_ingredients");
   }
