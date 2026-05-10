@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { calculateRecipeNutrition, type RecipeIngredientInput } from "@/lib/nutrition/calculate";
+import { calculateRecipeNutritionWithMeta } from "@/lib/nutrition/asyncTotals";
 import {
   buildGoalMatchedRecipeIngredients,
   fractionForMealSlot,
@@ -27,6 +28,13 @@ type CreateRecipePayload = {
 };
 
 type UpdateRecipePayload = CreateRecipePayload & { recipeId: string };
+
+export type CreateImportedRecipePayload = CreateRecipePayload & {
+  /** Parsed recipeYield from source (e.g. 4). */
+  detectedServings: number;
+  /** People quantities were scaled for at import. */
+  cookingFor: number;
+};
 
 const GOAL_MEAL_SLOTS: GoalMealSlot[] = ["breakfast", "lunch", "dinner", "snack"];
 
@@ -218,6 +226,7 @@ export async function createRecipe(
     name: toTitleCase(ingredient.name.trim()),
     quantity: ingredient.quantity,
     unit: ingredient.unit.trim(),
+    nutrition_estimated: false,
   }));
 
   const { error: ingredientsError } = await supabase
@@ -251,6 +260,112 @@ export async function createRecipe(
 
   revalidatePath("/recipes");
   return { success: true, data: { id: recipe.id }, message: "Recipe created." };
+}
+
+export async function createImportedRecipe(
+  payload: CreateImportedRecipePayload,
+): Promise<ActionResult<{ id: string }>> {
+  const name = toTitleCase(payload.name.trim());
+  const description = payload.description.trim();
+  const ingredients = payload.ingredients.filter(
+    (ingredient) =>
+      ingredient.name.trim() && Number.isFinite(ingredient.quantity) && ingredient.quantity > 0,
+  );
+
+  if (!name) {
+    return { error: "Recipe name is required." };
+  }
+
+  if (!ingredients.length) {
+    return { error: "Add at least one valid ingredient." };
+  }
+
+  const cookingFor = Math.max(1, Math.min(12, Math.round(Number(payload.cookingFor)) || 1));
+  const detectedServings = Math.max(1, Math.min(48, Math.round(Number(payload.detectedServings)) || 1));
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Unauthorized" };
+  }
+
+  const [tier, allowed, count] = await Promise.all([
+    getUserTier(),
+    canCreateRecipe(),
+    getRecipeCount(),
+  ]);
+  if (tier === "free" && !allowed) {
+    return {
+      error: `Recipe limit reached (${count}/10). Upgrade to Pro for unlimited recipes.`,
+    };
+  }
+
+  const { totals: nutrition, estimatedFlags } = await calculateRecipeNutritionWithMeta(ingredients, {
+    aiEnabled: true,
+  });
+
+  const { data: recipe, error: recipeError } = await supabase
+    .from("recipes")
+    .insert({
+      user_id: user.id,
+      name,
+      description: description || null,
+      servings: cookingFor,
+      detected_servings: detectedServings,
+      cooking_for: cookingFor,
+      fits_vegetarian: payload.fitsVegetarian === true ? true : null,
+      fits_vegan: payload.fitsVegan === true ? true : null,
+      fits_gluten_free: payload.fitsGlutenFree === true ? true : null,
+      source_url: payload.sourceUrl?.trim() || null,
+      source_domain: payload.sourceDomain?.trim() || null,
+      imported_at: payload.importedAt?.trim() || null,
+    })
+    .select("id")
+    .single();
+
+  if (recipeError || !recipe) {
+    return { error: recipeError?.message ?? "Failed to create recipe." };
+  }
+
+  const ingredientRows = ingredients.map((ingredient, i) => ({
+    recipe_id: recipe.id,
+    name: toTitleCase(ingredient.name.trim()),
+    quantity: ingredient.quantity,
+    unit: ingredient.unit.trim(),
+    nutrition_estimated: estimatedFlags[i] ?? false,
+  }));
+
+  const { error: ingredientsError } = await supabase.from("recipe_ingredients").insert(ingredientRows);
+
+  if (ingredientsError) {
+    return { error: ingredientsError.message };
+  }
+
+  const { error: nutritionError } = await supabase.from("recipe_nutrition").upsert(
+    {
+      recipe_id: recipe.id,
+      calories: nutrition.calories,
+      protein_g: nutrition.protein_g,
+      carbs_g: nutrition.carbs_g,
+      fat_g: nutrition.fat_g,
+      fibre_g: nutrition.fibre_g,
+      sugar_g: nutrition.sugar_g,
+      sodium_mg: nutrition.sodium_mg,
+      saturated_fat_g: nutrition.saturated_fat_g,
+      coverage_pct: nutrition.coverage_pct,
+    },
+    { onConflict: "recipe_id" },
+  );
+
+  if (nutritionError) {
+    return { error: nutritionError.message };
+  }
+
+  revalidatePath("/recipes");
+  return { success: true, data: { id: recipe.id }, message: "Recipe imported." };
 }
 
 export async function updateRecipe(payload: UpdateRecipePayload): Promise<ActionResult<{ id: string }>> {
@@ -297,6 +412,7 @@ export async function updateRecipe(payload: UpdateRecipePayload): Promise<Action
     name: toTitleCase(ingredient.name.trim()),
     quantity: ingredient.quantity,
     unit: ingredient.unit.trim(),
+    nutrition_estimated: false,
   }));
   const { error: insertIngredientsError } = await supabase
     .from("recipe_ingredients")

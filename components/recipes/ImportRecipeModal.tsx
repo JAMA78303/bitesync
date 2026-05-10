@@ -15,7 +15,13 @@ export type ImportResult = {
   ingredients: ParsedIngredient[];
   sourceUrl: string;
   sourceDomain: string;
+  /** Servings/yield from page metadata when available. */
+  detectedServings: number;
+  /** How many people to scale quantities for (set on servings step). */
+  cookingFor: number;
 };
+
+type Step = "url" | "preview" | "servings";
 
 type Props = {
   onClose: () => void;
@@ -23,11 +29,13 @@ type Props = {
 };
 
 export function ImportRecipeModal({ onClose, onImport }: Props) {
+  const [step, setStep] = useState<Step>("url");
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [result, setResult] = useState<ImportResult | null>(null);
+  const [result, setResult] = useState<Omit<ImportResult, "cookingFor"> | null>(null);
+  const [cookingFor, setCookingFor] = useState(1);
 
   const canImport = useMemo(() => url.trim().length > 0 && !loading, [url, loading]);
 
@@ -43,7 +51,19 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Import failed");
-      setResult(data as ImportResult);
+      const detectedServings =
+        typeof data.detectedServings === "number" && data.detectedServings > 0
+          ? data.detectedServings
+          : 1;
+      setResult({
+        name: data.name,
+        ingredients: data.ingredients,
+        sourceUrl: data.sourceUrl,
+        sourceDomain: data.sourceDomain,
+        detectedServings,
+      });
+      setCookingFor(1);
+      setStep("preview");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Could not import recipe. Try a different URL.";
       setError(msg);
@@ -68,14 +88,18 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
     });
   }
 
-  async function handleConfirm() {
-    if (!result || saving) return;
+  async function handleConfirmImport() {
+    if (!result || saving || step !== "servings") return;
     setSaving(true);
     setError("");
     try {
-      await onImport({
+      const payload: ImportResult = {
         ...result,
-        ingredients: result.ingredients.filter((i) => i.name.trim().length > 0),
+        cookingFor,
+      };
+      await onImport({
+        ...payload,
+        ingredients: payload.ingredients.filter((i) => i.name.trim().length > 0),
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save imported recipe.");
@@ -83,6 +107,13 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
       setSaving(false);
     }
   }
+
+  function handleBackFromPreview() {
+    setResult(null);
+    setStep("url");
+  }
+
+  const detected = result?.detectedServings ?? 1;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center">
@@ -94,7 +125,7 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
           </button>
         </div>
 
-        {!result ? (
+        {step === "url" ? (
           <>
             <p className="mb-4 text-sm text-gray-500">
               Paste a recipe URL. We only import the recipe name and ingredients, never instructions.
@@ -121,7 +152,9 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
               </button>
             </div>
           </>
-        ) : (
+        ) : null}
+
+        {step === "preview" && result ? (
           <>
             <div className="mb-4">
               <h3 className="text-base font-semibold">{result.name}</h3>
@@ -180,19 +213,78 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
             </div>
 
             <div className="flex gap-3">
-              <button onClick={() => setResult(null)} className="flex-1 rounded-xl border py-2.5 text-sm">
+              <button onClick={handleBackFromPreview} className="flex-1 rounded-xl border py-2.5 text-sm">
                 Back
               </button>
               <button
-                onClick={handleConfirm}
-                disabled={saving || result.ingredients.length === 0}
+                onClick={() => setStep("servings")}
+                disabled={result.ingredients.length === 0}
                 className="flex-1 rounded-xl bg-[#1A4731] py-2.5 text-sm font-medium text-white disabled:opacity-50"
               >
-                {saving ? "Saving..." : "Add to Recipes"}
+                Next
               </button>
             </div>
           </>
-        )}
+        ) : null}
+
+        {step === "servings" && result ? (
+          <>
+            <div className="mb-4">
+              <h3 className="font-semibold">{result.name}</h3>
+              {detected > 1 ? (
+                <p className="mt-1 text-sm text-gray-500">
+                  This recipe makes about {detected} servings. How many people are you cooking for?
+                </p>
+              ) : (
+                <p className="mt-1 text-sm text-gray-500">How many people are these ingredient amounts for?</p>
+              )}
+            </div>
+
+            <div className="mb-6 flex flex-wrap items-center gap-3">
+              <span className="text-sm text-gray-600">Cooking for</span>
+              <button
+                type="button"
+                onClick={() => setCookingFor((n) => Math.max(1, n - 1))}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-300 hover:bg-gray-50 dark:border-gray-700"
+              >
+                −
+              </button>
+              <span className="w-8 text-center text-lg font-bold">{cookingFor}</span>
+              <button
+                type="button"
+                onClick={() => setCookingFor((n) => Math.min(12, n + 1))}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-300 hover:bg-gray-50 dark:border-gray-700"
+              >
+                +
+              </button>
+              <span className="text-sm text-gray-600">{cookingFor === 1 ? "person" : "people"}</span>
+            </div>
+
+            {cookingFor !== detected ? (
+              <p className="mb-4 text-xs text-gray-400">
+                Quantities will be scaled from {detected} serving{detected === 1 ? "" : "s"} to {cookingFor}.
+              </p>
+            ) : null}
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setStep("preview")}
+                className="flex-1 rounded-xl border py-2.5 text-sm dark:border-gray-700"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleConfirmImport()}
+                disabled={saving || result.ingredients.length === 0}
+                className="flex-1 rounded-xl bg-[#1A4731] py-2.5 text-sm font-medium text-white disabled:opacity-50"
+              >
+                {saving ? "Saving..." : "Import recipe"}
+              </button>
+            </div>
+          </>
+        ) : null}
 
         {error ? <p className="mt-3 text-sm text-red-500">{error}</p> : null}
       </div>

@@ -21,7 +21,7 @@ export default async function RecipeDetailPage({ params }: RecipePageProps) {
 
   const { data: recipe } = await supabase
     .from("recipes")
-    .select("id,name,description,servings,source_url,source_domain")
+    .select("id,name,description,servings,source_url,source_domain,imported_at,detected_servings,cooking_for")
     .eq("id", id)
     .eq("user_id", user.id)
     .is("archived_at", null)
@@ -31,11 +31,19 @@ export default async function RecipeDetailPage({ params }: RecipePageProps) {
 
   const { data: ingredientRows } = await supabase
     .from("recipe_ingredients")
-    .select("id,name,quantity,unit")
+    .select("id,name,quantity,unit,nutrition_estimated")
     .eq("recipe_id", recipe.id)
     .order("id", { ascending: true });
 
-  const ingredients = (ingredientRows ?? []) as { id: string; name: string; quantity: number; unit: string }[];
+  const ingredients = (ingredientRows ?? []) as {
+    id: string;
+    name: string;
+    quantity: number;
+    unit: string;
+    nutrition_estimated?: boolean | null;
+  }[];
+
+  const anyEstimated = ingredients.some((r) => r.nutrition_estimated === true);
 
   const nutrition = await fetchRecipeNutritionForRecipe(supabase, recipe.id);
 
@@ -57,6 +65,13 @@ export default async function RecipeDetailPage({ params }: RecipePageProps) {
       <div className="min-w-0 px-0.5">
         <h1 className="break-words text-2xl font-semibold text-gray-900">{recipe.name}</h1>
         <p className="mt-1 text-sm text-gray-600">{recipe.description ?? "No description"}</p>
+        {recipe.imported_at && recipe.detected_servings != null && recipe.cooking_for != null ? (
+          <p className="mt-2 text-xs text-gray-500">
+            Imported quantities scaled for {Number(recipe.cooking_for)} person
+            {Number(recipe.cooking_for) === 1 ? "" : "s"} (original recipe ~{Number(recipe.detected_servings)}{" "}
+            serving{Number(recipe.detected_servings) === 1 ? "" : "s"}).
+          </p>
+        ) : null}
         {recipe.source_domain && recipe.source_url ? (
           <a
             href={recipe.source_url}
@@ -82,6 +97,14 @@ export default async function RecipeDetailPage({ params }: RecipePageProps) {
                     {row.quantity} {row.unit}
                   </span>{" "}
                   {row.name}
+                  {row.nutrition_estimated ? (
+                    <span
+                      className="ml-1 inline-flex items-center rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-700"
+                      title="Nutrition estimated by AI — may not be exact"
+                    >
+                      est.
+                    </span>
+                  ) : null}
                   {weightHint ? <span className="text-gray-500"> {weightHint}</span> : null}
                 </li>
               );
@@ -157,6 +180,11 @@ export default async function RecipeDetailPage({ params }: RecipePageProps) {
         <p className="mt-3 text-xs text-gray-500">
           Total kcal intake: {nutrition?.calories != null ? `${fmt(nutrition.calories)} kcal` : "—"}
         </p>
+        {anyEstimated ? (
+          <p className="mt-2 text-xs text-amber-700">
+            * Nutrition estimated by AI for one or more ingredients — values may not be exact.
+          </p>
+        ) : null}
       </article>
     </section>
   );

@@ -1,6 +1,7 @@
 import type { NutritionLookupEntry } from "@/types";
 import { ALLOWED_UNITS } from "@/types";
 import { lookupNutrition } from "@/lib/nutrition/lookup";
+import { matchPieceWeight } from "@/lib/nutrition/pieceWeights";
 
 /** Average grams per countable whole-food unit (UK-style portions). Keys are lowercase. */
 export const PIECE_WEIGHTS_G: Record<string, number> = {
@@ -71,6 +72,7 @@ const STANDARD_UNIT_TO_GRAMS_PER_UNIT: Record<string, number> = {
   tbsp: 15,
   cup: 240,
   "fl oz": 29.57,
+  fl_oz: 29.57,
 };
 
 /** Count-style units with a fixed grams multiplier (not per-ingredient table). */
@@ -120,6 +122,9 @@ function phraseBoundaryRegex(key: string): RegExp {
 export function lookupPieceWeightGramsPerUnit(rawName: string): number | null {
   const name = rawName.toLowerCase().trim();
   if (!name) return null;
+
+  const fromShared = matchPieceWeight(name);
+  if (fromShared != null) return fromShared.grams;
 
   const direct = PIECE_WEIGHTS_G[name];
   if (direct != null) return direct;

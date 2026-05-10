@@ -1,3 +1,5 @@
+import { matchPieceWeight } from "@/lib/nutrition/pieceWeights";
+
 export interface StoreUnit {
   unit: string;
   size: number;
@@ -24,6 +26,9 @@ export const STORE_UNIT_MAP: Record<string, StoreUnit> = {
   "red lentils": { unit: "bag", size: 500, baseUnit: "g" },
   quinoa: { unit: "bag", size: 500, baseUnit: "g" },
   breadcrumbs: { unit: "box", size: 400, baseUnit: "g" },
+
+  blueberries: { unit: "punnet", size: 150, baseUnit: "g" },
+  strawberries: { unit: "punnet", size: 400, baseUnit: "g" },
 
   "olive oil": { unit: "bottle", size: 500, baseUnit: "ml" },
   "extra virgin olive oil": { unit: "bottle", size: 500, baseUnit: "ml" },
@@ -81,7 +86,6 @@ export const STORE_UNIT_MAP: Record<string, StoreUnit> = {
   "cottage cheese": { unit: "tub", size: 300, baseUnit: "g" },
 
   salt: { unit: "box", size: 750, baseUnit: "g" },
-  pepper: { unit: "jar", size: 40, baseUnit: "g" },
   "black pepper": { unit: "jar", size: 40, baseUnit: "g" },
   cumin: { unit: "jar", size: 38, baseUnit: "g" },
   paprika: { unit: "jar", size: 45, baseUnit: "g" },
@@ -128,11 +132,19 @@ export const STORE_UNIT_MAP: Record<string, StoreUnit> = {
 
 const SORTED_KEYS = Object.keys(STORE_UNIT_MAP).sort((a, b) => b.length - a.length);
 
+const MIN_PARTIAL_KEY_LEN = 4;
+
 function formatQty(qty: number): string {
   return qty % 1 === 0 ? String(qty) : qty.toFixed(1);
 }
 
-/** Resolve typical retail pack for an ingredient name (exact match, then longest substring match). */
+function pluralPieceLabel(label: string, count: number): string {
+  if (count === 1) return label;
+  if (label.endsWith("s")) return label;
+  return `${label}s`;
+}
+
+/** Resolve typical retail pack for an ingredient name (exact match, then longest substring ≥4 chars). */
 export function getStoreUnit(ingredientName: string): StoreUnit | null {
   const normalised = ingredientName.toLowerCase().trim();
   if (!normalised) return null;
@@ -141,14 +153,23 @@ export function getStoreUnit(ingredientName: string): StoreUnit | null {
   if (exact) return exact;
 
   for (const key of SORTED_KEYS) {
-    if (normalised.includes(key)) return STORE_UNIT_MAP[key];
+    if (key.length < MIN_PARTIAL_KEY_LEN) continue;
+    if (normalised.includes(key) || (normalised.length >= MIN_PARTIAL_KEY_LEN && key.includes(normalised))) {
+      return STORE_UNIT_MAP[key];
+    }
   }
 
   return null;
 }
 
+const SKIP_STORE_BRACKETS = ["bread", "loaf", "stock cube", "pitta", "wrap", "tortilla"];
+
+function shouldSkipStoreBrackets(normalised: string): boolean {
+  return SKIP_STORE_BRACKETS.some((s) => normalised.includes(s));
+}
+
 /**
- * Grocery list display: retail unit + recipe amount in brackets.
+ * Grocery list display: piece counts for whole foods, retail unit + recipe amount, or raw qty + unit + name.
  * Display-only; does not change stored quantities.
  */
 export function formatGroceryItem(
@@ -157,17 +178,37 @@ export function formatGroceryItem(
   unit: string | undefined,
 ): string {
   const trimmedName = name.trim();
-  const storeUnit = getStoreUnit(trimmedName);
-  const u = unit?.trim();
+  const normalised = trimmedName.toLowerCase();
+  const u = unit?.trim().toLowerCase();
   const q = quantity;
 
-  if (!storeUnit) {
-    if (q != null && u) return `${formatQty(q)}${u} ${trimmedName}`;
+  const piece = matchPieceWeight(normalised);
+  if (piece) {
+    if (q != null && (u === "g" || u === "kg")) {
+      const grams = u === "kg" ? q * 1000 : q;
+      const count = Math.max(1, Math.ceil(grams / piece.grams));
+      return `${count} ${pluralPieceLabel(piece.label, count)}`;
+    }
+    if (q != null) {
+      const count = Math.floor(q) === q ? q : Number(q.toFixed(2));
+      return `${formatQty(count)} ${pluralPieceLabel(piece.label, count)}`;
+    }
     return trimmedName;
   }
 
-  if (q != null && !u) return trimmedName;
+  const storeUnit = getStoreUnit(trimmedName);
+  if (storeUnit && q != null) {
+    const skip = shouldSkipStoreBrackets(normalised);
+    const unitLabel = u ?? "";
+    const neededLabel =
+      !skip && unitLabel
+        ? ` (${formatQty(q)} ${unitLabel} needed)`
+        : skip
+          ? ""
+          : "";
+    return `1 ${storeUnit.unit} ${trimmedName}${neededLabel}`;
+  }
 
-  const neededLabel = q != null && u ? ` (${formatQty(q)}${u} needed)` : "";
-  return `1 ${storeUnit.unit} ${trimmedName}${neededLabel}`;
+  if (q != null && u) return `${formatQty(q)} ${u} ${trimmedName}`;
+  return trimmedName;
 }

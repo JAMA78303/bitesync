@@ -103,6 +103,21 @@ function parseIngredientString(raw: string): ParsedIngredient {
   return { rawText: cleaned, name, quantity, unit };
 }
 
+function parseRecipeYield(node: Record<string, unknown>): number {
+  const raw = node.recipeYield;
+  if (raw == null) return 1;
+  if (typeof raw === "number" && Number.isFinite(raw) && raw > 0) {
+    return Math.min(48, Math.max(1, Math.round(raw)));
+  }
+  const s = String(raw).trim();
+  const m = s.match(/(\d+)/);
+  if (m) {
+    const n = parseInt(m[1], 10);
+    if (Number.isFinite(n) && n > 0) return Math.min(48, n);
+  }
+  return 1;
+}
+
 function looksLikeRecipeNode(node: unknown): node is Record<string, unknown> {
   if (!node || typeof node !== "object") return false;
   const t = (node as Record<string, unknown>)["@type"];
@@ -117,6 +132,7 @@ function parseRecipe(html: string, sourceUrl: string) {
 
   let name = "";
   let rawIngredients: string[] = [];
+  let detectedServings = 1;
 
   const scripts = $('script[type="application/ld+json"]').toArray();
   for (const el of scripts) {
@@ -137,6 +153,7 @@ function parseRecipe(html: string, sourceUrl: string) {
         if (recipeNode) {
           name = String(recipeNode.name ?? "").trim();
           rawIngredients = (recipeNode.recipeIngredient ?? []).map((v) => String(v).trim()).filter(Boolean);
+          detectedServings = parseRecipeYield(recipeNode as Record<string, unknown>);
           break;
         }
       }
@@ -182,7 +199,7 @@ function parseRecipe(html: string, sourceUrl: string) {
     throw new Error("no_ingredients");
   }
 
-  return { name, ingredients, sourceUrl, sourceDomain };
+  return { name, ingredients, sourceUrl, sourceDomain, detectedServings };
 }
 
 export async function POST(request: NextRequest) {

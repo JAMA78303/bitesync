@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { Link as LinkIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { createRecipe } from "@/app/(app)/recipes/actions";
+import { createImportedRecipe } from "@/app/(app)/recipes/actions";
 import { ImportRecipeModal, type ImportResult } from "@/components/recipes/ImportRecipeModal";
 
 export function ImportRecipeButton() {
@@ -14,21 +14,32 @@ export function ImportRecipeButton() {
   async function handleImport(result: ImportResult) {
     return new Promise<void>((resolve, reject) => {
       startTransition(async () => {
+        const detected = Math.max(1, result.detectedServings ?? 1);
+        const cookingFor = Math.max(1, result.cookingFor ?? 1);
+        const scale = cookingFor / detected;
+
         const ingredients = result.ingredients
-          .map((ing) => ({
-            name: ing.name.trim(),
-            quantity: ing.quantity && Number.isFinite(ing.quantity) && ing.quantity > 0 ? ing.quantity : 1,
-            unit: ing.unit?.trim() || "piece",
-          }))
+          .map((ing) => {
+            const q =
+              ing.quantity != null && Number.isFinite(ing.quantity) && ing.quantity > 0 ? ing.quantity : 1;
+            const scaled = Math.round(q * scale * 100) / 100;
+            return {
+              name: ing.name.trim(),
+              quantity: scaled > 0 ? scaled : 1,
+              unit: ing.unit?.trim() || "piece",
+            };
+          })
           .filter((ing) => ing.name.length > 0);
 
-        const created = await createRecipe({
+        const created = await createImportedRecipe({
           name: result.name,
           description: `Imported from ${result.sourceDomain}`,
           ingredients,
           sourceUrl: result.sourceUrl,
           sourceDomain: result.sourceDomain,
           importedAt: new Date().toISOString(),
+          detectedServings: detected,
+          cookingFor,
         });
 
         if ("error" in created) {
