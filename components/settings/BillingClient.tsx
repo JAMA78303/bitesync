@@ -33,7 +33,7 @@ const PRO_FEATURES = [
   "Personal macro goals & planner bars",
   "Unlimited meal plan history",
   "Grocery list for chosen days",
-  "AI meal & grocery smarts (rolling out)",
+  "AI meal & grocery smarts (Pro beta)",
   "Priority support",
 ];
 
@@ -109,7 +109,7 @@ export function BillingClient({
         </p>
       </header>
 
-      {/* AI roadmap — visible to everyone (solid bg: Tailwind v4 uses bg-linear-* not bg-gradient-*) */}
+      {/* Pro AI tools — visible to everyone (solid bg: Tailwind v4 uses bg-linear-* not bg-gradient-*) */}
       <div className="rounded-2xl border border-dashed border-amber-400/70 bg-amber-50 p-5 shadow-sm ring-1 ring-amber-200/50 dark:border-amber-700/60 dark:bg-amber-950/30 dark:ring-amber-900/40">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--brand-sage)] text-white shadow-sm">
@@ -117,14 +117,14 @@ export function BillingClient({
           </div>
           <div className="min-w-0 flex-1 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="font-semibold text-gray-900 dark:text-gray-100">AI assistance</p>
+              <p className="font-semibold text-gray-900 dark:text-gray-100">AI-assisted planning</p>
               <span className="rounded-full bg-amber-200/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-950 dark:bg-amber-800/80 dark:text-amber-50">
-                Coming soon
+                Pro · beta
               </span>
             </div>
             <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-300">
-              Quick meal ideas, ingredient swaps, and smarter grocery suggestions tuned to your plan
-              — planned as part of Pro; not available in the app yet.
+              On Pro, use the planner to generate an AI weekly meal draft and smarter grocery baskets
+              (store comparisons and substitutions where enabled). We&apos;re still tightening quality and availability.
             </p>
           </div>
         </div>

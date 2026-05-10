@@ -40,10 +40,14 @@ export const metadata: Metadata = {
     title: "BiteSync — Meal Planning & Grocery Sync",
     description: "Plan your meals, track your nutrition, and generate your grocery list automatically.",
   },
+  /** Plain `/favicon.ico` from `public/` for default browser requests; PNG icon for crisp tabs. */
   icons: {
-    icon: "/icon.svg",
-    shortcut: "/icon.svg",
-    apple: "/apple-icon.svg",
+    icon: [
+      { url: "/favicon.ico", sizes: "16x16", type: "image/x-icon" },
+      { url: "/icon", type: "image/png", sizes: "48x48" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: { url: "/apple-icon", sizes: "180x180", type: "image/png" },
   },
   manifest: "/manifest.webmanifest",
 };

@@ -10,7 +10,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Do I need to create recipes from scratch?",
-    a: "You build your own recipe library, but it is quick. Add a recipe name and ingredients, and BiteSync calculates nutrition automatically. Recipe importing from popular recipe sites is coming soon.",
+    a: "No. Add recipes manually in minutes, or paste a URL from many recipe websites — BiteSync imports ingredients so you can tweak them before saving. Nutrition is calculated automatically either way.",
   },
   {
     q: "What is the difference between Free and Pro nutrition tracking?",
@@ -38,7 +38,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Can I import recipes from other websites?",
-    a: "Not yet. Recipe importing is on the roadmap. Sign up free and you can use it as soon as it launches.",
+    a: "Yes. Open Recipes while logged in, use import from URL, and paste a link. We extract ingredients where the page structure allows; you can edit anything before saving. Coverage varies by site.",
   },
 ] as const;
 

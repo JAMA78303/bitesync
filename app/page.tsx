@@ -40,7 +40,7 @@ const HOW_IT_WORKS: { step: string; Icon: LucideIcon; title: string; desc: strin
     step: "01",
     Icon: Utensils,
     title: "Build your recipe library",
-    desc: "Add your favourite meals with ingredients. BiteSync calculates the full nutrition automatically - calories, protein, carbs, fat and more.",
+    desc: "Add recipes manually or paste a URL to import from many websites. BiteSync calculates full nutrition automatically — calories, protein, carbs, fat and more.",
   },
   {
     step: "02",
@@ -56,7 +56,7 @@ const HOW_IT_WORKS: { step: string; Icon: LucideIcon; title: string; desc: strin
   },
 ];
 
-const FEATURES: { Icon: LucideIcon; title: string; desc: string; comingSoon?: boolean }[] = [
+const FEATURES: { Icon: LucideIcon; title: string; desc: string }[] = [
   {
     Icon: Flame,
     title: "Automatic nutrition tracking",
@@ -79,9 +79,8 @@ const FEATURES: { Icon: LucideIcon; title: string; desc: string; comingSoon?: bo
   },
   {
     Icon: BookOpen,
-    title: "Recipe import - coming soon",
-    desc: "Paste a URL from popular recipe websites and BiteSync will import ingredients automatically. Sign up free to get notified at launch.",
-    comingSoon: true,
+    title: "Recipe import from the web",
+    desc: "Paste a URL from popular recipe sites and blogs. We pull in ingredients so you can edit, get nutrition, and add the meal to your planner in seconds.",
   },
 ];
 
@@ -103,10 +102,11 @@ const BLOG_TEASERS: { Icon: LucideIcon; title: string; desc: string }[] = [
   },
 ];
 
-const COMING_SOON_SITES = ["Popular recipe sites", "Food blogs", "Healthy cooking sites", "Any recipe website"] as const;
+const IMPORT_SOURCE_EXAMPLES = ["Popular recipe sites", "Food blogs", "Healthy cooking sites", "Many recipe pages"] as const;
 
 const FREE_FEATURES = [
   "Up to 10 recipes",
+  "Recipe import from URL",
   "Weekly meal planner",
   "Grocery list generation",
   "Basic macro tracking",
@@ -246,24 +246,14 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {FEATURES.map(({ Icon, title, desc, comingSoon }, i) => (
-              <div
-                key={i}
-                className={`rounded-xl border p-5 ${
-                  comingSoon ? "border-white/5 bg-white/5 opacity-80" : "border-white/10 bg-white/10"
-                }`}
-              >
+            {FEATURES.map(({ Icon, title, desc }, i) => (
+              <div key={i} className="rounded-xl border border-white/10 bg-white/10 p-5">
                 <div className="mb-3 flex items-start justify-between gap-2">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 text-white">
                     <Icon className="h-5 w-5" aria-hidden />
                   </div>
-                  {comingSoon ? (
-                    <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
-                      Coming soon
-                    </span>
-                  ) : null}
                 </div>
-                <h3 className="mb-2 font-semibold text-white">{comingSoon ? "Recipe import" : title}</h3>
+                <h3 className="mb-2 font-semibold text-white">{title}</h3>
                 <p className="text-sm leading-relaxed text-green-200">{desc}</p>
               </div>
             ))}
@@ -338,15 +328,15 @@ export default function LandingPage() {
 
       <section className="mx-auto max-w-5xl px-4 pb-20">
         <div className="rounded-2xl border border-slate-700 bg-slate-900 p-8 text-white">
-          <span className="inline-flex rounded-full bg-amber-400/20 px-3 py-1 text-xs font-semibold text-amber-300">
-            Coming soon
+          <span className="inline-flex rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-semibold text-emerald-300 ring-1 ring-emerald-400/25">
+            Available now
           </span>
-          <h2 className="mt-4 text-2xl font-bold sm:text-3xl">Import recipes from any website</h2>
+          <h2 className="mt-4 text-2xl font-bold sm:text-3xl">Import recipes from the web</h2>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-300">
-            Found a recipe you like online? Paste the URL and BiteSync will import the ingredients automatically, calculate nutrition, and make it ready for planning.
+            Found a recipe online? Paste the URL from your recipes page and BiteSync pulls in ingredients, estimates nutrition, and saves it to your library — ready for your weekly plan and grocery list.
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
-            {COMING_SOON_SITES.map((site) => (
+            {IMPORT_SOURCE_EXAMPLES.map((site) => (
               <span key={site} className="rounded-full border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs text-slate-200">
                 {site}
               </span>
@@ -354,7 +344,7 @@ export default function LandingPage() {
           </div>
           <div className="mt-6 flex flex-wrap items-center gap-4">
             <Link href="/signup" className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900">
-              Sign up free - get notified at launch
+              Get started free
               <ChevronRight className="h-4 w-4" />
             </Link>
             <Link href="/login" className="text-sm text-slate-300 underline underline-offset-2 hover:text-white">
