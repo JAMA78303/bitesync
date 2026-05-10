@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { Check, Trash2 } from "lucide-react";
-import { formatGroceryQuantitySubtitle } from "@/lib/nutrition/convert";
+import { formatGroceryItem } from "@/lib/grocery/storeUnits";
 import { deleteGroceryItem, toggleGroceryItem } from "@/lib/supabase/grocery";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -53,10 +53,6 @@ export function GroceryItem({ id, name, quantity, unit, is_checked }: Props) {
     });
   }
 
-  function formatQty(qty: number): string {
-    return qty % 1 === 0 ? qty.toString() : qty.toFixed(1);
-  }
-
   return (
     <div
       className={`min-h-[56px] w-full rounded-xl border p-4 transition-all duration-200 ${
@@ -84,10 +80,7 @@ export function GroceryItem({ id, name, quantity, unit, is_checked }: Props) {
 
         <div className="min-w-0 flex-1">
           <span className={`block truncate text-[15px] font-medium ${checked ? "text-slate-400 line-through" : "text-slate-700"}`}>
-            {name}
-          </span>
-          <span className="mt-0.5 block text-sm text-slate-400">
-            {formatGroceryQuantitySubtitle(quantity, unit, name, formatQty)}
+            {formatGroceryItem(name, quantity, unit)}
           </span>
         </div>
         </button>

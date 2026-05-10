@@ -131,6 +131,8 @@ export async function estimateStoreItems(
       );
       out.push({
         ingredientName: ingredient.name,
+        quantity: ingredient.quantity,
+        unit: ingredient.unit,
         canonicalItemId: p.canonical_item_id,
         store: p.store,
         estimatedCost: cost,

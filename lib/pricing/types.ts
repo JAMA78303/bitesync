@@ -39,6 +39,9 @@ export type StoreProduct = {
 
 export type StoreItemEstimate = {
   ingredientName: string;
+  /** Recipe line qty/unit for display (e.g. store comparison labels). */
+  quantity?: number;
+  unit?: string;
   canonicalItemId: string | null;
   store: string;
   estimatedCost: number;

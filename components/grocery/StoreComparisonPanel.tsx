@@ -1,5 +1,6 @@
 import { ConfidenceBadge } from "@/components/grocery/ConfidenceBadge";
 import { FreshnessBadge } from "@/components/grocery/FreshnessBadge";
+import { formatGroceryItem } from "@/lib/grocery/storeUnits";
 import type { StoreItemEstimate, StoreTotal } from "@/lib/pricing/types";
 
 type Props = {
@@ -12,10 +13,11 @@ function packNotesForStore(store: string, estimates: StoreItemEstimate[]): strin
   const seen = new Set<string>();
   for (const e of estimates) {
     if (e.store !== store || !e.displayNote?.trim()) continue;
-    const key = `${e.ingredientName}\0${e.displayNote}`;
+    const label = formatGroceryItem(e.ingredientName, e.quantity, e.unit);
+    const key = `${label}\0${e.displayNote}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    lines.push(`${e.ingredientName}: ${e.displayNote}`);
+    lines.push(`${label}: ${e.displayNote}`);
     if (lines.length >= 8) break;
   }
   return lines;
