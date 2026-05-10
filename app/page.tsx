@@ -327,27 +327,36 @@ export default function LandingPage() {
       <LandingFaq />
 
       <section className="mx-auto max-w-5xl px-4 pb-20">
-        <div className="rounded-2xl border border-slate-700 bg-slate-900 p-8 text-white">
-          <span className="inline-flex rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-semibold text-emerald-300 ring-1 ring-emerald-400/25">
+        <div className="rounded-2xl border border-white/15 bg-[#1A4731] p-8 shadow-sm ring-1 ring-black/10">
+          <span className="inline-flex rounded-full bg-[#D1FAE5] px-3 py-1 text-xs font-semibold text-[#1A4731]">
             Available now
           </span>
-          <h2 className="mt-4 text-2xl font-bold sm:text-3xl">Import recipes from the web</h2>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-300">
+          <h2 className="mt-4 text-2xl font-bold text-white sm:text-3xl">Import recipes from the web</h2>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-green-100">
             Found a recipe online? Paste the URL from your recipes page and BiteSync pulls in ingredients, estimates nutrition, and saves it to your library — ready for your weekly plan and grocery list.
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
             {IMPORT_SOURCE_EXAMPLES.map((site) => (
-              <span key={site} className="rounded-full border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs text-slate-200">
+              <span
+                key={site}
+                className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-xs text-green-100"
+              >
                 {site}
               </span>
             ))}
           </div>
           <div className="mt-6 flex flex-wrap items-center gap-4">
-            <Link href="/signup" className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900">
+            <Link
+              href="/signup"
+              className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-[#1A4731] transition-colors hover:bg-[#D1FAE5]"
+            >
               Get started free
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4" aria-hidden />
             </Link>
-            <Link href="/login" className="text-sm text-slate-300 underline underline-offset-2 hover:text-white">
+            <Link
+              href="/login"
+              className="text-sm text-green-100 underline underline-offset-2 transition-colors hover:text-white"
+            >
               Already have an account? Log in →
             </Link>
           </div>
