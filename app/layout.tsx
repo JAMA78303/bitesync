@@ -40,14 +40,14 @@ export const metadata: Metadata = {
     title: "BiteSync — Meal Planning & Grocery Sync",
     description: "Plan your meals, track your nutrition, and generate your grocery list automatically.",
   },
-  /** Plain `/favicon.ico` from `public/` for default browser requests; PNG icon for crisp tabs. */
+  /** Static files in `/public` — avoids dynamic icon routes failing on some hosts. */
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "16x16", type: "image/x-icon" },
-      { url: "/icon", type: "image/png", sizes: "48x48" },
+      { url: "/icon.png", type: "image/png", sizes: "48x48" },
     ],
     shortcut: "/favicon.ico",
-    apple: { url: "/apple-icon", sizes: "180x180", type: "image/png" },
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
   manifest: "/manifest.webmanifest",
 };
@@ -60,6 +60,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className={`${inter.variable} ${inter.className} h-full antialiased`}>
       <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/icon.png" type="image/png" sizes="48x48" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
         <script
           dangerouslySetInnerHTML={{
             __html: `(function() {

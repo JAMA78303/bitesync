@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "favicon": "node scripts/write-favicon-ico.mjs"
+    "icons": "node scripts/write-brand-icons.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.92.0",
