@@ -66,18 +66,19 @@ export default async function SettingsPage() {
   const initial = email[0]?.toUpperCase() ?? "?";
 
   return (
-    <div className="-mx-4 min-h-screen bg-gray-50 pb-28 dark:bg-gray-950 md:mx-0">
-      <div className="border-b border-gray-100 bg-white px-4 pt-14 pb-4 dark:border-gray-900 dark:bg-gray-950">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white">Settings</h1>
+    <div className="-mx-4 min-h-screen bg-gray-50 dark:bg-gray-950 md:mx-0">
+      <div className="bg-gradient-to-b from-[#3a5a40] to-[#4a7a50] px-4 pt-14 pb-10">
+        <h1 className="text-xl font-bold text-white">Settings</h1>
+        <p className="mt-0.5 text-sm text-white/60">{email}</p>
       </div>
 
-      <div className="space-y-4 px-4 pt-4">
-        <div className={`${ds.card} flex items-center gap-4 ${ds.cardPadding}`}>
-          <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl bg-[#3a5a40] text-2xl font-bold text-white">
+      <div className="space-y-4 px-4 -mt-6 pb-28">
+        <div className={`${ds.card} mb-4 flex items-center gap-4 ${ds.cardPadding}`}>
+          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-[#3a5a40] text-xl font-bold text-white">
             {initial}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate font-bold text-gray-900 dark:text-white">{email}</p>
+            <p className="truncate text-sm font-bold text-gray-900 dark:text-white">{email}</p>
             <span
               className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
                 isPro ? "bg-[#3a5a40] text-white" : "bg-gray-100 text-gray-500 dark:bg-gray-800"

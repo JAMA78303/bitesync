@@ -54,9 +54,9 @@ export function RecipesPageClient({
 
   return (
   <div className="-mx-4 min-h-screen bg-gray-50 dark:bg-gray-950 md:mx-0">
-    <header className={ds.gradientHeader}>
+    <div className="bg-gradient-to-b from-[#3a5a40] to-[#4a7a50] px-4 pt-14 pb-8">
       <div className="mb-4 flex items-center justify-between gap-2">
-        <h1 className={ds.pageTitle}>My Recipes</h1>
+        <h1 className="text-xl font-bold text-white">My Recipes</h1>
         <Link
           href={showArchived ? "/recipes" : "/recipes?view=archived"}
           className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm"
@@ -108,10 +108,11 @@ export function RecipesPageClient({
           Favourites
         </button>
       </div>
-    </header>
+    </div>
 
+    <div className="space-y-4 px-4 -mt-4 pb-28">
     {!showArchived ? (
-      <div className={`${ds.overlap} mb-4 flex gap-3 px-4`}>
+      <div className="flex gap-3">
         <Link href="/recipes/new" className={`${ds.card} flex-1 py-3 text-center ${ds.cardTitle}`}>
           <span className="text-[#3a5a40]">+ </span>
           Add recipe
@@ -129,7 +130,7 @@ export function RecipesPageClient({
     ) : null}
 
     {showLimitWarning && !showArchived ? (
-      <div className="mx-4 mb-4 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
+      <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
         <span className="flex-shrink-0 text-xl" aria-hidden>
           ⚠️
         </span>
@@ -151,12 +152,12 @@ export function RecipesPageClient({
     ) : null}
 
     {!hasBreakfastFriendlyRecipe && !showArchived && recipes.length > 0 ? (
-      <div className="mx-4 mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/20 dark:text-amber-100">
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/20 dark:text-amber-100">
         Tip: add breakfast-named recipes (oats, eggs, yoghurt) for better AI planning.
       </div>
     ) : null}
 
-    <div className={`space-y-3 px-4 ${ds.pageContent}`}>
+    <div className="space-y-3">
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center px-4 py-20 text-center">
           <div className="mb-4 text-5xl" aria-hidden>
@@ -183,6 +184,7 @@ export function RecipesPageClient({
           <RecipeListCard key={recipe.id} recipe={recipe} dietaryPreferences={dietaryPreferences} />
         ))
       )}
+    </div>
     </div>
 
     {showImport ? (
