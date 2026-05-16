@@ -482,6 +482,32 @@ export async function archiveRecipe(recipeId: string): Promise<void> {
   redirect("/recipes");
 }
 
+export async function toggleRecipeFavourite(
+  recipeId: string,
+  isFavourite: boolean,
+): Promise<ActionResult> {
+  const id = recipeId.trim();
+  if (!id) return { error: "Invalid recipe" };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const { error } = await supabase
+    .from("recipes")
+    .update({ is_favourite: isFavourite, updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/recipes");
+  revalidatePath(`/recipes/${id}`);
+  return { success: true, message: isFavourite ? "Added to favourites" : "Removed from favourites" };
+}
+
 export async function restoreRecipe(recipeId: string): Promise<void> {
   const id = recipeId.trim();
   if (!id) return;

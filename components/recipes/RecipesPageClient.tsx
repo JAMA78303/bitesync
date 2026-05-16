@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Heart } from "lucide-react";
 import { useMemo, useState } from "react";
 import { ImportRecipeModal } from "@/components/recipes/ImportRecipeModal";
 import { RecipeListCard, type RecipeListItem } from "@/components/recipes/RecipeListCard";
@@ -39,7 +40,9 @@ export function RecipesPageClient({
     let list = recipes;
     const q = search.trim().toLowerCase();
     if (q) list = list.filter((r) => r.name.toLowerCase().includes(q));
-    if (activeFilter !== "All") {
+    if (activeFilter === "Favourites") {
+      list = list.filter((r) => r.isFavourite);
+    } else if (activeFilter !== "All") {
       list = list.filter((r) => {
         if (r.kcal == null) return false;
         const tag = getDietTag(r.kcal, r.protein ?? 0, r.carbs, r.fat, dietaryPreferences);
@@ -88,6 +91,22 @@ export function RecipesPageClient({
             {tag}
           </button>
         ))}
+        <button
+          type="button"
+          onClick={() => setActiveFilter("Favourites")}
+          aria-pressed={activeFilter === "Favourites"}
+          className={`flex flex-shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+            activeFilter === "Favourites"
+              ? "bg-white text-[#3a5a40]"
+              : "bg-white/15 text-white hover:bg-white/25"
+          }`}
+        >
+          <Heart
+            className={`h-3.5 w-3.5 ${activeFilter === "Favourites" ? "fill-red-500 text-red-500" : ""}`}
+            strokeWidth={2}
+          />
+          Favourites
+        </button>
       </div>
     </header>
 
@@ -149,7 +168,9 @@ export function RecipesPageClient({
           <p className="mb-6 text-sm text-gray-500">
             {recipes.length === 0
               ? "Add your first recipe or import one from a website"
-              : "Try a different search or filter"}
+              : activeFilter === "Favourites"
+                ? "Tap the heart on a recipe to save it here"
+                : "Try a different search or filter"}
           </p>
           {!showArchived && recipes.length === 0 ? (
             <Link href="/recipes/new" className={ds.primaryBtn}>
