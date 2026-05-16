@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, ShoppingCart } from "lucide-react";
+import { Activity } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getMonday, toLocalISO, addDays, isCurrentWeek } from "@/lib/utils/dates";
 import { fetchRecipeNutritionMap } from "@/lib/supabase/recipe-nutrition-query";
@@ -12,6 +12,7 @@ import { WeekNav } from "@/components/planner/WeekNav";
 import { GenerateListButton } from "@/components/planner/GenerateListButton";
 import { GenerateAIBasketButton } from "@/components/planner/GenerateAIBasketButton";
 import { getWeeklyMicroAnalysis } from "@/lib/supabase/nutrition";
+import { ds } from "@/lib/ui/classes";
 import { MEAL_TYPES } from "@/types";
 
 type Props = { searchParams: Promise<{ week?: string }> };
@@ -48,15 +49,20 @@ export default async function PlannerPage({ searchParams }: Props) {
 
   if (error || !mealPlan) {
     return (
-      <section className="space-y-3">
-        <h1 className="text-2xl font-semibold text-gray-900">Weekly Planner</h1>
-        <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-          Could not load your planner yet. Check that the database schema and RLS policies are applied, then refresh.
-        </p>
-        {error ? (
-          <pre className="overflow-x-auto rounded-md bg-gray-900 p-3 text-xs text-gray-100">{error}</pre>
-        ) : null}
-      </section>
+      <div className="-mx-4 min-h-screen bg-gray-50 px-4 pt-14 dark:bg-gray-950 md:mx-0">
+        <div className="bg-gradient-to-b from-[#3a5a40] to-[#4a7a50] -mx-4 px-4 pb-8 pt-14 md:mx-0">
+          <h1 className="text-xl font-bold text-white">Weekly Plan</h1>
+        </div>
+        <div className="-mt-4 space-y-3">
+          <p className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+            Could not load your planner yet. Check that the database schema and RLS policies are applied, then
+            refresh.
+          </p>
+          {error ? (
+            <pre className="overflow-x-auto rounded-md bg-gray-900 p-3 text-xs text-gray-100">{error}</pre>
+          ) : null}
+        </div>
+      </div>
     );
   }
 
@@ -124,110 +130,95 @@ export default async function PlannerPage({ searchParams }: Props) {
   }
 
   return (
-    <section className="-mx-4 space-y-4 md:mx-0">
-      <div className="bg-gradient-to-b from-[#3a5a40] to-[#4a7a50] px-4 pt-2 pb-5 sm:hidden">
+    <div className="-mx-4 min-h-screen bg-gray-50 dark:bg-gray-950 md:mx-0">
+      <div className="bg-gradient-to-b from-[#3a5a40] to-[#4a7a50] px-4 pt-14 pb-8">
         <h1 className="mb-1 text-xl font-bold text-white">Weekly Plan</h1>
-        <p className="text-sm text-white/80">Plan your meals, generate your list</p>
-      </div>
-
-      <div className="flex flex-col gap-2 px-4 sm:hidden">
-        <WeekNav weekStart={weekStart} />
-        <GenerateListButton
-          mealPlanId={mealPlan.id}
-          weekStart={weekStartISO}
-          filledDays={filledDays}
-          filledMealTypes={filledMealTypes}
-        />
-      </div>
-
-      <div className="hidden flex-col justify-between gap-3 px-4 md:flex md:flex-row md:items-center md:px-0">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Weekly Planner</h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400">Plan your meals, generate your list</p>
-        </div>
-        <div className="relative z-20 flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-          <WeekNav weekStart={weekStart} />
+        <p className="text-sm text-white/60">Plan your meals, generate your list</p>
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <WeekNav weekStart={weekStart} onGradient />
           <GenerateListButton
             mealPlanId={mealPlan.id}
             weekStart={weekStartISO}
             filledDays={filledDays}
             filledMealTypes={filledMealTypes}
+            onGradient
           />
-          <ShoppingCart className="hidden h-5 w-5 text-gray-400 md:block" />
         </div>
       </div>
 
-      <GenerateAIBasketButton
-        isPro={userTier === "pro"}
-        mealPlanId={mealPlan.id}
-        weekStartDate={weekStartISO}
-        goals={{
-          calorieTarget: dailyCalorieTarget,
-          proteinTarget: dailyProteinTarget,
-          followsVegetarian: Boolean(profile?.follows_vegetarian),
-          followsVegan: Boolean(profile?.follows_vegan),
-          followsGlutenFree: Boolean(profile?.follows_gluten_free),
-        }}
-      />
+      <div className="space-y-4 px-4 -mt-4 pb-28">
+        <GenerateAIBasketButton
+          isPro={userTier === "pro"}
+          mealPlanId={mealPlan.id}
+          weekStartDate={weekStartISO}
+          goals={{
+            calorieTarget: dailyCalorieTarget,
+            proteinTarget: dailyProteinTarget,
+            followsVegetarian: Boolean(profile?.follows_vegetarian),
+            followsVegan: Boolean(profile?.follows_vegan),
+            followsGlutenFree: Boolean(profile?.follows_gluten_free),
+          }}
+        />
 
-      <PlannerGrid
-        grid={grid}
-        entries={plannerEntries}
-        mealPlanId={mealPlan.id}
-        recipes={formattedRecipes}
-        weekDates={weekDates}
-        weekStartIso={weekStartISO}
-        initialActiveDay={initialActiveDay}
-        dailyCalorieTarget={dailyCalorieTarget}
-        dailyProteinTarget={dailyProteinTarget}
-        dietPrefs={dietPrefs}
-        dietaryPreferences={dietaryPreferences}
-      />
+        <PlannerGrid
+          grid={grid}
+          entries={plannerEntries}
+          mealPlanId={mealPlan.id}
+          recipes={formattedRecipes}
+          weekDates={weekDates}
+          weekStartIso={weekStartISO}
+          initialActiveDay={initialActiveDay}
+          dailyCalorieTarget={dailyCalorieTarget}
+          dailyProteinTarget={dailyProteinTarget}
+          dietPrefs={dietPrefs}
+          dietaryPreferences={dietaryPreferences}
+        />
 
-      {microAnalysis ? (
-        <Link
-          href={`/nutrition?week=${weekStartISO}`}
-          className="group mt-4 flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 transition-all hover:border-[#6EE7B7] hover:bg-[#F0FDF4]"
-        >
-          <div className="flex items-center gap-3">
-            <Activity className="h-4 w-4 text-[#1A4731]" />
-            <div>
-              <p className="text-sm font-semibold text-slate-800">Weekly nutrition</p>
-              <p className="text-xs text-slate-500">
-                {(() => {
-                  const reds = [
-                    ...microAnalysis.must_hit.filter((n) => n.traffic === "red"),
-                    ...microAnalysis.must_limit.filter((n) => n.traffic === "red"),
-                  ];
-                  if (reds.length === 0) return "All nutrients on track this week";
-                  const names = reds
-                    .slice(0, 2)
-                    .map((n) => n.label)
-                    .join(" and ");
-                  return `${names} need${reds.length === 1 ? "s" : ""} attention`;
-                })()}
-              </p>
+        {microAnalysis ? (
+          <Link
+            href={`/nutrition?week=${weekStartISO}`}
+            className={`${ds.card} group flex items-center justify-between px-4 py-3 transition-all hover:border-[#7ab87a] dark:hover:border-[#4a7a50]`}
+          >
+            <div className="flex items-center gap-3">
+              <Activity className="h-4 w-4 text-[#3a5a40]" />
+              <div>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">Weekly nutrition</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {(() => {
+                    const reds = [
+                      ...microAnalysis.must_hit.filter((n) => n.traffic === "red"),
+                      ...microAnalysis.must_limit.filter((n) => n.traffic === "red"),
+                    ];
+                    if (reds.length === 0) return "All nutrients on track this week";
+                    const names = reds
+                      .slice(0, 2)
+                      .map((n) => n.label)
+                      .join(" and ");
+                    return `${names} need${reds.length === 1 ? "s" : ""} attention`;
+                  })()}
+                </p>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-1 text-xs text-slate-400">
-            {[...microAnalysis.must_hit, ...microAnalysis.must_limit].slice(0, 6).map((n) => (
-              <div
-                key={n.key}
-                className={`h-2 w-2 rounded-full ${
-                  n.traffic === "green" ? "bg-green-500" : n.traffic === "amber" ? "bg-amber-400" : "bg-red-500"
-                }`}
-              />
-            ))}
-            →
-          </div>
-        </Link>
-      ) : null}
+            <div className="flex items-center gap-1 text-xs text-gray-400">
+              {[...microAnalysis.must_hit, ...microAnalysis.must_limit].slice(0, 6).map((n) => (
+                <div
+                  key={n.key}
+                  className={`h-2 w-2 rounded-full ${
+                    n.traffic === "green" ? "bg-green-500" : n.traffic === "amber" ? "bg-amber-400" : "bg-red-500"
+                  }`}
+                />
+              ))}
+              →
+            </div>
+          </Link>
+        ) : null}
 
-      {!microAnalysis && userTier === "pro" ? (
-        <Link href={`/nutrition?week=${weekStartISO}`} className="mt-4 block text-sm font-medium text-[#1A4731]">
-          Add meals to see nutrition analysis →
-        </Link>
-      ) : null}
-    </section>
+        {!microAnalysis && userTier === "pro" ? (
+          <Link href={`/nutrition?week=${weekStartISO}`} className="block text-sm font-medium text-[#3a5a40]">
+            Add meals to see nutrition analysis →
+          </Link>
+        ) : null}
+      </div>
+    </div>
   );
 }

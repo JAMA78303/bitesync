@@ -5,9 +5,9 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { addDays, formatWeekLabel, toLocalISO, isCurrentWeek } from "@/lib/utils/dates";
 
-type Props = { weekStart: Date };
+type Props = { weekStart: Date; onGradient?: boolean };
 
-export function WeekNav({ weekStart }: Props) {
+export function WeekNav({ weekStart, onGradient = false }: Props) {
   const router = useRouter();
   const current = isCurrentWeek(weekStart);
 
@@ -15,6 +15,16 @@ export function WeekNav({ weekStart }: Props) {
     const newDate = addDays(weekStart, direction === "next" ? 7 : -7);
     router.push(`/planner?week=${toLocalISO(newDate)}`);
   }
+
+  const navBtnClass = onGradient
+    ? "h-8 w-8 shrink-0 border-white/25 bg-white/15 text-white hover:bg-white/25"
+    : "h-8 w-8 shrink-0 bg-white";
+  const labelClass = onGradient
+    ? "min-w-0 flex-1 text-center text-xs font-medium text-white sm:flex-none sm:text-sm"
+    : "min-w-0 flex-1 text-center text-xs font-medium text-gray-800 sm:flex-none sm:text-sm";
+  const todayClass = onGradient
+    ? "ml-1 text-xs text-white/70 hover:bg-white/10 hover:text-white"
+    : "ml-1 text-xs text-slate-500 hover:text-slate-700";
 
   return (
     <div className="relative z-30 flex w-full shrink-0 items-center justify-center gap-2 sm:w-auto">
@@ -24,25 +34,23 @@ export function WeekNav({ weekStart }: Props) {
         size="icon"
         onClick={() => navigate("prev")}
         aria-label="Previous week"
-        className="h-8 w-8 shrink-0 bg-white"
+        className={navBtnClass}
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
-      <p className="min-w-0 flex-1 text-center text-xs font-medium text-gray-800 sm:flex-none sm:text-sm">
-        {formatWeekLabel(weekStart)}
-      </p>
+      <p className={labelClass}>{formatWeekLabel(weekStart)}</p>
       <Button
         type="button"
         variant="outline"
         size="icon"
         onClick={() => navigate("next")}
         aria-label="Next week"
-        className="h-8 w-8 shrink-0 bg-white"
+        className={navBtnClass}
       >
         <ChevronRight className="h-4 w-4" />
       </Button>
       {!current && (
-        <Button variant="ghost" size="sm" onClick={() => router.push("/planner")} className="ml-1 text-xs text-slate-500 hover:text-slate-700">
+        <Button variant="ghost" size="sm" onClick={() => router.push("/planner")} className={todayClass}>
           Today
         </Button>
       )}
