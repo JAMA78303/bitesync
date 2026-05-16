@@ -1,16 +1,38 @@
 import Link from "next/link";
-import { Lock } from "lucide-react";
 import { logout } from "@/app/(app)/settings/actions";
-import { ThemeToggle } from "@/components/settings/ThemeToggle";
-import { TDEEForm } from "@/components/settings/TDEEForm";
-import { DietaryPreferencesPicker } from "@/components/settings/DietaryPreferencesPicker";
-import { initialDietaryPreferencesFromProfile } from "@/lib/dietary/constraints";
+import { SettingsThemeRow } from "@/components/settings/SettingsThemeRow";
 import { isProSubscriptionStatus } from "@/lib/subscription";
 import { reconcileBillingSubscriptionFromStripe } from "@/lib/stripe/reconcile-billing-subscription";
 import { getProfile } from "@/lib/supabase/profile";
 import { createClient } from "@/lib/supabase/server";
+import { ds } from "@/lib/ui/classes";
 
 export const dynamic = "force-dynamic";
+
+const SETTINGS_GROUPS = [
+  {
+    title: "Preferences",
+    items: [
+      { icon: "🌿", label: "Dietary preferences", href: "/settings/dietary" },
+      { icon: "🎯", label: "Calorie & macro targets", href: "/settings/targets" },
+    ],
+  },
+  {
+    title: "Account",
+    items: [
+      { icon: "💳", label: "Billing & subscription", href: "/billing" },
+      { icon: "🔒", label: "Change password", href: "/reset" },
+    ],
+  },
+  {
+    title: "About",
+    items: [
+      { icon: "📋", label: "Privacy policy", href: "/privacy" },
+      { icon: "📄", label: "Terms of service", href: "/terms" },
+      { icon: "💬", label: "Give feedback", href: "mailto:hello@bitesync.io", external: true },
+    ],
+  },
+] as const;
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -19,11 +41,7 @@ export default async function SettingsPage() {
     data: { user },
   } = auth;
 
-  if (
-    user &&
-    profile &&
-    !isProSubscriptionStatus(profile.subscription_status)
-  ) {
+  if (user && profile && !isProSubscriptionStatus(profile.subscription_status)) {
     const reconciled = await reconcileBillingSubscriptionFromStripe({
       userId: user.id,
       subscriptionStatus: profile.subscription_status,
@@ -44,142 +62,124 @@ export default async function SettingsPage() {
       .filter(Boolean)
       .includes(user.id);
 
-  const defaultValues = profile?.weight_kg
-    ? {
-        weightKg: Number(profile.weight_kg),
-        heightCm: Number(profile.height_cm),
-        age: Number(profile.age),
-        sex: profile.sex as "male" | "female",
-        activityLevel: profile.activity_level as "sedentary" | "light" | "moderate" | "active" | "extra_active",
-        goal: profile.goal as "lose" | "maintain" | "gain",
-      }
-    : undefined;
+  const email = user?.email ?? "Account";
+  const initial = email[0]?.toUpperCase() ?? "?";
 
   return (
-    <div className="mx-auto max-w-lg space-y-4 pb-20">
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold text-slate-800">Settings</h1>
-        <p className="text-sm text-slate-400">Manage your account and nutrition targets</p>
+    <div className="-mx-4 min-h-screen bg-gray-50 pb-28 dark:bg-gray-950 md:mx-0">
+      <div className="border-b border-gray-100 bg-white px-4 pt-14 pb-4 dark:border-gray-900 dark:bg-gray-950">
+        <h1 className="text-xl font-bold text-gray-900 dark:text-white">Settings</h1>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <ThemeToggle />
-      </div>
-
-      <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-        <div className="mb-4">
-          <h2 className="text-base font-semibold text-slate-800 dark:text-white">Dietary preferences</h2>
-          <p className="mt-0.5 text-sm text-slate-500 dark:text-gray-400">
-            Used to personalise your AI meal plans.
-          </p>
-        </div>
-        <DietaryPreferencesPicker
-          initialSelected={initialDietaryPreferencesFromProfile(profile)}
-        />
-      </div>
-
-      <div className="rounded-xl border border-slate-200 bg-white p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-semibold text-slate-700">Calorie and protein targets</h2>
-            <p className="mt-0.5 text-xs text-slate-400">Based on your body stats and goal</p>
+      <div className="space-y-4 px-4 pt-4">
+        <div className={`${ds.card} flex items-center gap-4 ${ds.cardPadding}`}>
+          <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl bg-[#3a5a40] text-2xl font-bold text-white">
+            {initial}
           </div>
-          {!isPro ? (
-            <span className="flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
-              <Lock className="h-3 w-3" />
-              Pro
-            </span>
-          ) : null}
-        </div>
-
-        {isPro ? (
-          <TDEEForm defaultValues={defaultValues} />
-        ) : (
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 text-center">
-            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
-              <Lock className="h-5 w-5 text-amber-600" />
-            </div>
-            <p className="mb-1 text-sm font-medium text-slate-600">Pro feature</p>
-            <p className="mb-4 text-xs text-slate-400">
-              Set calorie and protein targets based on body stats, activity level, and goal.
-            </p>
-            <Link
-              href="/billing"
-              className="inline-block rounded-lg bg-[#1A4731] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#153928]"
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-bold text-gray-900 dark:text-white">{email}</p>
+            <span
+              className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
+                isPro ? "bg-[#3a5a40] text-white" : "bg-gray-100 text-gray-500 dark:bg-gray-800"
+              }`}
             >
-              Upgrade to Pro
-            </Link>
-            {profile?.stripe_customer_id ? (
-              <p className="mt-4 text-xs leading-relaxed text-slate-500">
-                Already paid? Open{" "}
+              {isPro ? "✦ Pro" : "Free plan"}
+            </span>
+          </div>
+        </div>
+
+        <div>
+          <p className={`${ds.label} mb-2 px-1`}>Preferences</p>
+          <div className={`${ds.card} overflow-hidden`}>
+            <SettingsThemeRow />
+            <div className="h-px bg-gray-50 dark:bg-gray-800" />
+            {SETTINGS_GROUPS[0].items.map((item, i) => (
+              <div key={item.label}>
                 <Link
-                  href="/billing"
-                  className="font-medium text-[#1A4731] underline underline-offset-2"
+                  href={item.href}
+                  className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
                 >
-                  Billing
-                </Link>{" "}
-                and use &quot;Sync subscription from Stripe&quot; so Pro unlocks here.
-              </p>
-            ) : null}
-          </div>
-        )}
-      </div>
-
-      {isPro && profile?.daily_calorie_target ? (
-        <div className="rounded-xl border border-[#6EE7B7] bg-[#F0FDF4] p-4">
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">Current targets</p>
-          <div className="flex gap-6">
-            <div>
-              <p className="text-xs text-slate-400">Calories</p>
-              <p className="text-lg font-bold text-[#1A4731]">{profile.daily_calorie_target} kcal/day</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-400">Protein</p>
-              <p className="text-lg font-bold text-[#1A4731]">{profile.daily_protein_target} g/day</p>
-            </div>
+                  <span className="w-7 text-center text-lg">{item.icon}</span>
+                  <span className="flex-1 text-sm font-medium text-gray-700 dark:text-gray-300">{item.label}</span>
+                  <Chevron />
+                </Link>
+                {i < SETTINGS_GROUPS[0].items.length - 1 ? (
+                  <div className="ml-14 h-px bg-gray-50 dark:bg-gray-800" />
+                ) : null}
+              </div>
+            ))}
           </div>
         </div>
-      ) : null}
 
-      <div className="mt-4 rounded-xl border border-slate-200 bg-white p-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-semibold text-slate-700">Subscription</h2>
-            <p className="mt-0.5 text-xs text-slate-400">
-              Manage your plan and billing
-            </p>
+        {SETTINGS_GROUPS.slice(1).map((group) => (
+          <div key={group.title}>
+            <p className={`${ds.label} mb-2 px-1`}>{group.title}</p>
+            <div className={`${ds.card} overflow-hidden`}>
+              {group.items.map((item, i) => (
+                <div key={item.label}>
+                  {"external" in item && item.external ? (
+                    <a
+                      href={item.href}
+                      className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
+                      <span className="w-7 text-center text-lg">{item.icon}</span>
+                      <span className="flex-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {item.label}
+                      </span>
+                      <Chevron />
+                    </a>
+                  ) : (
+                    <Link
+                      href={item.href}
+                      className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
+                      <span className="w-7 text-center text-lg">{item.icon}</span>
+                      <span className="flex-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {item.label}
+                      </span>
+                      <Chevron />
+                    </Link>
+                  )}
+                  {i < group.items.length - 1 ? (
+                    <div className="ml-14 h-px bg-gray-50 dark:bg-gray-800" />
+                  ) : null}
+                </div>
+              ))}
+            </div>
           </div>
-          <Link
-            href="/billing"
-            className="text-xs font-medium text-[#1A4731] hover:underline"
+        ))}
+
+        {isAdmin ? (
+          <div className="rounded-2xl bg-gray-900 p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-white">Admin</p>
+                <p className="mt-0.5 text-xs text-gray-400">Internal tools</p>
+              </div>
+              <Link href="/admin/prices" className="text-xs text-gray-300 hover:text-white">
+                Price manager →
+              </Link>
+            </div>
+          </div>
+        ) : null}
+
+        <form action={logout}>
+          <button
+            type="submit"
+            className="w-full rounded-2xl border border-red-100 bg-red-50 py-3.5 text-sm font-semibold text-red-500 dark:border-red-900 dark:bg-red-950/20"
           >
-            Manage →
-          </Link>
-        </div>
+            Sign out
+          </button>
+        </form>
       </div>
-
-      {isAdmin ? (
-        <div className="mt-4 rounded-xl bg-slate-800 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-white">Admin</p>
-              <p className="mt-0.5 text-xs text-slate-400">Internal tools</p>
-            </div>
-            <Link href="/admin/prices" className="text-xs text-slate-300 transition-colors hover:text-white">
-              Price manager →
-            </Link>
-          </div>
-        </div>
-      ) : null}
-
-      <form action={logout}>
-        <button
-          type="submit"
-          className="inline-flex h-10 items-center justify-center rounded-md border border-gray-300 bg-white px-4 text-sm font-medium text-gray-800 hover:bg-gray-50"
-        >
-          Log out
-        </button>
-      </form>
     </div>
+  );
+}
+
+function Chevron() {
+  return (
+    <svg className="h-4 w-4 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+    </svg>
   );
 }

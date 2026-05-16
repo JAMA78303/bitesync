@@ -13,9 +13,14 @@ html {
 
 :root {
   color-scheme: light;
-  --background: #f8faf8;
-  --foreground: #1f2937;
-  --brand-sage: #1a4731;
+  --background: #f9fafb;
+  --foreground: #111827;
+  --brand-primary: #3a5a40;
+  --brand-mid: #4a7a50;
+  --brand-light-bg: #f0f7f0;
+  --brand-sage-accent: #7ab87a;
+  --brand-dark: #2d4a32;
+  --brand-sage: #3a5a40;
   --brand-amber: #d97706;
 }
 

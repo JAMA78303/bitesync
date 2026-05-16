@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getDietTag } from "@/lib/ui/dietTags";
+import { getDietTagStyle } from "@/lib/ui/dietTagStyles";
 import { getMealEmoji } from "@/lib/ui/mealThumbnails";
 import type { TodayMeal } from "@/lib/planner/today";
 
@@ -36,7 +37,7 @@ export function TodayMealCard({ meal, dietaryPreferences = [] }: Props) {
           <p className="mb-1.5 text-xs text-gray-400">{meal.servingLabel}</p>
         ) : null}
         {dietTag ? (
-          <span className="mb-1.5 inline-block rounded-full bg-[#f0f7f0] px-2 py-0.5 text-xs font-medium text-[#3a5a40] dark:bg-[#1a2e1d] dark:text-[#a7d4a9]">
+          <span className={`mb-1.5 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${getDietTagStyle(dietTag)}`}>
             {dietTag}
           </span>
         ) : null}

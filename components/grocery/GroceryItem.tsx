@@ -5,6 +5,7 @@ import { Check, Trash2 } from "lucide-react";
 import { formatGroceryItem } from "@/lib/grocery/storeUnits";
 import { deleteGroceryItem, toggleGroceryItem } from "@/lib/supabase/grocery";
 import { useToast } from "@/components/ui/use-toast";
+import { STORE_COLORS } from "@/lib/ui/dietTagStyles";
 
 type Props = {
   id: string;
@@ -12,9 +13,19 @@ type Props = {
   quantity: number;
   unit: string;
   is_checked: boolean;
+  cheapestStore?: string | null;
+  price?: string | null;
 };
 
-export function GroceryItem({ id, name, quantity, unit, is_checked }: Props) {
+export function GroceryItem({
+  id,
+  name,
+  quantity,
+  unit,
+  is_checked,
+  cheapestStore,
+  price,
+}: Props) {
   const [checked, setChecked] = useState(is_checked);
   const [isPending, startTransition] = useTransition();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -53,47 +64,65 @@ export function GroceryItem({ id, name, quantity, unit, is_checked }: Props) {
     });
   }
 
+  const storeColor = cheapestStore ? STORE_COLORS[cheapestStore] : undefined;
+
   return (
     <div
-      className={`min-h-[56px] w-full rounded-xl border p-4 transition-all duration-200 ${
-        checked
-          ? "border-slate-100 bg-slate-50 opacity-60"
-          : "border-slate-200 bg-white hover:border-[#6EE7B7] hover:bg-[#F0FDF4]"
+      className={`flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-3.5 shadow-sm transition-opacity dark:border-gray-800 dark:bg-gray-900 ${
+        checked ? "opacity-40" : ""
       } ${isPending ? "opacity-50" : ""}`}
     >
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={handleToggle}
-          disabled={isPending}
-          aria-pressed={checked}
-          aria-label={`${checked ? "Uncheck" : "Check"} ${name}`}
-          className="flex min-w-0 flex-1 items-center gap-4 text-left"
-        >
-        <div
-          className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200 ${
-            checked ? "border-[#1A4731] bg-[#1A4731]" : "border-slate-300"
+      <button
+        type="button"
+        onClick={handleToggle}
+        disabled={isPending}
+        aria-pressed={checked}
+        aria-label={`${checked ? "Uncheck" : "Check"} ${name}`}
+        className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border-2 transition-all ${
+          checked ? "border-[#3a5a40] bg-[#3a5a40]" : "border-gray-300 dark:border-gray-600"
+        }`}
+      >
+        {checked ? <Check className="h-3 w-3 text-white" strokeWidth={3} /> : null}
+      </button>
+
+      <button
+        type="button"
+        onClick={handleToggle}
+        disabled={isPending}
+        className="min-w-0 flex-1 text-left"
+      >
+        <p
+          className={`truncate text-sm font-medium ${
+            checked ? "line-through text-gray-400" : "text-gray-900 dark:text-white"
           }`}
         >
-          {checked ? <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} /> : null}
-        </div>
+          {formatGroceryItem(name, quantity, unit)}
+        </p>
+      </button>
 
-        <div className="min-w-0 flex-1">
-          <span className={`block truncate text-[15px] font-medium ${checked ? "text-slate-400 line-through" : "text-slate-700"}`}>
-            {formatGroceryItem(name, quantity, unit)}
+      {cheapestStore ? (
+        <div className="flex flex-shrink-0 items-center gap-1.5">
+          <span
+            className="rounded-lg px-2 py-0.5 text-[10px] font-bold text-white"
+            style={{ backgroundColor: storeColor ?? "#3a5a40" }}
+          >
+            {cheapestStore}
           </span>
+          {price ? (
+            <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">{price}</span>
+          ) : null}
         </div>
-        </button>
-        <button
-          type="button"
-          onClick={handleDelete}
-          disabled={isPending}
-          aria-label={`Delete ${name}`}
-          className="rounded-md p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
-      </div>
+      ) : null}
+
+      <button
+        type="button"
+        onClick={handleDelete}
+        disabled={isPending}
+        aria-label={`Delete ${name}`}
+        className="flex-shrink-0 rounded-md p-1.5 text-gray-300 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30"
+      >
+        <Trash2 className="h-4 w-4" />
+      </button>
     </div>
   );
 }

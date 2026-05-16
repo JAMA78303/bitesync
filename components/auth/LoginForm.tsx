@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { ds } from "@/lib/ui/classes";
 
 type Props = {
   redirectTo: string;
@@ -41,7 +42,7 @@ export function LoginForm({ redirectTo }: Props) {
       }
 
       router.refresh();
-      router.push(redirectTo.startsWith("/") ? redirectTo : "/planner");
+      router.push(redirectTo.startsWith("/") ? redirectTo : "/today");
     } finally {
       setPending(false);
     }
@@ -50,32 +51,36 @@ export function LoginForm({ redirectTo }: Props) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error ? (
-        <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">{error}</p>
+        <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+          {error}
+        </p>
       ) : null}
-      <input
-        type="email"
-        name="email"
-        required
-        placeholder="Email"
-        autoComplete="email"
-        disabled={pending}
-        className="h-11 w-full rounded-md border border-gray-300 px-3 text-sm disabled:opacity-60"
-      />
-      <input
-        type="password"
-        name="password"
-        required
-        placeholder="Password"
-        autoComplete="current-password"
-        disabled={pending}
-        className="h-11 w-full rounded-md border border-gray-300 px-3 text-sm disabled:opacity-60"
-      />
-      <button
-        type="submit"
-        disabled={pending}
-        className="h-11 w-full rounded-md bg-[var(--brand-sage)] px-4 text-base font-medium text-white disabled:cursor-not-allowed disabled:opacity-70"
-      >
-        {pending ? "Please wait..." : "Log In"}
+      <div>
+        <label className="mb-1.5 block text-xs font-semibold text-gray-500">Email</label>
+        <input
+          type="email"
+          name="email"
+          required
+          placeholder="you@example.com"
+          autoComplete="email"
+          disabled={pending}
+          className={ds.input}
+        />
+      </div>
+      <div>
+        <label className="mb-1.5 block text-xs font-semibold text-gray-500">Password</label>
+        <input
+          type="password"
+          name="password"
+          required
+          placeholder="••••••••"
+          autoComplete="current-password"
+          disabled={pending}
+          className={ds.input}
+        />
+      </div>
+      <button type="submit" disabled={pending} className={`${ds.primaryBtn} mt-2 w-full py-4 disabled:opacity-60`}>
+        {pending ? "Please wait..." : "Sign in →"}
       </button>
     </form>
   );

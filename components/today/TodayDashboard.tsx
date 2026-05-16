@@ -26,7 +26,7 @@ export function TodayDashboard({ meals, totals, targets, dietaryPreferences }: P
   });
 
   return (
-    <div className="-mx-4 min-h-screen bg-gray-50 pb-4 dark:bg-gray-950 md:mx-0">
+    <div className="-mx-4 min-h-screen bg-gray-50 pb-28 dark:bg-gray-950 md:mx-0">
       <div className="bg-gradient-to-b from-[#3a5a40] to-[#4a7a50] px-5 pt-6 pb-8">
         <p className="mb-0.5 text-sm text-white/70">{dateLabel}</p>
         <h1 className="text-2xl font-bold text-white">Your Goals</h1>

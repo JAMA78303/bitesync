@@ -1,8 +1,7 @@
-import { GroceryProgressBar } from "@/components/grocery/GroceryProgressBar";
 import type { ReactNode } from "react";
+import { ds } from "@/lib/ui/classes";
 
 type Props = {
-  /** Week range, or selected days + range when the list was generated for part of the week */
   subtitle: string;
   total: number;
   checked: number;
@@ -10,19 +9,36 @@ type Props = {
 };
 
 export function GroceryHeader({ subtitle, total, checked, actions }: Props) {
+  const pct = total > 0 ? (checked / total) * 100 : 0;
+
   return (
-    <div className="sticky top-0 z-10 border-b border-slate-100 bg-white px-4 py-4">
-      <div className="mb-3 flex items-center justify-between">
+    <header className={ds.gradientHeader}>
+      <div className="mb-1 flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-lg font-semibold text-slate-800">Grocery List</h1>
-          <p className="mt-0.5 text-xs text-slate-400">{subtitle}</p>
+          <h1 className={ds.pageTitle}>Grocery List</h1>
+          <p className="mt-0.5 text-xs text-white/60">{subtitle}</p>
         </div>
-        {actions}
+        <div className="flex flex-col items-end gap-2">
+          <div className="rounded-xl bg-white/15 px-3 py-1.5 text-center backdrop-blur-sm">
+            <p className="text-sm font-bold text-white">
+              {checked}/{total}
+            </p>
+            <p className="text-[9px] text-white/60">items</p>
+          </div>
+          {actions}
+        </div>
       </div>
-      <GroceryProgressBar total={total} checked={checked} />
-      <p className="mt-2 text-[11px] text-slate-500">
-        Quantities are converted to shopping units (for example, slices {"->"} loaf and cloves {"->"} bulb).
+
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/20">
+        <div
+          className="h-full rounded-full bg-white transition-all duration-500"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+
+      <p className="mt-3 text-[10px] text-white/50">
+        Quantities use shopping units (slices → loaf, cloves → bulb).
       </p>
-    </div>
+    </header>
   );
 }

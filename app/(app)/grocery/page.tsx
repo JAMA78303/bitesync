@@ -98,12 +98,11 @@ export default async function GroceryPage({ searchParams }: Props) {
   if (!mealPlanId) {
     const fallbackSubtitle = formatWeekLabel(weekStart);
     return (
-      <div className="pb-20">
-        <div className="border-b border-slate-100 px-4 pb-3 pt-4">
-          <h1 className="text-lg font-semibold text-slate-800">Grocery List</h1>
-          <p className="mt-0.5 text-xs text-slate-400">{fallbackSubtitle}</p>
+      <div className="-mx-4 min-h-screen bg-gray-50 pb-28 dark:bg-gray-950 md:mx-0">
+        <GroceryHeader subtitle={fallbackSubtitle} total={0} checked={0} />
+        <div className="-mt-4 px-4">
+          <GroceryEmptyState />
         </div>
-        <GroceryEmptyState />
       </div>
     );
   }
@@ -132,10 +131,10 @@ export default async function GroceryPage({ searchParams }: Props) {
 
   if (total === 0) {
     return (
-      <div className="pb-20">
+      <div className="-mx-4 min-h-screen bg-gray-50 pb-28 dark:bg-gray-950 md:mx-0">
         <GroceryHeader subtitle={subtitle} total={0} checked={0} actions={headerActions} />
-        <GroceryEmptyState />
-        <div className="px-4 pt-4">
+        <div className="-mt-4 space-y-4 px-4">
+          <GroceryEmptyState />
           <ManualGroceryAdd mealPlanId={mealPlanId} />
         </div>
       </div>
@@ -146,10 +145,14 @@ export default async function GroceryPage({ searchParams }: Props) {
   const checkedItems = groceryItems.filter((item) => item.is_checked);
 
   return (
-    <div className="pb-20">
+    <div className="-mx-4 min-h-screen bg-gray-50 pb-28 dark:bg-gray-950 md:mx-0">
       <GroceryHeader subtitle={subtitle} total={total} checked={checked} actions={headerActions} />
-      {allDone ? <GroceryDoneState /> : null}
-      <div className="space-y-2 px-4 pt-4">
+      {allDone ? (
+        <div className="-mt-2 px-4">
+          <GroceryDoneState />
+        </div>
+      ) : null}
+      <div className="-mt-4 space-y-2 px-4">
         {uncheckedItems.map((item) => (
           <GroceryItem
             key={item.id}

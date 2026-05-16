@@ -6,6 +6,7 @@ import { useState, useTransition } from "react";
 import { removeSlotEntry } from "@/lib/supabase/meal-plans";
 import { useToast } from "@/components/ui/use-toast";
 import { getDietTag } from "@/lib/ui/dietTags";
+import { getDietTagStyle } from "@/lib/ui/dietTagStyles";
 import { getMealEmoji } from "@/lib/ui/mealThumbnails";
 import { recipeDietWarnings, type ProfileDietPrefs } from "@/lib/utils/diet";
 import {
@@ -76,7 +77,7 @@ export function RecipeSlotCard({ entry, dietPrefs, dietaryPreferences = [] }: Pr
 
       <div className="min-w-0 flex-1">
         {dietTag ? (
-          <span className="mb-1 inline-block rounded-full bg-[#f0f7f0] px-2 py-0.5 text-xs font-medium text-[#3a5a40] dark:bg-[#1a2e1d] dark:text-[#a7d4a9]">
+          <span className={`mb-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${getDietTagStyle(dietTag)}`}>
             {dietTag}
           </span>
         ) : null}
