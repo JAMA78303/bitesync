@@ -12,9 +12,9 @@ export function AppShell({ children }: AppShellProps) {
       <Sidebar />
       <div className="flex w-full flex-1 flex-col">
         <header className="border-b border-gray-200 bg-white px-4 py-3 md:hidden">
-          <Logo size="sm" href="/planner" />
+          <Logo size="sm" href="/today" />
         </header>
-        <main className="flex-1 p-4 pb-24 md:p-8 md:pb-8">{children}</main>
+        <main className="page-content flex-1 p-4 md:p-8 md:pb-8">{children}</main>
         <BottomNav />
       </div>
     </div>

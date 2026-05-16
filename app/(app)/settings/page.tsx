@@ -3,7 +3,8 @@ import { Lock } from "lucide-react";
 import { logout } from "@/app/(app)/settings/actions";
 import { ThemeToggle } from "@/components/settings/ThemeToggle";
 import { TDEEForm } from "@/components/settings/TDEEForm";
-import { DietPreferencesForm } from "@/components/settings/DietPreferencesForm";
+import { DietaryPreferencesPicker } from "@/components/settings/DietaryPreferencesPicker";
+import { initialDietaryPreferencesFromProfile } from "@/lib/dietary/constraints";
 import { isProSubscriptionStatus } from "@/lib/subscription";
 import { reconcileBillingSubscriptionFromStripe } from "@/lib/stripe/reconcile-billing-subscription";
 import { getProfile } from "@/lib/supabase/profile";
@@ -65,19 +66,15 @@ export default async function SettingsPage() {
         <ThemeToggle />
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-5">
+      <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
         <div className="mb-4">
-          <h2 className="text-sm font-semibold text-slate-700">Diet preferences</h2>
-          <p className="mt-0.5 text-xs text-slate-400">
-            Tag how you eat — used when planning meals and labeling recipes
+          <h2 className="text-base font-semibold text-slate-800 dark:text-white">Dietary preferences</h2>
+          <p className="mt-0.5 text-sm text-slate-500 dark:text-gray-400">
+            Used to personalise your AI meal plans.
           </p>
         </div>
-        <DietPreferencesForm
-          initialValues={{
-            followsVegetarian: Boolean(profile?.follows_vegetarian),
-            followsVegan: Boolean(profile?.follows_vegan),
-            followsGlutenFree: Boolean(profile?.follows_gluten_free),
-          }}
+        <DietaryPreferencesPicker
+          initialSelected={initialDietaryPreferencesFromProfile(profile)}
         />
       </div>
 

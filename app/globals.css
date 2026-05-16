@@ -190,3 +190,46 @@ select.theme-aware-select {
 :root[data-theme="dark"] .line-through {
   color: #9fb0c6 !important;
 }
+
+.card-soft {
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.04),
+    0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.meal-section {
+  padding: 0 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.meal-type-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.pb-safe {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+.page-content {
+  padding-bottom: 7rem;
+}
+
+@media (min-width: 768px) {
+  .page-content {
+    padding-bottom: 2rem;
+  }
+}

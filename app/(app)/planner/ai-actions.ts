@@ -20,6 +20,7 @@ import {
   generateSubstitutions,
   type ClaudeMealPlanResult,
 } from "@/lib/ai/client";
+import { buildDietaryConstraints, dietaryPreferencesToLegacyFlags, parseDietaryPreferences } from "@/lib/dietary/constraints";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   AI_BREAKFAST_BLOCKED,
@@ -669,11 +670,19 @@ function trimSnacksIfDayOverMacroCaps(
   }
 }
 
-function recipeMatchesGoals(recipe: RecipeRow, goals: GoalContext): boolean {
-  if (goals.followsVegan && recipe.fits_vegan !== true) return false;
-  if (!goals.followsVegan && goals.followsVegetarian && recipe.fits_vegetarian !== true) return false;
-  if (goals.followsGlutenFree && recipe.fits_gluten_free !== true) return false;
-  return true;
+function dietaryFlagsFromProfile(profile: Awaited<ReturnType<typeof getProfile>>, goals: GoalContext) {
+  const prefs = parseDietaryPreferences(profile?.dietary_preferences);
+  const fromPrefs = dietaryPreferencesToLegacyFlags(prefs);
+  return {
+    prefs,
+    dietaryConstraintsLine: buildDietaryConstraints(prefs),
+    flags: {
+      isVegan: fromPrefs.followsVegan || goals.followsVegan,
+      isVegetarian: fromPrefs.followsVegetarian || goals.followsVegetarian,
+      isGlutenFree: fromPrefs.followsGlutenFree || goals.followsGlutenFree,
+      isDairyFree: fromPrefs.dairyFree || goals.dairyFree === true,
+    },
+  };
 }
 
 export async function generateAIWeekPlan(input: GenerateAIWeekPlanInput) {
@@ -703,19 +712,18 @@ export async function generateAIWeekPlan(input: GenerateAIWeekPlanInput) {
 
   if (recipesError) return { error: recipesError.message };
   const allRecipes = (recipes ?? []) as RecipeRow[];
-  const eligible = allRecipes.filter((r) => recipeMatchesGoals(r, input.goals));
-  if (!eligible.length) {
-    return { error: "No recipes match your dietary preferences yet. Add more recipes and try again." };
+  if (!allRecipes.length) {
+    return { error: "Add at least one recipe to your library before generating a plan." };
   }
 
   const nutritionMap = await fetchRecipeNutritionMap(
     supabase,
-    eligible.map((r) => r.id),
+    allRecipes.map((r) => r.id),
   );
   const { data: ingredientRows } = await supabase
     .from("recipe_ingredients")
     .select("recipe_id,name")
-    .in("recipe_id", eligible.map((r) => r.id));
+    .in("recipe_id", allRecipes.map((r) => r.id));
   const ingredientNamesByRecipe = new Map<string, string[]>();
   for (const row of ingredientRows ?? []) {
     const rid = String(row.recipe_id ?? "");
@@ -724,7 +732,7 @@ export async function generateAIWeekPlan(input: GenerateAIWeekPlanInput) {
     cur.push(String(row.name ?? ""));
     ingredientNamesByRecipe.set(rid, cur);
   }
-  const withNutrition = eligible
+  const withNutrition = allRecipes
     .map((r) => {
       const n = nutritionMap.get(r.id);
       return {
@@ -757,7 +765,8 @@ export async function generateAIWeekPlan(input: GenerateAIWeekPlanInput) {
     fat_g: r.fat_g,
   }));
 
-  const allowedIds = new Set(eligible.map((r) => r.id));
+  const allowedIds = new Set(allRecipes.map((r) => r.id));
+  const dietContext = dietaryFlagsFromProfile(profile, input.goals);
   let claudeSucceeded = false;
   let claudeNotes: string | undefined;
   let heuristicWarning: string | undefined;
@@ -771,12 +780,8 @@ export async function generateAIWeekPlan(input: GenerateAIWeekPlanInput) {
         daysToFill: 7,
         mealTypes: ["breakfast", "lunch", "dinner", "snack"],
         snackCountPerDay,
-        dietaryFlags: {
-          isVegan: input.goals.followsVegan,
-          isVegetarian: input.goals.followsVegetarian,
-          isGlutenFree: input.goals.followsGlutenFree,
-          isDairyFree: input.goals.dairyFree === true,
-        },
+        dietaryFlags: dietContext.flags,
+        dietaryConstraintsLine: dietContext.dietaryConstraintsLine || undefined,
         allergies: input.goals.allergens ?? [],
       });
       if (aiPlan?.plan?.length) {
@@ -1118,19 +1123,18 @@ export async function generateAIBasketForWeek(input: GenerateAIBasketInput) {
 
   if (recipesError) return { error: recipesError.message };
   const allRecipes = (recipes ?? []) as RecipeRow[];
-  const eligible = allRecipes.filter((r) => recipeMatchesGoals(r, input.goals));
-  if (!eligible.length) {
-    return { error: "No recipes match your dietary preferences yet. Add more recipes and try again." };
+  if (!allRecipes.length) {
+    return { error: "Add at least one recipe to your library before generating a plan." };
   }
 
   const nutritionMap = await fetchRecipeNutritionMap(
     supabase,
-    eligible.map((r) => r.id),
+    allRecipes.map((r) => r.id),
   );
   const { data: ingredientRows } = await supabase
     .from("recipe_ingredients")
     .select("recipe_id,name")
-    .in("recipe_id", eligible.map((r) => r.id));
+    .in("recipe_id", allRecipes.map((r) => r.id));
   const ingredientNamesByRecipe = new Map<string, string[]>();
   for (const row of ingredientRows ?? []) {
     const rid = String(row.recipe_id ?? "");
@@ -1139,7 +1143,7 @@ export async function generateAIBasketForWeek(input: GenerateAIBasketInput) {
     cur.push(String(row.name ?? ""));
     ingredientNamesByRecipe.set(rid, cur);
   }
-  const withNutrition = eligible
+  const withNutrition = allRecipes
     .map((r) => {
       const n = nutritionMap.get(r.id);
       return {
@@ -1161,7 +1165,8 @@ export async function generateAIBasketForWeek(input: GenerateAIBasketInput) {
     carbs_g: r.carbs_g,
     fat_g: r.fat_g,
   }));
-  const allowedIds = new Set(eligible.map((r) => r.id));
+  const allowedIds = new Set(allRecipes.map((r) => r.id));
+  const dietContext = dietaryFlagsFromProfile(profile, input.goals);
 
   const goalContextRecord: Record<string, unknown> = {
     ...input.goals,
@@ -1178,12 +1183,8 @@ export async function generateAIBasketForWeek(input: GenerateAIBasketInput) {
         daysToFill: selectedDays.length,
         mealTypes: ["breakfast", "lunch", "dinner", "snack"],
         snackCountPerDay,
-        dietaryFlags: {
-          isVegan: input.goals.followsVegan,
-          isVegetarian: input.goals.followsVegetarian,
-          isGlutenFree: input.goals.followsGlutenFree,
-          isDairyFree: input.goals.dairyFree === true,
-        },
+        dietaryFlags: dietContext.flags,
+        dietaryConstraintsLine: dietContext.dietaryConstraintsLine || undefined,
         allergies: input.goals.allergens ?? [],
       });
       if (aiPlan?.plan?.length) {

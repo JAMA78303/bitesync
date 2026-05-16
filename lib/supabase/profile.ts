@@ -3,6 +3,8 @@
 import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 import { isProSubscriptionStatus } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
+import { dietaryPreferencesToLegacyFlags } from "@/lib/dietary/constraints";
+import { normalizeDietaryPreferencesForSave } from "@/lib/dietary/constants";
 import { calculateNutritionTargetsWithSafety, type TDEEFormValues } from "@/lib/utils/tdee";
 
 export type DietPreferencesInput = {
@@ -11,27 +13,47 @@ export type DietPreferencesInput = {
   followsGlutenFree: boolean;
 };
 
+/** @deprecated Use saveDietaryPreferenceKeys */
 export async function saveDietaryPreferences(values: DietPreferencesInput) {
+  const keys: string[] = [];
+  if (values.followsVegan) keys.push("vegan");
+  else if (values.followsVegetarian) keys.push("vegetarian");
+  if (values.followsGlutenFree) keys.push("gluten_free");
+  if (!keys.length) keys.push("no_preference");
+  return saveDietaryPreferenceKeys(keys);
+}
+
+export async function saveDietaryPreferenceKeys(
+  selected: string[],
+  options?: { completeOnboarding?: boolean },
+) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
-  const { error } = await supabase
-    .from("profiles")
-    .update({
-      follows_vegetarian: values.followsVegetarian,
-      follows_vegan: values.followsVegan,
-      follows_gluten_free: values.followsGlutenFree,
-    })
-    .eq("id", user.id);
+  const dietary_preferences = normalizeDietaryPreferencesForSave(selected);
+  const legacy = dietaryPreferencesToLegacyFlags(dietary_preferences);
+
+  const update: Record<string, unknown> = {
+    dietary_preferences,
+    follows_vegetarian: legacy.followsVegetarian,
+    follows_vegan: legacy.followsVegan,
+    follows_gluten_free: legacy.followsGlutenFree,
+  };
+  if (options?.completeOnboarding) {
+    update.has_completed_onboarding = true;
+  }
+
+  const { error } = await supabase.from("profiles").update(update).eq("id", user.id);
 
   if (error) return { error: error.message };
 
   revalidatePath("/settings");
   revalidatePath("/planner");
   revalidatePath("/recipes");
+  revalidatePath("/onboarding");
   return { success: true as const };
 }
 
@@ -113,7 +135,9 @@ export async function getProfile() {
       daily_protein_target,
       follows_vegetarian,
       follows_vegan,
-      follows_gluten_free
+      follows_gluten_free,
+      dietary_preferences,
+      has_completed_onboarding
     `,
     )
     .eq("id", user.id)

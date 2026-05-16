@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getMonday, toLocalISO, addDays, isCurrentWeek } from "@/lib/utils/dates";
 import { fetchRecipeNutritionMap } from "@/lib/supabase/recipe-nutrition-query";
 import { getOrCreateMealPlan, getMealPlanEntries, buildGrid } from "@/lib/supabase/meal-plans";
+import { initialDietaryPreferencesFromProfile } from "@/lib/dietary/constraints";
 import { getProfile } from "@/lib/supabase/profile";
 import { getUserTier } from "@/lib/subscription";
 import { PlannerGrid } from "@/components/planner/PlannerGrid";
@@ -98,6 +99,7 @@ export default async function PlannerPage({ searchParams }: Props) {
         follows_gluten_free: Boolean(profile.follows_gluten_free),
       }
     : null;
+  const dietaryPreferences = initialDietaryPreferencesFromProfile(profile);
   const grid = await buildGrid(entries ?? []);
   const plannerEntries = entries ?? [];
   const filledDays = Array.from({ length: 7 }, (_, day) => {
@@ -122,11 +124,26 @@ export default async function PlannerPage({ searchParams }: Props) {
   }
 
   return (
-    <section className="space-y-4">
-      <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
+    <section className="-mx-4 space-y-4 md:mx-0">
+      <div className="bg-gradient-to-b from-[#3a5a40] to-[#4a7a50] px-4 pt-2 pb-5 sm:hidden">
+        <h1 className="mb-1 text-xl font-bold text-white">Weekly Plan</h1>
+        <p className="text-sm text-white/80">Plan your meals, generate your list</p>
+      </div>
+
+      <div className="flex flex-col gap-2 px-4 sm:hidden">
+        <WeekNav weekStart={weekStart} />
+        <GenerateListButton
+          mealPlanId={mealPlan.id}
+          weekStart={weekStartISO}
+          filledDays={filledDays}
+          filledMealTypes={filledMealTypes}
+        />
+      </div>
+
+      <div className="hidden flex-col justify-between gap-3 px-4 md:flex md:flex-row md:items-center md:px-0">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Weekly Planner</h1>
-          <p className="text-sm text-gray-600">Plan your meals, generate your list</p>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Weekly Planner</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Plan your meals, generate your list</p>
         </div>
         <div className="relative z-20 flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
           <WeekNav weekStart={weekStart} />
@@ -164,6 +181,7 @@ export default async function PlannerPage({ searchParams }: Props) {
         dailyCalorieTarget={dailyCalorieTarget}
         dailyProteinTarget={dailyProteinTarget}
         dietPrefs={dietPrefs}
+        dietaryPreferences={dietaryPreferences}
       />
 
       {microAnalysis ? (

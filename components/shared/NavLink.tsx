@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, CalendarDays, ChefHat, ShoppingBasket, Settings } from "lucide-react";
+import { Activity, CalendarDays, ChefHat, Home, ShoppingBasket, Settings } from "lucide-react";
 
-type NavIcon = "planner" | "recipes" | "grocery" | "nutrition" | "settings";
+type NavIcon = "today" | "planner" | "recipes" | "grocery" | "nutrition" | "settings";
 
 const iconMap = {
+  today: Home,
   planner: CalendarDays,
   recipes: ChefHat,
   grocery: ShoppingBasket,

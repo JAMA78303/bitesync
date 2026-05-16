@@ -1,23 +1,70 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 import { updateSession } from "@/lib/supabase/middleware";
 
-const PROTECTED_ROUTES = ["/planner", "/recipes", "/grocery", "/nutrition", "/settings", "/billing"];
+const PROTECTED_ROUTES = ["/today", "/planner", "/recipes", "/grocery", "/nutrition", "/settings", "/billing"];
 const AUTH_ROUTES = ["/login", "/signup"];
+const ONBOARDING_ROUTE = "/onboarding";
 const ADMIN_USER_IDS = (process.env.ADMIN_USER_ID ?? "")
   .split(",")
   .map((v) => v.trim())
   .filter(Boolean);
 
+async function hasCompletedOnboarding(
+  request: NextRequest,
+  response: NextResponse,
+  userId: string,
+): Promise<boolean> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseAnonKey) return true;
+
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) =>
+          response.cookies.set(name, value, options),
+        );
+      },
+    },
+  });
+
+  const { data } = await supabase
+    .from("profiles")
+    .select("has_completed_onboarding")
+    .eq("id", userId)
+    .maybeSingle();
+
+  return data?.has_completed_onboarding !== false;
+}
+
 export async function proxy(request: NextRequest) {
   const { user, response } = await updateSession(request);
   const path = request.nextUrl.pathname;
 
-  if (PROTECTED_ROUTES.some((route) => path.startsWith(route)) && !user) {
+  if ((PROTECTED_ROUTES.some((route) => path.startsWith(route)) || path.startsWith(ONBOARDING_ROUTE)) && !user) {
     return NextResponse.redirect(new URL(`/login?next=${path}`, request.url));
   }
 
-  if (AUTH_ROUTES.some((route) => path.startsWith(route)) && user) {
-    return NextResponse.redirect(new URL("/planner", request.url));
+  if (user) {
+    const onboardingDone = await hasCompletedOnboarding(request, response, user.id);
+
+    if (!onboardingDone && PROTECTED_ROUTES.some((route) => path.startsWith(route))) {
+      return NextResponse.redirect(new URL(ONBOARDING_ROUTE, request.url));
+    }
+
+    if (onboardingDone && path.startsWith(ONBOARDING_ROUTE)) {
+      return NextResponse.redirect(new URL("/today", request.url));
+    }
+
+    if (AUTH_ROUTES.some((route) => path.startsWith(route))) {
+      return NextResponse.redirect(
+        new URL(onboardingDone ? "/today" : ONBOARDING_ROUTE, request.url),
+      );
+    }
   }
 
   if (path.startsWith("/admin")) {

@@ -5,23 +5,45 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { removeSlotEntry } from "@/lib/supabase/meal-plans";
 import { useToast } from "@/components/ui/use-toast";
+import { getDietTag } from "@/lib/ui/dietTags";
+import { getMealEmoji } from "@/lib/ui/mealThumbnails";
 import { recipeDietWarnings, type ProfileDietPrefs } from "@/lib/utils/diet";
+import {
+  normalizeRecipeNutritionEmbed,
+  type RecipeNutritionSummary,
+} from "@/lib/utils/recipe-nutrition";
 import { getEntryCalories, getEntryName } from "@/types";
 import type { MealPlanEntry } from "@/types";
 
-type Props = { entry: MealPlanEntry; dietPrefs?: ProfileDietPrefs | null };
+type Props = {
+  entry: MealPlanEntry;
+  dietPrefs?: ProfileDietPrefs | null;
+  dietaryPreferences?: string[];
+};
 
-export function RecipeSlotCard({ entry, dietPrefs }: Props) {
+export function RecipeSlotCard({ entry, dietPrefs, dietaryPreferences = [] }: Props) {
   const [isPending, startTransition] = useTransition();
   const [removed, setRemoved] = useState(false);
   const { toast } = useToast();
   if (removed) return null;
 
   const name = getEntryName(entry);
-  const calories = getEntryCalories(entry);
   const recipeIdForLink = entry.recipe_id ?? entry.recipe?.id ?? null;
   const isQuickAdd = !recipeIdForLink;
   const recipe = entry.recipe;
+  const nutrition = normalizeRecipeNutritionEmbed(
+    recipe?.recipe_nutrition as RecipeNutritionSummary | RecipeNutritionSummary[] | null | undefined,
+  );
+  const calories = getEntryCalories(entry);
+  const protein = nutrition?.protein_g ?? null;
+  const carbs = nutrition?.carbs_g ?? 0;
+  const fat = nutrition?.fat_g ?? 0;
+
+  const dietTag =
+    !isQuickAdd && calories != null
+      ? getDietTag(calories, protein ?? 0, carbs, fat, dietaryPreferences)
+      : null;
+
   const dietWarnings =
     dietPrefs && recipe
       ? recipeDietWarnings(dietPrefs, {
@@ -42,44 +64,74 @@ export function RecipeSlotCard({ entry, dietPrefs }: Props) {
     });
   }
 
-  const shellClass = `group relative flex min-h-[64px] w-full flex-col justify-between rounded-lg border border-slate-200 bg-slate-50 p-2 text-left transition-opacity duration-150 ${
-    isPending ? "opacity-50" : "opacity-100"
-  }`;
+  const cardInner = (
+    <div
+      className={`card-soft flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-3 dark:border-gray-800 dark:bg-gray-900 ${
+        isPending ? "opacity-50" : ""
+      }`}
+    >
+      <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-[#f0f7f0] text-2xl dark:bg-[#1a2e1d]">
+        {isQuickAdd ? "✨" : getMealEmoji(name, entry.meal_type)}
+      </div>
 
-  const body = (
-    <>
-      <p className={`line-clamp-2 pr-5 text-xs font-semibold leading-tight ${isQuickAdd ? "text-slate-600" : "text-slate-700"}`}>
-        {name}
-      </p>
-      {calories != null ? (
-        <p className={`mt-1 text-[10px] ${isQuickAdd ? "text-slate-400" : "text-slate-500"}`}>
-          {Math.round(calories)} kcal
-          {isQuickAdd ? <span className="ml-1 text-slate-300">· quick add</span> : null}
-        </p>
-      ) : null}
+      <div className="min-w-0 flex-1">
+        {dietTag ? (
+          <span className="mb-1 inline-block rounded-full bg-[#f0f7f0] px-2 py-0.5 text-xs font-medium text-[#3a5a40] dark:bg-[#1a2e1d] dark:text-[#a7d4a9]">
+            {dietTag}
+          </span>
+        ) : null}
+        <p className="truncate text-sm font-bold text-gray-900 dark:text-white">{name}</p>
+        {calories != null ? (
+          <div className="mt-1 flex items-center gap-3">
+            <span className="flex items-center gap-1 text-xs text-gray-500">
+              <span aria-hidden>🔥</span>
+              <span className="font-medium text-gray-700 dark:text-gray-300">{Math.round(calories)}</span>
+              <span>kcal</span>
+            </span>
+            {protein != null ? (
+              <span className="flex items-center gap-1 text-xs text-gray-500">
+                <span aria-hidden>🌿</span>
+                <span className="font-medium text-gray-700 dark:text-gray-300">{Math.round(protein)}g</span>
+                <span>protein</span>
+              </span>
+            ) : null}
+          </div>
+        ) : isQuickAdd ? (
+          <p className="mt-1 text-xs text-gray-400">Quick add</p>
+        ) : null}
+        {dietWarnings.length > 0 ? (
+          <p className="mt-1 line-clamp-1 text-[10px] font-medium text-amber-700 dark:text-amber-400" title={dietWarnings.join(" · ")}>
+            {dietWarnings.join(" · ")}
+          </p>
+        ) : null}
+      </div>
+
       {!isQuickAdd ? (
-        <p className="mt-1 text-[9px] font-medium text-[#1A4731]/90">View recipe & ingredients →</p>
+        <svg
+          className="h-4 w-4 flex-shrink-0 text-gray-300 dark:text-gray-600"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          aria-hidden
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
       ) : null}
-      {dietWarnings.length > 0 ? (
-        <p className="mt-1 line-clamp-2 text-[9px] font-medium text-amber-700" title={dietWarnings.join(" · ")}>
-          {dietWarnings.join(" · ")}
-        </p>
-      ) : null}
-    </>
+    </div>
   );
 
   return (
-    <div className={shellClass}>
+    <div className="group relative">
       {recipeIdForLink && !isQuickAdd ? (
         <Link
           href={`/recipes/${encodeURIComponent(String(recipeIdForLink))}`}
-          className="block min-h-[44px] outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-[#1A4731]"
-          aria-label={`Open recipe ${name} to see ingredients`}
+          className="block outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-[#3a5a40]"
+          aria-label={`Open recipe ${name}`}
         >
-          {body}
+          {cardInner}
         </Link>
       ) : (
-        body
+        cardInner
       )}
       <button
         type="button"
@@ -90,9 +142,9 @@ export function RecipeSlotCard({ entry, dietPrefs }: Props) {
         }}
         disabled={isPending}
         aria-label={`Remove ${name}`}
-        className="absolute right-1.5 top-1.5 z-10 flex h-5 w-5 items-center justify-center rounded bg-white/90 text-slate-500 opacity-80 transition-all duration-150 hover:bg-white hover:text-red-500 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100"
+        className="absolute right-1.5 top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-slate-500 opacity-80 shadow-sm transition-all hover:bg-white hover:text-red-500 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 dark:bg-gray-800/90"
       >
-        <X className="h-3 w-3" />
+        <X className="h-3.5 w-3.5" />
       </button>
     </div>
   );

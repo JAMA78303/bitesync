@@ -39,6 +39,8 @@ export type GenerateMealPlanParams = {
     isGlutenFree: boolean;
     isDairyFree: boolean;
   };
+  /** Full sentence from buildDietaryConstraints — inserted before meal suggestions. */
+  dietaryConstraintsLine?: string;
   allergies: string[];
 };
 
@@ -138,7 +140,7 @@ DIETARY REQUIREMENTS:
   Gluten free: ${params.dietaryFlags.isGlutenFree}
   Dairy free: ${params.dietaryFlags.isDairyFree}
   Allergies: ${params.allergies.join(", ") || "none"}
-
+${params.dietaryConstraintsLine ? `\n${params.dietaryConstraintsLine}\n` : ""}
 MEAL TYPES TO FILL: ${params.mealTypes.join(", ")}
 SNACK SLOTS PER DAY: ${params.snackCountPerDay}
 ${snackExtra}

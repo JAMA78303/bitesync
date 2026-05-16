@@ -34,6 +34,7 @@ type Props = {
   dailyCalorieTarget?: number | null;
   dailyProteinTarget?: number | null;
   dietPrefs?: ProfileDietPrefs | null;
+  dietaryPreferences?: string[];
 };
 
 export function PlannerGrid({
@@ -47,6 +48,7 @@ export function PlannerGrid({
   dailyCalorieTarget,
   dailyProteinTarget,
   dietPrefs,
+  dietaryPreferences = [],
 }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
   const [activeDay, setActiveDay] = useState<number | null>(null);
@@ -100,7 +102,7 @@ export function PlannerGrid({
                       <div className="space-y-1">
                         {snackEntries.length > 0 ? (
                           snackEntries.map((snack) => (
-                            <RecipeSlotCard key={snack.id} entry={snack} dietPrefs={dietPrefs} />
+                            <RecipeSlotCard key={snack.id} entry={snack} dietPrefs={dietPrefs} dietaryPreferences={dietaryPreferences} />
                           ))
                         ) : (
                           <AddSlotButton
@@ -124,7 +126,7 @@ export function PlannerGrid({
                         ) : null}
                       </div>
                     ) : entry ? (
-                      <RecipeSlotCard entry={entry} dietPrefs={dietPrefs} />
+                      <RecipeSlotCard entry={entry} dietPrefs={dietPrefs} dietaryPreferences={dietaryPreferences} />
                     ) : (
                       <div className="space-y-1">
                         <AddSlotButton
@@ -166,6 +168,7 @@ export function PlannerGrid({
         dailyCalorieTarget={dailyCalorieTarget}
         dailyProteinTarget={dailyProteinTarget}
         dietPrefs={dietPrefs}
+        dietaryPreferences={dietaryPreferences}
       />
 
       <RecipePickerModal
@@ -194,6 +197,7 @@ type MobileProps = {
   dailyCalorieTarget?: number | null;
   dailyProteinTarget?: number | null;
   dietPrefs?: ProfileDietPrefs | null;
+  dietaryPreferences?: string[];
 };
 
 function PlannerGridMobileInline({
@@ -207,6 +211,7 @@ function PlannerGridMobileInline({
   dailyCalorieTarget,
   dailyProteinTarget,
   dietPrefs,
+  dietaryPreferences = [],
 }: MobileProps) {
   const [activeDay, setActiveDay] = useState(initialActiveDay);
 
@@ -221,18 +226,20 @@ function PlannerGridMobileInline({
 
   return (
     <div className="space-y-3 sm:hidden">
-      <div className="grid grid-cols-7 gap-1 rounded-xl border border-gray-200 bg-white p-2">
+      <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-1">
         {Array.from({ length: 7 }, (_, day) => (
           <button
             key={day}
             type="button"
             onClick={() => setActiveDay(day)}
-            className={`flex min-w-0 flex-col items-center rounded-lg px-1 py-2 transition-all ${
-              activeDay === day ? "bg-[#1A4731] text-white" : "text-slate-500 hover:bg-slate-50"
+            className={`flex min-w-[48px] flex-col items-center rounded-2xl px-1 py-2 transition-all ${
+              activeDay === day
+                ? "bg-[#3a5a40] text-white shadow-sm"
+                : "text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
             }`}
           >
-            <span className="text-xs">{DAY_LABELS[day]}</span>
-            <span className="text-sm font-semibold">{weekDates[day].getDate()}</span>
+            <span className="text-xs font-medium">{DAY_LABELS[day]}</span>
+            <span className="text-lg font-bold">{weekDates[day].getDate()}</span>
           </button>
         ))}
       </div>
@@ -241,12 +248,19 @@ function PlannerGridMobileInline({
         {MEAL_TYPES.map((mealType) => {
           const entry = grid[activeDay][mealType];
           return (
-            <div key={mealType} className="space-y-1 rounded-xl border border-gray-200 bg-white p-3">
-              <p className="text-xs font-semibold uppercase text-gray-500">{MEAL_LABELS[mealType]}</p>
+            <div key={mealType} className="meal-section space-y-2">
+              <p className="meal-type-label">{MEAL_LABELS[mealType]}</p>
               {mealType === "snack" ? (
                 <div className="space-y-1">
                   {snackEntries.length > 0 ? (
-                    snackEntries.map((snack) => <RecipeSlotCard key={snack.id} entry={snack} dietPrefs={dietPrefs} />)
+                    snackEntries.map((snack) => (
+                      <RecipeSlotCard
+                        key={snack.id}
+                        entry={snack}
+                        dietPrefs={dietPrefs}
+                        dietaryPreferences={dietaryPreferences}
+                      />
+                    ))
                   ) : (
                     <AddSlotButton
                       day={activeDay}
@@ -269,7 +283,7 @@ function PlannerGridMobileInline({
                   ) : null}
                 </div>
               ) : entry ? (
-                <RecipeSlotCard entry={entry} dietPrefs={dietPrefs} />
+                <RecipeSlotCard entry={entry} dietPrefs={dietPrefs} dietaryPreferences={dietaryPreferences} />
               ) : (
                 <div className="space-y-1">
                   <AddSlotButton

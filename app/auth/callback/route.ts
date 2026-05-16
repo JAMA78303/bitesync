@@ -6,11 +6,32 @@ export async function GET(request: Request) {
   const code = requestUrl.searchParams.get("code");
   const tokenHash = requestUrl.searchParams.get("token_hash");
   const type = requestUrl.searchParams.get("type");
-  const next = requestUrl.searchParams.get("next") ?? "/planner";
+  const next = requestUrl.searchParams.get("next") ?? "/today";
   const base = requestUrl.origin;
 
-  const redirectTo = new URL(next.startsWith("/") ? next : "/planner", base);
   const supabase = await createClient();
+
+  async function postAuthRedirect(): Promise<NextResponse> {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.redirect(new URL("/login", base));
+    }
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("has_completed_onboarding")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (!profile?.has_completed_onboarding) {
+      return NextResponse.redirect(new URL("/onboarding", base));
+    }
+
+    const destination = next.startsWith("/") ? next : "/today";
+    return NextResponse.redirect(new URL(destination, base));
+  }
 
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
@@ -19,7 +40,7 @@ export async function GET(request: Request) {
         new URL(`/login?error=${encodeURIComponent(error.message)}`, base),
       );
     }
-    return NextResponse.redirect(redirectTo);
+    return postAuthRedirect();
   }
 
   // Some email confirmation links provide token_hash + type instead of code.
@@ -38,7 +59,7 @@ export async function GET(request: Request) {
         new URL(`/login?error=${encodeURIComponent(error.message)}`, base),
       );
     }
-    return NextResponse.redirect(redirectTo);
+    return postAuthRedirect();
   }
 
   return NextResponse.redirect(new URL("/login?error=Invalid%20confirmation%20link", base));
