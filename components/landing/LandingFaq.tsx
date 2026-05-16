@@ -1,8 +1,3 @@
-"use client";
-
-import { useState } from "react";
-import { ChevronDown } from "lucide-react";
-
 const FAQ_ITEMS = [
   {
     q: "Does BiteSync work on my phone?",
@@ -43,35 +38,29 @@ const FAQ_ITEMS = [
 ] as const;
 
 export function LandingFaq() {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
-
   return (
-    <section className="mx-auto max-w-4xl px-4 pb-20">
+    <section id="faq" className="mx-auto max-w-4xl scroll-mt-24 px-4 py-20">
       <div className="mb-8 text-center">
         <h2 className="mb-2 text-2xl font-bold text-slate-900 sm:text-3xl">Questions answered</h2>
         <p className="text-sm text-slate-500">Everything you need to know before you get started.</p>
       </div>
       <div className="space-y-3">
-        {FAQ_ITEMS.map((item, index) => {
-          const open = openIndex === index;
-          return (
-            <div key={item.q} className="rounded-xl border border-slate-200 bg-white px-4 py-3">
-              <button
-                type="button"
-                aria-expanded={open}
-                className="flex w-full cursor-pointer items-center justify-between gap-3 text-left text-sm font-semibold text-slate-800 transition-colors hover:text-[#1A4731]"
-                onClick={() => setOpenIndex(open ? null : index)}
-              >
-                <span className="min-w-0">{item.q}</span>
-                <ChevronDown
-                  className={`h-4 w-4 shrink-0 text-slate-500 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-                  aria-hidden
-                />
-              </button>
-              {open ? <p className="mt-3 pr-6 text-sm leading-relaxed text-slate-600">{item.a}</p> : null}
-            </div>
-          );
-        })}
+        {FAQ_ITEMS.map((item) => (
+          <details
+            key={item.q}
+            className="group rounded-xl border border-slate-200 bg-white px-4 py-3 open:shadow-sm"
+          >
+            <summary className="cursor-pointer list-none text-sm font-semibold text-slate-800 marker:content-none [&::-webkit-details-marker]:hidden">
+              <span className="flex items-center justify-between gap-3">
+                {item.q}
+                <span className="text-slate-400 transition-transform group-open:rotate-180" aria-hidden>
+                  ▾
+                </span>
+              </span>
+            </summary>
+            <p className="mt-3 pr-2 text-sm leading-relaxed text-slate-600">{item.a}</p>
+          </details>
+        ))}
       </div>
     </section>
   );
