@@ -25,7 +25,6 @@
 /scripts/cofid_2021.csv
 /scripts/McCance_*.csv
 /scripts/.pydeps/
-/sql/cofid_import/
 
 # misc
 .DS_Store
