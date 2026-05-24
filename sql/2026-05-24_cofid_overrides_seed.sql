@@ -1,0 +1,36 @@
+-- Seed cofid_overrides (run after npm run import:cofid).
+-- Fails with FK error if cofid_foods is empty — import first.
+
+INSERT INTO public.cofid_overrides (ingredient_name, food_code, note) VALUES
+  ('plain flour', '11-886', 'Flour, wheat, white, plain, soft'),
+  ('self raising flour', '11-888', 'Flour, wheat, white, self raising'),
+  ('skimmed milk', '12-307', 'Milk, skimmed, pasteurised, average'),
+  ('semi skimmed milk', '12-313', 'Milk, semi-skimmed, pasteurised, average'),
+  ('whole milk', '12-596', 'Milk, whole, pasteurised, average'),
+  ('greek yogurt', '12-555', 'Yogurt, Greek style, plain'),
+  ('greek yoghurt', '12-555', 'Yogurt, Greek style, plain'),
+  ('natural yogurt', '12-184', 'Yogurt, whole milk, plain'),
+  ('natural yoghurt', '12-184', 'Yogurt, whole milk, plain'),
+  ('cheddar', '12-346', 'Cheese, Cheddar, English'),
+  ('cheddar cheese', '12-346', 'Cheese, Cheddar, English'),
+  ('olive oil', '17-038', 'Oil, olive'),
+  ('vegetable oil', '17-686', 'Oil, vegetable, average'),
+  ('butter', '17-685', 'Butter, salted'),
+  ('eggs', '12-937', 'Eggs, chicken, whole, raw'),
+  ('egg', '12-937', 'Eggs, chicken, whole, raw'),
+  ('chicken breast', '18-323', 'Chicken, breast, grilled without skin, meat only'),
+  ('salmon', '16-356', 'Salmon, farmed, flesh only, raw'),
+  ('brown rice', '11-869', 'Rice, brown, wholegrain, boiled in unsalted water'),
+  ('white rice', '11-862', 'Rice, white, long grain, boiled in unsalted water'),
+  ('basmati rice', '11-858', 'Rice, white, basmati, boiled in unsalted water'),
+  ('oats', '11-788', 'Porridge oats, unfortified'),
+  ('porridge oats', '11-788', 'Porridge oats, unfortified'),
+  ('rolled oats', '11-788', 'Porridge oats, unfortified'),
+  ('tinned tomatoes', '13-530', 'Tomatoes, canned, whole contents'),
+  ('chopped tomatoes', '13-530', 'Tomatoes, canned, whole contents'),
+  ('chickpeas', '13-670', 'Beans, chick peas, canned, re-heated, drained'),
+  ('kidney beans', '13-660', 'Beans, red kidney, canned in water, re-heated, drained'),
+  ('red lentils', '13-658', 'Lentils, red, split, dried, boiled in unsalted water'),
+  ('peanut butter', '14-892', 'Peanut butter, smooth'),
+  ('honey', '17-050', 'Honey')
+ON CONFLICT (ingredient_name) DO NOTHING;

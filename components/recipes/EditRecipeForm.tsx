@@ -3,7 +3,8 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { formatIngredientWeightSuffix, getSupportedUnits } from "@/lib/nutrition/convert";
-import { calculateRecipeNutrition, type RecipeIngredientInput } from "@/lib/nutrition/calculate";
+import type { RecipeIngredientInput } from "@/lib/nutrition/calculate";
+import { useLiveRecipeNutrition } from "@/components/recipes/useLiveRecipeNutrition";
 import { getIngredientAutocompleteLabel, getNutritionIngredientNames } from "@/lib/nutrition/lookup";
 import { NutritionPreview } from "@/components/recipes/NutritionPreview";
 import { updateRecipe } from "@/app/(app)/recipes/actions";
@@ -70,7 +71,8 @@ export function EditRecipeForm({
     [ingredients],
   );
 
-  const nutrition = useMemo(() => calculateRecipeNutrition(parsedIngredients), [parsedIngredients]);
+  const { totals: nutrition, lookingUp, lineMetaByIngredientIndex } =
+    useLiveRecipeNutrition(parsedIngredients);
 
   function updateIngredient(id: string, key: keyof IngredientRow, value: string) {
     setIngredients((current) =>
@@ -165,12 +167,13 @@ export function EditRecipeForm({
         </div>
         <div className="space-y-3">
           <h3 className="font-medium text-gray-900">Ingredients</h3>
-          {ingredients.map((ingredient) => {
+          {ingredients.map((ingredient, index) => {
             const qty = Number.parseFloat(ingredient.quantity);
             const weightHint =
               Number.isFinite(qty) && qty > 0 && ingredient.name.trim()
                 ? formatIngredientWeightSuffix(qty, ingredient.unit || "", ingredient.name)
                 : null;
+            const lineMeta = lineMetaByIngredientIndex[index];
             return (
               <div key={ingredient.id} className="space-y-1">
                 <div className="grid gap-2 md:grid-cols-[1fr_120px_120px_40px]">
@@ -212,6 +215,15 @@ export function EditRecipeForm({
                   </button>
                 </div>
                 {weightHint ? <p className="text-xs text-slate-500 md:pl-1">{weightHint}</p> : null}
+                {(lineMeta?.matchHint || lineMeta?.unknown) && ingredient.name.trim() ? (
+                  <p className="text-xs text-gray-400 md:pl-1">
+                    {lineMeta.matchHint ? (
+                      <span title={lineMeta.matchHint}>{lineMeta.matchHint}</span>
+                    ) : (
+                      "Unknown ingredient — nutrition may be incomplete until saved"
+                    )}
+                  </p>
+                ) : null}
               </div>
             );
           })}
@@ -239,7 +251,12 @@ export function EditRecipeForm({
           {isPending ? "Saving..." : "Save Changes"}
         </button>
       </section>
-      <NutritionPreview totals={nutrition} />
+      <div className="space-y-2">
+        {lookingUp ? (
+          <p className="text-center text-xs text-gray-400">Looking up nutrition…</p>
+        ) : null}
+        <NutritionPreview totals={nutrition} />
+      </div>
     </div>
   );
 }

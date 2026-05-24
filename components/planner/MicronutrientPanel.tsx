@@ -1,4 +1,5 @@
 import { Info } from "lucide-react";
+import { CofidAttribution } from "@/components/nutrition/CofidAttribution";
 import type { MicroAnalysis, NutrientResult } from "@/lib/supabase/nutrition";
 
 type Props = {
@@ -45,10 +46,11 @@ export function MicronutrientPanel({ analysis }: Props) {
         </div>
       </div>
 
-      <div className="px-5 pb-4">
+      <div className="space-y-3 px-5 pb-4">
         <p className="text-center text-xs text-slate-300">
           Source: UK SACN Dietary Reference Values · NHS guidelines for sat fat, salt and sugar
         </p>
+        <CofidAttribution className="text-center text-slate-400" />
       </div>
     </div>
   );

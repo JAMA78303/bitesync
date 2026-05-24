@@ -1,9 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import {
-  calculateRecipeNutrition,
-  type NutritionTotals,
-  type RecipeIngredientInput,
-} from "@/lib/nutrition/calculate";
+import type { NutritionTotals, RecipeIngredientInput } from "@/lib/nutrition/calculate";
+import { getRecipeNutritionTotals } from "@/lib/nutrition/recipeNutritionTotals";
 import type { RecipeNutritionSummary } from "@/lib/utils/recipe-nutrition";
 
 export function totalsToNutritionSummary(totals: NutritionTotals): RecipeNutritionSummary {
@@ -104,7 +101,7 @@ async function fillNutritionFromIngredients(
 
   for (const rid of missing) {
     const inputs = byRecipe.get(rid) ?? [];
-    const totals = calculateRecipeNutrition(inputs);
+    const { totals } = await getRecipeNutritionTotals(inputs, { aiEnabled: true });
     const summary = totalsToNutritionSummary(totals);
     map.set(rid, summary);
     upsertRows.push({

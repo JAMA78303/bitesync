@@ -36,7 +36,7 @@ export default async function RecipeDetailPage({ params }: RecipePageProps) {
 
   const { data: ingredientRows } = await supabase
     .from("recipe_ingredients")
-    .select("id,name,quantity,unit,nutrition_estimated")
+    .select("id,name,quantity,unit,nutrition_estimated,cofid_food_name,cofid_matched_by")
     .eq("recipe_id", recipe.id)
     .order("id", { ascending: true });
 
@@ -46,6 +46,8 @@ export default async function RecipeDetailPage({ params }: RecipePageProps) {
     quantity: number;
     unit: string;
     nutrition_estimated?: boolean | null;
+    cofid_food_name?: string | null;
+    cofid_matched_by?: string | null;
   }[];
 
   const nutrition = await fetchRecipeNutritionForRecipe(supabase, recipe.id);

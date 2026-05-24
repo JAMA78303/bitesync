@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Lock } from "lucide-react";
+import { CofidAttribution } from "@/components/nutrition/CofidAttribution";
 import { TDEEForm } from "@/components/settings/TDEEForm";
 import { isProSubscriptionStatus } from "@/lib/subscription";
 import { getProfile } from "@/lib/supabase/profile";
@@ -55,6 +56,7 @@ export default async function TargetsSettingsPage() {
             </Link>
           </div>
         )}
+        <CofidAttribution className="mt-6 px-1" />
       </div>
     </div>
   );

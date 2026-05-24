@@ -28,9 +28,17 @@ export default async function AdminLayout({
           <span className="font-semibold">BiteSync Admin</span>
           <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs">Internal only</span>
         </div>
-        <Link href="/planner" className="text-xs text-green-200 hover:text-white">
-          ← Back to app
-        </Link>
+        <div className="flex items-center gap-4 text-xs">
+          <Link href="/admin/prices" className="text-green-200 hover:text-white">
+            Prices
+          </Link>
+          <Link href="/admin/nutrition" className="text-green-200 hover:text-white">
+            Nutrition
+          </Link>
+          <Link href="/planner" className="text-green-200 hover:text-white">
+            ← App
+          </Link>
+        </div>
       </nav>
       <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
     </div>

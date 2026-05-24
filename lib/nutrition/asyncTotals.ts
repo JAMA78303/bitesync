@@ -1,8 +1,11 @@
-import { ingredientGrams } from "@/lib/nutrition/convert";
-import { lookupNutrition } from "@/lib/nutrition/lookup";
-import type { NutritionLookupEntry } from "@/types";
-import { estimateNutritionWithAI } from "@/lib/nutrition/estimateWithAI";
+import type { CoFIDMatchKind } from "@/lib/nutrition/cofidLookup";
+import { lookupNutritionAsync } from "@/lib/nutrition/lookupAsync";
 import type { NutritionTotals, RecipeIngredientInput } from "@/lib/nutrition/calculate";
+
+export type IngredientCofidMeta = {
+  cofid_food_name?: string;
+  cofid_matched_by?: CoFIDMatchKind;
+};
 
 function emptyLine(): Pick<
   NutritionTotals,
@@ -27,16 +30,6 @@ function emptyLine(): Pick<
   };
 }
 
-function isIncomplete(entry: NutritionLookupEntry): boolean {
-  const p = entry.per_100g;
-  return (
-    p.calories > 0 &&
-    p.protein_g === 0 &&
-    p.carbs_g === 0 &&
-    p.fat_g === 0
-  );
-}
-
 function sumPartial(a: ReturnType<typeof emptyLine>, b: Partial<ReturnType<typeof emptyLine>>): void {
   a.calories += b.calories ?? 0;
   a.protein_g += b.protein_g ?? 0;
@@ -51,82 +44,54 @@ function sumPartial(a: ReturnType<typeof emptyLine>, b: Partial<ReturnType<typeo
 export async function resolveIngredientLineAsync(
   ing: RecipeIngredientInput,
   aiEnabled: boolean,
-): Promise<{ contribution: ReturnType<typeof emptyLine>; estimated: boolean }> {
+): Promise<{
+  contribution: ReturnType<typeof emptyLine>;
+  estimated: boolean;
+  cofid?: IngredientCofidMeta;
+}> {
   const base = emptyLine();
-  const entry = lookupNutrition(ing.name);
-  const grams = ingredientGrams(ing.quantity, ing.unit, entry, ing.name);
+  const resolved = await lookupNutritionAsync(ing.name, ing.quantity, ing.unit, {
+    skipAI: !aiEnabled,
+  });
 
-  const tryAi = aiEnabled && Boolean(process.env.ANTHROPIC_API_KEY);
-
-  if (entry && grams != null && grams > 0 && !isIncomplete(entry)) {
-    const r = grams / 100;
-    const p = entry.per_100g;
-    sumPartial(base, {
-      calories: p.calories * r,
-      protein_g: p.protein_g * r,
-      carbs_g: p.carbs_g * r,
-      fat_g: p.fat_g * r,
-      fibre_g: p.fibre_g * r,
-      sugar_g: p.sugar_g * r,
-      sodium_mg: p.sodium_mg * r,
-      saturated_fat_g: p.saturated_fat_g * r,
-    });
+  if (!resolved) {
     return { contribution: base, estimated: false };
   }
 
-  if (entry && grams != null && grams > 0 && isIncomplete(entry) && tryAi) {
-    const ai = await estimateNutritionWithAI(ing.name, ing.quantity, ing.unit);
-    const r = grams / 100;
-    const dbKcal = entry.per_100g.calories * r;
-    if (ai && ai.kcal > 0) {
-      const scale = dbKcal / ai.kcal;
-      sumPartial(base, {
-        calories: dbKcal,
-        protein_g: ai.protein * scale,
-        carbs_g: ai.carbs * scale,
-        fat_g: ai.fat * scale,
-        fibre_g: ai.fibre * scale,
-        sugar_g: entry.per_100g.sugar_g * r,
-        sodium_mg: entry.per_100g.sodium_mg * r,
-        saturated_fat_g: entry.per_100g.saturated_fat_g * r,
-      });
-      return { contribution: base, estimated: true };
-    }
-    const p = entry.per_100g;
-    sumPartial(base, {
-      calories: dbKcal,
-      protein_g: p.protein_g * r,
-      carbs_g: p.carbs_g * r,
-      fat_g: p.fat_g * r,
-      fibre_g: p.fibre_g * r,
-      sugar_g: p.sugar_g * r,
-      sodium_mg: p.sodium_mg * r,
-      saturated_fat_g: p.saturated_fat_g * r,
-    });
-    return { contribution: base, estimated: false };
-  }
+  sumPartial(base, {
+    calories: resolved.kcal,
+    protein_g: resolved.protein,
+    carbs_g: resolved.carbs,
+    fat_g: resolved.fat,
+    fibre_g: resolved.fibre,
+    sugar_g: resolved.sugar_g,
+    sodium_mg: resolved.sodium_mg,
+    saturated_fat_g: resolved.saturated_fat_g,
+  });
 
-  if (tryAi) {
-    const ai = await estimateNutritionWithAI(ing.name, ing.quantity, ing.unit);
-    if (ai && (ai.kcal > 0 || ai.protein > 0)) {
-      sumPartial(base, {
-        calories: ai.kcal,
-        protein_g: ai.protein,
-        carbs_g: ai.carbs,
-        fat_g: ai.fat,
-        fibre_g: ai.fibre,
-      });
-      return { contribution: base, estimated: true };
-    }
-  }
+  const cofid: IngredientCofidMeta | undefined =
+    resolved.source === "cofid"
+      ? {
+          cofid_food_name: resolved.cofid_food_name,
+          cofid_matched_by: resolved.cofid_matched_by,
+        }
+      : undefined;
 
-  return { contribution: base, estimated: false };
+  return {
+    contribution: base,
+    estimated: resolved.estimated,
+    cofid,
+  };
 }
 
 export async function calculateRecipeNutritionWithMeta(
   ingredients: RecipeIngredientInput[],
   opts?: { aiEnabled?: boolean },
-): Promise<{ totals: NutritionTotals; estimatedFlags: boolean[] }> {
+): Promise<{
+  totals: NutritionTotals;
+  estimatedFlags: boolean[];
+  cofidMeta: IngredientCofidMeta[];
+}> {
   const valid = ingredients.filter(
     (i) => i.name.trim() && Number.isFinite(i.quantity) && i.quantity > 0,
   );
@@ -144,7 +109,11 @@ export async function calculateRecipeNutritionWithMeta(
   };
 
   if (!valid.length) {
-    return { totals: EMPTY, estimatedFlags: ingredients.map(() => false) };
+    return {
+      totals: EMPTY,
+      estimatedFlags: ingredients.map(() => false),
+      cofidMeta: ingredients.map(() => ({})),
+    };
   }
 
   const aiEnabled = opts?.aiEnabled ?? true;
@@ -153,6 +122,7 @@ export async function calculateRecipeNutritionWithMeta(
   let matched = 0;
   const totals = emptyLine();
   const estimatedFlags = rows.map((row) => row.estimated);
+  const cofidMeta = rows.map((row) => row.cofid ?? {});
   for (const row of rows) {
     const hasData =
       row.contribution.calories > 0 ||
@@ -163,12 +133,37 @@ export async function calculateRecipeNutritionWithMeta(
     sumPartial(totals, row.contribution);
   }
 
+  const fullCofidMeta: IngredientCofidMeta[] = [];
+  let validIdx = 0;
+  for (const ing of ingredients) {
+    const isValid = ing.name.trim() && Number.isFinite(ing.quantity) && ing.quantity > 0;
+    if (isValid) {
+      fullCofidMeta.push(cofidMeta[validIdx] ?? {});
+      validIdx += 1;
+    } else {
+      fullCofidMeta.push({});
+    }
+  }
+
+  const fullEstimatedFlags: boolean[] = [];
+  validIdx = 0;
+  for (const ing of ingredients) {
+    const isValid = ing.name.trim() && Number.isFinite(ing.quantity) && ing.quantity > 0;
+    if (isValid) {
+      fullEstimatedFlags.push(estimatedFlags[validIdx] ?? false);
+      validIdx += 1;
+    } else {
+      fullEstimatedFlags.push(false);
+    }
+  }
+
   return {
     totals: {
       ...totals,
       coverage_pct: Math.round((matched / valid.length) * 100),
     },
-    estimatedFlags,
+    estimatedFlags: fullEstimatedFlags,
+    cofidMeta: fullCofidMeta,
   };
 }
 

@@ -3,8 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { calculateRecipeNutrition, type RecipeIngredientInput } from "@/lib/nutrition/calculate";
-import { calculateRecipeNutritionWithMeta } from "@/lib/nutrition/asyncTotals";
+import type { RecipeIngredientInput } from "@/lib/nutrition/calculate";
+import {
+  calculateRecipeNutritionWithMeta,
+  type IngredientCofidMeta,
+} from "@/lib/nutrition/asyncTotals";
+import { getRecipeNutritionTotals } from "@/lib/nutrition/recipeNutritionTotals";
 import {
   buildGoalMatchedRecipeIngredients,
   fractionForMealSlot,
@@ -88,6 +92,23 @@ function toTitleCase(value: string): string {
     .join(" ");
 }
 
+function buildIngredientRows(
+  recipeId: string,
+  ingredients: RecipeIngredientInput[],
+  estimatedFlags: boolean[],
+  cofidMeta: IngredientCofidMeta[],
+) {
+  return ingredients.map((ingredient, i) => ({
+    recipe_id: recipeId,
+    name: toTitleCase(ingredient.name.trim()),
+    quantity: ingredient.quantity,
+    unit: ingredient.unit.trim(),
+    nutrition_estimated: estimatedFlags[i] ?? false,
+    cofid_food_name: cofidMeta[i]?.cofid_food_name ?? null,
+    cofid_matched_by: cofidMeta[i]?.cofid_matched_by ?? null,
+  }));
+}
+
 export async function generateGoalMatchedRecipeDraft(payload: {
   mealSlot: GoalMealSlot;
   fitsVegan: boolean;
@@ -138,7 +159,7 @@ export async function generateGoalMatchedRecipeDraft(payload: {
     payload.variationSeed,
   );
 
-  const ingredients = buildGoalMatchedRecipeIngredients({
+  const ingredients = await buildGoalMatchedRecipeIngredients({
     targetCalories: targetMealCalories,
     mealSlot: payload.mealSlot,
     vegan,
@@ -147,7 +168,7 @@ export async function generateGoalMatchedRecipeDraft(payload: {
     variantSeed,
   });
 
-  const totals = calculateRecipeNutrition(ingredients);
+  const { totals } = await getRecipeNutritionTotals(ingredients, { aiEnabled: true });
 
   return {
     success: true,
@@ -221,13 +242,12 @@ export async function createRecipe(
     return { error: recipeError?.message ?? "Failed to create recipe." };
   }
 
-  const ingredientRows = ingredients.map((ingredient) => ({
-    recipe_id: recipe.id,
-    name: toTitleCase(ingredient.name.trim()),
-    quantity: ingredient.quantity,
-    unit: ingredient.unit.trim(),
-    nutrition_estimated: false,
-  }));
+  const { totals: nutrition, estimatedFlags, cofidMeta } = await calculateRecipeNutritionWithMeta(
+    ingredients,
+    { aiEnabled: true },
+  );
+
+  const ingredientRows = buildIngredientRows(recipe.id, ingredients, estimatedFlags, cofidMeta);
 
   const { error: ingredientsError } = await supabase
     .from("recipe_ingredients")
@@ -237,7 +257,6 @@ export async function createRecipe(
     return { error: ingredientsError.message };
   }
 
-  const nutrition = calculateRecipeNutrition(ingredients);
   const { error: nutritionError } = await supabase.from("recipe_nutrition").upsert(
     {
       recipe_id: recipe.id,
@@ -303,9 +322,10 @@ export async function createImportedRecipe(
     };
   }
 
-  const { totals: nutrition, estimatedFlags } = await calculateRecipeNutritionWithMeta(ingredients, {
-    aiEnabled: true,
-  });
+  const { totals: nutrition, estimatedFlags, cofidMeta } = await calculateRecipeNutritionWithMeta(
+    ingredients,
+    { aiEnabled: true },
+  );
 
   const { data: recipe, error: recipeError } = await supabase
     .from("recipes")
@@ -330,13 +350,7 @@ export async function createImportedRecipe(
     return { error: recipeError?.message ?? "Failed to create recipe." };
   }
 
-  const ingredientRows = ingredients.map((ingredient, i) => ({
-    recipe_id: recipe.id,
-    name: toTitleCase(ingredient.name.trim()),
-    quantity: ingredient.quantity,
-    unit: ingredient.unit.trim(),
-    nutrition_estimated: estimatedFlags[i] ?? false,
-  }));
+  const ingredientRows = buildIngredientRows(recipe.id, ingredients, estimatedFlags, cofidMeta);
 
   const { error: ingredientsError } = await supabase.from("recipe_ingredients").insert(ingredientRows);
 
@@ -407,19 +421,17 @@ export async function updateRecipe(payload: UpdateRecipePayload): Promise<Action
     .eq("recipe_id", recipeId);
   if (deleteIngredientsError) return { error: deleteIngredientsError.message };
 
-  const ingredientRows = ingredients.map((ingredient) => ({
-    recipe_id: recipeId,
-    name: toTitleCase(ingredient.name.trim()),
-    quantity: ingredient.quantity,
-    unit: ingredient.unit.trim(),
-    nutrition_estimated: false,
-  }));
+  const { totals: nutrition, estimatedFlags, cofidMeta } = await calculateRecipeNutritionWithMeta(
+    ingredients,
+    { aiEnabled: true },
+  );
+
+  const ingredientRows = buildIngredientRows(recipeId, ingredients, estimatedFlags, cofidMeta);
   const { error: insertIngredientsError } = await supabase
     .from("recipe_ingredients")
     .insert(ingredientRows);
   if (insertIngredientsError) return { error: insertIngredientsError.message };
 
-  const nutrition = calculateRecipeNutrition(ingredients);
   const { error: nutritionError } = await supabase.from("recipe_nutrition").upsert(
     {
       recipe_id: recipeId,

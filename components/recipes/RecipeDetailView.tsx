@@ -14,6 +14,8 @@ type Ingredient = {
   quantity: number;
   unit: string;
   nutrition_estimated?: boolean | null;
+  cofid_food_name?: string | null;
+  cofid_matched_by?: string | null;
 };
 
 type Props = {
@@ -158,6 +160,14 @@ export function RecipeDetailView({
                       {qty} {ing.unit} {ing.name}
                       {weightHint ? <span className="text-gray-400"> {weightHint}</span> : null}
                     </span>
+                    {ing.cofid_matched_by && ing.cofid_matched_by !== "exact" ? (
+                      <span
+                        className="text-xs text-gray-400"
+                        title={`Matched to: ${ing.cofid_food_name ?? ""}`}
+                      >
+                        ~
+                      </span>
+                    ) : null}
                     {ing.nutrition_estimated ? (
                       <span className="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-xs text-amber-600">
                         est.

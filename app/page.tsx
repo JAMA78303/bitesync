@@ -18,7 +18,7 @@ import {
   MapPin,
 } from "lucide-react";
 import { LandingFaq } from "@/components/landing/LandingFaq";
-import { LandingPhoneMockups } from "@/components/landing/LandingPhoneMockups";
+import { LandingPhoneMockups, MockPlanner } from "@/components/landing/LandingPhoneMockups";
 import { Logo } from "@/components/shared/Logo";
 
 const NAV_LINKS = [
@@ -50,7 +50,7 @@ const STEPS: { step: string; Icon: LucideIcon; title: string; desc: string }[] =
   },
 ];
 
-const FEATURES: { Icon: LucideIcon; title: string; desc: string }[] = [
+const FEATURES: { Icon: LucideIcon; title: string; desc: string; isPro?: boolean }[] = [
   {
     Icon: Flame,
     title: "Automatic nutrition",
@@ -80,6 +80,7 @@ const FEATURES: { Icon: LucideIcon; title: string; desc: string }[] = [
     Icon: BarChart3,
     title: "Weekly nutrition",
     desc: "Micronutrient analysis against UK reference values on Pro.",
+    isPro: true,
   },
   {
     Icon: BookOpen,
@@ -90,6 +91,7 @@ const FEATURES: { Icon: LucideIcon; title: string; desc: string }[] = [
     Icon: Sparkles,
     title: "AI meal planning",
     desc: "Pro users can fill the week from their own recipe library, respecting dietary preferences.",
+    isPro: true,
   },
   {
     Icon: Leaf,
@@ -176,8 +178,17 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      <header className="bg-gradient-to-b from-[#3a5a40] via-[#3d6144] to-[#4a7a50] px-4 pt-14 pb-16 text-center text-white sm:pt-20 sm:pb-20">
-        <div className="mx-auto max-w-3xl">
+      <header className="relative overflow-hidden bg-[radial-gradient(ellipse_at_top_left,_#4a7a50_0%,_#3a5a40_40%,_#2d4a33_100%)] px-4 pt-14 pb-10 text-center text-white sm:pt-20 sm:pb-28">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E\")",
+            backgroundSize: "200px 200px",
+          }}
+        />
+        <div className="relative z-10 mx-auto max-w-3xl">
           <p className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-xs font-medium backdrop-blur-sm">
             <Zap className="h-3.5 w-3.5" aria-hidden />
             Free to start — no credit card needed
@@ -189,24 +200,21 @@ export default function LandingPage() {
             Build your recipe library, plan your week, hit your nutrition targets, and generate your
             grocery list — automatically.
           </p>
-          <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link
-              href="/signup"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-[#3a5a40] transition-colors hover:bg-[#f0f7f0] sm:w-auto"
-            >
-              Start planning for free
-              <ChevronRight className="h-4 w-4" aria-hidden />
-            </Link>
-            <Link
-              href="/login"
-              className="inline-flex w-full items-center justify-center rounded-xl border border-white/30 bg-white/10 px-6 py-3 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/20 sm:w-auto"
-            >
-              Sign in
-            </Link>
-          </div>
+          <Link
+            href="/signup"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-[#3a5a40] transition-colors hover:bg-[#f0f7f0] sm:w-auto"
+          >
+            Start planning for free
+            <ChevronRight className="h-4 w-4" aria-hidden />
+          </Link>
           <p className="mt-6 text-xs text-white/60">
             Built for UK households · NHS-aligned nutrition references · Private by default
           </p>
+          <div className="mt-10 hidden justify-center sm:flex">
+            <div className="relative z-10 -mb-20 drop-shadow-2xl">
+              <MockPlanner />
+            </div>
+          </div>
         </div>
       </header>
 
@@ -235,7 +243,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="overflow-hidden bg-white py-12 sm:py-16">
+      <section className="overflow-hidden bg-[#f5f9f5] py-12 sm:py-16">
         <div className="mx-auto mb-8 max-w-2xl px-4 text-center">
           <h2 className="mb-2 text-2xl font-bold text-slate-900 sm:text-3xl">See it in action</h2>
           <p className="text-sm text-slate-500">
@@ -245,7 +253,7 @@ export default function LandingPage() {
         <LandingPhoneMockups />
       </section>
 
-      <section id="features" className="scroll-mt-24 py-16 sm:py-20">
+      <section id="features" className="scroll-mt-24 bg-slate-50 py-16 sm:py-20">
         <div className="mx-auto max-w-6xl px-4">
           <div className="mb-12 text-center">
             <h2 className="mb-3 text-2xl font-bold text-slate-900 sm:text-3xl">
@@ -256,15 +264,22 @@ export default function LandingPage() {
             </p>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map(({ Icon, title, desc }) => (
+            {FEATURES.map(({ Icon, title, desc, isPro }) => (
               <article
                 key={title}
-                className="rounded-2xl border border-slate-200 bg-white p-5 transition-shadow hover:shadow-md"
+                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
               >
-                <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#f0f7f0]">
-                  <Icon className="h-5 w-5 text-[#3a5a40]" aria-hidden />
+                <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-[#f0f7f0]">
+                  <Icon className="h-6 w-6 text-[#3a5a40]" aria-hidden />
                 </span>
-                <h3 className="mb-2 font-semibold text-slate-900">{title}</h3>
+                <h3 className="mb-2 font-semibold text-slate-900">
+                  {title}
+                  {isPro ? (
+                    <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                      Pro
+                    </span>
+                  ) : null}
+                </h3>
                 <p className="text-sm leading-relaxed text-slate-500">{desc}</p>
               </article>
             ))}
@@ -307,7 +322,12 @@ export default function LandingPage() {
               <p className="text-3xl font-bold">
                 £6.99<span className="text-base font-normal text-white/70">/month</span>
               </p>
-              <p className="mt-1 text-xs text-white/70">or £59/year — save 30%</p>
+              <div className="mt-2 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+                <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
+                  SAVE 30%
+                </span>
+                <span className="text-xs text-white/70">£59/year · works out to £4.92/mo</span>
+              </div>
               <ul className="mb-8 mt-6 space-y-3">
                 {PRO_FEATURES.map((item) => (
                   <li key={item} className="flex items-center gap-2 text-sm text-green-50">
@@ -381,6 +401,13 @@ export default function LandingPage() {
                 </h3>
                 <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-500">{post.desc}</p>
                 <p className="mt-4 text-xs text-slate-400">{post.readTime}</p>
+                <Link
+                  href="/signup"
+                  className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-[#3a5a40] hover:underline"
+                >
+                  Try BiteSync free
+                  <ChevronRight className="h-3 w-3" aria-hidden />
+                </Link>
               </article>
             ))}
           </div>
@@ -405,19 +432,52 @@ export default function LandingPage() {
       </section>
 
       <footer className="border-t border-slate-100 bg-slate-50 py-10">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 px-4 sm:flex-row">
-          <Logo size="sm" href="/" />
-          <nav className="flex flex-wrap items-center justify-center gap-6">
-            {NAV_LINKS.map((link) => (
-              <a key={link.href} href={link.href} className="text-xs text-slate-500 hover:text-slate-700">
-                {link.label}
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-4">
+          <div className="flex w-full flex-col items-center justify-between gap-6 sm:flex-row">
+            <Logo size="sm" href="/" />
+            <nav className="flex flex-wrap items-center justify-center gap-6">
+              {NAV_LINKS.map((link) => (
+                <a key={link.href} href={link.href} className="text-xs text-slate-500 hover:text-slate-700">
+                  {link.label}
+                </a>
+              ))}
+              <Link href="/login" className="text-xs text-slate-500 hover:text-slate-700">
+                Sign in
+              </Link>
+            </nav>
+            <div className="flex items-center gap-3">
+              <a
+                href="https://x.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-slate-400 transition-colors hover:text-slate-600"
+                aria-label="BiteSync on X"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
               </a>
-            ))}
-            <Link href="/login" className="text-xs text-slate-500 hover:text-slate-700">
-              Sign in
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-slate-400 transition-colors hover:text-slate-600"
+                aria-label="BiteSync on Instagram"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                  <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                  <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+                </svg>
+              </a>
+            </div>
+          </div>
+          <p className="text-center text-xs text-slate-400">
+            © {new Date().getFullYear()} BiteSync · GDPR compliant ·{" "}
+            <Link href="/privacy" className="ml-1 hover:underline">
+              Privacy
             </Link>
-          </nav>
-          <p className="text-xs text-slate-400">© {new Date().getFullYear()} BiteSync. All rights reserved.</p>
+          </p>
         </div>
       </footer>
     </div>

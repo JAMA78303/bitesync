@@ -45,6 +45,7 @@ export function getIngredientAutocompleteLabel(name: string): string {
   return name;
 }
 
+/** Local curated DB (sync). UK CoFID lookup runs server-side in async recipe nutrition (see cofidLookup.ts). */
 export function lookupNutrition(name: string): NutritionLookupEntry | null {
   const normalized = normalizeName(name);
   const exact = NUTRITION_DB.find((item) => normalizeName(item.name) === normalized);

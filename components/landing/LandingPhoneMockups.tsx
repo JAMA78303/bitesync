@@ -80,7 +80,7 @@ function MealRow({ emoji, name, meta }: { emoji: string; name: string; meta: str
   );
 }
 
-function MockPlanner() {
+export function MockPlanner() {
   const days = ["M", "T", "W", "T", "F", "S", "S"];
   return (
     <PhoneFrame label="BiteSync weekly planner preview">

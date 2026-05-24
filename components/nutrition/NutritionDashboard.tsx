@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import type { DayMacros } from "@/lib/planner/weekly-macros";
 import type { UserNutritionTargets } from "@/lib/utils/nutrition-targets";
 import { ds } from "@/lib/ui/classes";
+import { CofidAttribution } from "@/components/nutrition/CofidAttribution";
 import { MicronutrientPanel } from "@/components/planner/MicronutrientPanel";
 import type { MicroAnalysis } from "@/lib/supabase/nutrition";
 
@@ -154,6 +155,8 @@ export function NutritionDashboard({
             </div>
           )}
         </div>
+
+        <CofidAttribution className="mt-6 px-1" />
       </div>
     </div>
   );

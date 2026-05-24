@@ -20,6 +20,13 @@
 # production
 /build
 
+# CoFID dataset files (download via scripts/README-cofid.md)
+/scripts/cofid_2021.xlsx
+/scripts/cofid_2021.csv
+/scripts/McCance_*.csv
+/scripts/.pydeps/
+/sql/cofid_import/
+
 # misc
 .DS_Store
 *.pem
