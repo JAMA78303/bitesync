@@ -62,6 +62,52 @@ If any name is ≤2 chars → data bug (Step 2A); else layout fix is sufficient.
 
 ---
 
+## Stale grocery snapshots (separate from Spec 4)
+
+**Verdict: `grocery_items` is a persisted snapshot. Macro recompute does not touch it.**
+
+The Spec 4 migration (`lib/recipes/macroRecompute.ts`) writes **only** to `recipe_ingredients` and `recipe_nutrition`. Confirmed in `applyRecipeRecompute()` — no `grocery_items` reads or writes. A stale line like `1 bottle ½ Tbsp Olive Oil Plus An Extra Drizzle (1 piece needed)` is a frozen row from an old generate; regenerating the list rebuilds from current `recipe_ingredients` via `generateGroceryList()` → `mergeScaledRecipeIngredients` → `normalizeIngredientsForShopping` → `replaceGroceryItemsWithMerged`.
+
+**These are independent repairs.** Run Spec 4 for bad recipe nutrition / mangled ingredient rows. Fix stale grocery display separately — do not delay macro recompute because of a grocery line.
+
+### Decision rule
+
+| Scope query result | Action |
+|---|---|
+| One list, or a handful | **Regenerate by hand** (Grocery → Generate list). No migration extension, no code. |
+| Many affected plans | **Separate task:** re-derive `grocery_items` for affected `meal_plan_id`s through the existing `generateGroceryList` pipeline, with dry-run + idempotent pattern. Do **not** bolt onto Spec 4. |
+
+### Scope queries (run in Supabase SQL editor)
+
+**Count plans with likely stale recipe-derived rows** (not manual items):
+
+```sql
+SELECT meal_plan_id, COUNT(*) AS stale_items
+FROM grocery_items
+WHERE archived_at IS NULL
+  AND COALESCE(is_manual, false) = false
+  AND (
+    unit IN ('piece', 'pieces')
+    OR name ~* '(tbsp|tsp|tablespoon|teaspoon|½|plus an extra)'
+  )
+GROUP BY meal_plan_id
+ORDER BY stale_items DESC;
+```
+
+**Caution:** the `name ~*` pattern can false-positive on legitimate lines (e.g. a user-typed name containing "tbsp"). `is_manual = false` helps but is not enough — **eyeball the actual rows**, not just the count, before deciding "many."
+
+**Optional — plans with piece-unit rows only** (broader, review manually):
+
+```sql
+SELECT COUNT(DISTINCT meal_plan_id) AS plans_with_piece_unit_grocery
+FROM grocery_items
+WHERE archived_at IS NULL
+  AND COALESCE(is_manual, false) = false
+  AND unit IN ('piece', 'pieces');
+```
+
+---
+
 ## Verified in code (2026-06-03)
 
 ### Spec 1 — FIXES
@@ -95,6 +141,7 @@ If any name is ≤2 chars → data bug (Step 2A); else layout fix is sufficient.
 |---|---|---|
 | Dry-run script | ✅ | `npm run recompute:macros -- --dry-run` |
 | **Executed** | ❌ | Needs Supabase env vars |
+| Grocery list repair | ➖ N/A | **Not in scope** — see [Stale grocery snapshots](#stale-grocery-snapshots-separate-from-spec-4) |
 
 ### Specs 5, 6, button
 
@@ -104,15 +151,17 @@ All ✅ — see prior commits in working tree.
 
 ## Next actions
 
-1. **Deploy** current branch so planner grid layout fix reaches production.
-2. **Spec 4** — with env vars set:
+1. **Spec 4** — with env vars set (independent of grocery snapshots):
    - `npm run recompute:macros -- --dry-run`
    - Review `scripts/reports/`
    - Real run → dry-run again (expect 0 changes)
+2. **Stale grocery lists** — run [scope queries](#scope-queries-run-in-supabase-sql-editor) above:
+   - Few plans → regenerate those lists in the app
+   - Many plans → schedule separate grocery re-derive task (not Spec 4)
 3. Run `sql/2026-06-02_recipes_source_type.sql` in Supabase if not applied.
 
 ---
 
 ## Note
 
-Parser + CoFID matcher fixes are highest leverage — bad output flows into grocery, planner totals, and dashboard. Macro recompute (Spec 4) repairs already-saved rows once Specs 1+2 are deployed.
+Parser + CoFID matcher fixes are highest leverage — bad output flows into grocery, planner totals, and dashboard. Macro recompute (Spec 4) repairs already-saved **recipe** rows once Specs 1+2 are deployed; saved **grocery** snapshots only refresh on regenerate (or a future dedicated migration if scope is high).
