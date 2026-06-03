@@ -16,6 +16,7 @@
  */
 import fs from "fs";
 import path from "path";
+import { loadEnvFiles } from "@/lib/supabase/loadEnv";
 import { setCofidLookupSupabase } from "@/lib/nutrition/cofidLookup";
 import {
   formatMacroRecomputeReport,
@@ -40,6 +41,7 @@ function parseArgs(argv: string[]) {
 }
 
 async function main() {
+  loadEnvFiles();
   const args = parseArgs(process.argv.slice(2));
   const supabase = createServiceClient();
   setCofidLookupSupabase(supabase);
