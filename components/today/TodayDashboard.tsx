@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { CalorieRing } from "@/components/today/CalorieRing";
+import { GoalsStatusLegend } from "@/components/today/GoalsStatusLegend";
 import { MacroBar } from "@/components/today/MacroBar";
+import { getGoalStatus } from "@/lib/today/goal-status";
 import { TodayMealCard } from "@/components/today/TodayMealCard";
 import type { TodayMeal, TodayTotals } from "@/lib/planner/today";
 import type { UserNutritionTargets } from "@/lib/utils/nutrition-targets";
@@ -19,6 +21,7 @@ type Props = {
 
 export function TodayDashboard({ meals, totals, targets, dietaryPreferences }: Props) {
   const remaining = Math.max(0, targets.kcal - totals.kcal);
+  const calorieStatus = getGoalStatus("kcal", totals.kcal, targets.kcal);
   const dateLabel = new Date().toLocaleDateString("en-GB", {
     weekday: "long",
     day: "numeric",
@@ -42,18 +45,20 @@ export function TodayDashboard({ meals, totals, targets, dietaryPreferences }: P
                 {Math.round(totals.kcal)}
                 <span className="text-base font-normal text-gray-400"> / {targets.kcal}</span>
               </p>
-              <p className="mt-0.5 text-xs font-medium text-[#3a5a40] dark:text-[#a7d4a9]">
+              <p className="mt-0.5 text-xs font-medium text-gray-500 dark:text-gray-400">
                 {remaining} kcal remaining
               </p>
+              <p className={`text-[10px] font-medium ${calorieStatus.textClassName}`}>{calorieStatus.label}</p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <MacroBar label="Protein" value={totals.protein} target={targets.protein} unit="g" color="#3a5a40" />
-            <MacroBar label="Fibre" value={totals.fibre} target={targets.fibre} unit="g" color="#7ab87a" />
-            <MacroBar label="Fat" value={totals.fat} target={targets.fat} unit="g" color="#f59e0b" />
-            <MacroBar label="Carbs" value={totals.carbs} target={targets.carbs} unit="g" color="#f97316" />
+            <MacroBar metric="protein" label="Protein" value={totals.protein} target={targets.protein} unit="g" />
+            <MacroBar metric="fibre" label="Fibre" value={totals.fibre} target={targets.fibre} unit="g" />
+            <MacroBar metric="fat" label="Fat" value={totals.fat} target={targets.fat} unit="g" />
+            <MacroBar metric="carbs" label="Carbs" value={totals.carbs} target={targets.carbs} unit="g" />
           </div>
+          <GoalsStatusLegend />
         </div>
 
         <div className="mb-4">

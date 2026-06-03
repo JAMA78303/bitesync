@@ -1,5 +1,7 @@
 "use client";
 
+import { getGoalStatus } from "@/lib/today/goal-status";
+
 type Props = {
   consumed: number;
   target: number;
@@ -12,9 +14,7 @@ export function CalorieRing({ consumed, target, size = 80 }: Props) {
   const safeTarget = target > 0 ? target : 1;
   const progress = Math.min(consumed / safeTarget, 1);
   const strokeDashoffset = circumference * (1 - progress);
-
-  const ringColor =
-    progress >= 1 ? "#ef4444" : progress >= 0.85 ? "#f59e0b" : "#3a5a40";
+  const ringColor = getGoalStatus("kcal", consumed, target).color;
 
   return (
     <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
@@ -39,7 +39,7 @@ export function CalorieRing({ consumed, target, size = 80 }: Props) {
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
-          style={{ transition: "stroke-dashoffset 0.6s ease" }}
+          style={{ transition: "stroke-dashoffset 0.6s ease, stroke 0.3s ease" }}
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">

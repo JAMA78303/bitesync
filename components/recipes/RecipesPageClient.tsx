@@ -69,8 +69,8 @@ export function RecipesPageClient({
         </Link>
       </div>
 
-      <div className="flex items-center gap-2 rounded-2xl bg-white/15 px-4 py-3 backdrop-blur-sm">
-        <svg className="h-4 w-4 shrink-0 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+      <div className="flex items-center gap-2 rounded-2xl border border-white/30 bg-white/25 px-4 py-3 backdrop-blur-sm">
+        <svg className="h-4 w-4 shrink-0 text-white/90" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
         <input
@@ -78,7 +78,7 @@ export function RecipesPageClient({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search recipes..."
-          className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/50"
+          className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/85 dark:text-white dark:placeholder:text-white/85"
         />
       </div>
 
@@ -89,7 +89,9 @@ export function RecipesPageClient({
             type="button"
             onClick={() => setActiveFilter(tag)}
             className={`flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
-              activeFilter === tag ? "bg-white text-[#3a5a40]" : "bg-white/15 text-white hover:bg-white/25"
+              activeFilter === tag
+                ? "bg-white text-[#3a5a40] shadow-sm"
+                : "border border-white/45 bg-white/30 text-white hover:bg-white/40"
             }`}
           >
             {tag}
@@ -101,12 +103,14 @@ export function RecipesPageClient({
           aria-pressed={activeFilter === "Favourites"}
           className={`flex flex-shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
             activeFilter === "Favourites"
-              ? "bg-white text-[#3a5a40]"
-              : "bg-white/15 text-white hover:bg-white/25"
+              ? "bg-white text-[#3a5a40] shadow-sm"
+              : "border border-white/45 bg-white/30 text-white hover:bg-white/40"
           }`}
         >
           <Heart
-            className={`h-3.5 w-3.5 ${activeFilter === "Favourites" ? "fill-red-500 text-red-500" : ""}`}
+            className={`h-3.5 w-3.5 ${
+              activeFilter === "Favourites" ? "fill-red-500 text-red-500" : "text-white"
+            }`}
             strokeWidth={2}
           />
           Favourites
