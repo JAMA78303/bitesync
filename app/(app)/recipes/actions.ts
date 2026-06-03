@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { RecipeIngredientInput } from "@/lib/nutrition/calculate";
 import {
@@ -472,44 +471,45 @@ export async function updateRecipe(payload: UpdateRecipePayload): Promise<Action
   return { success: true, data: { id: recipeId }, message: "Recipe updated." };
 }
 
-export async function deleteRecipe(recipeId: string): Promise<void> {
+export async function deleteRecipe(recipeId: string): Promise<ActionResult> {
   const id = recipeId.trim();
-  if (!id) return;
+  if (!id) return { error: "Invalid recipe" };
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) {
-    redirect("/login");
-  }
+  if (!user) return { error: "Unauthorized" };
 
-  await supabase.from("recipes").delete().eq("id", id).eq("user_id", user.id);
+  const { error } = await supabase.from("recipes").delete().eq("id", id).eq("user_id", user.id);
+  if (error) return { error: error.message };
+
   revalidatePath("/recipes");
-  redirect("/recipes");
+  revalidatePath("/planner");
+  return { success: true, message: "Recipe deleted." };
 }
 
-export async function archiveRecipe(recipeId: string): Promise<void> {
+export async function archiveRecipe(recipeId: string): Promise<ActionResult> {
   const id = recipeId.trim();
-  if (!id) return;
+  if (!id) return { error: "Invalid recipe" };
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) {
-    redirect("/login");
-  }
+  if (!user) return { error: "Unauthorized" };
 
-  await supabase
+  const { error } = await supabase
     .from("recipes")
     .update({ archived_at: new Date().toISOString(), updated_at: new Date().toISOString() })
     .eq("id", id)
     .eq("user_id", user.id);
 
+  if (error) return { error: error.message };
+
   revalidatePath("/recipes");
   revalidatePath("/planner");
-  redirect("/recipes");
+  return { success: true, message: "Recipe archived." };
 }
 
 export async function toggleRecipeFavourite(
@@ -538,27 +538,27 @@ export async function toggleRecipeFavourite(
   return { success: true, message: isFavourite ? "Added to favourites" : "Removed from favourites" };
 }
 
-export async function restoreRecipe(recipeId: string): Promise<void> {
+export async function restoreRecipe(recipeId: string): Promise<ActionResult> {
   const id = recipeId.trim();
-  if (!id) return;
+  if (!id) return { error: "Invalid recipe" };
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) {
-    redirect("/login");
-  }
+  if (!user) return { error: "Unauthorized" };
 
-  await supabase
+  const { error } = await supabase
     .from("recipes")
     .update({ archived_at: null, updated_at: new Date().toISOString() })
     .eq("id", id)
     .eq("user_id", user.id);
 
+  if (error) return { error: error.message };
+
   revalidatePath("/recipes");
   revalidatePath("/planner");
-  redirect("/recipes?view=archived");
+  return { success: true, message: "Recipe restored." };
 }
 
 /** Recompute stored nutrition using corrected parser + CoFID matcher (current user only). */

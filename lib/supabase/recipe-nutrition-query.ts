@@ -58,10 +58,18 @@ export function sanitizeRecipeNutritionRow(raw: Record<string, unknown> | null):
   };
 }
 
+export type FetchRecipeNutritionOptions = {
+  /** When false, skip deriving missing rows from ingredients (fast list views). Default true. */
+  fillMissing?: boolean;
+  /** Used when fillMissing is true. Default false — avoid AI on bulk reads. */
+  aiEnabled?: boolean;
+};
+
 async function fillNutritionFromIngredients(
   supabase: SupabaseClient,
   recipeIds: string[],
   map: Map<string, RecipeNutritionSummary>,
+  aiEnabled: boolean,
 ): Promise<void> {
   const missing = recipeIds.filter((id) => !map.has(id));
   if (!missing.length) return;
@@ -86,6 +94,14 @@ async function fillNutritionFromIngredients(
     byRecipe.set(rid, list);
   }
 
+  const computed = await Promise.all(
+    missing.map(async (rid) => {
+      const inputs = byRecipe.get(rid) ?? [];
+      const { totals } = await getRecipeNutritionTotals(inputs, { aiEnabled });
+      return { rid, totals, summary: totalsToNutritionSummary(totals) };
+    }),
+  );
+
   const upsertRows: Array<{
     recipe_id: string;
     calories: number;
@@ -99,10 +115,7 @@ async function fillNutritionFromIngredients(
     coverage_pct: number;
   }> = [];
 
-  for (const rid of missing) {
-    const inputs = byRecipe.get(rid) ?? [];
-    const { totals } = await getRecipeNutritionTotals(inputs, { aiEnabled: true });
-    const summary = totalsToNutritionSummary(totals);
+  for (const { rid, totals, summary } of computed) {
     map.set(rid, summary);
     upsertRows.push({
       recipe_id: rid,
@@ -126,7 +139,10 @@ async function fillNutritionFromIngredients(
 export async function fetchRecipeNutritionMap(
   supabase: SupabaseClient,
   recipeIds: string[],
+  opts?: FetchRecipeNutritionOptions,
 ): Promise<Map<string, RecipeNutritionSummary>> {
+  const fillMissing = opts?.fillMissing ?? true;
+  const aiEnabled = opts?.aiEnabled ?? false;
   const map = new Map<string, RecipeNutritionSummary>();
   const ids = [...new Set(recipeIds)].filter(Boolean);
   if (!ids.length) return map;
@@ -146,8 +162,10 @@ export async function fetchRecipeNutritionMap(
     }
   }
 
-  /* When table rows are missing, RLS blocked the read, or rows failed sanitization — derive from ingredients (same logic as save). */
-  await fillNutritionFromIngredients(supabase, ids, map);
+  if (fillMissing) {
+    /* When table rows are missing, RLS blocked the read, or rows failed sanitization — derive from ingredients. */
+    await fillNutritionFromIngredients(supabase, ids, map, aiEnabled);
+  }
 
   return map;
 }

@@ -39,8 +39,11 @@ type Props = {
   } | null;
   dietaryPreferences: string[];
   editHref: string;
-  archiveAction: React.ReactNode;
-  deleteAction: React.ReactNode;
+  lifecycleActions?: React.ReactNode;
+  /** @deprecated Prefer lifecycleActions */
+  archiveAction?: React.ReactNode;
+  /** @deprecated Prefer lifecycleActions */
+  deleteAction?: React.ReactNode;
 };
 
 export function RecipeDetailView({
@@ -49,6 +52,7 @@ export function RecipeDetailView({
   nutrition,
   dietaryPreferences,
   editHref,
+  lifecycleActions,
   archiveAction,
   deleteAction,
 }: Props) {
@@ -185,8 +189,12 @@ export function RecipeDetailView({
             Add to planner
           </Link>
           <div className="flex gap-2">
-            {archiveAction}
-            {deleteAction}
+            {lifecycleActions ?? (
+              <>
+                {archiveAction}
+                {deleteAction}
+              </>
+            )}
           </div>
         </div>
       </div>

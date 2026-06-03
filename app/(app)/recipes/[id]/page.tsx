@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
-import { archiveRecipe, deleteRecipe } from "@/app/(app)/recipes/actions";
 import { RecipeDetailView } from "@/components/recipes/RecipeDetailView";
+import { RecipeLifecycleButtons } from "@/components/recipes/RecipeLifecycleButtons";
 import { initialDietaryPreferencesFromProfile } from "@/lib/dietary/constraints";
 import { fetchRecipeNutritionForRecipe } from "@/lib/supabase/recipe-nutrition-query";
 import { getProfile } from "@/lib/supabase/profile";
@@ -69,28 +69,7 @@ export default async function RecipeDetailPage({ params }: RecipePageProps) {
       }
       dietaryPreferences={dietaryPreferences}
       editHref={`/recipes/${recipe.id}/edit`}
-      archiveAction={
-        <form action={archiveRecipe.bind(null, recipe.id)}>
-          <button
-            type="submit"
-            className="flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-200 text-lg text-gray-400 hover:text-amber-600 dark:border-gray-700"
-            aria-label="Archive recipe"
-          >
-            📦
-          </button>
-        </form>
-      }
-      deleteAction={
-        <form action={deleteRecipe.bind(null, recipe.id)}>
-          <button
-            type="submit"
-            className="flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-200 text-lg text-gray-400 hover:text-red-500 dark:border-gray-700"
-            aria-label="Delete recipe"
-          >
-            🗑️
-          </button>
-        </form>
-      }
+      lifecycleActions={<RecipeLifecycleButtons recipeId={recipe.id} />}
     />
   );
 }

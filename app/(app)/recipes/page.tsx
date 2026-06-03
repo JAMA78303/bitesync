@@ -66,7 +66,9 @@ export default async function RecipesPage({ searchParams }: Props) {
   }
 
   const nutritionMap =
-    recipes.length > 0 ? await fetchRecipeNutritionMap(supabase, recipes.map((r) => r.id)) : new Map();
+    recipes.length > 0
+      ? await fetchRecipeNutritionMap(supabase, recipes.map((r) => r.id), { fillMissing: false })
+      : new Map();
 
   const listItems: RecipeListItem[] = recipes.map((r) => {
     const n = nutritionMap.get(r.id);
