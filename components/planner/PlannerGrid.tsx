@@ -22,6 +22,17 @@ type Recipe = {
   fits_gluten_free?: boolean | null;
   ingredientNames?: string[];
 };
+
+const BREAKFAST_EMPTY_TIP =
+  "Tip: add recipes whose names mention oats, eggs, yoghurt… so hints and AI picks align better.";
+
+function isBreakfastRowEmpty(grid: PlannerGridType): boolean {
+  for (let day = 0; day < 7; day++) {
+    if (grid[day]?.breakfast) return false;
+  }
+  return true;
+}
+
 type Props = {
   grid: PlannerGridType;
   entries: MealPlanEntry[];
@@ -76,6 +87,8 @@ export function PlannerGrid({
 
   function handleAssigned() {}
 
+  const showBreakfastTip = isBreakfastRowEmpty(grid);
+
   return (
     <>
       <div className="hidden overflow-x-auto rounded-xl border border-gray-200 bg-white sm:block">
@@ -92,6 +105,11 @@ export function PlannerGrid({
             <Fragment key={mealType}>
               <div className="border-b border-gray-200 p-2 text-xs font-semibold uppercase text-gray-500">
                 {MEAL_LABELS[mealType]}
+                {mealType === "breakfast" && showBreakfastTip ? (
+                  <p className="mt-2 text-[11px] font-normal normal-case leading-snug text-slate-500">
+                    {BREAKFAST_EMPTY_TIP}
+                  </p>
+                ) : null}
               </div>
               {Array.from({ length: 7 }, (_, day) => {
                 const entry = grid[day][mealType];
@@ -128,20 +146,13 @@ export function PlannerGrid({
                     ) : entry ? (
                       <RecipeSlotCard entry={entry} dietPrefs={dietPrefs} dietaryPreferences={dietaryPreferences} variant="grid" />
                     ) : (
-                      <div className="space-y-1">
-                        <AddSlotButton
-                          day={day}
-                          mealType={mealType}
-                          dayLabel={DAY_LABELS[day]}
-                          mealPlanId={mealPlanId}
-                          onPickRecipe={openPicker}
-                        />
-                        {mealType === "breakfast" ? (
-                          <p className="text-[11px] text-slate-500">
-                            Tip: add recipes whose names mention oats, eggs, yoghurt… so hints and AI picks align better.
-                          </p>
-                        ) : null}
-                      </div>
+                      <AddSlotButton
+                        day={day}
+                        mealType={mealType}
+                        dayLabel={DAY_LABELS[day]}
+                        mealPlanId={mealPlanId}
+                        onPickRecipe={openPicker}
+                      />
                     )}
                   </div>
                 );
@@ -250,6 +261,9 @@ function PlannerGridMobileInline({
           return (
             <div key={mealType} className="meal-section space-y-2">
               <p className="meal-type-label">{MEAL_LABELS[mealType]}</p>
+              {mealType === "breakfast" && !entry ? (
+                <p className="text-[11px] leading-snug text-slate-500">{BREAKFAST_EMPTY_TIP}</p>
+              ) : null}
               {mealType === "snack" ? (
                 <div className="space-y-1">
                   {snackEntries.length > 0 ? (
@@ -285,20 +299,13 @@ function PlannerGridMobileInline({
               ) : entry ? (
                 <RecipeSlotCard entry={entry} dietPrefs={dietPrefs} dietaryPreferences={dietaryPreferences} />
               ) : (
-                <div className="space-y-1">
-                  <AddSlotButton
-                    day={activeDay}
-                    mealType={mealType}
-                    dayLabel={DAY_LABELS[activeDay]}
-                    mealPlanId={mealPlanId}
-                    onPickRecipe={openPicker}
-                  />
-                  {mealType === "breakfast" ? (
-                    <p className="text-[11px] text-slate-500">
-                      Tip: breakfast-named recipes help AI fill this slot automatically.
-                    </p>
-                  ) : null}
-                </div>
+                <AddSlotButton
+                  day={activeDay}
+                  mealType={mealType}
+                  dayLabel={DAY_LABELS[activeDay]}
+                  mealPlanId={mealPlanId}
+                  onPickRecipe={openPicker}
+                />
               )}
             </div>
           );
