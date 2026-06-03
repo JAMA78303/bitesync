@@ -2,15 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, CalendarDays, ChefHat, Home, ShoppingBasket, Settings, Target } from "lucide-react";
+import { Activity, CalendarDays, ChefHat, Home, Package, Settings, ShoppingBasket, Target } from "lucide-react";
 
-type NavIcon = "today" | "planner" | "recipes" | "grocery" | "nutrition" | "goals" | "settings";
+type NavIcon = "today" | "planner" | "recipes" | "grocery" | "pantry" | "nutrition" | "goals" | "settings";
 
 const iconMap = {
   today: Home,
   planner: CalendarDays,
   recipes: ChefHat,
   grocery: ShoppingBasket,
+  pantry: Package,
   nutrition: Activity,
   goals: Target,
   settings: Settings,

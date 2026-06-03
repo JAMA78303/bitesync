@@ -10,6 +10,7 @@ export function Sidebar() {
         <NavLink href="/planner" label="Planner" icon="planner" />
         <NavLink href="/recipes" label="Recipes" icon="recipes" />
         <NavLink href="/grocery" label="Grocery" icon="grocery" />
+        <NavLink href="/pantry" label="Pantry" icon="pantry" />
         <NavLink href="/nutrition" label="Nutrition" icon="nutrition" />
         <NavLink href="/goals" label="Goals" icon="goals" />
         <NavLink href="/settings" label="Settings" icon="settings" />

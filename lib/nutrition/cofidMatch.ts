@@ -36,11 +36,21 @@ function normalizeForMatch(value: string): string {
     .replace(/\s+/g, " ");
 }
 
+/** Shared normalisation for ingredient overlap (CoFID matcher, pantry, leftovers). */
+export function normalizeIngredientForMatch(value: string): string {
+  return normalizeForMatch(value);
+}
+
 function tokenize(value: string): string[] {
   return normalizeForMatch(value)
     .split(/[\s,/]+/)
     .map((t) => t.trim())
     .filter((t) => t.length > 1);
+}
+
+/** Tokenise a food name for overlap scoring. */
+export function tokenizeIngredientForMatch(value: string): string[] {
+  return tokenize(value);
 }
 
 /** Score how well a CoFID row matches the user's ingredient name (higher = better). */

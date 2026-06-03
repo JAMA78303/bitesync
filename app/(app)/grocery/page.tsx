@@ -5,6 +5,7 @@ import { getMealPlanIdForWeek, getGroceryItems } from "@/lib/supabase/grocery";
 import {
   getLiveStorePricingForMealPlan,
 } from "@/app/(app)/planner/ai-actions";
+import { LeftoverSuggestionsPanel } from "@/components/grocery/LeftoverSuggestionsPanel";
 import { GroceryHeader } from "@/components/grocery/GroceryHeader";
 import { GroceryItem } from "@/components/grocery/GroceryItem";
 import { GroceryEmptyState } from "@/components/grocery/GroceryEmptyState";
@@ -153,6 +154,7 @@ export default async function GroceryPage({ searchParams }: Props) {
         </div>
       ) : null}
       <div className="-mt-4 space-y-2 px-4">
+        <LeftoverSuggestionsPanel mealPlanId={mealPlanId} uncheckedCount={uncheckedItems.length} />
         {uncheckedItems.map((item) => (
           <GroceryItem
             key={item.id}
