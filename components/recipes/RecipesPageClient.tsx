@@ -6,6 +6,10 @@ import { useMemo, useState } from "react";
 import { ImportRecipeModal } from "@/components/recipes/ImportRecipeModal";
 import { RecipeListCard, type RecipeListItem } from "@/components/recipes/RecipeListCard";
 import { createImportedRecipe } from "@/app/(app)/recipes/actions";
+import {
+  parsedIngredientsToInputs,
+  scaleParsedIngredients,
+} from "@/lib/recipes/parseIngredient";
 import { getDietTag } from "@/lib/ui/dietTags";
 import { ds } from "@/lib/ui/classes";
 import { useRouter } from "next/navigation";
@@ -194,25 +198,15 @@ export function RecipesPageClient({
           const detected = Math.max(1, result.detectedServings ?? 1);
           const cookingFor = Math.max(1, result.cookingFor ?? 1);
           const scale = cookingFor / detected;
-          const ingredients = result.ingredients
-            .map((ing) => {
-              const q =
-                ing.quantity != null && Number.isFinite(ing.quantity) && ing.quantity > 0
-                  ? ing.quantity
-                  : 1;
-              return {
-                name: ing.name.trim(),
-                quantity: Math.round(q * scale * 100) / 100 || 1,
-                unit: ing.unit?.trim() || "piece",
-              };
-            })
-            .filter((ing) => ing.name.length > 0);
+          const ingredients = parsedIngredientsToInputs(scaleParsedIngredients(result.ingredients, scale));
           const created = await createImportedRecipe({
             name: result.name,
             description: `Imported from ${result.sourceDomain}`,
             ingredients,
+            steps: result.steps,
             sourceUrl: result.sourceUrl,
             sourceDomain: result.sourceDomain,
+            sourceType: result.sourceType,
             importedAt: new Date().toISOString(),
             detectedServings: detected,
             cookingFor,

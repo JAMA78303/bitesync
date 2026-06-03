@@ -17,6 +17,17 @@ import {
 import { randomInt } from "node:crypto";
 import { canCreateRecipe, getRecipeCount, getUserTier } from "@/lib/subscription";
 import { getProfile } from "@/lib/supabase/profile";
+import { getDailyCalorieTarget } from "@/lib/utils/nutrition-targets";
+import {
+  applyRecipeRecompute,
+  loadRecipesForRecompute,
+  recomputeRecipeMacros,
+} from "@/lib/recipes/macroRecompute";
+import {
+  filterValidRecipeIngredients,
+  ingredientQuantityError,
+  validateRecipeIngredients,
+} from "@/lib/recipes/ingredientValidation";
 import type { ActionResult } from "@/types";
 
 type CreateRecipePayload = {
@@ -28,7 +39,9 @@ type CreateRecipePayload = {
   fitsGlutenFree?: boolean;
   sourceUrl?: string;
   sourceDomain?: string;
+  sourceType?: string;
   importedAt?: string;
+  steps?: string[];
 };
 
 type UpdateRecipePayload = CreateRecipePayload & { recipeId: string };
@@ -102,7 +115,7 @@ function buildIngredientRows(
     recipe_id: recipeId,
     name: toTitleCase(ingredient.name.trim()),
     quantity: ingredient.quantity,
-    unit: ingredient.unit.trim(),
+    unit: (ingredient.unit ?? "").trim(),
     nutrition_estimated: estimatedFlags[i] ?? false,
     cofid_food_name: cofidMeta[i]?.cofid_food_name ?? null,
     cofid_matched_by: cofidMeta[i]?.cofid_matched_by ?? null,
@@ -139,7 +152,7 @@ export async function generateGoalMatchedRecipeDraft(payload: {
   }
 
   const profile = await getProfile();
-  const daily = profile?.daily_calorie_target;
+  const daily = getDailyCalorieTarget(profile);
   if (daily == null || !Number.isFinite(Number(daily)) || daily < 800) {
     return {
       error: "Set a daily calorie target in Settings (TDEE) first. We use it to size each meal to about the right share of your day.",
@@ -188,10 +201,9 @@ export async function createRecipe(
 ): Promise<ActionResult<{ id: string }>> {
   const name = toTitleCase(payload.name.trim());
   const description = payload.description.trim();
-  const ingredients = payload.ingredients.filter(
-    (ingredient) =>
-      ingredient.name.trim() && Number.isFinite(ingredient.quantity) && ingredient.quantity > 0,
-  );
+  const ingredientError = validateRecipeIngredients(payload.ingredients);
+  if (ingredientError) return { error: ingredientError };
+  const ingredients = filterValidRecipeIngredients(payload.ingredients);
 
   if (!name) {
     return { error: "Recipe name is required." };
@@ -285,11 +297,17 @@ export async function createImportedRecipe(
   payload: CreateImportedRecipePayload,
 ): Promise<ActionResult<{ id: string }>> {
   const name = toTitleCase(payload.name.trim());
-  const description = payload.description.trim();
-  const ingredients = payload.ingredients.filter(
-    (ingredient) =>
-      ingredient.name.trim() && Number.isFinite(ingredient.quantity) && ingredient.quantity > 0,
-  );
+  const steps = (payload.steps ?? []).map((s) => s.trim()).filter(Boolean);
+  const descriptionBody = payload.description.trim();
+  const description =
+    steps.length > 0
+      ? [descriptionBody, "Method", ...steps.map((step, i) => `${i + 1}. ${step}`)]
+          .filter(Boolean)
+          .join("\n")
+      : descriptionBody;
+  const ingredientError = validateRecipeIngredients(payload.ingredients);
+  if (ingredientError) return { error: ingredientError };
+  const ingredients = filterValidRecipeIngredients(payload.ingredients);
 
   if (!name) {
     return { error: "Recipe name is required." };
@@ -341,6 +359,7 @@ export async function createImportedRecipe(
       fits_gluten_free: payload.fitsGlutenFree === true ? true : null,
       source_url: payload.sourceUrl?.trim() || null,
       source_domain: payload.sourceDomain?.trim() || null,
+      source_type: payload.sourceType?.trim() || null,
       imported_at: payload.importedAt?.trim() || null,
     })
     .select("id")
@@ -386,10 +405,9 @@ export async function updateRecipe(payload: UpdateRecipePayload): Promise<Action
   const recipeId = payload.recipeId.trim();
   const name = toTitleCase(payload.name.trim());
   const description = payload.description.trim();
-  const ingredients = payload.ingredients.filter(
-    (ingredient) =>
-      ingredient.name.trim() && Number.isFinite(ingredient.quantity) && ingredient.quantity > 0,
-  );
+  const ingredientError = validateRecipeIngredients(payload.ingredients);
+  if (ingredientError) return { error: ingredientError };
+  const ingredients = filterValidRecipeIngredients(payload.ingredients);
 
   if (!recipeId) return { error: "Recipe not found." };
   if (!name) return { error: "Recipe name is required." };
@@ -541,4 +559,45 @@ export async function restoreRecipe(recipeId: string): Promise<void> {
   revalidatePath("/recipes");
   revalidatePath("/planner");
   redirect("/recipes?view=archived");
+}
+
+/** Recompute stored nutrition using corrected parser + CoFID matcher (current user only). */
+export async function recomputeAllRecipeNutrition(): Promise<
+  ActionResult<{ updated: number; significant: number }>
+> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const recipes = await loadRecipesForRecompute(supabase, user.id);
+  if (!recipes.length) {
+    return { success: true, data: { updated: 0, significant: 0 }, message: "No recipes to update." };
+  }
+
+  let updated = 0;
+  let significant = 0;
+
+  for (const recipe of recipes) {
+    const result = await recomputeRecipeMacros(recipe, { aiEnabled: false });
+    const unchanged =
+      !result.ingredientsChanged &&
+      !result.cofidMatchesChanged &&
+      Math.round(recipe.nutrition?.calories ?? 0) === result.newCalories;
+    if (unchanged) continue;
+
+    await applyRecipeRecompute(supabase, result);
+    updated += 1;
+    if (result.significantChange) significant += 1;
+  }
+
+  revalidatePath("/recipes");
+  revalidatePath("/planner");
+  revalidatePath("/today");
+  return {
+    success: true,
+    data: { updated, significant },
+    message: `Recalculated nutrition for ${updated} recipe${updated === 1 ? "" : "s"} (${significant} large shift${significant === 1 ? "" : "s"}).`,
+  };
 }

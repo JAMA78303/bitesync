@@ -11,9 +11,9 @@ type AppShellProps = {
 
 /** Routes that render their own full-bleed green gradient header on mobile. */
 function hasGradientHeader(pathname: string): boolean {
-  const roots = ["/today", "/planner", "/recipes", "/grocery", "/nutrition"];
+  const roots = ["/today", "/planner", "/recipes", "/grocery", "/nutrition", "/goals"];
   if (roots.some((r) => pathname === r || pathname.startsWith(`${r}/`))) return true;
-  return pathname === "/settings";
+  return pathname === "/settings" || pathname.startsWith("/settings/");
 }
 
 export function AppShell({ children }: AppShellProps) {

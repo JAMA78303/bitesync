@@ -41,24 +41,24 @@ export function LandingFaq() {
   return (
     <section id="faq" className="mx-auto max-w-4xl scroll-mt-24 px-4 py-20">
       <div className="mb-8 text-center">
-        <h2 className="mb-2 text-2xl font-bold text-slate-900 sm:text-3xl">Questions answered</h2>
-        <p className="text-sm text-slate-500">Everything you need to know before you get started.</p>
+        <h2 className="mb-2 text-2xl font-bold text-slate-900 sm:text-3xl dark:text-white">Questions answered</h2>
+        <p className="text-sm text-slate-500 dark:text-gray-400">Everything you need to know before you get started.</p>
       </div>
       <div className="space-y-3">
         {FAQ_ITEMS.map((item) => (
           <details
             key={item.q}
-            className="group rounded-xl border border-slate-200 bg-white px-4 py-3 open:shadow-sm"
+            className="group rounded-xl border border-slate-200 bg-white px-4 py-3 open:shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:open:shadow-none"
           >
-            <summary className="cursor-pointer list-none text-sm font-semibold text-slate-800 marker:content-none [&::-webkit-details-marker]:hidden">
+            <summary className="cursor-pointer list-none text-sm font-semibold text-slate-800 marker:content-none dark:text-gray-100 [&::-webkit-details-marker]:hidden">
               <span className="flex items-center justify-between gap-3">
                 {item.q}
-                <span className="text-slate-400 transition-transform group-open:rotate-180" aria-hidden>
+                <span className="text-slate-400 transition-transform group-open:rotate-180 dark:text-gray-500" aria-hidden>
                   ▾
                 </span>
               </span>
             </summary>
-            <p className="mt-3 pr-2 text-sm leading-relaxed text-slate-600">{item.a}</p>
+            <p className="mt-3 pr-2 text-sm leading-relaxed text-slate-600 dark:text-gray-300">{item.a}</p>
           </details>
         ))}
       </div>

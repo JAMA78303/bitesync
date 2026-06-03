@@ -1,12 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
-import * as cheerio from "cheerio";
 import { createClient } from "@/lib/supabase/server";
+import {
+  detectSourceType,
+  isSocialSourceType,
+  type RecipeSourceType,
+} from "@/lib/recipes/detectSourceType";
+import { extractOpenGraphText, fetchSocialCaption } from "@/lib/recipes/extractCaptionText";
+import {
+  extractIngredientsFromCaption,
+  extractStepsFromCaption,
+} from "@/lib/recipes/extractCaptionRecipe";
+import { extractRecipeFromHtml } from "@/lib/recipes/extractRecipeFromHtml";
+import type { ParsedIngredient } from "@/lib/recipes/parseIngredient";
 
-type ParsedIngredient = {
-  rawText: string;
+export type ImportApiResponse = {
   name: string;
-  quantity?: number;
-  unit?: string;
+  ingredients: ParsedIngredient[];
+  steps: string[];
+  sourceUrl: string;
+  sourceDomain: string;
+  sourceType: RecipeSourceType;
+  detectedServings: number;
+  importNotice?: string;
 };
 
 function isValidUrl(value: string): boolean {
@@ -44,162 +59,26 @@ async function fetchPage(url: string): Promise<string> {
   return res.text();
 }
 
-function parseFractionPart(token: string): number {
-  const unicodeFractions: Record<string, number> = {
-    "½": 0.5,
-    "¼": 0.25,
-    "¾": 0.75,
-    "⅓": 1 / 3,
-    "⅔": 2 / 3,
-    "⅛": 0.125,
+function socialImportNotice(sourceType: RecipeSourceType): string {
+  const label =
+    sourceType === "tiktok"
+      ? "TikTok"
+      : sourceType === "instagram"
+        ? "Instagram"
+        : sourceType === "facebook"
+          ? "Facebook"
+          : "social post";
+  return `We pulled this from the ${label} caption — please check the ingredients and amounts below.`;
+}
+
+function buildImportResponse(
+  partial: Omit<ImportApiResponse, "sourceUrl" | "sourceDomain"> & { sourceUrl: string },
+): ImportApiResponse {
+  const sourceDomain = new URL(partial.sourceUrl).hostname.replace(/^www\./, "");
+  return {
+    ...partial,
+    sourceDomain,
   };
-  if (unicodeFractions[token] != null) return unicodeFractions[token]!;
-  if (/^\d+\/\d+$/.test(token)) {
-    const [a, b] = token.split("/");
-    const den = Number(b);
-    if (!den) return 0;
-    return Number(a) / den;
-  }
-  const n = Number(token);
-  return Number.isFinite(n) ? n : 0;
-}
-
-function parseQuantity(token: string): number | undefined {
-  const clean = token.trim();
-  if (!clean) return undefined;
-  const rangeMatch = clean.match(/^(.+?)\s*[-–]\s*(.+)$/);
-  if (rangeMatch) {
-    const low = parseQuantity(rangeMatch[1] ?? "");
-    if (low != null) return low;
-  }
-  const parts = clean.split(/\s+/);
-  const total = parts.reduce((s, p) => s + parseFractionPart(p), 0);
-  return Number.isFinite(total) && total > 0 ? total : undefined;
-}
-
-function parseIngredientString(raw: string): ParsedIngredient {
-  const cleaned = raw
-    .replace(/\u00a0/g, " ")
-    .replace(/\s+/g, " ")
-    .replace(/^[•\-*]\s*/, "")
-    .trim();
-  const qtyMatch = cleaned.match(
-    /^((?:\d+(?:\.\d+)?(?:\s+\d+\/\d+)?|\d+\/\d+|[½¼¾⅓⅔⅛])(?:\s*[-–]\s*(?:\d+(?:\.\d+)?|\d+\/\d+|[½¼¾⅓⅔⅛]))?)/,
-  );
-  const quantity = qtyMatch?.[1] ? parseQuantity(qtyMatch[1]) : undefined;
-  const restAfterQty = qtyMatch ? cleaned.slice(qtyMatch[0].length).trim() : cleaned;
-  const unitMatch = restAfterQty.match(
-    /^(tbsp|tsp|kg|g|ml|l|oz|lb|cups|cup|handful|pinch|slices|slice|cloves|clove|pieces|piece|large|medium|small)\b/i,
-  );
-  const unitRaw = unitMatch?.[1]?.toLowerCase();
-  const unit =
-    unitRaw === "cups" ? "cup" : unitRaw === "cloves" ? "clove" : unitRaw === "pieces" ? "piece" : unitRaw;
-  let name = unitMatch ? restAfterQty.slice(unitMatch[0].length).trim() : restAfterQty;
-  name = name
-    .replace(/\s*\([^)]*\)\s*$/g, "")
-    .replace(/\s*,\s*(to serve|for serving|optional|plus extra.*)$/i, "")
-    .trim();
-  if (!name) name = cleaned;
-  return { rawText: cleaned, name, quantity, unit };
-}
-
-function parseRecipeYield(node: Record<string, unknown>): number {
-  const raw = node.recipeYield;
-  if (raw == null) return 1;
-  if (typeof raw === "number" && Number.isFinite(raw) && raw > 0) {
-    return Math.min(48, Math.max(1, Math.round(raw)));
-  }
-  const s = String(raw).trim();
-  const m = s.match(/(\d+)/);
-  if (m) {
-    const n = parseInt(m[1], 10);
-    if (Number.isFinite(n) && n > 0) return Math.min(48, n);
-  }
-  return 1;
-}
-
-function looksLikeRecipeNode(node: unknown): node is Record<string, unknown> {
-  if (!node || typeof node !== "object") return false;
-  const t = (node as Record<string, unknown>)["@type"];
-  if (typeof t === "string") return t.toLowerCase() === "recipe";
-  if (Array.isArray(t)) return t.some((x) => String(x).toLowerCase() === "recipe");
-  return false;
-}
-
-function parseRecipe(html: string, sourceUrl: string) {
-  const $ = cheerio.load(html);
-  const sourceDomain = new URL(sourceUrl).hostname.replace(/^www\./, "");
-
-  let name = "";
-  let rawIngredients: string[] = [];
-  let detectedServings = 1;
-
-  const scripts = $('script[type="application/ld+json"]').toArray();
-  for (const el of scripts) {
-    const raw = $(el).html() || "";
-    if (!raw.trim()) continue;
-    try {
-      const json = JSON.parse(raw);
-      const roots = Array.isArray(json) ? json : [json];
-      for (const root of roots) {
-        const nodes: unknown[] = [];
-        nodes.push(root);
-        if (root && typeof root === "object" && Array.isArray((root as { "@graph"?: unknown[] })["@graph"])) {
-          nodes.push(...((root as { "@graph": unknown[] })["@graph"] ?? []));
-        }
-        const recipeNode = nodes.find((n) => looksLikeRecipeNode(n)) as
-          | { name?: string; recipeIngredient?: unknown[] }
-          | undefined;
-        if (recipeNode) {
-          name = String(recipeNode.name ?? "").trim();
-          rawIngredients = (recipeNode.recipeIngredient ?? []).map((v) => String(v).trim()).filter(Boolean);
-          detectedServings = parseRecipeYield(recipeNode as Record<string, unknown>);
-          break;
-        }
-      }
-    } catch {
-      // ignore malformed JSON-LD blocks
-    }
-    if (rawIngredients.length > 0) break;
-  }
-
-  if (!rawIngredients.length) {
-    const candidateLists: string[][] = [];
-    const selectors = [
-      '[itemprop="recipeIngredient"]',
-      ".ingredients li",
-      ".recipe-ingredients li",
-      "[data-testid*='ingredient'] li",
-      "li[class*='ingredient']",
-    ];
-    for (const sel of selectors) {
-      const collected = $(sel)
-        .toArray()
-        .map((el) => $(el).text().replace(/\s+/g, " ").trim())
-        .filter((t) => t.length > 2 && t.length < 200)
-        .filter((t) => !/^(ingredients?|method|instructions?)$/i.test(t));
-      if (collected.length) candidateLists.push(collected);
-    }
-    if (candidateLists.length) {
-      rawIngredients = candidateLists
-        .sort((a, b) => b.length - a.length)[0]
-        ?.filter((line, idx, arr) => arr.indexOf(line) === idx) ?? [];
-    }
-  }
-
-  if (!name) {
-    name = $("h1").first().text().trim() || $("title").text().trim() || "Imported Recipe";
-  }
-
-  const ingredients = rawIngredients
-    .map(parseIngredientString)
-    .filter((i) => i.name.length > 0)
-    .filter((i) => !/^(ingredients?|method|instructions?)$/i.test(i.name));
-  if (!ingredients.length) {
-    throw new Error("no_ingredients");
-  }
-
-  return { name, ingredients, sourceUrl, sourceDomain, detectedServings };
 }
 
 export async function POST(request: NextRequest) {
@@ -217,6 +96,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
   }
   const sourceUrl = normalizeSourceUrl(rawUrl);
+  const sourceType = detectSourceType(sourceUrl);
 
   const { data: existing } = await supabase
     .from("recipes")
@@ -233,23 +113,104 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const html = await fetchPage(sourceUrl);
-    const parsed = parseRecipe(html, sourceUrl);
-    return NextResponse.json(parsed);
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "";
-    if (msg === "blocked") {
+    let html = "";
+    try {
+      html = await fetchPage(sourceUrl);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "";
+      if (isSocialSourceType(sourceType)) {
+        return NextResponse.json(
+          buildImportResponse({
+            name: "Imported recipe",
+            ingredients: [],
+            steps: [],
+            sourceUrl,
+            sourceType,
+            detectedServings: 1,
+            importNotice: socialImportNotice(sourceType),
+          }),
+        );
+      }
+      if (msg === "blocked") {
+        return NextResponse.json(
+          buildImportResponse({
+            name: "Imported recipe",
+            ingredients: [],
+            steps: [],
+            sourceUrl,
+            sourceType: "unknown",
+            detectedServings: 1,
+            importNotice:
+              "We couldn't read this page automatically. Add the recipe details below before saving.",
+          }),
+        );
+      }
+      throw err;
+    }
+
+    if (isSocialSourceType(sourceType)) {
+      const socialType = sourceType;
+      const caption = await fetchSocialCaption(socialType, sourceUrl, html);
+      const captionText = caption.description || caption.title;
+      const ingredients = extractIngredientsFromCaption(captionText);
+      const steps = extractStepsFromCaption(captionText);
+
       return NextResponse.json(
-        { error: "This site does not allow imports. Try copying ingredients manually." },
-        { status: 422 },
+        buildImportResponse({
+          name: caption.title || "Imported recipe",
+          ingredients,
+          steps,
+          sourceUrl,
+          sourceType,
+          detectedServings: 1,
+          importNotice: socialImportNotice(sourceType),
+        }),
       );
     }
-    if (msg === "no_ingredients") {
-      return NextResponse.json({ error: "Could not find ingredients on this page." }, { status: 422 });
+
+    const extracted = extractRecipeFromHtml(html);
+    if (extracted.ingredients.length > 0) {
+      return NextResponse.json(
+        buildImportResponse({
+          name: extracted.name,
+          ingredients: extracted.ingredients,
+          steps: extracted.steps,
+          sourceUrl,
+          sourceType,
+          detectedServings: extracted.detectedServings,
+        }),
+      );
     }
+
+    const og = extractOpenGraphText(html);
+    return NextResponse.json(
+      buildImportResponse({
+        name: extracted.name || og.title || "Imported recipe",
+        ingredients: extractIngredientsFromCaption(og.description),
+        steps: extractStepsFromCaption(og.description),
+        sourceUrl,
+        sourceType: extracted.name ? sourceType : "unknown",
+        detectedServings: extracted.detectedServings,
+        importNotice:
+          "We found limited recipe data on this page. Review and fill in any missing details before saving.",
+      }),
+    );
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
     if (msg.includes("aborted")) {
       return NextResponse.json({ error: "That page took too long to load." }, { status: 408 });
     }
-    return NextResponse.json({ error: "Could not import recipe from that URL." }, { status: 422 });
+    return NextResponse.json(
+      buildImportResponse({
+        name: "Imported recipe",
+        ingredients: [],
+        steps: [],
+        sourceUrl,
+        sourceType: "unknown",
+        detectedServings: 1,
+        importNotice:
+          "We couldn't extract much from this link. Add the recipe details below before saving.",
+      }),
+    );
   }
 }

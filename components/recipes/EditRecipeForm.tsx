@@ -2,8 +2,9 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { formatIngredientWeightSuffix, getSupportedUnits } from "@/lib/nutrition/convert";
+import { formatIngredientWeightSuffix, defaultUnitForIngredient, getUnitsForIngredient } from "@/lib/nutrition/convert";
 import type { RecipeIngredientInput } from "@/lib/nutrition/calculate";
+import { ingredientQuantityError } from "@/lib/recipes/ingredientValidation";
 import { useLiveRecipeNutrition } from "@/components/recipes/useLiveRecipeNutrition";
 import { getIngredientAutocompleteLabel, getNutritionIngredientNames } from "@/lib/nutrition/lookup";
 import { NutritionPreview } from "@/components/recipes/NutritionPreview";
@@ -22,7 +23,6 @@ type EditRecipeFormProps = {
 
 type IngredientRow = { id: string; name: string; quantity: string; unit: string };
 const DEFAULT_UNIT = "g";
-const units = getSupportedUnits();
 const ingredientSuggestions = getNutritionIngredientNames();
 
 function createId(): string {
@@ -76,7 +76,17 @@ export function EditRecipeForm({
 
   function updateIngredient(id: string, key: keyof IngredientRow, value: string) {
     setIngredients((current) =>
-      current.map((ingredient) => (ingredient.id === id ? { ...ingredient, [key]: value } : ingredient)),
+      current.map((ingredient) => {
+        if (ingredient.id !== id) return ingredient;
+        if (key === "name") {
+          const allowedUnits = getUnitsForIngredient(value);
+          const unit = allowedUnits.includes(ingredient.unit)
+            ? ingredient.unit
+            : defaultUnitForIngredient(value);
+          return { ...ingredient, name: value, unit };
+        }
+        return { ...ingredient, [key]: value };
+      }),
     );
   }
 
@@ -90,6 +100,11 @@ export function EditRecipeForm({
 
   function onSaveRecipe() {
     setFormError(null);
+    const qtyError = ingredients.map((row) => ingredientQuantityError(row.name, row.quantity)).find(Boolean);
+    if (qtyError) {
+      setFormError(qtyError);
+      return;
+    }
     startTransition(async () => {
       const result = await updateRecipe({
         recipeId,
@@ -169,6 +184,8 @@ export function EditRecipeForm({
           <h3 className="font-medium text-gray-900">Ingredients</h3>
           {ingredients.map((ingredient, index) => {
             const qty = Number.parseFloat(ingredient.quantity);
+            const qtyError = ingredientQuantityError(ingredient.name, ingredient.quantity);
+            const rowUnits = getUnitsForIngredient(ingredient.name);
             const weightHint =
               Number.isFinite(qty) && qty > 0 && ingredient.name.trim()
                 ? formatIngredientWeightSuffix(qty, ingredient.unit || "", ingredient.name)
@@ -193,14 +210,16 @@ export function EditRecipeForm({
                     title="Use unit “piece”, “item”, or “each” for whole foods"
                     value={ingredient.quantity}
                     onChange={(event) => updateIngredient(ingredient.id, "quantity", event.target.value)}
-                    className="h-10 rounded-md border border-gray-300 px-3 text-sm"
+                    className={`h-10 rounded-md border px-3 text-sm ${
+                      qtyError ? "border-amber-400 bg-amber-50/50" : "border-gray-300"
+                    }`}
                   />
                   <select
                     value={ingredient.unit}
                     onChange={(event) => updateIngredient(ingredient.id, "unit", event.target.value)}
                     className="h-10 rounded-md border border-gray-300 px-3 text-sm"
                   >
-                    {units.map((unit) => (
+                    {rowUnits.map((unit) => (
                       <option key={unit} value={unit}>
                         {unit}
                       </option>
@@ -215,6 +234,7 @@ export function EditRecipeForm({
                   </button>
                 </div>
                 {weightHint ? <p className="text-xs text-slate-500 md:pl-1">{weightHint}</p> : null}
+                {qtyError ? <p className="text-xs text-amber-700 md:pl-1">{qtyError}</p> : null}
                 {(lineMeta?.matchHint || lineMeta?.unknown) && ingredient.name.trim() ? (
                   <p className="text-xs text-gray-400 md:pl-1">
                     {lineMeta.matchHint ? (
@@ -245,7 +265,10 @@ export function EditRecipeForm({
         <button
           type="button"
           onClick={onSaveRecipe}
-          disabled={isPending}
+          disabled={
+            isPending ||
+            ingredients.some((row) => ingredientQuantityError(row.name, row.quantity) != null)
+          }
           className="ml-3 inline-flex h-10 items-center justify-center rounded-md border border-gray-300 bg-white px-4 text-sm font-medium text-gray-800 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-70"
         >
           {isPending ? "Saving..." : "Save Changes"}

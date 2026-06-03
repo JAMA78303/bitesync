@@ -99,17 +99,17 @@ export function getBMILabel(category: BMICategory): string {
   }
 }
 
-/** Tailwind utility classes for BMI badge (light UI). */
+/** Tailwind utility classes for BMI badge (informative, neutral tone). */
 export function getBMIColour(category: BMICategory): string {
   switch (category) {
     case "underweight":
-      return "text-blue-600 bg-blue-50 dark:text-blue-200 dark:bg-blue-950/40";
+      return "text-slate-700 bg-slate-100 dark:text-slate-200 dark:bg-slate-800/60";
     case "healthy":
       return "text-[#1A4731] bg-[#D1FAE5] dark:text-emerald-100 dark:bg-emerald-950/50";
     case "overweight":
-      return "text-amber-600 bg-amber-50 dark:text-amber-100 dark:bg-amber-950/40";
+      return "text-slate-700 bg-slate-100 dark:text-slate-200 dark:bg-slate-800/60";
     case "obese":
-      return "text-red-600 bg-red-50 dark:text-red-100 dark:bg-red-950/40";
+      return "text-slate-700 bg-slate-100 dark:text-slate-200 dark:bg-slate-800/60";
   }
 }
 

@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { updateSession } from "@/lib/supabase/middleware";
 
-const PROTECTED_ROUTES = ["/today", "/planner", "/recipes", "/grocery", "/nutrition", "/settings", "/billing"];
+const PROTECTED_ROUTES = ["/today", "/planner", "/recipes", "/grocery", "/nutrition", "/goals", "/settings", "/billing"];
 const AUTH_ROUTES = ["/login", "/signup"];
 const ONBOARDING_ROUTE = "/onboarding";
 const ADMIN_USER_IDS = (process.env.ADMIN_USER_ID ?? "")

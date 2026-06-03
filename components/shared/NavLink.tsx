@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, CalendarDays, ChefHat, Home, ShoppingBasket, Settings } from "lucide-react";
+import { Activity, CalendarDays, ChefHat, Home, ShoppingBasket, Settings, Target } from "lucide-react";
 
-type NavIcon = "today" | "planner" | "recipes" | "grocery" | "nutrition" | "settings";
+type NavIcon = "today" | "planner" | "recipes" | "grocery" | "nutrition" | "goals" | "settings";
 
 const iconMap = {
   today: Home,
@@ -12,6 +12,7 @@ const iconMap = {
   recipes: ChefHat,
   grocery: ShoppingBasket,
   nutrition: Activity,
+  goals: Target,
   settings: Settings,
 } as const;
 

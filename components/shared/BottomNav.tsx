@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart2, CalendarDays, ChefHat, Home, ShoppingCart, User } from "lucide-react";
+import { BarChart2, CalendarDays, ChefHat, Home, ShoppingCart, Target } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/today", label: "Home", Icon: Home },
@@ -10,7 +10,7 @@ const NAV_ITEMS = [
   { href: "/recipes", label: "Recipes", Icon: ChefHat },
   { href: "/grocery", label: "Grocery", Icon: ShoppingCart },
   { href: "/nutrition", label: "Nutrition", Icon: BarChart2 },
-  { href: "/settings", label: "Profile", Icon: User },
+  { href: "/goals", label: "Goals", Icon: Target },
 ] as const;
 
 export function BottomNav() {

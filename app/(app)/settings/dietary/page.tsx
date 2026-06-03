@@ -1,28 +1,5 @@
-import Link from "next/link";
-import { DietaryPreferencesPicker } from "@/components/settings/DietaryPreferencesPicker";
-import { initialDietaryPreferencesFromProfile } from "@/lib/dietary/constraints";
-import { getProfile } from "@/lib/supabase/profile";
-import { ds } from "@/lib/ui/classes";
+import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic";
-
-export default async function DietarySettingsPage() {
-  const profile = await getProfile();
-
-  return (
-    <div className="-mx-4 min-h-screen bg-gray-50 pb-28 dark:bg-gray-950 md:mx-0">
-      <div className="border-b border-gray-100 bg-white px-4 pt-14 pb-4 dark:border-gray-900 dark:bg-gray-950">
-        <Link href="/settings" className="mb-2 inline-block text-sm font-medium text-[#3a5a40]">
-          ← Settings
-        </Link>
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white">Dietary preferences</h1>
-        <p className="mt-0.5 text-sm text-gray-500">Used to personalise your AI meal plans</p>
-      </div>
-      <div className="px-4 pt-4">
-        <div className={`${ds.card} ${ds.cardPadding}`}>
-          <DietaryPreferencesPicker initialSelected={initialDietaryPreferencesFromProfile(profile)} />
-        </div>
-      </div>
-    </div>
-  );
+export default function DietarySettingsRedirect() {
+  redirect("/goals/dietary");
 }

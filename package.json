@@ -9,6 +9,7 @@
     "lint": "eslint",
     "icons": "node scripts/write-brand-icons.mjs",
     "import:cofid": "tsx scripts/import-cofid.ts",
+    "recompute:macros": "tsx scripts/recompute-recipe-macros.ts",
     "export:cofid-sql": "tsx scripts/generate-cofid-sql.ts",
     "export:cofid-copy-page": "tsx scripts/generate-cofid-copy-page.ts",
     "export:cofid-retry-13-15": "tsx scripts/generate-cofid-retry-13-15.ts"

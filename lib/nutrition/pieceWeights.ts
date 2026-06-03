@@ -29,6 +29,8 @@ export const PIECE_WEIGHT_MAP: Record<string, PieceWeightEntry> = {
   cucumber: { label: "cucumber", grams: 300 },
   "garlic clove": { label: "garlic clove", grams: 5 },
   garlic: { label: "garlic bulb", grams: 40 },
+  mushroom: { label: "mushroom", grams: 20 },
+  mushrooms: { label: "mushroom", grams: 20 },
   broccoli: { label: "broccoli head", grams: 400 },
   cauliflower: { label: "cauliflower", grams: 600 },
   corn: { label: "corn cob", grams: 150 },

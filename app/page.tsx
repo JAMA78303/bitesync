@@ -146,8 +146,8 @@ const BLOG_POSTS = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white">
-      <nav className="sticky top-0 z-50 border-b border-slate-100/80 bg-white/90 backdrop-blur-md">
+    <div className="min-h-screen bg-white dark:bg-gray-950">
+      <nav className="sticky top-0 z-50 border-b border-slate-100/80 bg-white/90 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/90">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
           <Logo size="sm" href="/" />
           <div className="hidden items-center gap-6 md:flex">
@@ -155,7 +155,7 @@ export default function LandingPage() {
               <a
                 key={link.href}
                 href={link.href}
-                className="text-sm text-slate-600 transition-colors hover:text-[#3a5a40]"
+                className="text-sm text-slate-600 transition-colors hover:text-[#3a5a40] dark:text-gray-300 dark:hover:text-emerald-300"
               >
                 {link.label}
               </a>
@@ -164,7 +164,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-2">
             <Link
               href="/login"
-              className="rounded-lg px-3 py-2 text-sm text-slate-600 transition-colors hover:text-slate-900"
+              className="rounded-lg px-3 py-2 text-sm text-slate-600 transition-colors hover:text-slate-900 dark:text-gray-300 dark:hover:text-white"
             >
               Sign in
             </Link>
@@ -218,48 +218,51 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <section id="how-it-works" className="scroll-mt-24 bg-slate-50 py-16 sm:py-20">
+      <section id="how-it-works" className="scroll-mt-24 bg-slate-50 py-16 sm:py-20 dark:bg-gray-900">
         <div className="mx-auto max-w-6xl px-4">
           <div className="mb-12 text-center">
-            <h2 className="mb-3 text-2xl font-bold text-slate-900 sm:text-3xl">Plan. Shop. Track.</h2>
-            <p className="mx-auto max-w-lg text-sm text-slate-500">
+            <h2 className="mb-3 text-2xl font-bold text-slate-900 sm:text-3xl dark:text-white">Plan. Shop. Track.</h2>
+            <p className="mx-auto max-w-lg text-sm text-slate-500 dark:text-gray-400">
               Three steps from &quot;what should we eat?&quot; to a full week sorted.
             </p>
           </div>
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
             {STEPS.map(({ step, Icon, title, desc }) => (
-              <article key={title} className="rounded-2xl border border-slate-200 bg-white p-6">
+              <article
+                key={title}
+                className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800"
+              >
                 <div className="mb-4 flex items-center gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f0f7f0]">
-                    <Icon className="h-5 w-5 text-[#3a5a40]" aria-hidden />
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f0f7f0] dark:bg-[#1a2e1d]">
+                    <Icon className="h-5 w-5 text-[#3a5a40] dark:text-emerald-400" aria-hidden />
                   </span>
-                  <span className="text-xs font-bold tracking-widest text-slate-300">{step}</span>
+                  <span className="text-xs font-bold tracking-widest text-slate-300 dark:text-gray-600">{step}</span>
                 </div>
-                <h3 className="mb-2 text-lg font-semibold text-slate-900">{title}</h3>
-                <p className="text-sm leading-relaxed text-slate-500">{desc}</p>
+                <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-white">{title}</h3>
+                <p className="text-sm leading-relaxed text-slate-500 dark:text-gray-400">{desc}</p>
               </article>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="overflow-hidden bg-[#f5f9f5] py-12 sm:py-16">
+      <section className="overflow-hidden bg-[#f5f9f5] py-12 sm:py-16 dark:bg-gray-950">
         <div className="mx-auto mb-8 max-w-2xl px-4 text-center">
-          <h2 className="mb-2 text-2xl font-bold text-slate-900 sm:text-3xl">See it in action</h2>
-          <p className="text-sm text-slate-500">
+          <h2 className="mb-2 text-2xl font-bold text-slate-900 sm:text-3xl dark:text-white">See it in action</h2>
+          <p className="text-sm text-slate-500 dark:text-gray-400">
             Real BiteSync screens — Today, your weekly plan, and your grocery list.
           </p>
         </div>
         <LandingPhoneMockups />
       </section>
 
-      <section id="features" className="scroll-mt-24 bg-slate-50 py-16 sm:py-20">
+      <section id="features" className="scroll-mt-24 bg-slate-50 py-16 sm:py-20 dark:bg-gray-900">
         <div className="mx-auto max-w-6xl px-4">
           <div className="mb-12 text-center">
-            <h2 className="mb-3 text-2xl font-bold text-slate-900 sm:text-3xl">
+            <h2 className="mb-3 text-2xl font-bold text-slate-900 sm:text-3xl dark:text-white">
               Everything you need to eat well
             </h2>
-            <p className="mx-auto max-w-lg text-sm text-slate-500">
+            <p className="mx-auto max-w-lg text-sm text-slate-500 dark:text-gray-400">
               Recipes, planning, nutrition, and shopping — connected in one app.
             </p>
           </div>
@@ -267,49 +270,51 @@ export default function LandingPage() {
             {FEATURES.map(({ Icon, title, desc, isPro }) => (
               <article
                 key={title}
-                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:shadow-lg dark:hover:shadow-black/20"
               >
-                <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-[#f0f7f0]">
-                  <Icon className="h-6 w-6 text-[#3a5a40]" aria-hidden />
+                <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-[#f0f7f0] dark:bg-[#1a2e1d]">
+                  <Icon className="h-6 w-6 text-[#3a5a40] dark:text-emerald-400" aria-hidden />
                 </span>
-                <h3 className="mb-2 font-semibold text-slate-900">
+                <h3 className="mb-2 font-semibold text-slate-900 dark:text-white">
                   {title}
                   {isPro ? (
-                    <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                    <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
                       Pro
                     </span>
                   ) : null}
                 </h3>
-                <p className="text-sm leading-relaxed text-slate-500">{desc}</p>
+                <p className="text-sm leading-relaxed text-slate-500 dark:text-gray-400">{desc}</p>
               </article>
             ))}
           </div>
         </div>
       </section>
 
-      <section id="pricing" className="scroll-mt-24 bg-slate-50 py-16 sm:py-20">
+      <section id="pricing" className="scroll-mt-24 bg-slate-50 py-16 sm:py-20 dark:bg-gray-900">
         <div className="mx-auto max-w-6xl px-4">
           <div className="mb-12 text-center">
-            <h2 className="mb-3 text-2xl font-bold text-slate-900 sm:text-3xl">Simple, honest pricing</h2>
-            <p className="text-sm text-slate-500">Start free. Upgrade when you want the full picture.</p>
+            <h2 className="mb-3 text-2xl font-bold text-slate-900 sm:text-3xl dark:text-white">
+              Simple, honest pricing
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-gray-400">Start free. Upgrade when you want the full picture.</p>
           </div>
           <div className="mx-auto grid max-w-3xl grid-cols-1 gap-6 sm:grid-cols-2">
-            <article className="rounded-2xl border border-slate-200 bg-white p-6">
-              <h3 className="mb-1 font-bold text-slate-800">Free</h3>
-              <p className="text-3xl font-bold text-slate-900">
-                £0 <span className="text-sm font-normal text-slate-400">forever</span>
+            <article className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+              <h3 className="mb-1 font-bold text-slate-800 dark:text-gray-100">Free</h3>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white">
+                £0 <span className="text-sm font-normal text-slate-400 dark:text-gray-500">forever</span>
               </p>
               <ul className="mb-8 mt-6 space-y-3">
                 {FREE_FEATURES.map((item) => (
-                  <li key={item} className="flex items-center gap-2 text-sm text-slate-600">
-                    <Check className="h-4 w-4 shrink-0 text-[#3a5a40]" aria-hidden />
+                  <li key={item} className="flex items-center gap-2 text-sm text-slate-600 dark:text-gray-300">
+                    <Check className="h-4 w-4 shrink-0 text-[#3a5a40] dark:text-emerald-400" aria-hidden />
                     {item}
                   </li>
                 ))}
               </ul>
               <Link
                 href="/signup"
-                className="block w-full rounded-xl border border-slate-200 py-2.5 text-center text-sm font-medium text-slate-700 hover:bg-slate-50"
+                className="block w-full rounded-xl border border-slate-200 py-2.5 text-center text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-700"
               >
                 Get started free
               </Link>
@@ -347,32 +352,32 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="border-y border-slate-100 bg-white py-12">
+      <section className="border-y border-slate-100 bg-white py-12 dark:border-gray-800 dark:bg-gray-950">
         <div className="mx-auto grid max-w-4xl grid-cols-1 gap-8 px-4 sm:grid-cols-3">
           <article className="text-center">
-            <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#f0f7f0]">
-              <Shield className="h-6 w-6 text-[#3a5a40]" aria-hidden />
+            <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#f0f7f0] dark:bg-[#1a2e1d]">
+              <Shield className="h-6 w-6 text-[#3a5a40] dark:text-emerald-400" aria-hidden />
             </span>
-            <h3 className="mb-1 text-sm font-semibold text-slate-900">NHS-aligned guidance</h3>
-            <p className="text-xs leading-relaxed text-slate-500">
+            <h3 className="mb-1 text-sm font-semibold text-slate-900 dark:text-white">NHS-aligned guidance</h3>
+            <p className="text-xs leading-relaxed text-slate-500 dark:text-gray-400">
               Micronutrient targets reference UK dietary reference values on Pro.
             </p>
           </article>
           <article className="text-center">
-            <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#f0f7f0]">
-              <MapPin className="h-6 w-6 text-[#3a5a40]" aria-hidden />
+            <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#f0f7f0] dark:bg-[#1a2e1d]">
+              <MapPin className="h-6 w-6 text-[#3a5a40] dark:text-emerald-400" aria-hidden />
             </span>
-            <h3 className="mb-1 text-sm font-semibold text-slate-900">Built in the UK</h3>
-            <p className="text-xs leading-relaxed text-slate-500">
+            <h3 className="mb-1 text-sm font-semibold text-slate-900 dark:text-white">Built in the UK</h3>
+            <p className="text-xs leading-relaxed text-slate-500 dark:text-gray-400">
               GBP pricing, UK supermarkets, and nutrition data for British shoppers.
             </p>
           </article>
           <article className="text-center">
-            <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#f0f7f0]">
-              <Utensils className="h-6 w-6 text-[#3a5a40]" aria-hidden />
+            <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#f0f7f0] dark:bg-[#1a2e1d]">
+              <Utensils className="h-6 w-6 text-[#3a5a40] dark:text-emerald-400" aria-hidden />
             </span>
-            <h3 className="mb-1 text-sm font-semibold text-slate-900">Your data stays yours</h3>
-            <p className="text-xs leading-relaxed text-slate-500">
+            <h3 className="mb-1 text-sm font-semibold text-slate-900 dark:text-white">Your data stays yours</h3>
+            <p className="text-xs leading-relaxed text-slate-500 dark:text-gray-400">
               Recipes and plans are private to your account. Payments via Stripe.
             </p>
           </article>
@@ -381,11 +386,11 @@ export default function LandingPage() {
 
       <LandingFaq />
 
-      <section id="blog" className="scroll-mt-24 py-16 sm:py-20">
+      <section id="blog" className="scroll-mt-24 bg-white py-16 sm:py-20 dark:bg-gray-950">
         <div className="mx-auto max-w-6xl px-4">
           <div className="mb-10 text-center">
-            <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">From the BiteSync blog</h2>
-            <p className="mt-2 text-sm text-slate-500">
+            <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl dark:text-white">From the BiteSync blog</h2>
+            <p className="mt-2 text-sm text-slate-500 dark:text-gray-400">
               Nutrition science and practical planning — also shared on our social channels.
             </p>
           </div>
@@ -393,17 +398,17 @@ export default function LandingPage() {
             {BLOG_POSTS.map((post) => (
               <article
                 key={post.slug}
-                className="group flex flex-col rounded-2xl border border-slate-200 bg-white p-5 transition-shadow hover:shadow-md"
+                className="group flex flex-col rounded-2xl border border-slate-200 bg-white p-5 transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-900 dark:hover:shadow-lg dark:hover:shadow-black/20"
               >
-                <p className="text-xs font-medium text-[#3a5a40]">{post.category}</p>
-                <h3 className="mt-2 text-base font-semibold text-slate-900 group-hover:text-[#3a5a40]">
+                <p className="text-xs font-medium text-[#3a5a40] dark:text-emerald-400">{post.category}</p>
+                <h3 className="mt-2 text-base font-semibold text-slate-900 group-hover:text-[#3a5a40] dark:text-white dark:group-hover:text-emerald-300">
                   <Link href={`/blog/${post.slug}`}>{post.title}</Link>
                 </h3>
-                <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-500">{post.desc}</p>
-                <p className="mt-4 text-xs text-slate-400">{post.readTime}</p>
+                <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-500 dark:text-gray-400">{post.desc}</p>
+                <p className="mt-4 text-xs text-slate-400 dark:text-gray-500">{post.readTime}</p>
                 <Link
                   href="/signup"
-                  className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-[#3a5a40] hover:underline"
+                  className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-[#3a5a40] hover:underline dark:text-emerald-400"
                 >
                   Try BiteSync free
                   <ChevronRight className="h-3 w-3" aria-hidden />
@@ -431,17 +436,24 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <footer className="border-t border-slate-100 bg-slate-50 py-10">
+      <footer className="border-t border-slate-100 bg-slate-50 py-10 dark:border-gray-800 dark:bg-gray-900">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-4">
           <div className="flex w-full flex-col items-center justify-between gap-6 sm:flex-row">
             <Logo size="sm" href="/" />
             <nav className="flex flex-wrap items-center justify-center gap-6">
               {NAV_LINKS.map((link) => (
-                <a key={link.href} href={link.href} className="text-xs text-slate-500 hover:text-slate-700">
+                <a
+                  key={link.href}
+                  href={link.href}
+                  className="text-xs text-slate-500 hover:text-slate-700 dark:text-gray-400 dark:hover:text-gray-200"
+                >
                   {link.label}
                 </a>
               ))}
-              <Link href="/login" className="text-xs text-slate-500 hover:text-slate-700">
+              <Link
+                href="/login"
+                className="text-xs text-slate-500 hover:text-slate-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
                 Sign in
               </Link>
             </nav>
@@ -450,7 +462,7 @@ export default function LandingPage() {
                 href="https://x.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-slate-400 transition-colors hover:text-slate-600"
+                className="text-slate-400 transition-colors hover:text-slate-600 dark:text-gray-500 dark:hover:text-gray-300"
                 aria-label="BiteSync on X"
               >
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -461,7 +473,7 @@ export default function LandingPage() {
                 href="https://instagram.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-slate-400 transition-colors hover:text-slate-600"
+                className="text-slate-400 transition-colors hover:text-slate-600 dark:text-gray-500 dark:hover:text-gray-300"
                 aria-label="BiteSync on Instagram"
               >
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
@@ -472,9 +484,9 @@ export default function LandingPage() {
               </a>
             </div>
           </div>
-          <p className="text-center text-xs text-slate-400">
+          <p className="text-center text-xs text-slate-400 dark:text-gray-500">
             © {new Date().getFullYear()} BiteSync · GDPR compliant ·{" "}
-            <Link href="/privacy" className="ml-1 hover:underline">
+            <Link href="/privacy" className="ml-1 hover:underline dark:hover:text-gray-300">
               Privacy
             </Link>
           </p>

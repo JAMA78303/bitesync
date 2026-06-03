@@ -6,6 +6,7 @@ import { fetchRecipeNutritionMap } from "@/lib/supabase/recipe-nutrition-query";
 import { getOrCreateMealPlan, getMealPlanEntries, buildGrid } from "@/lib/supabase/meal-plans";
 import { initialDietaryPreferencesFromProfile } from "@/lib/dietary/constraints";
 import { getProfile } from "@/lib/supabase/profile";
+import { getDailyCalorieTarget, getDailyProteinTarget } from "@/lib/utils/nutrition-targets";
 import { getUserTier } from "@/lib/subscription";
 import { PlannerGrid } from "@/components/planner/PlannerGrid";
 import { WeekNav } from "@/components/planner/WeekNav";
@@ -96,8 +97,8 @@ export default async function PlannerPage({ searchParams }: Props) {
       ingredientNames: ingredientNamesByRecipe.get(r.id) ?? [],
     };
   });
-  const dailyCalorieTarget = profile?.daily_calorie_target ?? null;
-  const dailyProteinTarget = profile?.daily_protein_target ?? null;
+  const dailyCalorieTarget = getDailyCalorieTarget(profile);
+  const dailyProteinTarget = getDailyProteinTarget(profile);
   const dietPrefs = profile
     ? {
         follows_vegetarian: Boolean(profile.follows_vegetarian),

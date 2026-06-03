@@ -1,24 +1,24 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ExternalLink, Link as LinkIcon, Loader2, Trash2, X } from "lucide-react";
+import { ExternalLink, Link as LinkIcon, Loader2, Plus, Trash2, X } from "lucide-react";
+import type { RecipeSourceType } from "@/lib/recipes/detectSourceType";
+import type { ParsedIngredient } from "@/lib/recipes/parseIngredient";
 
-export type ParsedIngredient = {
-  rawText: string;
-  name: string;
-  quantity?: number;
-  unit?: string;
-};
+export type { ParsedIngredient };
 
 export type ImportResult = {
   name: string;
   ingredients: ParsedIngredient[];
+  steps: string[];
   sourceUrl: string;
   sourceDomain: string;
+  sourceType: RecipeSourceType;
   /** Servings/yield from page metadata when available. */
   detectedServings: number;
   /** How many people to scale quantities for (set on servings step). */
   cookingFor: number;
+  importNotice?: string;
 };
 
 type Step = "url" | "preview" | "servings";
@@ -27,6 +27,15 @@ type Props = {
   onClose: () => void;
   onImport: (result: ImportResult) => Promise<void> | void;
 };
+
+const EMPTY_INGREDIENT = (): ParsedIngredient => ({
+  quantity: null,
+  unit: null,
+  name: "",
+  grams: null,
+  gramsSource: null,
+  rawText: "",
+});
 
 export function ImportRecipeModal({ onClose, onImport }: Props) {
   const [step, setStep] = useState<Step>("url");
@@ -50,17 +59,22 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
         body: JSON.stringify({ url: url.trim() }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Import failed");
+      if (!res.ok && !data?.sourceUrl) {
+        throw new Error(data?.error || "Import failed");
+      }
       const detectedServings =
         typeof data.detectedServings === "number" && data.detectedServings > 0
           ? data.detectedServings
           : 1;
       setResult({
-        name: data.name,
-        ingredients: data.ingredients,
-        sourceUrl: data.sourceUrl,
-        sourceDomain: data.sourceDomain,
+        name: data.name || "Imported recipe",
+        ingredients: Array.isArray(data.ingredients) ? data.ingredients : [],
+        steps: Array.isArray(data.steps) ? data.steps : [],
+        sourceUrl: data.sourceUrl || url.trim(),
+        sourceDomain: data.sourceDomain || new URL(url.trim()).hostname.replace(/^www\./, ""),
+        sourceType: data.sourceType || "unknown",
         detectedServings,
+        importNotice: data.importNotice,
       });
       setCookingFor(1);
       setStep("preview");
@@ -80,12 +94,33 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
     });
   }
 
+  function addIngredient() {
+    if (!result) return;
+    setResult({
+      ...result,
+      ingredients: [...result.ingredients, EMPTY_INGREDIENT()],
+    });
+  }
+
   function updateIngredient(index: number, patch: Partial<ParsedIngredient>) {
     if (!result) return;
     setResult({
       ...result,
       ingredients: result.ingredients.map((ing, i) => (i === index ? { ...ing, ...patch } : ing)),
     });
+  }
+
+  function updateStep(index: number, value: string) {
+    if (!result) return;
+    setResult({
+      ...result,
+      steps: result.steps.map((stepText, i) => (i === index ? value : stepText)),
+    });
+  }
+
+  function addStep() {
+    if (!result) return;
+    setResult({ ...result, steps: [...result.steps, ""] });
   }
 
   async function handleConfirmImport() {
@@ -100,6 +135,7 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
       await onImport({
         ...payload,
         ingredients: payload.ingredients.filter((i) => i.name.trim().length > 0),
+        steps: payload.steps.map((s) => s.trim()).filter(Boolean),
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save imported recipe.");
@@ -114,12 +150,13 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
   }
 
   const detected = result?.detectedServings ?? 1;
+  const hasValidIngredients = (result?.ingredients ?? []).some((i) => i.name.trim().length > 0);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center">
       <div className="max-h-[90vh] w-full overflow-y-auto rounded-t-2xl bg-white p-6 sm:max-w-2xl sm:rounded-2xl">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Import Recipe from URL</h2>
+          <h2 className="text-lg font-semibold">Import recipe</h2>
           <button onClick={onClose} className="rounded-lg p-1 hover:bg-gray-100" aria-label="Close import modal">
             <X className="h-5 w-5" />
           </button>
@@ -128,7 +165,8 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
         {step === "url" ? (
           <>
             <p className="mb-4 text-sm text-gray-500">
-              Paste a recipe URL. We only import the recipe name and ingredients, never instructions.
+              Paste a link from a recipe site, TikTok, Instagram, or Facebook. You&apos;ll review everything before
+              saving.
             </p>
             <div className="flex gap-2">
               <div className="flex flex-1 items-center gap-2 rounded-xl border px-3 py-2">
@@ -138,7 +176,7 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleFetch()}
-                  placeholder="https://www.bbcgoodfood.com/recipes/..."
+                  placeholder="https://..."
                   className="flex-1 bg-transparent text-sm outline-none"
                   autoFocus
                 />
@@ -156,8 +194,17 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
 
         {step === "preview" && result ? (
           <>
+            {result.importNotice ? (
+              <p className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">{result.importNotice}</p>
+            ) : null}
+
             <div className="mb-4">
-              <h3 className="text-base font-semibold">{result.name}</h3>
+              <label className="mb-1 block text-xs font-medium text-gray-500">Recipe name</label>
+              <input
+                value={result.name}
+                onChange={(e) => setResult({ ...result, name: e.target.value })}
+                className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm font-semibold"
+              />
               <a
                 href={result.sourceUrl}
                 target="_blank"
@@ -169,11 +216,26 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
               </a>
             </div>
 
-            <p className="mb-2 text-sm font-medium text-gray-700">Ingredients ({result.ingredients.length})</p>
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-sm font-medium text-gray-700">Ingredients ({result.ingredients.length})</p>
+              <button
+                type="button"
+                onClick={addIngredient}
+                className="inline-flex items-center gap-1 text-xs font-medium text-[#1A4731] hover:underline"
+              >
+                <Plus className="h-3 w-3" />
+                Add row
+              </button>
+            </div>
             <div className="mb-6 space-y-2">
+              {result.ingredients.length === 0 ? (
+                <p className="rounded-lg bg-gray-50 p-3 text-sm text-gray-500">
+                  No ingredients found — add them manually below.
+                </p>
+              ) : null}
               {result.ingredients.map((ing, i) => (
                 <div key={`${ing.rawText}-${i}`} className="space-y-1 rounded-lg bg-gray-50 p-2">
-                  <div className="grid gap-2 md:grid-cols-[1fr_110px_90px_36px]">
+                  <div className="grid gap-2 md:grid-cols-[1fr_80px_80px_72px_36px]">
                     <input
                       value={ing.name}
                       onChange={(e) => updateIngredient(i, { name: e.target.value })}
@@ -184,7 +246,7 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
                       value={ing.quantity ?? ""}
                       onChange={(e) =>
                         updateIngredient(i, {
-                          quantity: e.target.value ? Number(e.target.value) : undefined,
+                          quantity: e.target.value ? Number(e.target.value) : null,
                         })
                       }
                       type="number"
@@ -195,9 +257,23 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
                     />
                     <input
                       value={ing.unit ?? ""}
-                      onChange={(e) => updateIngredient(i, { unit: e.target.value.toLowerCase() || undefined })}
+                      onChange={(e) => updateIngredient(i, { unit: e.target.value.toLowerCase() || null })}
                       className="h-9 rounded-md border border-gray-300 bg-white px-2 text-sm"
                       placeholder="Unit"
+                    />
+                    <input
+                      value={ing.grams ?? ""}
+                      onChange={(e) =>
+                        updateIngredient(i, {
+                          grams: e.target.value ? Number(e.target.value) : null,
+                          gramsSource: e.target.value ? "explicit" : null,
+                        })
+                      }
+                      type="number"
+                      min="0"
+                      step="1"
+                      className="h-9 rounded-md border border-gray-300 bg-white px-2 text-sm"
+                      placeholder="g"
                     />
                     <button
                       onClick={() => removeIngredient(i)}
@@ -207,9 +283,38 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
                       <Trash2 className="mx-auto h-4 w-4" />
                     </button>
                   </div>
-                  <p className="text-xs text-gray-500">{ing.rawText}</p>
+                  {ing.rawText ? <p className="text-xs text-gray-500">Source: {ing.rawText}</p> : null}
                 </div>
               ))}
+            </div>
+
+            <div className="mb-6">
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-sm font-medium text-gray-700">Method</p>
+                <button
+                  type="button"
+                  onClick={addStep}
+                  className="inline-flex items-center gap-1 text-xs font-medium text-[#1A4731] hover:underline"
+                >
+                  <Plus className="h-3 w-3" />
+                  Add step
+                </button>
+              </div>
+              <div className="space-y-2">
+                {result.steps.length === 0 ? (
+                  <p className="text-sm text-gray-400">No steps imported — add them if you like.</p>
+                ) : null}
+                {result.steps.map((stepText, i) => (
+                  <textarea
+                    key={`step-${i}`}
+                    value={stepText}
+                    onChange={(e) => updateStep(i, e.target.value)}
+                    rows={2}
+                    className="w-full rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm"
+                    placeholder={`Step ${i + 1}`}
+                  />
+                ))}
+              </div>
             </div>
 
             <div className="flex gap-3">
@@ -218,12 +323,17 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
               </button>
               <button
                 onClick={() => setStep("servings")}
-                disabled={result.ingredients.length === 0}
+                disabled={!result.name.trim()}
                 className="flex-1 rounded-xl bg-[#1A4731] py-2.5 text-sm font-medium text-white disabled:opacity-50"
               >
                 Next
               </button>
             </div>
+            {!hasValidIngredients ? (
+              <p className="mt-2 text-xs text-amber-700">
+                Add at least one ingredient on the next screen before saving, or go back to fill them in now.
+              </p>
+            ) : null}
           </>
         ) : null}
 
@@ -277,10 +387,10 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
               <button
                 type="button"
                 onClick={() => void handleConfirmImport()}
-                disabled={saving || result.ingredients.length === 0}
+                disabled={saving || !hasValidIngredients}
                 className="flex-1 rounded-xl bg-[#1A4731] py-2.5 text-sm font-medium text-white disabled:opacity-50"
               >
-                {saving ? "Saving..." : "Import recipe"}
+                {saving ? "Saving..." : "Save recipe"}
               </button>
             </div>
           </>

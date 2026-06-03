@@ -15,6 +15,7 @@ import { mealPlanRecipeServings, mergeIngredients, mergeScaledRecipeIngredients 
 import { replaceGroceryItemsWithMerged } from "@/lib/supabase/grocery";
 import { fetchRecipeNutritionMap } from "@/lib/supabase/recipe-nutrition-query";
 import { getProfile } from "@/lib/supabase/profile";
+import { getDailyCalorieTarget, getDailyProteinTarget } from "@/lib/utils/nutrition-targets";
 import {
   generateMealPlan,
   generateSubstitutions,
@@ -750,10 +751,10 @@ export async function generateAIWeekPlan(input: GenerateAIWeekPlanInput) {
   const selectedDaysFullWeek = [0, 1, 2, 3, 4, 5, 6];
   const profile = await getProfile();
   const dailyCalorieTarget = Math.round(
-    Number(input.goals.calorieTarget ?? profile?.daily_calorie_target ?? 2000),
+    Number(input.goals.calorieTarget ?? getDailyCalorieTarget(profile) ?? 2000),
   );
   const dailyProteinTarget = Math.round(
-    Number(input.goals.proteinTarget ?? profile?.daily_protein_target ?? 120),
+    Number(input.goals.proteinTarget ?? getDailyProteinTarget(profile) ?? 120),
   );
 
   const formattedRecipes = withNutrition.map((r) => ({
@@ -1107,10 +1108,10 @@ export async function generateAIBasketForWeek(input: GenerateAIBasketInput) {
   const selectedDays = normalizeSelectedDays(input.selectedDays);
   const profile = await getProfile();
   const dailyCalorieTarget = Math.round(
-    Number(input.goals.calorieTarget ?? profile?.daily_calorie_target ?? 2000),
+    Number(input.goals.calorieTarget ?? getDailyCalorieTarget(profile) ?? 2000),
   );
   const dailyProteinTarget = Math.round(
-    Number(input.goals.proteinTarget ?? profile?.daily_protein_target ?? 120),
+    Number(input.goals.proteinTarget ?? getDailyProteinTarget(profile) ?? 120),
   );
   const snackCountPerDay = (input.goals.calorieTarget ?? 0) >= 2200 ? 2 : 1;
 
@@ -1441,8 +1442,8 @@ export async function getSubstitutionSuggestionsForMealPlan(
 
   const profile = await getProfile();
   const goals: GoalContext = {
-    calorieTarget: profile?.daily_calorie_target ?? null,
-    proteinTarget: profile?.daily_protein_target ?? null,
+    calorieTarget: getDailyCalorieTarget(profile),
+    proteinTarget: getDailyProteinTarget(profile),
     followsVegetarian: Boolean(profile?.follows_vegetarian),
     followsVegan: Boolean(profile?.follows_vegan),
     followsGlutenFree: Boolean(profile?.follows_gluten_free),

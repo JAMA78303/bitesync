@@ -5,6 +5,31 @@ import { Link as LinkIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createImportedRecipe } from "@/app/(app)/recipes/actions";
 import { ImportRecipeModal, type ImportResult } from "@/components/recipes/ImportRecipeModal";
+import {
+  parsedIngredientsToInputs,
+  scaleParsedIngredients,
+} from "@/lib/recipes/parseIngredient";
+
+function buildImportPayload(result: ImportResult) {
+  const detected = Math.max(1, result.detectedServings ?? 1);
+  const cookingFor = Math.max(1, result.cookingFor ?? 1);
+  const scale = cookingFor / detected;
+  const scaled = scaleParsedIngredients(result.ingredients, scale);
+  const ingredients = parsedIngredientsToInputs(scaled);
+
+  return {
+    name: result.name,
+    description: `Imported from ${result.sourceDomain}`,
+    ingredients,
+    steps: result.steps,
+    sourceUrl: result.sourceUrl,
+    sourceDomain: result.sourceDomain,
+    sourceType: result.sourceType,
+    importedAt: new Date().toISOString(),
+    detectedServings: detected,
+    cookingFor,
+  };
+}
 
 export function ImportRecipeButton() {
   const [showImport, setShowImport] = useState(false);
@@ -14,34 +39,13 @@ export function ImportRecipeButton() {
   async function handleImport(result: ImportResult) {
     return new Promise<void>((resolve, reject) => {
       startTransition(async () => {
-        const detected = Math.max(1, result.detectedServings ?? 1);
-        const cookingFor = Math.max(1, result.cookingFor ?? 1);
-        const scale = cookingFor / detected;
+        const payload = buildImportPayload(result);
+        if (!payload.ingredients.length) {
+          reject(new Error("Add at least one ingredient before saving."));
+          return;
+        }
 
-        const ingredients = result.ingredients
-          .map((ing) => {
-            const q =
-              ing.quantity != null && Number.isFinite(ing.quantity) && ing.quantity > 0 ? ing.quantity : 1;
-            const scaled = Math.round(q * scale * 100) / 100;
-            return {
-              name: ing.name.trim(),
-              quantity: scaled > 0 ? scaled : 1,
-              unit: ing.unit?.trim() || "piece",
-            };
-          })
-          .filter((ing) => ing.name.length > 0);
-
-        const created = await createImportedRecipe({
-          name: result.name,
-          description: `Imported from ${result.sourceDomain}`,
-          ingredients,
-          sourceUrl: result.sourceUrl,
-          sourceDomain: result.sourceDomain,
-          importedAt: new Date().toISOString(),
-          detectedServings: detected,
-          cookingFor,
-        });
-
+        const created = await createImportedRecipe(payload);
         if ("error" in created) {
           reject(new Error(created.error));
           return;

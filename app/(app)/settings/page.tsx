@@ -11,13 +11,6 @@ export const dynamic = "force-dynamic";
 
 const SETTINGS_GROUPS = [
   {
-    title: "Preferences",
-    items: [
-      { icon: "🌿", label: "Dietary preferences", href: "/settings/dietary" },
-      { icon: "🎯", label: "Calorie & macro targets", href: "/settings/targets" },
-    ],
-  },
-  {
     title: "Account",
     items: [
       { icon: "💳", label: "Billing & subscription", href: "/billing" },
@@ -90,29 +83,25 @@ export default async function SettingsPage() {
         </div>
 
         <div>
-          <p className={`${ds.label} mb-2 px-1`}>Preferences</p>
+          <p className={`${ds.label} mb-2 px-1`}>App</p>
           <div className={`${ds.card} overflow-hidden`}>
             <SettingsThemeRow />
-            <div className="h-px bg-gray-50 dark:bg-gray-800" />
-            {SETTINGS_GROUPS[0].items.map((item, i) => (
-              <div key={item.label}>
-                <Link
-                  href={item.href}
-                  className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
-                >
-                  <span className="w-7 text-center text-lg">{item.icon}</span>
-                  <span className="flex-1 text-sm font-medium text-gray-700 dark:text-gray-300">{item.label}</span>
-                  <Chevron />
-                </Link>
-                {i < SETTINGS_GROUPS[0].items.length - 1 ? (
-                  <div className="ml-14 h-px bg-gray-50 dark:bg-gray-800" />
-                ) : null}
-              </div>
-            ))}
           </div>
         </div>
 
-        {SETTINGS_GROUPS.slice(1).map((group) => (
+        <Link
+          href="/goals"
+          className={`${ds.card} flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800`}
+        >
+          <span className="w-7 text-center text-lg">🎯</span>
+          <span className="flex-1">
+            <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nutrition &amp; goals</span>
+            <span className="text-xs text-gray-500">Dietary preferences and calorie targets</span>
+          </span>
+          <Chevron />
+        </Link>
+
+        {SETTINGS_GROUPS.map((group) => (
           <div key={group.title}>
             <p className={`${ds.label} mb-2 px-1`}>{group.title}</p>
             <div className={`${ds.card} overflow-hidden`}>

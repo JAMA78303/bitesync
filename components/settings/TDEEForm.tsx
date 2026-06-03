@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertTriangle, Calculator, Info, Loader2, ShieldCheck } from "lucide-react";
@@ -97,6 +97,11 @@ export function TDEEForm({ defaultValues }: Props) {
     });
   }
 
+  useEffect(() => {
+    updatePreview();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- initial preview from server defaultValues
+  }, []);
+
   function onSubmit(values: TDEEFormValues) {
     startTransition(async () => {
       const result = await saveTDEEProfile(values);
@@ -168,7 +173,6 @@ export function TDEEForm({ defaultValues }: Props) {
                 step="0.1"
                 onKeyDown={(e) => ["e", "E", "+", "-"].includes(e.key) && e.preventDefault()}
               />
-              <p className="text-[11px] text-slate-500">Stored internally as kg for TDEE.</p>
             </>
           ) : weightUnit === "lb" ? (
             <>
@@ -271,7 +275,6 @@ export function TDEEForm({ defaultValues }: Props) {
                 step={1}
                 onKeyDown={(e) => ["e", "E", "+", "-"].includes(e.key) && e.preventDefault()}
               />
-              <p className="text-[11px] text-slate-500">Stored internally as cm for TDEE.</p>
             </>
           ) : heightUnit === "m" ? (
             <>
@@ -364,6 +367,9 @@ export function TDEEForm({ defaultValues }: Props) {
           </div>
           <p className="mt-2 text-sm font-medium">{getBMILabel(bmiCategory)}</p>
           <p className="mt-0.5 text-[11px] opacity-80">WHO classification</p>
+          <p className="mt-2 text-xs leading-relaxed opacity-90">
+            BMI is a rough guide and doesn&apos;t account for muscle mass or body composition.
+          </p>
         </div>
       ) : null}
 

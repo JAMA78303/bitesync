@@ -7,6 +7,7 @@ import type { UserNutritionTargets } from "@/lib/utils/nutrition-targets";
 import { ds } from "@/lib/ui/classes";
 import { CofidAttribution } from "@/components/nutrition/CofidAttribution";
 import { MicronutrientPanel } from "@/components/planner/MicronutrientPanel";
+import { DAY_NAMES } from "@/types";
 import type { MicroAnalysis } from "@/lib/supabase/nutrition";
 
 type Props = {
@@ -36,6 +37,7 @@ export function NutritionDashboard({
   const [selectedDay, setSelectedDay] = useState(defaultDay);
 
   const day = useMemo(() => days.find((d) => d.dateISO === selectedDay) ?? days[0], [days, selectedDay]);
+  const selectedDayLabel = day ? `${DAY_NAMES[day.dayOfWeek] ?? day.short} ${day.num}` : "Selected day";
 
   const macros = [
     { label: "Calories", value: day?.kcal ?? 0, target: targets.kcal, unit: "kcal", color: "#3a5a40" },
@@ -55,8 +57,9 @@ export function NutritionDashboard({
     <div className="-mx-4 min-h-screen bg-gray-50 dark:bg-gray-950 md:mx-0">
       <header className={ds.gradientHeader}>
         <h1 className={`${ds.pageTitle} mb-1`}>Nutrition</h1>
-        <p className="mb-4 text-xs text-white/60">This week vs your targets</p>
+        <p className="mb-4 text-xs text-white/60">Weekly averages vs your daily targets</p>
         <div className="mb-4">{weekNav}</div>
+        <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-white/50">Weekly average</p>
         <div className="grid grid-cols-2 gap-2">
           {weekPills.map((m) => {
             const pct = m.target > 0 ? Math.round((m.value / m.target) * 100) : 0;
@@ -69,7 +72,7 @@ export function NutritionDashboard({
                   <span className="text-xs font-normal text-white/60"> {m.unit}</span>
                 </p>
                 <p className={`mt-0.5 text-[9px] font-semibold ${onTrack ? "text-[#7ab87a]" : "text-amber-300"}`}>
-                  {pct}% of target
+                  {pct}% of daily target (week avg)
                 </p>
               </div>
             );
@@ -78,7 +81,11 @@ export function NutritionDashboard({
       </header>
 
       <div className={`px-4 ${ds.overlap} ${ds.pageContent}`}>
-        <div className={`${ds.card} mb-4 flex gap-1 p-2`}>
+        <div className="mb-3">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            Selected day
+          </p>
+          <div className={`${ds.card} flex gap-1 p-2`}>
           {days.map((d) => (
             <button
               key={d.dateISO}
@@ -94,7 +101,13 @@ export function NutritionDashboard({
               <p className="text-xs font-bold">{d.num}</p>
             </button>
           ))}
+          </div>
         </div>
+
+        <p className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
+          {selectedDayLabel}
+          <span className="ml-2 text-xs font-normal text-gray-500">vs {targets.kcal} kcal daily target</span>
+        </p>
 
         <div className={`space-y-3 ${ds.sectionGap}`}>
           {macros.map((m) => {
@@ -120,7 +133,11 @@ export function NutritionDashboard({
                     }}
                   />
                 </div>
-                <p className={`mt-1.5 text-xs font-medium ${status.className}`}>{status.label}</p>
+                <p className="mt-1.5 text-xs font-medium text-gray-500">
+                  vs {m.target}
+                  {m.unit} daily target
+                </p>
+                <p className={`text-xs font-medium ${status.className}`}>{status.label}</p>
               </div>
             );
           })}

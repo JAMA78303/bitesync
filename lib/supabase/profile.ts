@@ -5,6 +5,11 @@ import { isProSubscriptionStatus } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 import { dietaryPreferencesToLegacyFlags } from "@/lib/dietary/constraints";
 import { normalizeDietaryPreferencesForSave } from "@/lib/dietary/constants";
+import {
+  computeNutritionTargetsFromProfile,
+  hasCompleteTdeeProfile,
+  storedTargetsAreStale,
+} from "@/lib/utils/nutrition-targets";
 import { calculateNutritionTargetsWithSafety, type TDEEFormValues } from "@/lib/utils/tdee";
 
 export type DietPreferencesInput = {
@@ -51,6 +56,7 @@ export async function saveDietaryPreferenceKeys(
   if (error) return { error: error.message };
 
   revalidatePath("/settings");
+  revalidatePath("/goals");
   revalidatePath("/planner");
   revalidatePath("/recipes");
   revalidatePath("/onboarding");
@@ -94,8 +100,11 @@ export async function saveTDEEProfile(values: TDEEFormValues) {
   if (error) return { error: error.message };
 
   revalidatePath("/settings");
+  revalidatePath("/goals");
   revalidatePath("/billing");
   revalidatePath("/planner");
+  revalidatePath("/nutrition");
+  revalidatePath("/today");
   return {
     success: true,
     overrideApplied: safe.overrideApplied,
@@ -142,6 +151,24 @@ export async function getProfile() {
     )
     .eq("id", user.id)
     .maybeSingle();
+
+  if (data && storedTargetsAreStale(data)) {
+    const computed = computeNutritionTargetsFromProfile(data);
+    if (computed) {
+      await supabase
+        .from("profiles")
+        .update({
+          daily_calorie_target: computed.kcal,
+          daily_protein_target: computed.protein,
+        })
+        .eq("id", user.id);
+      return {
+        ...data,
+        daily_calorie_target: computed.kcal,
+        daily_protein_target: computed.protein,
+      };
+    }
+  }
 
   return data;
 }

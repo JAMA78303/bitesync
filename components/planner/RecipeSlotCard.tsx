@@ -20,9 +20,16 @@ type Props = {
   entry: MealPlanEntry;
   dietPrefs?: ProfileDietPrefs | null;
   dietaryPreferences?: string[];
+  /** Compact vertical layout for narrow planner grid cells. */
+  variant?: "default" | "grid";
 };
 
-export function RecipeSlotCard({ entry, dietPrefs, dietaryPreferences = [] }: Props) {
+export function RecipeSlotCard({
+  entry,
+  dietPrefs,
+  dietaryPreferences = [],
+  variant = "default",
+}: Props) {
   const [isPending, startTransition] = useTransition();
   const [removed, setRemoved] = useState(false);
   const { toast } = useToast();
@@ -65,68 +72,111 @@ export function RecipeSlotCard({ entry, dietPrefs, dietaryPreferences = [] }: Pr
     });
   }
 
-  const cardInner = (
-    <div
-      className={`card-soft flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-3 dark:border-gray-800 dark:bg-gray-900 ${
-        isPending ? "opacity-50" : ""
-      }`}
-    >
-      <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-[#f0f7f0] text-2xl dark:bg-[#1a2e1d]">
-        {isQuickAdd ? "✨" : getMealEmoji(name, entry.meal_type)}
+  const macroLine =
+    calories != null ? (
+      <div className={`flex flex-wrap items-center gap-x-2 gap-y-0.5 ${variant === "grid" ? "mt-1" : "mt-1 gap-3"}`}>
+        <span className="flex items-center gap-1 text-xs text-gray-500">
+          <span aria-hidden>🔥</span>
+          <span className="font-medium text-gray-700 dark:text-gray-300">{Math.round(calories)}</span>
+          <span>kcal</span>
+        </span>
+        {protein != null ? (
+          <span className="flex items-center gap-1 text-xs text-gray-500">
+            <span aria-hidden>🌿</span>
+            <span className="font-medium text-gray-700 dark:text-gray-300">{Math.round(protein)}g</span>
+            <span>P</span>
+          </span>
+        ) : null}
       </div>
+    ) : isQuickAdd ? (
+      <p className="mt-1 text-xs text-gray-400">Quick add</p>
+    ) : null;
 
-      <div className="min-w-0 flex-1">
+  const cardInner =
+    variant === "grid" ? (
+      <div
+        className={`card-soft flex min-h-[88px] min-w-0 w-full flex-col rounded-xl border border-gray-100 bg-white p-2 pr-7 dark:border-gray-800 dark:bg-gray-900 ${
+          isPending ? "opacity-50" : ""
+        }`}
+      >
         {dietTag ? (
-          <span className={`mb-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${getDietTagStyle(dietTag)}`}>
+          <span
+            className={`mb-1 inline-flex w-fit max-w-full shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium leading-tight ${getDietTagStyle(dietTag)}`}
+          >
             {dietTag}
           </span>
         ) : null}
-        <p className="truncate text-sm font-bold text-gray-900 dark:text-white">{name}</p>
-        {calories != null ? (
-          <div className="mt-1 flex items-center gap-3">
-            <span className="flex items-center gap-1 text-xs text-gray-500">
-              <span aria-hidden>🔥</span>
-              <span className="font-medium text-gray-700 dark:text-gray-300">{Math.round(calories)}</span>
-              <span>kcal</span>
-            </span>
-            {protein != null ? (
-              <span className="flex items-center gap-1 text-xs text-gray-500">
-                <span aria-hidden>🌿</span>
-                <span className="font-medium text-gray-700 dark:text-gray-300">{Math.round(protein)}g</span>
-                <span>protein</span>
-              </span>
-            ) : null}
-          </div>
-        ) : isQuickAdd ? (
-          <p className="mt-1 text-xs text-gray-400">Quick add</p>
-        ) : null}
+        <p
+          className="min-w-0 w-full break-words line-clamp-2 text-xs font-bold leading-snug text-gray-900 dark:text-white"
+          title={name}
+        >
+          {name}
+        </p>
+        {macroLine}
         {dietWarnings.length > 0 ? (
-          <p className="mt-1 line-clamp-1 text-[10px] font-medium text-amber-700 dark:text-amber-400" title={dietWarnings.join(" · ")}>
+          <p
+            className="mt-1 line-clamp-1 text-[10px] font-medium text-amber-700 dark:text-amber-400"
+            title={dietWarnings.join(" · ")}
+          >
             {dietWarnings.join(" · ")}
           </p>
         ) : null}
       </div>
+    ) : (
+      <div
+        className={`card-soft flex items-start gap-3 rounded-2xl border border-gray-100 bg-white p-3 dark:border-gray-800 dark:bg-gray-900 ${
+          isPending ? "opacity-50" : ""
+        }`}
+      >
+        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-[#f0f7f0] text-2xl dark:bg-[#1a2e1d]">
+          {isQuickAdd ? "✨" : getMealEmoji(name, entry.meal_type)}
+        </div>
 
-      {!isQuickAdd ? (
-        <svg
-          className="h-4 w-4 flex-shrink-0 text-gray-300 dark:text-gray-600"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          aria-hidden
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-      ) : null}
-    </div>
-  );
+        <div className="min-w-0 flex-1">
+          {dietTag ? (
+            <span
+              className={`mb-1 inline-flex w-fit max-w-full rounded-full px-2 py-0.5 text-xs font-medium ${getDietTagStyle(dietTag)}`}
+            >
+              {dietTag}
+            </span>
+          ) : null}
+          <p
+            className="min-w-0 break-words line-clamp-2 text-sm font-bold leading-snug text-gray-900 dark:text-white"
+            title={name}
+          >
+            {name}
+          </p>
+          {macroLine}
+          {dietWarnings.length > 0 ? (
+            <p
+              className="mt-1 line-clamp-1 text-[10px] font-medium text-amber-700 dark:text-amber-400"
+              title={dietWarnings.join(" · ")}
+            >
+              {dietWarnings.join(" · ")}
+            </p>
+          ) : null}
+        </div>
+
+        {!isQuickAdd ? (
+          <svg
+            className="mt-1 h-4 w-4 flex-shrink-0 text-gray-300 dark:text-gray-600"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            aria-hidden
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        ) : null}
+      </div>
+    );
 
   return (
-    <div className="group relative">
+    <div className="group relative min-w-0">
       {recipeIdForLink && !isQuickAdd ? (
         <Link
           href={`/recipes/${encodeURIComponent(String(recipeIdForLink))}`}
-          className="block outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-[#3a5a40]"
+          className="block min-w-0 outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-[#3a5a40]"
           aria-label={`Open recipe ${name}`}
         >
           {cardInner}

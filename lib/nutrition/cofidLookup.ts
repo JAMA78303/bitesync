@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { pickBestCofidCandidate, type CofidCandidate, type CoFIDMatchKind } from "@/lib/nutrition/cofidMatch";
 
-export type CoFIDMatchKind = "exact" | "fulltext" | "partial";
+export type { CoFIDMatchKind };
 
 export interface CoFIDNutrition {
   kcal: number | null;
@@ -73,6 +75,19 @@ const OVERRIDE_TTL_MS = 5 * 60 * 1000;
 const lookupCache = new Map<string, CoFIDNutrition | null>();
 
 let overrideCache: { map: Map<string, string>; loadedAt: number } | null = null;
+let injectedSupabase: SupabaseClient | null = null;
+
+/** Allows scripts to run CoFID lookups with a service-role client. */
+export function setCofidLookupSupabase(client: SupabaseClient | null): void {
+  injectedSupabase = client;
+  overrideCache = null;
+  lookupCache.clear();
+}
+
+async function resolveSupabase(): Promise<SupabaseClient> {
+  if (injectedSupabase) return injectedSupabase;
+  return createClient();
+}
 
 function cacheKey(name: string): string {
   return name.toLowerCase().trim();
@@ -85,7 +100,7 @@ function rowToNutrition(row: CofidDbRow, matched_by: CoFIDMatchKind): CoFIDNutri
 async function getOverrideFoodCode(normalised: string): Promise<string | null> {
   const now = Date.now();
   if (!overrideCache || now - overrideCache.loadedAt > OVERRIDE_TTL_MS) {
-    const supabase = await createClient();
+    const supabase = await resolveSupabase();
     const { data } = await supabase.from("cofid_overrides").select("ingredient_name, food_code");
     const map = new Map<string, string>();
     for (const row of data ?? []) {
@@ -101,6 +116,71 @@ export function invalidateCofidOverrideCache(): void {
   overrideCache = null;
 }
 
+const COFID_SELECT =
+  "food_code,food_name,food_group,kcal,protein_g,fat_g,carbs_g,sugars_g,fibre_g,sodium_mg,salt_g,vitamin_a_ug,vitamin_d_ug,vitamin_e_mg,vitamin_k_ug,vitamin_c_mg,thiamin_mg,riboflavin_mg,niacin_mg,vitamin_b6_mg,vitamin_b12_ug,folate_ug,calcium_mg,iron_mg,zinc_mg,magnesium_mg,potassium_mg,phosphorus_mg,selenium_ug,iodine_ug";
+
+function addCandidates(
+  target: CofidCandidate[],
+  seen: Set<string>,
+  rows: Pick<CofidDbRow, "food_code" | "food_name" | "food_group">[] | null | undefined,
+  matchKind: CoFIDMatchKind,
+): void {
+  for (const row of rows ?? []) {
+    if (seen.has(row.food_code)) continue;
+    seen.add(row.food_code);
+    target.push({
+      food_code: row.food_code,
+      food_name: row.food_name,
+      food_group: row.food_group,
+      matchKind,
+    });
+  }
+}
+
+async function collectCofidCandidates(
+  supabase: SupabaseClient,
+  normalised: string,
+): Promise<CofidCandidate[]> {
+  const candidates: CofidCandidate[] = [];
+  const seen = new Set<string>();
+
+  const { data: exactRows } = await supabase
+    .from("cofid_foods")
+    .select("food_code,food_name,food_group")
+    .ilike("food_name", normalised)
+    .limit(5);
+  addCandidates(candidates, seen, exactRows, "exact");
+
+  const { data: containsRows } = await supabase
+    .from("cofid_foods")
+    .select("food_code,food_name,food_group")
+    .ilike("food_name", `%${normalised}%`)
+    .limit(20);
+  addCandidates(candidates, seen, containsRows, "partial");
+
+  const ftsQuery = normalised.replace(/\s+/g, " & ");
+  if (ftsQuery.length >= 2) {
+    const { data: ftsRows } = await supabase
+      .from("cofid_foods")
+      .select("food_code,food_name,food_group")
+      .textSearch("search_vector", ftsQuery, { type: "websearch", config: "english" })
+      .limit(20);
+    addCandidates(candidates, seen, ftsRows, "fulltext");
+  }
+
+  const words = normalised.split(/\s+/).filter((w) => w.length > 2);
+  for (const word of words.slice(0, 4)) {
+    const { data: wordRows } = await supabase
+      .from("cofid_foods")
+      .select("food_code,food_name,food_group")
+      .ilike("food_name", `%${word}%`)
+      .limit(10);
+    addCandidates(candidates, seen, wordRows, "partial");
+  }
+
+  return candidates;
+}
+
 /**
  * Look up a food by name in the CoFID database.
  * Returns nutrition per 100g, or null if not found.
@@ -111,14 +191,14 @@ export async function lookupCoFID(foodName: string): Promise<CoFIDNutrition | nu
     return lookupCache.get(key) ?? null;
   }
 
-  const supabase = await createClient();
+  const supabase = await resolveSupabase();
   const normalised = key;
 
   const overrideCode = await getOverrideFoodCode(normalised);
   if (overrideCode) {
     const { data: food } = await supabase
       .from("cofid_foods")
-      .select("*")
+      .select(COFID_SELECT)
       .eq("food_code", overrideCode)
       .maybeSingle();
 
@@ -129,44 +209,18 @@ export async function lookupCoFID(foodName: string): Promise<CoFIDNutrition | nu
     }
   }
 
-  const { data: exact } = await supabase
-    .from("cofid_foods")
-    .select("*")
-    .ilike("food_name", normalised)
-    .limit(1)
-    .maybeSingle();
+  const candidates = await collectCofidCandidates(supabase, normalised);
+  const best = pickBestCofidCandidate(normalised, candidates);
 
-  if (exact) {
-    const hit = rowToNutrition(exact as CofidDbRow, "exact");
-    lookupCache.set(key, hit);
-    return hit;
-  }
-
-  const { data: fts } = await supabase
-    .from("cofid_foods")
-    .select("*")
-    .textSearch("search_vector", normalised.replace(/\s+/g, " & "), {
-      type: "websearch",
-      config: "english",
-    })
-    .limit(1);
-
-  if (fts?.[0]) {
-    const hit = rowToNutrition(fts[0] as CofidDbRow, "fulltext");
-    lookupCache.set(key, hit);
-    return hit;
-  }
-
-  const words = normalised.split(/\s+/).filter((w) => w.length > 3);
-  if (words.length > 0) {
-    const { data: partial } = await supabase
+  if (best) {
+    const { data: food } = await supabase
       .from("cofid_foods")
-      .select("*")
-      .ilike("food_name", `%${words[0]}%`)
-      .limit(1);
+      .select(COFID_SELECT)
+      .eq("food_code", best.food_code)
+      .maybeSingle();
 
-    if (partial?.[0]) {
-      const hit = rowToNutrition(partial[0] as CofidDbRow, "partial");
+    if (food) {
+      const hit = rowToNutrition(food as CofidDbRow, best.matchKind);
       lookupCache.set(key, hit);
       return hit;
     }

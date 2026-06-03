@@ -20,7 +20,10 @@ export const PIECE_WEIGHTS_G: Record<string, number> = {
   apricot: 35,
 
   onion: 150,
+  "small onion": 110,
   "red onion": 150,
+  mushroom: 20,
+  mushrooms: 20,
   "garlic clove": 5,
   garlic: 5,
   egg: 60,
@@ -211,7 +214,12 @@ function resolveGrams(
     if (typical != null && typical > 0) {
       return quantity * typical;
     }
-    return quantity * 100;
+    return null;
+  }
+
+  if (!u && name) {
+    const tableG = lookupPieceWeightGramsPerUnit(name);
+    if (tableG != null) return quantity * tableG;
   }
 
   const countMul = COUNT_STYLE_MULTIPLIERS[u];
@@ -221,6 +229,15 @@ function resolveGrams(
 
   const std = STANDARD_UNIT_TO_GRAMS_PER_UNIT[u];
   if (std != null) {
+    if (/\boil\b/i.test(name) && (u === "tbsp" || u === "tsp")) {
+      return quantity * (u === "tbsp" ? 13.5 : 4.5);
+    }
+    if (/\b(purée|puree|paste)\b/i.test(name) && u === "tbsp") {
+      return quantity * 16;
+    }
+    if (/\b(spice|spices|ground)\b/i.test(name) && u === "tsp") {
+      return quantity * 2;
+    }
     return quantity * std;
   }
 
@@ -247,6 +264,58 @@ export function getSupportedUnits(): string[] {
   return [...new Set([...(ALLOWED_UNITS as readonly string[]), ...extra])].sort((a, b) =>
     a.localeCompare(b),
   );
+}
+
+const LIQUID_PATTERN =
+  /\b(oil|olive oil|milk|water|stock|broth|cream|juice|vinegar|wine|sauce|paste|pur[ée]e|honey|syrup|yoghurt|yogurt|buttermilk|coconut milk)\b/i;
+const SPICE_PATTERN =
+  /\b(spice|spices|pepper|salt|paprika|cumin|oregano|basil|thyme|herb|herbs|ground|chilli|chili|turmeric|coriander|nutmeg|ginger powder)\b/i;
+const COUNTABLE_PATTERN =
+  /\b(apple|banana|orange|egg|eggs|onion|garlic|mushroom|tomato|potato|pepper|avocado|lemon|lime|carrot|courgette|aubergine|pear|peach|kiwi|bread|wrap|pitta|bagel|rasher|bacon|sausage|fillet|breast|thigh)\b/i;
+
+/** Context-aware unit list for recipe-maker ingredient rows (always includes g). */
+export function getUnitsForIngredient(ingredientName: string): string[] {
+  const all = getSupportedUnits();
+  const name = ingredientName.trim();
+  if (!name) return all;
+
+  const preferred: string[] = ["g"];
+  const add = (...units: string[]) => {
+    for (const unit of units) {
+      if (!preferred.includes(unit) && all.includes(unit)) preferred.push(unit);
+    }
+  };
+
+  if (LIQUID_PATTERN.test(name)) {
+    add("ml", "l", "tbsp", "tsp", "cup", "fl oz", "cl");
+  } else if (SPICE_PATTERN.test(name)) {
+    add("tsp", "tbsp", "g");
+  } else if (/\b(garlic|onion|shallot)\b/i.test(name)) {
+    add("clove", "cloves", "piece", "whole", "kg");
+  } else if (/\b(bread|toast|bacon|rashers?)\b/i.test(name)) {
+    add("slice", "slices", "rasher", "rashers", "piece");
+  } else if (lookupPieceWeightGramsPerUnit(name) != null || COUNTABLE_PATTERN.test(name)) {
+    add("piece", "whole", "each", "item", "slice", "handful", "kg");
+  } else if (/\b(chicken|beef|pork|lamb|fish|salmon|cod|tuna|prawn|prawns|mince)\b/i.test(name)) {
+    add("kg", "oz", "lb", "fillet", "breast", "thigh", "piece");
+  } else {
+    add("kg", "tbsp", "tsp", "cup", "ml", "oz", "piece");
+  }
+
+  for (const unit of all) {
+    if (!preferred.includes(unit)) preferred.push(unit);
+  }
+
+  return preferred;
+}
+
+export function defaultUnitForIngredient(ingredientName: string): string {
+  const units = getUnitsForIngredient(ingredientName);
+  if (lookupPieceWeightGramsPerUnit(ingredientName.trim()) != null && units.includes("piece")) {
+    return "piece";
+  }
+  if (LIQUID_PATTERN.test(ingredientName) && units.includes("ml")) return "ml";
+  return units[0] ?? "g";
 }
 
 /** Approximate total grams suffix for ingredient lists, e.g. `(~240g)`. */

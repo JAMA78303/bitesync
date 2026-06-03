@@ -11,6 +11,7 @@ export function Sidebar() {
         <NavLink href="/recipes" label="Recipes" icon="recipes" />
         <NavLink href="/grocery" label="Grocery" icon="grocery" />
         <NavLink href="/nutrition" label="Nutrition" icon="nutrition" />
+        <NavLink href="/goals" label="Goals" icon="goals" />
         <NavLink href="/settings" label="Settings" icon="settings" />
       </nav>
     </aside>

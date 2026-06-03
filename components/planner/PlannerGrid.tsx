@@ -79,7 +79,7 @@ export function PlannerGrid({
   return (
     <>
       <div className="hidden overflow-x-auto rounded-xl border border-gray-200 bg-white sm:block">
-        <div className="grid min-w-[900px] grid-cols-[120px_repeat(7,minmax(100px,1fr))]">
+        <div className="grid min-w-[980px] grid-cols-[120px_repeat(7,minmax(112px,1fr))]">
           <div className="border-b border-gray-200 p-2" />
           {Array.from({ length: 7 }, (_, day) => (
             <div key={`head-${day}`} className="border-b border-l border-gray-200 p-2 text-center">
@@ -97,12 +97,12 @@ export function PlannerGrid({
                 const entry = grid[day][mealType];
                 const snackEntries = mealType === "snack" ? snackEntriesForDay(day) : [];
                 return (
-                  <div key={`${mealType}-${day}`} className="border-b border-l border-gray-200 p-2">
+                  <div key={`${mealType}-${day}`} className="min-w-0 border-b border-l border-gray-200 p-2">
                     {mealType === "snack" ? (
                       <div className="space-y-1">
                         {snackEntries.length > 0 ? (
                           snackEntries.map((snack) => (
-                            <RecipeSlotCard key={snack.id} entry={snack} dietPrefs={dietPrefs} dietaryPreferences={dietaryPreferences} />
+                            <RecipeSlotCard key={snack.id} entry={snack} dietPrefs={dietPrefs} dietaryPreferences={dietaryPreferences} variant="grid" />
                           ))
                         ) : (
                           <AddSlotButton
@@ -126,7 +126,7 @@ export function PlannerGrid({
                         ) : null}
                       </div>
                     ) : entry ? (
-                      <RecipeSlotCard entry={entry} dietPrefs={dietPrefs} dietaryPreferences={dietaryPreferences} />
+                      <RecipeSlotCard entry={entry} dietPrefs={dietPrefs} dietaryPreferences={dietaryPreferences} variant="grid" />
                     ) : (
                       <div className="space-y-1">
                         <AddSlotButton

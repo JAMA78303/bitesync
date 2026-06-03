@@ -1,6 +1,7 @@
 import { RecipeForm } from "@/components/recipes/RecipeForm";
 import { RecipeLimitReached } from "@/components/recipes/RecipeLimitReached";
 import { getProfile } from "@/lib/supabase/profile";
+import { getDailyCalorieTarget, getDailyProteinTarget } from "@/lib/utils/nutrition-targets";
 import { canCreateRecipe, getRecipeCount } from "@/lib/subscription";
 
 export default async function NewRecipePage() {
@@ -15,8 +16,8 @@ export default async function NewRecipePage() {
   const profileTargets =
     profile != null
       ? {
-          daily_calorie_target: profile.daily_calorie_target ?? null,
-          daily_protein_target: profile.daily_protein_target ?? null,
+          daily_calorie_target: getDailyCalorieTarget(profile),
+          daily_protein_target: getDailyProteinTarget(profile),
         }
       : null;
 

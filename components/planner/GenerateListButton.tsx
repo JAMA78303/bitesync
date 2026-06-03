@@ -28,9 +28,10 @@ export function GenerateListButton({
       <Button
         onClick={() => setShowSelector(true)}
         disabled={filledDays.length === 0}
+        variant={onGradient ? "outline" : "default"}
         className={
           onGradient
-            ? "h-9 w-full bg-white text-sm text-[#3a5a40] hover:bg-white/90 sm:w-auto"
+            ? "h-9 w-full border-white bg-white text-sm font-medium !text-[#1A4731] hover:!bg-white/90 disabled:opacity-50 sm:w-auto dark:!border-white/30 dark:!bg-white dark:!text-[#1A4731] dark:hover:!bg-white/90"
             : "h-9 bg-[#3a5a40] text-sm text-white hover:bg-[#2d4a32]"
         }
       >
