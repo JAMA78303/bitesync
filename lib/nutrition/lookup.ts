@@ -5,6 +5,29 @@ function normalizeName(value: string): string {
   return value.toLowerCase().trim();
 }
 
+/** Common import / recipe phrasing → canonical nutrition DB name. */
+const INGREDIENT_LOOKUP_ALIASES: Record<string, string> = {
+  tortilla: "flour tortilla",
+  tortillas: "flour tortilla",
+  "flour tortilla": "flour tortilla",
+  "flour tortillas": "flour tortilla",
+  salsa: "salsa mild jar",
+  "fresh salsa": "salsa mild jar",
+  "ground cumin": "cumin",
+  cumin: "cumin",
+  tabasco: "hot sauce tabasco",
+  "red chilli": "chilli flakes",
+  chilli: "chilli flakes",
+  chili: "chilli flakes",
+  "mixed salad": "lettuce",
+  "lime juiced": "lime",
+};
+
+function resolveLookupName(name: string): string {
+  const normalized = normalizeName(name);
+  return INGREDIENT_LOOKUP_ALIASES[normalized] ?? normalized;
+}
+
 /** Display hints for autocomplete (whole foods / common count units). Keys lowercase. */
 export const FOOD_UNIT_HINTS: Record<string, string> = {
   banana: "piece (~120g each)",
@@ -27,6 +50,10 @@ export const FOOD_UNIT_HINTS: Record<string, string> = {
   potato: "piece (~175g each)",
   carrot: "piece (~100g each)",
   "tortilla wrap": "piece (~64g each)",
+  tortilla: "piece (~40g each)",
+  tortillas: "piece (~40g each)",
+  "chicken breast": "piece (~175g each)",
+  "chicken breasts": "piece (~175g each)",
   "pitta bread": "piece (~60g each)",
   "stock cube": "piece (~10g each)",
   "bacon rasher": "rasher (~25g each)",
@@ -47,7 +74,7 @@ export function getIngredientAutocompleteLabel(name: string): string {
 
 /** Local curated DB (sync). UK CoFID lookup runs server-side in async recipe nutrition (see cofidLookup.ts). */
 export function lookupNutrition(name: string): NutritionLookupEntry | null {
-  const normalized = normalizeName(name);
+  const normalized = resolveLookupName(name);
   const exact = NUTRITION_DB.find((item) => normalizeName(item.name) === normalized);
   if (exact) return exact;
 

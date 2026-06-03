@@ -76,6 +76,12 @@ const TRAILING_SERVING = /\s*,\s*(to serve|for serving|optional|plus extra.*)$/i
 const TRAILING_PREP =
   /\s*,?\s*(plus an extra drizzle|for garnish|to taste|as needed|or to taste)\.?$/i;
 
+const SPICE_ONLY_PATTERN =
+  /\b(spice|spices|paprika|cumin|coriander|oregano|basil|thyme|turmeric|nutmeg|chilli|chili|tabasco|pepper|salt)\b/i;
+
+const COUNT_NOUN_PATTERN =
+  /^(breasts?|thighs?|tortillas?|wraps?|fillets?|rashers?|drumsticks?)\b/i;
+
 function normalizeSpaces(value: string): string {
   return value.replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
 }
@@ -183,7 +189,7 @@ function cleanIngredientName(name: string): string {
     .trim();
 
   cleaned = cleaned
-    .replace(/\b(chopped|sliced|diced|grated|minced|crushed|peeled|finely|roughly|thinly)\b/gi, " ")
+    .replace(/\b(chopped|sliced|diced|grated|minced|crushed|peeled|finely|roughly|thinly|juiced)\b/gi, " ")
     .replace(/\s+/g, " ")
     .trim();
 
@@ -207,16 +213,57 @@ export function parseIngredientLine(raw: string): ParsedIngredient {
   const { quantity, remainder: afterQty } = parseLeadingQuantity(working);
   working = afterQty;
 
-  const { unit, remainder: afterUnit } = extractUnit(working);
-  working = afterUnit;
+  let unit: string | null = null;
+  let remainderAfterUnit = working;
+  const countNoun = working.match(COUNT_NOUN_PATTERN);
+  if (countNoun?.[1]) {
+    const noun = countNoun[1].toLowerCase();
+    unit =
+      noun === "breasts" || noun === "breast"
+        ? "breast"
+        : noun === "thighs" || noun === "thigh"
+          ? "thigh"
+          : noun === "tortillas" || noun === "tortilla"
+            ? "tortilla"
+            : noun === "wraps" || noun === "wrap"
+              ? "wrap"
+              : noun === "fillets" || noun === "fillet"
+                ? "fillet"
+                : noun === "rashers" || noun === "rasher"
+                  ? "rasher"
+                  : noun === "drumsticks" || noun === "drumstick"
+                    ? "drumstick"
+                    : null;
+    if (unit) {
+      remainderAfterUnit = working.slice(countNoun[0].length).trim();
+    }
+  }
+
+  if (!unit) {
+    const extracted = extractUnit(working);
+    unit = extracted.unit;
+    remainderAfterUnit = extracted.remainder;
+  }
+  working = remainderAfterUnit;
 
   let name = cleanIngredientName(working);
   name = name.replace(/^(?:pieces?)\s+/i, "").trim();
+  if (!name && countNoun?.[1]) {
+    name = cleanIngredientName(countNoun[1]);
+  }
   if (!name) name = cleanIngredientName(rawText.replace(/^(?:pieces?)\s+/i, ""));
 
   let quantityResolved = quantity;
   if (quantityResolved == null && unit != null) {
     quantityResolved = 1;
+  }
+  if (quantityResolved == null && SPICE_ONLY_PATTERN.test(name)) {
+    quantityResolved = 1;
+    if (!unit) unit = "tsp";
+  }
+  if (quantityResolved == null && /\b(salad|to serve)\b/i.test(rawText)) {
+    quantityResolved = 1;
+    if (!unit) unit = "handful";
   }
 
   let grams: number | null = explicitGrams;

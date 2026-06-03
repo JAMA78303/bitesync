@@ -43,7 +43,14 @@ export const PIECE_WEIGHTS_G: Record<string, number> = {
 
   "bread slice": 40,
   "tortilla wrap": 64,
+  tortilla: 40,
+  tortillas: 40,
   wrap: 64,
+  wraps: 64,
+  "chicken breast": 175,
+  "chicken breasts": 175,
+  chilli: 15,
+  "red chilli": 15,
   "pitta bread": 60,
   pitta: 60,
   bagel: 98,
@@ -106,6 +113,8 @@ const COUNT_STYLE_MULTIPLIERS: Record<string, number> = {
   thighs: 120,
   drumstick: 100,
   drumsticks: 100,
+  tortilla: 40,
+  tortillas: 40,
 };
 
 function escapeRegExp(s: string): string {

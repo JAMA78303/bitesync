@@ -34,6 +34,20 @@ const NUTRITION_DB_CORE: NutritionLookupEntry[] = [
     },
   },
   {
+    name: "flour tortilla",
+    typical_piece_g: 40,
+    per_100g: {
+      calories: 174,
+      protein_g: 5.7,
+      carbs_g: 30,
+      fat_g: 3.5,
+      fibre_g: 2,
+      sugar_g: 1,
+      sodium_mg: 420,
+      saturated_fat_g: 0.8,
+    },
+  },
+  {
     name: "salmon",
     per_100g: {
       calories: 208,
