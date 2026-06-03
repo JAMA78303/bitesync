@@ -113,6 +113,8 @@ The Spec 4 migration (`lib/recipes/macroRecompute.ts`) writes **only** to `recip
 
 ### Scope queries (run in Supabase SQL editor)
 
+**All queries in one file:** `sql/2026-06-03_grocery_scope_and_recompute_checks.sql` (Part A = grocery scope, Part B = post-recompute checks).
+
 **Count plans with likely stale recipe-derived rows** (not manual items):
 
 ```sql
