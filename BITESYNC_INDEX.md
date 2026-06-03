@@ -177,16 +177,16 @@ WHERE archived_at IS NULL
 |---|---|---|
 | Dry-run script | ✅ | `npm run recompute:macros -- --dry-run` |
 | Env loading | ✅ | `lib/supabase/loadEnv.ts` reads `.env.local` |
-| **Executed** | 🟡 | See run log below |
+| **Executed** | 🟡 | Admin UI at `/admin/macro-recompute` or `npm run recompute:macros` |
 | Grocery list repair | ➖ N/A | **Not in scope** — see [Stale grocery snapshots](#stale-grocery-snapshots-separate-from-spec-4) |
 
 #### Spec 4 — MACRO_RECOMPUTE run log
 
 | Step | Status | Notes |
 |---|---|---|
-| Dry-run #1 | 🟡 pending | Review `scripts/reports/macro-recompute-*.json` |
-| Real run | 🟡 pending | |
-| Dry-run #2 (expect 0 changes) | 🟡 pending | |
+| Dry-run #1 | 🟡 | `/admin/macro-recompute` → **Dry run**, or `npm run recompute:macros -- --dry-run` |
+| Real run | 🟡 | Admin → **Apply recompute**, or `npm run recompute:macros` |
+| Dry-run #2 (expect 0 changes) | 🟡 | Admin → **Verify**, or dry-run npm again |
 
 **Run locally** (create `.env.local` with `NEXT_PUBLIC_SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`):
 
@@ -205,7 +205,7 @@ All ✅ — see prior commits.
 
 ## Next actions
 
-1. **Spec 4** — dry-run → review outliers → real run → confirm idempotent dry-run (see run log above)
+1. **Spec 4** — [Admin → Macro recompute](https://bitesync.io/admin/macro-recompute): dry-run → apply → verify. Or locally with `.env.local`: `npm run recompute:macros -- --dry-run` etc.
 2. **Stale grocery lists** — run [scope queries](#scope-queries-run-in-supabase-sql-editor); few → regenerate in app; many → separate migration task
 3. ~~Run `sql/2026-06-02_recipes_source_type.sql`~~ — applied
 4. ~~Run `sql/2026-06-03_pantry_items.sql`~~ — applied

@@ -35,6 +35,9 @@ export default async function AdminLayout({
           <Link href="/admin/nutrition" className="text-green-200 hover:text-white">
             Nutrition
           </Link>
+          <Link href="/admin/macro-recompute" className="text-green-200 hover:text-white">
+            Macro recompute
+          </Link>
           <Link href="/planner" className="text-green-200 hover:text-white">
             ← App
           </Link>
