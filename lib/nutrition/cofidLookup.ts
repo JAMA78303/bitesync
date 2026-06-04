@@ -1,6 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { pickBestCofidCandidate, type CofidCandidate, type CoFIDMatchKind } from "@/lib/nutrition/cofidMatch";
+import {
+  cofidQueryVariants,
+  normalizeCofidQuery,
+  pickBestCofidCandidate,
+  type CofidCandidate,
+  type CoFIDMatchKind,
+} from "@/lib/nutrition/cofidMatch";
 
 export type { CoFIDMatchKind };
 
@@ -90,7 +96,13 @@ async function resolveSupabase(): Promise<SupabaseClient> {
 }
 
 function cacheKey(name: string): string {
-  return name.toLowerCase().trim();
+  return normalizeCofidQuery(name);
+}
+
+/** Keys used for cofid_overrides lookup (normalised name + singular/plural). */
+function overrideLookupKeys(name: string): string[] {
+  const keys = cofidQueryVariants(name);
+  return keys;
 }
 
 function rowToNutrition(row: CofidDbRow, matched_by: CoFIDMatchKind): CoFIDNutrition {
@@ -104,11 +116,15 @@ async function getOverrideFoodCode(normalised: string): Promise<string | null> {
     const { data } = await supabase.from("cofid_overrides").select("ingredient_name, food_code");
     const map = new Map<string, string>();
     for (const row of data ?? []) {
-      map.set(row.ingredient_name, row.food_code);
+      map.set(normalizeCofidQuery(row.ingredient_name), row.food_code);
     }
     overrideCache = { map, loadedAt: now };
   }
-  return overrideCache.map.get(normalised) ?? null;
+  for (const key of overrideLookupKeys(normalised)) {
+    const code = overrideCache.map.get(key);
+    if (code) return code;
+  }
+  return null;
 }
 
 /** Call after admin edits overrides so lookups pick up changes within TTL. */
@@ -143,19 +159,29 @@ async function collectCofidCandidates(
 ): Promise<CofidCandidate[]> {
   const candidates: CofidCandidate[] = [];
   const seen = new Set<string>();
+  const variants = cofidQueryVariants(normalised);
 
-  const { data: exactRows } = await supabase
-    .from("cofid_foods")
-    .select("food_code,food_name,food_group")
-    .ilike("food_name", normalised)
-    .limit(5);
-  addCandidates(candidates, seen, exactRows, "exact");
+  for (const variant of variants) {
+    const { data: exactRows } = await supabase
+      .from("cofid_foods")
+      .select("food_code,food_name,food_group")
+      .ilike("food_name", variant)
+      .limit(5);
+    addCandidates(candidates, seen, exactRows, "exact");
+
+    const { data: primaryRows } = await supabase
+      .from("cofid_foods")
+      .select("food_code,food_name,food_group")
+      .ilike("food_name", `${variant},%`)
+      .limit(15);
+    addCandidates(candidates, seen, primaryRows, "partial");
+  }
 
   const { data: containsRows } = await supabase
     .from("cofid_foods")
     .select("food_code,food_name,food_group")
     .ilike("food_name", `%${normalised}%`)
-    .limit(20);
+    .limit(40);
   addCandidates(candidates, seen, containsRows, "partial");
 
   const ftsQuery = normalised.replace(/\s+/g, " & ");
@@ -164,18 +190,20 @@ async function collectCofidCandidates(
       .from("cofid_foods")
       .select("food_code,food_name,food_group")
       .textSearch("search_vector", ftsQuery, { type: "websearch", config: "english" })
-      .limit(20);
+      .limit(25);
     addCandidates(candidates, seen, ftsRows, "fulltext");
   }
 
   const words = normalised.split(/\s+/).filter((w) => w.length > 2);
   for (const word of words.slice(0, 4)) {
-    const { data: wordRows } = await supabase
-      .from("cofid_foods")
-      .select("food_code,food_name,food_group")
-      .ilike("food_name", `%${word}%`)
-      .limit(10);
-    addCandidates(candidates, seen, wordRows, "partial");
+    for (const variant of cofidQueryVariants(word)) {
+      const { data: wordRows } = await supabase
+        .from("cofid_foods")
+        .select("food_code,food_name,food_group")
+        .ilike("food_name", `${variant},%`)
+        .limit(10);
+      addCandidates(candidates, seen, wordRows, "partial");
+    }
   }
 
   return candidates;
