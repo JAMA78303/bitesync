@@ -1,9 +1,9 @@
 /**
- * Status-based colour logic for the Today "Your Goals" card (ring + macro bars).
+ * Status-based colour logic for macro targets (Today goals card + Nutrition view).
  *
  * Each nutrient has an explicit "good direction":
- * - kcal, fat, carbs: land near target — under is neutral, over is undesirable
- * - protein, fibre: at least target — meeting/exceeding is good, under is neutral
+ * - kcal, fat, carbs: land near target — under is amber, over is red
+ * - protein, fibre: at least target — meeting/exceeding is green, under is amber
  */
 
 export type GoalMetric = "kcal" | "protein" | "fibre" | "fat" | "carbs";
@@ -27,20 +27,26 @@ const OVER_MODERATE_MAX = 1.15;
 export const GOAL_STATUS_COLORS = {
   "on-track": "#3a5a40",
   under: "#f59e0b",
-  "over-moderate": "#f59e0b",
+  "over-moderate": "#f97316",
   "over-high": "#ef4444",
 } as const;
 
 export const GOAL_STATUS_TEXT_CLASS: Record<GoalStatusKind, string> = {
-  "on-track": "text-[#3a5a40] dark:text-[#a7d4a9]",
-  under: "text-amber-500",
-  "over-moderate": "text-amber-500",
-  "over-high": "text-red-500",
+  "on-track": "text-[#3a5a40] dark:text-[#86efac]",
+  under: "text-amber-600 dark:text-amber-400",
+  "over-moderate": "text-orange-600 dark:text-orange-400",
+  "over-high": "text-red-600 dark:text-red-400",
 };
 
 function buildStatus(kind: GoalStatusKind): GoalStatus {
   const label =
-    kind === "on-track" ? "On track" : kind === "under" ? "Under" : "Over";
+    kind === "on-track"
+      ? "On track"
+      : kind === "under"
+        ? "↑ Below target"
+        : kind === "over-moderate"
+          ? "↓ Over target"
+          : "↓ Well over target";
   return {
     kind,
     label,
@@ -61,7 +67,7 @@ function minimumTargetStatus(ratio: number): GoalStatus {
   return buildStatus("under");
 }
 
-/** Shared status for the calorie ring and macro bars. */
+/** Shared status for calorie ring, macro bars, and nutrition dashboard. */
 export function getGoalStatus(metric: GoalMetric, value: number, target: number): GoalStatus {
   if (!Number.isFinite(value) || !Number.isFinite(target) || target <= 0) {
     return buildStatus("under");

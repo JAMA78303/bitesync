@@ -2,9 +2,9 @@ import { GOAL_STATUS_COLORS } from "@/lib/today/goal-status";
 
 const LEGEND_ITEMS = [
   { label: "On track", color: GOAL_STATUS_COLORS["on-track"] },
-  { label: "Under", color: GOAL_STATUS_COLORS.under },
-  { label: "Over", color: GOAL_STATUS_COLORS["over-moderate"] },
-  { label: "Well over", color: GOAL_STATUS_COLORS["over-high"] },
+  { label: "Below target", color: GOAL_STATUS_COLORS.under },
+  { label: "Over target", color: GOAL_STATUS_COLORS["over-moderate"] },
+  { label: "Well over target", color: GOAL_STATUS_COLORS["over-high"] },
 ] as const;
 
 export function GoalsStatusLegend() {

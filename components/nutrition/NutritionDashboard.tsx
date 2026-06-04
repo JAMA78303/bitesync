@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { DayMacros } from "@/lib/planner/weekly-macros";
 import type { UserNutritionTargets } from "@/lib/utils/nutrition-targets";
+import { getGoalStatus, type GoalMetric } from "@/lib/today/goal-status";
+import { formatWeekdayWithOrdinal } from "@/lib/utils/dates";
 import { ds } from "@/lib/ui/classes";
 import { CofidAttribution } from "@/components/nutrition/CofidAttribution";
 import { MicronutrientPanel } from "@/components/planner/MicronutrientPanel";
-import { DAY_NAMES } from "@/types";
 import type { MicroAnalysis } from "@/lib/supabase/nutrition";
 
 type Props = {
@@ -18,13 +19,6 @@ type Props = {
   microAnalysis: MicroAnalysis | null;
   weekNav: React.ReactNode;
 };
-
-function macroStatus(value: number, target: number) {
-  if (value >= target * 0.8 && value <= target * 1.15)
-    return { label: "✓ On track", className: "text-[#3a5a40] dark:text-[#86efac]" };
-  if (value < target * 0.8) return { label: "↑ Below target", className: "text-amber-600 dark:text-amber-400" };
-  return { label: "↓ Over target", className: "text-red-600 dark:text-red-400" };
-}
 
 export function NutritionDashboard({
   weekAvg,
@@ -38,13 +32,15 @@ export function NutritionDashboard({
   const [selectedDay, setSelectedDay] = useState(defaultDay);
 
   const day = useMemo(() => days.find((d) => d.dateISO === selectedDay) ?? days[0], [days, selectedDay]);
-  const selectedDayLabel = day ? `${DAY_NAMES[day.dayOfWeek] ?? day.short} ${day.num}` : "Selected day";
+  const selectedDayLabel = day
+    ? formatWeekdayWithOrdinal(new Date(`${day.dateISO}T12:00:00`), "long")
+    : "Selected day";
 
-  const macros = [
-    { label: "Calories", value: day?.kcal ?? 0, target: targets.kcal, unit: "kcal", color: "#3a5a40" },
-    { label: "Protein", value: day?.protein ?? 0, target: targets.protein, unit: "g", color: "#3a5a40" },
-    { label: "Carbs", value: day?.carbs ?? 0, target: targets.carbs, unit: "g", color: "#f97316" },
-    { label: "Fat", value: day?.fat ?? 0, target: targets.fat, unit: "g", color: "#f59e0b" },
+  const macros: { label: string; metric: GoalMetric; value: number; target: number; unit: string }[] = [
+    { label: "Calories", metric: "kcal", value: day?.kcal ?? 0, target: targets.kcal, unit: "kcal" },
+    { label: "Protein", metric: "protein", value: day?.protein ?? 0, target: targets.protein, unit: "g" },
+    { label: "Carbs", metric: "carbs", value: day?.carbs ?? 0, target: targets.carbs, unit: "g" },
+    { label: "Fat", metric: "fat", value: day?.fat ?? 0, target: targets.fat, unit: "g" },
   ];
 
   const weekPills = [
@@ -116,7 +112,8 @@ export function NutritionDashboard({
 
         <div className={`space-y-3 ${ds.sectionGap}`}>
           {macros.map((m) => {
-            const status = macroStatus(m.value, m.target);
+            const status = getGoalStatus(m.metric, m.value, m.target);
+            const safeTarget = m.target > 0 ? m.target : 1;
             return (
               <div key={m.label} className={`${ds.card} ${ds.cardPadding}`}>
                 <div className="mb-2 flex items-center justify-between">
@@ -133,8 +130,8 @@ export function NutritionDashboard({
                   <div
                     className="h-full rounded-full transition-all duration-500"
                     style={{
-                      width: `${Math.min((m.value / m.target) * 100, 100)}%`,
-                      backgroundColor: m.color,
+                      width: `${Math.min((m.value / safeTarget) * 100, 100)}%`,
+                      backgroundColor: status.color,
                     }}
                   />
                 </div>
@@ -142,7 +139,7 @@ export function NutritionDashboard({
                   vs {m.target}
                   {m.unit} daily target
                 </p>
-                <p className={`text-xs font-medium ${status.className}`}>{status.label}</p>
+                <p className={`text-xs font-medium ${status.textClassName}`}>{status.label}</p>
               </div>
             );
           })}

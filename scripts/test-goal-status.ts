@@ -32,4 +32,20 @@ assertStatus("kcal", 2400, 2027, "over-high", "well over budget");
 assertStatus("protein", 200, 122, "on-track", "well over protein minimum");
 assertStatus("fibre", 45, 30, "on-track", "well over fibre minimum");
 
+// Under and over must never share the same colour (spec: over ≠ amber)
+const underCarbs = getGoalStatus("carbs", 100, 200);
+const overCarbs = getGoalStatus("carbs", 220, 200);
+if (underCarbs.color === overCarbs.color) {
+  throw new Error("carbs under and over must use different colours");
+}
+if (underCarbs.kind !== "under" || overCarbs.kind !== "over-moderate") {
+  throw new Error("expected under vs over-moderate kinds for carbs");
+}
+
+// High protein over target stays on-track, not red
+const highProtein = getGoalStatus("protein", 180, 120);
+if (highProtein.kind !== "on-track" || highProtein.color === underCarbs.color) {
+  throw new Error("protein over minimum must be green, not amber/red");
+}
+
 console.log("OK: goal status colour logic");
