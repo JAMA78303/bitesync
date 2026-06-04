@@ -166,35 +166,43 @@ async function collectCofidCandidates(
   const variants = cofidQueryVariants(normalised);
 
   type TaggedFetch = { kind: CoFIDMatchKind; data: CofidCandidateRow[] | null };
-  const pending: Promise<TaggedFetch>[] = [
-    supabase
-      .from("cofid_foods")
-      .select(COFID_CANDIDATE_SELECT)
-      .ilike("food_name", `%${normalised}%`)
-      .limit(35)
-      .then(({ data }) => ({ kind: "partial" as const, data })),
-  ];
+  const pending: Promise<TaggedFetch>[] = [];
 
-  for (const variant of variants) {
-    pending.push(
+  pending.push(
+    Promise.resolve(
       supabase
         .from("cofid_foods")
         .select(COFID_CANDIDATE_SELECT)
-        .ilike("food_name", `${variant},%`)
-        .limit(20)
+        .ilike("food_name", `%${normalised}%`)
+        .limit(35)
         .then(({ data }) => ({ kind: "partial" as const, data })),
+    ),
+  );
+
+  for (const variant of variants) {
+    pending.push(
+      Promise.resolve(
+        supabase
+          .from("cofid_foods")
+          .select(COFID_CANDIDATE_SELECT)
+          .ilike("food_name", `${variant},%`)
+          .limit(20)
+          .then(({ data }) => ({ kind: "partial" as const, data })),
+      ),
     );
   }
 
   const ftsQuery = normalised.replace(/\s+/g, " & ");
   if (ftsQuery.length >= 2) {
     pending.push(
-      supabase
-        .from("cofid_foods")
-        .select(COFID_CANDIDATE_SELECT)
-        .textSearch("search_vector", ftsQuery, { type: "websearch", config: "english" })
-        .limit(20)
-        .then(({ data }) => ({ kind: "fulltext" as const, data })),
+      Promise.resolve(
+        supabase
+          .from("cofid_foods")
+          .select(COFID_CANDIDATE_SELECT)
+          .textSearch("search_vector", ftsQuery, { type: "websearch", config: "english" })
+          .limit(20)
+          .then(({ data }) => ({ kind: "fulltext" as const, data })),
+      ),
     );
   }
 
@@ -203,12 +211,14 @@ async function collectCofidCandidates(
     for (const word of words.slice(0, 3)) {
       for (const variant of cofidQueryVariants(word)) {
         pending.push(
-          supabase
-            .from("cofid_foods")
-            .select(COFID_CANDIDATE_SELECT)
-            .ilike("food_name", `${variant},%`)
-            .limit(10)
-            .then(({ data }) => ({ kind: "partial" as const, data })),
+          Promise.resolve(
+            supabase
+              .from("cofid_foods")
+              .select(COFID_CANDIDATE_SELECT)
+              .ilike("food_name", `${variant},%`)
+              .limit(10)
+              .then(({ data }) => ({ kind: "partial" as const, data })),
+          ),
         );
       }
     }

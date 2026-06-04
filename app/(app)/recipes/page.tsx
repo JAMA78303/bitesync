@@ -2,7 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { fetchRecipeNutritionMap } from "@/lib/supabase/recipe-nutrition-query";
 import { initialDietaryPreferencesFromProfile } from "@/lib/dietary/constraints";
 import { getProfile } from "@/lib/supabase/profile";
-import { getUserTier, getRecipeCount } from "@/lib/subscription";
+import { getDailyCalorieTarget } from "@/lib/utils/nutrition-targets";
+import { canCreateRecipe, getRecipeCount, getUserTier } from "@/lib/subscription";
 import { RecipesPageClient } from "@/components/recipes/RecipesPageClient";
 import type { RecipeListItem } from "@/components/recipes/RecipeListCard";
 
@@ -89,6 +90,17 @@ export default async function RecipesPage({ searchParams }: Props) {
     BREAKFAST_KEYWORDS.some((keyword) => recipe.name.toLowerCase().includes(keyword)),
   );
 
+  const dailyTarget = getDailyCalorieTarget(profile);
+  const canCreate = await canCreateRecipe();
+  const canFillLibrary =
+    Boolean(dailyTarget && dailyTarget >= 800) && (tier !== "free" || canCreate);
+  const fillLibraryBlockedMessage =
+    dailyTarget == null || dailyTarget < 800
+      ? "Set your daily calorie target in Settings first."
+      : tier === "free" && !canCreate
+        ? "Recipe limit reached — upgrade to Pro or archive recipes."
+        : null;
+
   return (
     <RecipesPageClient
       recipes={listItems}
@@ -97,6 +109,8 @@ export default async function RecipesPage({ searchParams }: Props) {
       recipeCount={count}
       dietaryPreferences={initialDietaryPreferencesFromProfile(profile)}
       hasBreakfastFriendlyRecipe={hasBreakfastFriendlyRecipe}
+      canFillLibrary={canFillLibrary}
+      fillLibraryBlockedMessage={fillLibraryBlockedMessage}
     />
   );
 }

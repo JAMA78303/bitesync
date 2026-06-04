@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Heart } from "lucide-react";
 import { useMemo, useState } from "react";
 import { ImportRecipeModal } from "@/components/recipes/ImportRecipeModal";
+import { FillMyLibraryModal } from "@/components/recipes/FillMyLibraryModal";
 import { RecipeListCard, type RecipeListItem } from "@/components/recipes/RecipeListCard";
 import { createImportedRecipe } from "@/app/(app)/recipes/actions";
 import {
@@ -24,6 +25,8 @@ type Props = {
   recipeCount: number;
   dietaryPreferences: string[];
   hasBreakfastFriendlyRecipe: boolean;
+  canFillLibrary: boolean;
+  fillLibraryBlockedMessage?: string | null;
 };
 
 export function RecipesPageClient({
@@ -33,10 +36,13 @@ export function RecipesPageClient({
   recipeCount,
   dietaryPreferences,
   hasBreakfastFriendlyRecipe,
+  canFillLibrary,
+  fillLibraryBlockedMessage,
 }: Props) {
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<string>("All");
   const [showImport, setShowImport] = useState(false);
+  const [showFillLibrary, setShowFillLibrary] = useState(false);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
@@ -120,20 +126,35 @@ export function RecipesPageClient({
 
     <div className="space-y-4 px-4 -mt-4 pb-28">
     {!showArchived ? (
-      <div className="flex gap-3">
-        <Link href="/recipes/new" className={`${ds.card} flex-1 py-3 text-center ${ds.cardTitle}`}>
-          <span className="text-[#3a5a40]">+ </span>
-          Add recipe
-        </Link>
+      <div className="space-y-3">
+        <div className="flex gap-3">
+          <Link href="/recipes/new" className={`${ds.card} flex-1 py-3 text-center ${ds.cardTitle}`}>
+            <span className="text-[#3a5a40]">+ </span>
+            Add recipe
+          </Link>
+          <button
+            type="button"
+            onClick={() => setShowImport(true)}
+            disabled={isPending}
+            className={`${ds.card} flex-1 py-3 text-center ${ds.cardTitle} disabled:opacity-60`}
+          >
+            <span className="text-[#3a5a40]">🔗 </span>
+            Import URL
+          </button>
+        </div>
         <button
           type="button"
-          onClick={() => setShowImport(true)}
-          disabled={isPending}
-          className={`${ds.card} flex-1 py-3 text-center ${ds.cardTitle} disabled:opacity-60`}
+          onClick={() => setShowFillLibrary(true)}
+          disabled={isPending || !canFillLibrary}
+          title={fillLibraryBlockedMessage ?? undefined}
+          className={`${ds.card} w-full py-3 text-center ${ds.cardTitle} disabled:cursor-not-allowed disabled:opacity-60`}
         >
-          <span className="text-[#3a5a40]">🔗 </span>
-          Import URL
+          <span className="text-[#3a5a40]">✨ </span>
+          Fill my library
         </button>
+        {!canFillLibrary && fillLibraryBlockedMessage ? (
+          <p className="text-center text-xs text-amber-700 dark:text-amber-300">{fillLibraryBlockedMessage}</p>
+        ) : null}
       </div>
     ) : null}
 
@@ -194,6 +215,8 @@ export function RecipesPageClient({
       )}
     </div>
     </div>
+
+    {showFillLibrary ? <FillMyLibraryModal onClose={() => setShowFillLibrary(false)} /> : null}
 
     {showImport ? (
       <ImportRecipeModal

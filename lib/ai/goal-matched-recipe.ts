@@ -58,6 +58,8 @@ async function findBestCarbAdjustment(
   return bestWithin ?? best;
 }
 
+export type ProteinAxis = "meat" | "fish" | "plant";
+
 export type GoalMatchedRecipeOptions = {
   targetCalories: number;
   mealSlot: GoalMealSlot;
@@ -66,6 +68,8 @@ export type GoalMatchedRecipeOptions = {
   glutenFree: boolean;
   /** Changes template choice so drafts are not identical every time (e.g. Date.now() from client). */
   variantSeed: number;
+  /** Soft batch mix: bias omnivore templates toward meat or fish mains. */
+  proteinAxis?: ProteinAxis;
 };
 
 function clampTarget(kcal: number): number {
@@ -80,6 +84,20 @@ function pickVariant(seed: number, modulo: number): number {
 /** Second template axis so carb tuning does not wash out protein choice. */
 function pickVariantAlt(seed: number, modulo: number): number {
   return pickVariant((seed >>> 13) ^ (seed << 3), modulo);
+}
+
+/** Omnivore template index with optional meat/fish bias for bulk library variety. */
+function pickMealVariant(seed: number, modulo: number, proteinAxis?: ProteinAxis): number {
+  if (modulo <= 0) return 0;
+  if (proteinAxis === "fish") {
+    const fish = [1, 3, 6, 8, 9].filter((i) => i < modulo);
+    if (fish.length) return fish[pickVariant(seed ^ 0xf15e, fish.length)];
+  }
+  if (proteinAxis === "meat") {
+    const meat = [0, 2, 4, 5, 7].filter((i) => i < modulo);
+    if (meat.length) return meat[pickVariant(seed ^ 0xbeef5, meat.length)];
+  }
+  return pickVariant(seed, modulo);
 }
 
 /** Gluten-free breakfast carbs — avoids defaulting every draft to rice or oats. Names must match the nutrition DB. */
@@ -159,6 +177,7 @@ async function buildGoalMatchedRecipeIngredientsRaw(
   const target = clampTarget(opts.targetCalories);
   const carbName = opts.glutenFree ? "rice" : "oats";
   const seed = opts.variantSeed;
+  const pv = (modulo: number) => pickMealVariant(seed, modulo, opts.proteinAxis);
 
   if (opts.vegan) {
     if (opts.mealSlot === "breakfast") {
@@ -276,7 +295,7 @@ async function buildGoalMatchedRecipeIngredientsRaw(
 
   // Omnivore
   if (opts.mealSlot === "snack") {
-    const v = pickVariant(seed, 5);
+    const v = pv(5);
     const fruit = pickVariantAlt(seed, 2) === 0 ? "banana" : "apple";
     if (v === 0) {
       const base = [ing("greek yogurt", 130, "g"), ing(fruit, 90, "g")];
@@ -299,7 +318,7 @@ async function buildGoalMatchedRecipeIngredientsRaw(
   }
 
   if (opts.mealSlot === "breakfast") {
-    const v = pickVariant(seed, 7);
+    const v = pv(7);
     const carb = opts.glutenFree ? glutenFreeBreakfastCarbTune(seed ^ 0x2c7e9f31) : { name: "oats" as const, minG: 20, maxG: 100 };
     const v2 = pickVariantAlt(seed, 2);
     const fruit = v2 === 0 ? "banana" : "apple";
@@ -331,7 +350,7 @@ async function buildGoalMatchedRecipeIngredientsRaw(
     return await findBestCarbAdjustment(base, carb, target);
   }
 
-  const v = pickVariant(seed, 10);
+  const v = pv(10);
   if (v === 0) {
     const base = [ing("chicken breast", 140, "g"), ing("broccoli", 100, "g")];
     return await findBestCarbAdjustment(base, { name: "rice", minG: 0, maxG: 320 }, target);
