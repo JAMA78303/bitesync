@@ -64,6 +64,9 @@ export async function POST(request: Request) {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[macro-recompute]", message);
-    return NextResponse.json({ error: message }, { status: 500 });
+    const hint = /permission denied for table/i.test(message)
+      ? " Run sql/2026-06-04_service_role_recipe_grants.sql in Supabase SQL Editor. Also confirm Vercel SUPABASE_SERVICE_ROLE_KEY is the service_role JWT (eyJ…), not the anon key."
+      : "";
+    return NextResponse.json({ error: message + hint }, { status: 500 });
   }
 }

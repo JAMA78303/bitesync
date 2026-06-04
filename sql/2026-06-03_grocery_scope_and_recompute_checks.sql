@@ -58,6 +58,8 @@ WHERE archived_at IS NULL
 --   npm run recompute:macros
 --   npm run recompute:macros -- --dry-run   (expect 0 changes)
 -- Requires .env.local with NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY
+-- If admin recompute fails with "permission denied for table recipes", run:
+--   sql/2026-06-04_service_role_recipe_grants.sql
 -- =============================================================================
 
 -- B1. Recipes with suspicious total calories (outliers to review)
