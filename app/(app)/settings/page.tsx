@@ -59,13 +59,13 @@ export default async function SettingsPage() {
   const initial = email[0]?.toUpperCase() ?? "?";
 
   return (
-    <div className="-mx-4 min-h-screen bg-gray-50 dark:bg-gray-950 md:mx-0">
-      <div className="bg-gradient-to-b from-[#3a5a40] to-[#4a7a50] px-4 pt-14 pb-10">
-        <h1 className="text-xl font-bold text-white">Settings</h1>
-        <p className="mt-0.5 text-sm text-white/60">{email}</p>
+    <div className={ds.mobilePage}>
+      <div className={`${ds.gradientHeader} pb-10`}>
+        <h1 className={ds.pageTitle}>Settings</h1>
+        <p className={`mt-0.5 ${ds.pageSubtitle}`}>{email}</p>
       </div>
 
-      <div className="space-y-4 px-4 -mt-6 pb-28">
+      <div className={`${ds.mobileGutter} -mt-6 space-y-4 ${ds.pageContent}`}>
         <div className={`${ds.card} mb-4 flex items-center gap-4 ${ds.cardPadding}`}>
           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-[#3a5a40] text-xl font-bold text-white">
             {initial}

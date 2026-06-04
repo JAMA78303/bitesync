@@ -20,9 +20,10 @@ type Props = {
 };
 
 function macroStatus(value: number, target: number) {
-  if (value >= target * 0.8 && value <= target * 1.15) return { label: "✓ On track", className: "text-[#3a5a40]" };
-  if (value < target * 0.8) return { label: "↑ Below target", className: "text-amber-500" };
-  return { label: "↓ Over target", className: "text-red-500" };
+  if (value >= target * 0.8 && value <= target * 1.15)
+    return { label: "✓ On track", className: "text-[#3a5a40] dark:text-[#86efac]" };
+  if (value < target * 0.8) return { label: "↑ Below target", className: "text-amber-600 dark:text-amber-400" };
+  return { label: "↓ Over target", className: "text-red-600 dark:text-red-400" };
 }
 
 export function NutritionDashboard({
@@ -54,24 +55,28 @@ export function NutritionDashboard({
   ];
 
   return (
-    <div className="-mx-4 min-h-screen bg-gray-50 dark:bg-gray-950 md:mx-0">
+    <div className={ds.mobilePage}>
       <header className={ds.gradientHeader}>
         <h1 className={`${ds.pageTitle} mb-1`}>Nutrition</h1>
-        <p className="mb-4 text-xs text-white/60">Weekly averages vs your daily targets</p>
+        <p className={`mb-4 ${ds.pageSubtitle}`}>Weekly averages vs your daily targets</p>
         <div className="mb-4">{weekNav}</div>
-        <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-white/50">Weekly average</p>
+        <p className={`mb-2 text-[10px] font-semibold uppercase tracking-wider ${ds.headerStatLabel}`}>
+          Weekly average
+        </p>
         <div className="grid grid-cols-2 gap-2">
           {weekPills.map((m) => {
             const pct = m.target > 0 ? Math.round((m.value / m.target) * 100) : 0;
             const onTrack = pct >= 80 && pct <= 115;
             return (
-              <div key={m.label} className="rounded-2xl bg-white/15 p-3 backdrop-blur-sm">
-                <p className="mb-0.5 text-[9px] text-white/60">{m.label}</p>
-                <p className="text-base font-bold text-white">
+              <div key={m.label} className={ds.headerStatCard}>
+                <p className={`mb-0.5 ${ds.headerStatLabel}`}>{m.label}</p>
+                <p className={ds.headerStatValue}>
                   {Math.round(m.value)}
-                  <span className="text-xs font-normal text-white/60"> {m.unit}</span>
+                  <span className={ds.headerStatUnit}> {m.unit}</span>
                 </p>
-                <p className={`mt-0.5 text-[9px] font-semibold ${onTrack ? "text-[#7ab87a]" : "text-amber-300"}`}>
+                <p
+                  className={`mt-0.5 text-[9px] font-semibold ${onTrack ? ds.headerStatAccent : ds.headerStatWarn}`}
+                >
                   {pct}% of daily target (week avg)
                 </p>
               </div>
@@ -80,7 +85,7 @@ export function NutritionDashboard({
         </div>
       </header>
 
-      <div className={`px-4 ${ds.overlap} ${ds.pageContent}`}>
+      <div className={`${ds.mobileGutter} ${ds.overlap} ${ds.pageContent}`}>
         <div className="mb-3">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
             Selected day
@@ -133,7 +138,7 @@ export function NutritionDashboard({
                     }}
                   />
                 </div>
-                <p className="mt-1.5 text-xs font-medium text-gray-500">
+                <p className="mt-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
                   vs {m.target}
                   {m.unit} daily target
                 </p>

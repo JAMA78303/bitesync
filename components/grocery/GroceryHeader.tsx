@@ -16,27 +16,27 @@ export function GroceryHeader({ subtitle, total, checked, actions }: Props) {
       <div className="mb-1 flex items-start justify-between gap-3">
         <div>
           <h1 className={ds.pageTitle}>Grocery List</h1>
-          <p className="mt-0.5 text-xs text-white/60">{subtitle}</p>
+          <p className={`mt-0.5 text-xs ${ds.pageSubtitle}`}>{subtitle}</p>
         </div>
         <div className="flex flex-col items-end gap-2">
-          <div className="rounded-xl bg-white/15 px-3 py-1.5 text-center backdrop-blur-sm">
-            <p className="text-sm font-bold text-white">
+          <div className={`${ds.headerStatCard} text-center`}>
+            <p className={ds.headerStatValue}>
               {checked}/{total}
             </p>
-            <p className="text-[9px] text-white/60">items</p>
+            <p className={ds.headerStatLabel}>items</p>
           </div>
           {actions}
         </div>
       </div>
 
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/20">
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/20 dark:bg-white/10">
         <div
-          className="h-full rounded-full bg-white transition-all duration-500"
+          className="h-full rounded-full bg-[var(--text-on-header)] transition-all duration-500"
           style={{ width: `${pct}%` }}
         />
       </div>
 
-      <p className="mt-3 text-[10px] text-white/50">
+      <p className={`mt-3 text-[10px] ${ds.headerStatLabel}`}>
         Quantities use shopping units (slices → loaf, cloves → bulb).
       </p>
     </header>

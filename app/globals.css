@@ -22,6 +22,19 @@ html {
   --brand-dark: #2d4a32;
   --brand-sage: #3a5a40;
   --brand-amber: #d97706;
+  /* App theme tokens (light / dark pairs) */
+  --header-from: #3a5a40;
+  --header-to: #4a7a50;
+  --text-on-header: #ffffff;
+  --text-on-header-muted: rgba(255, 255, 255, 0.72);
+  --text-on-header-subtle: rgba(255, 255, 255, 0.55);
+  --header-stat-bg: rgba(255, 255, 255, 0.16);
+  --header-stat-accent: #bbf7d0;
+  --header-stat-warn: #fde68a;
+  --nav-bar-bg: #2d4a32;
+  --card-surface: #ffffff;
+  --card-text: #111827;
+  --card-text-muted: #6b7280;
 }
 
 :root.dark,
@@ -29,6 +42,18 @@ html {
   color-scheme: dark;
   --background: #0b1220;
   --foreground: #e5e7eb;
+  --header-from: #152318;
+  --header-to: #243d28;
+  --text-on-header: #f9fafb;
+  --text-on-header-muted: rgba(249, 250, 251, 0.78);
+  --text-on-header-subtle: rgba(249, 250, 251, 0.58);
+  --header-stat-bg: rgba(255, 255, 255, 0.1);
+  --header-stat-accent: #86efac;
+  --header-stat-warn: #fcd34d;
+  --nav-bar-bg: #152318;
+  --card-surface: #111827;
+  --card-text: #f3f4f6;
+  --card-text-muted: #9ca3af;
 }
 
 @theme inline {
@@ -229,8 +254,18 @@ select.theme-aware-select {
   padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
 }
 
+/** Horizontal gutters + notch/rounded-corner safe areas on phones */
+.app-mobile-gutter {
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+}
+
+.app-header-safe-top {
+  padding-top: max(3.5rem, calc(env(safe-area-inset-top) + 2rem));
+}
+
 .page-content {
-  padding-bottom: 7rem;
+  padding-bottom: max(7rem, calc(env(safe-area-inset-bottom) + 5.5rem));
 }
 
 @media (min-width: 768px) {

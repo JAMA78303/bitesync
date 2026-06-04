@@ -9,6 +9,7 @@ import { TodayMealCard } from "@/components/today/TodayMealCard";
 import type { TodayMeal, TodayTotals } from "@/lib/planner/today";
 import type { UserNutritionTargets } from "@/lib/utils/nutrition-targets";
 import { MEAL_LABELS, type MealType } from "@/types";
+import { ds } from "@/lib/ui/classes";
 
 const MEAL_ORDER: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
 
@@ -29,13 +30,13 @@ export function TodayDashboard({ meals, totals, targets, dietaryPreferences }: P
   });
 
   return (
-    <div className="-mx-4 min-h-screen bg-gray-50 pb-28 dark:bg-gray-950 md:mx-0">
-      <div className="bg-gradient-to-b from-[#3a5a40] to-[#4a7a50] px-5 pt-6 pb-8">
-        <p className="mb-0.5 text-sm text-white/70">{dateLabel}</p>
-        <h1 className="text-2xl font-bold text-white">Your Goals</h1>
+    <div className={`${ds.mobilePage} ${ds.pageContent}`}>
+      <div className={ds.gradientHeaderCompact}>
+        <p className={`mb-0.5 text-sm ${ds.pageSubtitle}`}>{dateLabel}</p>
+        <h1 className="text-2xl font-bold text-[var(--text-on-header)]">Your Goals</h1>
       </div>
 
-      <div className="-mt-4 px-4">
+      <div className={`${ds.mobileGutter} ${ds.overlap}`}>
         <div className="mb-4 rounded-3xl bg-white p-6 shadow-sm dark:bg-gray-900">
           <div className="mb-6 flex items-center gap-6">
             <CalorieRing consumed={totals.kcal} target={targets.kcal} />

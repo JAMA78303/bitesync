@@ -17,14 +17,14 @@ export function WeekNav({ weekStart, onGradient = false }: Props) {
   }
 
   const navBtnClass = onGradient
-    ? "h-8 w-8 shrink-0 border-white/25 bg-white/15 text-white hover:bg-white/25"
-    : "h-8 w-8 shrink-0 bg-white";
+    ? "h-8 w-8 shrink-0 border-white/25 bg-white/15 text-[var(--text-on-header)] hover:bg-white/25 dark:border-white/20 dark:bg-white/10"
+    : "h-8 w-8 shrink-0 bg-white dark:bg-gray-900 dark:text-gray-100";
   const labelClass = onGradient
-    ? "min-w-0 flex-1 text-center text-xs font-medium text-white sm:flex-none sm:text-sm"
-    : "min-w-0 flex-1 text-center text-xs font-medium text-gray-800 sm:flex-none sm:text-sm";
+    ? "min-w-0 flex-1 text-center text-xs font-medium text-[var(--text-on-header)] sm:flex-none sm:text-sm"
+    : "min-w-0 flex-1 text-center text-xs font-medium text-gray-800 dark:text-gray-200 sm:flex-none sm:text-sm";
   const todayClass = onGradient
-    ? "ml-1 text-xs text-white/70 hover:bg-white/10 hover:text-white"
-    : "ml-1 text-xs text-slate-500 hover:text-slate-700";
+    ? "ml-1 text-xs text-[var(--text-on-header-muted)] hover:bg-white/10 hover:text-[var(--text-on-header)]"
+    : "ml-1 text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200";
 
   return (
     <div className="relative z-30 flex w-full shrink-0 items-center justify-center gap-2 sm:w-auto">

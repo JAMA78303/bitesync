@@ -11,7 +11,7 @@ type AppShellProps = {
 
 /** Routes that render their own full-bleed green gradient header on mobile. */
 function hasGradientHeader(pathname: string): boolean {
-  const roots = ["/today", "/planner", "/recipes", "/grocery", "/nutrition", "/goals"];
+  const roots = ["/today", "/planner", "/recipes", "/grocery", "/nutrition", "/goals", "/pantry"];
   if (roots.some((r) => pathname === r || pathname.startsWith(`${r}/`))) return true;
   return pathname === "/settings" || pathname.startsWith("/settings/");
 }
@@ -21,7 +21,7 @@ export function AppShell({ children }: AppShellProps) {
   const gradientHeader = hasGradientHeader(pathname);
 
   return (
-    <div className="flex min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+    <div className="flex min-h-screen overflow-x-hidden bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
       <Sidebar />
       <div className="flex w-full flex-1 flex-col">
         {!gradientHeader ? (
@@ -30,8 +30,8 @@ export function AppShell({ children }: AppShellProps) {
           </header>
         ) : null}
         <main
-          className={`page-content flex-1 md:p-8 md:pb-8 ${
-            gradientHeader ? "p-0 md:p-8" : "p-4"
+          className={`page-content flex-1 overflow-x-hidden md:p-8 md:pb-8 ${
+            gradientHeader ? "p-0 md:p-8" : "app-mobile-gutter py-4 md:p-8"
           }`}
         >
           {children}

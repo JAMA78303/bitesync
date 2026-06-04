@@ -28,20 +28,20 @@ export default async function GoalsPage() {
   const targets = deriveNutritionTargets(profile);
 
   return (
-    <div className="-mx-4 min-h-screen bg-gray-50 dark:bg-gray-950 md:mx-0">
-      <div className="bg-gradient-to-b from-[#3a5a40] to-[#4a7a50] px-4 pt-14 pb-10">
-        <h1 className="text-xl font-bold text-white">Nutrition &amp; goals</h1>
-        <p className="mt-0.5 text-sm text-white/60">
+    <div className={ds.mobilePage}>
+      <div className={ds.gradientHeader}>
+        <h1 className={ds.pageTitle}>Nutrition &amp; goals</h1>
+        <p className={`mt-0.5 ${ds.pageSubtitle}`}>
           Diet preferences and daily targets that power your planner and macros
         </p>
         {hasCompleteTdeeProfile(profile) ? (
-          <p className="mt-3 rounded-xl bg-white/15 px-3 py-2 text-xs text-white/90 backdrop-blur-sm">
+          <p className={`mt-3 rounded-xl ${ds.headerStatCard} text-xs text-[var(--text-on-header)]`}>
             Current target: {targets.kcal} kcal · {targets.protein}g protein / day
           </p>
         ) : null}
       </div>
 
-      <div className="space-y-4 px-4 -mt-6 pb-28">
+      <div className={`${ds.mobileGutter} -mt-6 space-y-4 ${ds.pageContent}`}>
         <div className={`${ds.card} overflow-hidden`}>
           {GOALS_ITEMS.map((item, i) => (
             <div key={item.href}>

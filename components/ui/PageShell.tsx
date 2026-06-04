@@ -11,9 +11,9 @@ type Props = {
 
 export function PageShell({ header, children, overlap = true, className = "" }: Props) {
   return (
-    <div className={`-mx-4 ${ds.page} md:mx-0 ${className}`.trim()}>
+    <div className={`${ds.mobilePage} ${className}`.trim()}>
       {header}
-      <div className={`px-4 ${overlap ? ds.overlap : "pt-4"} ${ds.pageContent}`}>{children}</div>
+      <div className={`${ds.mobileGutter} ${overlap ? ds.overlap : "pt-4"} ${ds.pageContent}`}>{children}</div>
     </div>
   );
 }

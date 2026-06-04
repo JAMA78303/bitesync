@@ -78,7 +78,7 @@ export function RecipeDetailView({
   ];
 
   return (
-    <div className="-mx-4 min-h-screen bg-gray-50 pb-28 dark:bg-gray-950 md:mx-0">
+    <div className={`${ds.mobilePage} ${ds.pageContent}`}>
       <div className="relative flex h-40 items-center justify-center rounded-b-none bg-[#f0f7f0] dark:bg-[#1a2e1d]">
         <span className="text-7xl" aria-hidden>
           {getMealEmoji(recipe.name, "dinner")}
@@ -95,7 +95,7 @@ export function RecipeDetailView({
         ) : null}
       </div>
 
-      <div className="px-5 pt-4">
+      <div className={`${ds.mobileGutter} pt-4`}>
         <Link href="/recipes" className="mb-4 inline-flex text-sm font-medium text-[#3a5a40]">
           ← Back to recipes
         </Link>

@@ -50,11 +50,11 @@ export default async function PlannerPage({ searchParams }: Props) {
 
   if (error || !mealPlan) {
     return (
-      <div className="-mx-4 min-h-screen bg-gray-50 px-4 pt-14 dark:bg-gray-950 md:mx-0">
-        <div className="bg-gradient-to-b from-[#3a5a40] to-[#4a7a50] -mx-4 px-4 pb-8 pt-14 md:mx-0">
-          <h1 className="text-xl font-bold text-white">Weekly Plan</h1>
+      <div className={ds.mobilePage}>
+        <div className={ds.gradientHeader}>
+          <h1 className={ds.pageTitle}>Weekly Plan</h1>
         </div>
-        <div className="-mt-4 space-y-3">
+        <div className={`${ds.mobileGutter} ${ds.overlap} space-y-3 ${ds.pageContent}`}>
           <p className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
             Could not load your planner yet. Check that the database schema and RLS policies are applied, then
             refresh.
@@ -131,10 +131,10 @@ export default async function PlannerPage({ searchParams }: Props) {
   }
 
   return (
-    <div className="-mx-4 min-h-screen bg-gray-50 dark:bg-gray-950 md:mx-0">
-      <div className="bg-gradient-to-b from-[#3a5a40] to-[#4a7a50] px-4 pt-14 pb-8">
-        <h1 className="mb-1 text-xl font-bold text-white">Weekly Plan</h1>
-        <p className="text-sm text-white/60">Plan your meals, generate your list</p>
+    <div className={ds.mobilePage}>
+      <div className={ds.gradientHeader}>
+        <h1 className={`mb-1 ${ds.pageTitle}`}>Weekly Plan</h1>
+        <p className={ds.pageSubtitle}>Plan your meals, generate your list</p>
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <WeekNav weekStart={weekStart} onGradient />
           <GenerateListButton
@@ -147,7 +147,7 @@ export default async function PlannerPage({ searchParams }: Props) {
         </div>
       </div>
 
-      <div className="space-y-4 px-4 -mt-4 pb-28">
+      <div className={`${ds.mobileGutter} ${ds.overlap} space-y-4 ${ds.pageContent}`}>
         <GenerateAIBasketButton
           isPro={userTier === "pro"}
           mealPlanId={mealPlan.id}

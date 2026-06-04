@@ -63,10 +63,10 @@ export function RecipesPageClient({
   }, [recipes, search, activeFilter, dietaryPreferences]);
 
   return (
-  <div className="-mx-4 min-h-screen bg-gray-50 dark:bg-gray-950 md:mx-0">
-    <div className="bg-gradient-to-b from-[#3a5a40] to-[#4a7a50] px-4 pt-14 pb-8">
+  <div className={ds.mobilePage}>
+    <div className={ds.gradientHeader}>
       <div className="mb-4 flex items-center justify-between gap-2">
-        <h1 className="text-xl font-bold text-white">My Recipes</h1>
+        <h1 className={ds.pageTitle}>My Recipes</h1>
         <Link
           href={showArchived ? "/recipes" : "/recipes?view=archived"}
           className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm"
@@ -124,7 +124,7 @@ export function RecipesPageClient({
       </div>
     </div>
 
-    <div className="space-y-4 px-4 -mt-4 pb-28">
+    <div className={`${ds.mobileGutter} ${ds.overlap} ${ds.pageContent} space-y-4`}>
     {!showArchived ? (
       <div className="space-y-3">
         <div className="flex gap-3">

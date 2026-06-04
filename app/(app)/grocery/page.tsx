@@ -15,6 +15,7 @@ import { GroceryListActions } from "@/components/grocery/GroceryListActions";
 import { GroceryBasketSnapshotSection } from "@/components/grocery/GroceryBasketSnapshotSection";
 import type { StoreItemEstimate, StoreTotal } from "@/lib/pricing/types";
 import { MEAL_TYPES } from "@/types";
+import { ds } from "@/lib/ui/classes";
 
 type Props = {
   searchParams: Promise<{ week?: string; plan?: string }>;
@@ -99,9 +100,9 @@ export default async function GroceryPage({ searchParams }: Props) {
   if (!mealPlanId) {
     const fallbackSubtitle = formatWeekLabel(weekStart);
     return (
-      <div className="-mx-4 min-h-screen bg-gray-50 pb-28 dark:bg-gray-950 md:mx-0">
+      <div className={`${ds.mobilePage} ${ds.pageContent}`}>
         <GroceryHeader subtitle={fallbackSubtitle} total={0} checked={0} />
-        <div className="-mt-4 px-4">
+        <div className={`${ds.mobileGutter} ${ds.overlap}`}>
           <GroceryEmptyState />
         </div>
       </div>
@@ -132,9 +133,9 @@ export default async function GroceryPage({ searchParams }: Props) {
 
   if (total === 0) {
     return (
-      <div className="-mx-4 min-h-screen bg-gray-50 pb-28 dark:bg-gray-950 md:mx-0">
+      <div className={`${ds.mobilePage} ${ds.pageContent}`}>
         <GroceryHeader subtitle={subtitle} total={0} checked={0} actions={headerActions} />
-        <div className="-mt-4 space-y-4 px-4">
+        <div className={`${ds.mobileGutter} ${ds.overlap} space-y-4`}>
           <GroceryEmptyState />
           <ManualGroceryAdd mealPlanId={mealPlanId} />
         </div>
@@ -146,14 +147,14 @@ export default async function GroceryPage({ searchParams }: Props) {
   const checkedItems = groceryItems.filter((item) => item.is_checked);
 
   return (
-    <div className="-mx-4 min-h-screen bg-gray-50 pb-28 dark:bg-gray-950 md:mx-0">
+    <div className={`${ds.mobilePage} ${ds.pageContent}`}>
       <GroceryHeader subtitle={subtitle} total={total} checked={checked} actions={headerActions} />
       {allDone ? (
-        <div className="-mt-2 px-4">
+        <div className={`-mt-2 ${ds.mobileGutter}`}>
           <GroceryDoneState />
         </div>
       ) : null}
-      <div className="-mt-4 space-y-2 px-4">
+      <div className={`${ds.mobileGutter} ${ds.overlap} space-y-2`}>
         <LeftoverSuggestionsPanel mealPlanId={mealPlanId} uncheckedCount={uncheckedItems.length} />
         {uncheckedItems.map((item) => (
           <GroceryItem
