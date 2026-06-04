@@ -9,7 +9,10 @@ import {
   ChefHat,
   Home,
   MoreHorizontal,
+  Package,
+  Settings,
   ShoppingCart,
+  Target,
 } from "lucide-react";
 import { MobileNavMoreSheet } from "@/components/shared/MobileNavMoreSheet";
 
@@ -18,10 +21,10 @@ const PRIMARY_ITEMS = [
   { href: "/planner", label: "Plan", Icon: CalendarDays },
   { href: "/recipes", label: "Recipes", Icon: ChefHat },
   { href: "/grocery", label: "Grocery", Icon: ShoppingCart },
-  { href: "/nutrition", label: "Nutrition", Icon: BarChart2 },
+  { href: "/settings", label: "Settings", Icon: Settings },
 ] as const;
 
-const MORE_PATHS = ["/pantry", "/goals", "/settings"];
+const MORE_PATHS = ["/nutrition", "/pantry", "/goals"];
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -30,62 +33,64 @@ export function BottomNav() {
 
   return (
     <>
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:hidden">
-        <nav
-          className="pointer-events-auto grid w-full max-w-md grid-cols-6 gap-0.5 rounded-[28px] bg-[var(--nav-bar-bg)] px-1.5 py-1.5 shadow-2xl shadow-black/25"
-          aria-label="Main navigation"
-        >
-          {PRIMARY_ITEMS.map(({ href, label, Icon }) => {
-            const isActive = pathname === href || pathname.startsWith(`${href}/`);
+      {!moreOpen ? (
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:hidden">
+          <nav
+            className="pointer-events-auto grid w-full max-w-md grid-cols-6 gap-0.5 rounded-[28px] bg-[var(--nav-bar-bg)] px-1.5 py-1.5 shadow-2xl shadow-black/25"
+            aria-label="Main navigation"
+          >
+            {PRIMARY_ITEMS.map(({ href, label, Icon }) => {
+              const isActive = pathname === href || pathname.startsWith(`${href}/`);
 
-            return (
-              <Link
-                key={href}
-                href={href}
-                prefetch
-                className={`flex min-h-[48px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-[20px] px-1 py-1.5 transition-all duration-200 ${
-                  isActive ? "bg-white/15" : "hover:bg-white/8"
-                }`}
-              >
-                <Icon
-                  className={`h-5 w-5 shrink-0 transition-colors ${isActive ? "text-[var(--text-on-header)]" : "text-[var(--text-on-header-muted)]"}`}
-                  strokeWidth={isActive ? 2.5 : 1.8}
-                />
-                <span
-                  className={`max-w-full truncate text-[10px] font-medium leading-tight ${
-                    isActive ? "text-[var(--text-on-header)]" : "text-[var(--text-on-header-muted)]"
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  prefetch
+                  className={`flex min-h-[48px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-[20px] px-1 py-1.5 transition-all duration-200 ${
+                    isActive ? "bg-white/15" : "hover:bg-white/8"
                   }`}
                 >
-                  {label}
-                </span>
-              </Link>
-            );
-          })}
+                  <Icon
+                    className={`h-5 w-5 shrink-0 transition-colors ${isActive ? "text-[var(--text-on-header)]" : "text-[var(--text-on-header-muted)]"}`}
+                    strokeWidth={isActive ? 2.5 : 1.8}
+                  />
+                  <span
+                    className={`max-w-full truncate text-[10px] font-medium leading-tight ${
+                      isActive ? "text-[var(--text-on-header)]" : "text-[var(--text-on-header-muted)]"
+                    }`}
+                  >
+                    {label}
+                  </span>
+                </Link>
+              );
+            })}
 
-          <button
-            type="button"
-            onClick={() => setMoreOpen(true)}
-            className={`flex min-h-[48px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-[20px] px-1 py-1.5 transition-all duration-200 ${
-              moreActive ? "bg-white/15" : "hover:bg-white/8"
-            }`}
-            aria-expanded={moreOpen}
-            aria-haspopup="dialog"
-            aria-label="More destinations"
-          >
-            <MoreHorizontal
-              className={`h-5 w-5 shrink-0 ${moreActive ? "text-[var(--text-on-header)]" : "text-[var(--text-on-header-muted)]"}`}
-              strokeWidth={moreActive ? 2.5 : 1.8}
-            />
-            <span
-              className={`text-[10px] font-medium leading-tight ${
-                moreActive ? "text-[var(--text-on-header)]" : "text-[var(--text-on-header-muted)]"
+            <button
+              type="button"
+              onClick={() => setMoreOpen(true)}
+              className={`flex min-h-[48px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-[20px] px-1 py-1.5 transition-all duration-200 ${
+                moreActive ? "bg-white/15" : "hover:bg-white/8"
               }`}
+              aria-expanded={moreOpen}
+              aria-haspopup="dialog"
+              aria-label="More destinations"
             >
-              More
-            </span>
-          </button>
-        </nav>
-      </div>
+              <MoreHorizontal
+                className={`h-5 w-5 shrink-0 ${moreActive ? "text-[var(--text-on-header)]" : "text-[var(--text-on-header-muted)]"}`}
+                strokeWidth={moreActive ? 2.5 : 1.8}
+              />
+              <span
+                className={`text-[10px] font-medium leading-tight ${
+                  moreActive ? "text-[var(--text-on-header)]" : "text-[var(--text-on-header-muted)]"
+                }`}
+              >
+                More
+              </span>
+            </button>
+          </nav>
+        </div>
+      ) : null}
       <MobileNavMoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} />
     </>
   );

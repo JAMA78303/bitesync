@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart2, Package, Settings, Target, X } from "lucide-react";
+import { BarChart2, Package, Target, X } from "lucide-react";
 
 const MORE_ITEMS = [
+  { href: "/nutrition", label: "Nutrition", Icon: BarChart2 },
   { href: "/pantry", label: "Pantry", Icon: Package },
   { href: "/goals", label: "Goals", Icon: Target },
-  { href: "/settings", label: "Settings", Icon: Settings },
 ] as const;
 
 type Props = {
@@ -24,7 +24,7 @@ export function MobileNavMoreSheet({ open, onClose }: Props) {
     <div className="fixed inset-0 z-[60] md:hidden" role="dialog" aria-modal="true" aria-label="More navigation">
       <button
         type="button"
-        className="absolute inset-0 bg-black/40"
+        className="absolute inset-0 bg-black/50"
         aria-label="Close menu"
         onClick={onClose}
       />
@@ -34,7 +34,7 @@ export function MobileNavMoreSheet({ open, onClose }: Props) {
           <button
             type="button"
             onClick={onClose}
-            className="flex h-11 w-11 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="flex h-11 w-11 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
             aria-label="Close"
           >
             <X className="h-5 w-5" />
@@ -60,10 +60,6 @@ export function MobileNavMoreSheet({ open, onClose }: Props) {
             );
           })}
         </nav>
-        <p className="flex items-center justify-center gap-1.5 px-4 pb-2 text-xs text-gray-400">
-          <BarChart2 className="h-3.5 w-3.5" aria-hidden />
-          Nutrition is in the main bar
-        </p>
       </div>
     </div>
   );

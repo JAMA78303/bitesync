@@ -252,8 +252,8 @@ export function GenerateAIBasketButton({
   const estimatedSavings = best && secondBest ? Math.max(0, secondBest.total - best.total) : null;
 
   const storeAndDaysRow = (
-    <div className="flex flex-nowrap items-center gap-x-4 gap-y-2 overflow-x-auto rounded-lg border border-slate-200 bg-slate-50/90 px-3 py-2 text-xs text-slate-700 [-webkit-overflow-scrolling:touch] md:flex-wrap md:overflow-visible">
-      <span className="shrink-0 font-medium text-slate-800">Stores</span>
+    <div className="flex flex-nowrap items-center gap-x-4 gap-y-2 overflow-x-auto rounded-lg border border-slate-200 bg-slate-50/90 px-3 py-2 text-xs text-slate-700 dark:border-gray-700 dark:bg-gray-800/80 dark:text-gray-200 [-webkit-overflow-scrolling:touch] md:flex-wrap md:overflow-visible">
+      <span className="shrink-0 font-medium text-slate-800 dark:text-gray-100">Stores</span>
       {ALL_PRICE_STORE_IDS.map((id) => (
         <label key={id} className="inline-flex shrink-0 cursor-pointer items-center gap-1.5">
           <input
@@ -315,8 +315,8 @@ export function GenerateAIBasketButton({
     Boolean(priceMatchNote) || storeTotals.length > 0 || suggestions.length > 0 || isPending;
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm md:space-y-3 md:border-0 md:bg-transparent md:p-0 md:shadow-none">
-      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 md:hidden">AI &amp; prices</p>
+    <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-gray-800 dark:bg-gray-900 md:space-y-3 md:border-0 md:bg-transparent md:p-0 md:shadow-none">
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-gray-400 md:hidden">AI &amp; prices</p>
 
       <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center md:gap-2">
         <Button
