@@ -9,6 +9,7 @@ import { TodayMealCard } from "@/components/today/TodayMealCard";
 import type { TodayMeal, TodayTotals } from "@/lib/planner/today";
 import type { UserNutritionTargets } from "@/lib/utils/nutrition-targets";
 import { MEAL_LABELS, type MealType } from "@/types";
+import { formatLongDateWithOrdinal } from "@/lib/utils/dates";
 import { ds } from "@/lib/ui/classes";
 
 const MEAL_ORDER: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
@@ -23,11 +24,7 @@ type Props = {
 export function TodayDashboard({ meals, totals, targets, dietaryPreferences }: Props) {
   const remaining = Math.max(0, targets.kcal - totals.kcal);
   const calorieStatus = getGoalStatus("kcal", totals.kcal, targets.kcal);
-  const dateLabel = new Date().toLocaleDateString("en-GB", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
+  const dateLabel = formatLongDateWithOrdinal(new Date());
 
   return (
     <div className={`${ds.mobilePage} ${ds.pageContent}`}>

@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
+import { formatDayWithOrdinal } from "@/lib/utils/dates";
 import { RecipeSlotCard } from "@/components/planner/RecipeSlotCard";
 import { AddSlotButton } from "@/components/planner/AddSlotButton";
 import { DailyTotalsRow } from "@/components/planner/DailyTotalsRow";
@@ -91,13 +92,13 @@ export function PlannerGrid({
 
   return (
     <>
-      <div className="hidden overflow-x-auto rounded-xl border border-gray-200 bg-white sm:block">
+      <div className="hidden overflow-x-auto rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900 sm:block">
         <div className="grid min-w-[980px] grid-cols-[120px_repeat(7,minmax(112px,1fr))]">
           <div className="border-b border-gray-200 p-2" />
           {Array.from({ length: 7 }, (_, day) => (
             <div key={`head-${day}`} className="border-b border-l border-gray-200 p-2 text-center">
               <p className="text-xs font-medium text-gray-500">{DAY_LABELS[day]}</p>
-              <p className="text-sm font-semibold text-gray-900">{weekDates[day].getDate()}</p>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white">{formatDayWithOrdinal(weekDates[day].getDate())}</p>
             </div>
           ))}
 
@@ -192,6 +193,7 @@ export function PlannerGrid({
         recipes={recipes}
         dietPrefs={dietPrefs}
         onAssigned={handleAssigned}
+        weekDates={weekDates}
       />
     </>
   );
@@ -250,7 +252,7 @@ function PlannerGridMobileInline({
             }`}
           >
             <span className="text-xs font-medium">{DAY_LABELS[day]}</span>
-            <span className="text-lg font-bold">{weekDates[day].getDate()}</span>
+            <span className="text-lg font-bold">{formatDayWithOrdinal(weekDates[day].getDate())}</span>
           </button>
         ))}
       </div>
@@ -262,7 +264,7 @@ function PlannerGridMobileInline({
             <div key={mealType} className="meal-section space-y-2">
               <p className="meal-type-label">{MEAL_LABELS[mealType]}</p>
               {mealType === "breakfast" && !entry ? (
-                <p className="text-[11px] leading-snug text-slate-500">{BREAKFAST_EMPTY_TIP}</p>
+                <p className="text-[11px] leading-snug text-slate-500 dark:text-gray-400">{BREAKFAST_EMPTY_TIP}</p>
               ) : null}
               {mealType === "snack" ? (
                 <div className="space-y-1">
@@ -311,7 +313,7 @@ function PlannerGridMobileInline({
           );
         })}
 
-        <div className="rounded-xl border border-gray-200 bg-white p-3">
+        <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
           {(() => {
             const slots = Object.values(grid[activeDay]).filter(Boolean);
             const cal = slots.reduce((s, e) => s + (getEntryCalories(e!) ?? 0), 0);
@@ -335,36 +337,36 @@ function PlannerGridMobileInline({
               const n = normalizeRecipeNutritionEmbed(e!.recipe?.recipe_nutrition as RecipeNutritionSummary | RecipeNutritionSummary[] | null | undefined);
               return s + (n?.sugar_g ?? 0);
             }, 0);
-            if (slots.length === 0) return <p className="text-sm text-gray-500">No meals planned</p>;
+            if (slots.length === 0) return <p className="text-sm text-gray-500 dark:text-gray-400">No meals planned</p>;
             return (
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <p className="text-xs text-gray-500">Calories</p>
-                  <p className="font-medium text-gray-900">{Math.round(cal)} kcal</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Calories</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{Math.round(cal)} kcal</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Protein</p>
-                  <p className="font-medium text-gray-900">{Math.round(pro)}g</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Protein</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{Math.round(pro)}g</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Carbs</p>
-                  <p className="font-medium text-gray-900">{Math.round(carbs)}g</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Carbs</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{Math.round(carbs)}g</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Fat</p>
-                  <p className="font-medium text-gray-900">{Math.round(fat)}g</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Fat</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{Math.round(fat)}g</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Fibre</p>
-                  <p className="font-medium text-gray-900">{Math.round(fibre)}g</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Fibre</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{Math.round(fibre)}g</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Sugar</p>
-                  <p className="font-medium text-gray-900">{Math.round(sugar)}g</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Sugar</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{Math.round(sugar)}g</p>
                 </div>
                 {hasTargets ? (
                   <div className="col-span-2">
-                    <p className="mt-1 text-xs text-slate-400">
+                    <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
                       Target: {dailyCalorieTarget} kcal · {dailyProteinTarget}g P
                     </p>
                   </div>

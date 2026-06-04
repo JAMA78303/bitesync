@@ -9,7 +9,7 @@ import { assignRecipeToSlot } from "@/lib/supabase/meal-plans";
 import { useToast } from "@/components/ui/use-toast";
 import { recipeDietWarnings, type ProfileDietPrefs } from "@/lib/utils/diet";
 import { recipeMatchesPlannerSlot } from "@/lib/planner/meal-slot-eligibility";
-import { DAY_NAMES } from "@/types";
+import { formatWeekdayWithOrdinal } from "@/lib/utils/dates";
 import type { MealType } from "@/types";
 
 type Recipe = {
@@ -31,6 +31,7 @@ type Props = {
   recipes: Recipe[];
   dietPrefs?: ProfileDietPrefs | null;
   onAssigned: () => void;
+  weekDates?: Date[];
 };
 
 export function RecipePickerModal({
@@ -43,6 +44,7 @@ export function RecipePickerModal({
   recipes,
   dietPrefs,
   onAssigned,
+  weekDates,
 }: Props) {
   const [query, setQuery] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -84,7 +86,7 @@ export function RecipePickerModal({
 
   const title =
     day !== null && mealType
-      ? `${DAY_NAMES[day]} — ${mealType.charAt(0).toUpperCase() + mealType.slice(1)}`
+      ? `${weekDates?.[day] ? formatWeekdayWithOrdinal(weekDates[day]) : `Day ${day + 1}`} — ${mealType.charAt(0).toUpperCase() + mealType.slice(1)}`
       : "Add meal";
 
   return (

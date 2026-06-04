@@ -1,4 +1,4 @@
-import { addDays, toLocalISO } from "@/lib/utils/dates";
+import { addDays, toLocalISO, formatDayWithOrdinal } from "@/lib/utils/dates";
 import {
   normalizeRecipeNutritionEmbed,
   type RecipeNutritionSummary,
@@ -53,7 +53,7 @@ export function computeWeeklyMacrosFromEntries(
       dayOfWeek: day,
       dateISO: toLocalISO(date),
       short: date.toLocaleDateString("en-GB", { weekday: "short" }).slice(0, 3),
-      num: String(date.getDate()),
+      num: formatDayWithOrdinal(date.getDate()),
       kcal,
       protein,
       carbs,

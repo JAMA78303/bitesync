@@ -8,7 +8,7 @@ import { getWeeklyMicroAnalysis } from "@/lib/supabase/nutrition";
 import { getProfile } from "@/lib/supabase/profile";
 import { createClient } from "@/lib/supabase/server";
 import { deriveNutritionTargets } from "@/lib/utils/nutrition-targets";
-import { getMonday, toLocalISO } from "@/lib/utils/dates";
+import { formatDayMonthOrdinal, getMonday, toLocalISO } from "@/lib/utils/dates";
 
 export default async function NutritionPage({
   searchParams,
@@ -55,21 +55,22 @@ export default async function NutritionPage({
 
   const { days, weekAvg } = computeWeeklyMacrosFromEntries(entries ?? [], weekStart);
 
-  const rangeLabel = `${weekStart.toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-  })} – ${new Date(weekStart.getTime() + 6 * 86400000).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-  })}`;
+  const weekEnd = new Date(weekStart.getTime() + 6 * 86400000);
+  const rangeLabel = `${formatDayMonthOrdinal(weekStart)} – ${formatDayMonthOrdinal(weekEnd)}`;
 
   const weekNav = (
-    <div className="flex items-center justify-between rounded-xl bg-white/15 px-2 py-1.5 backdrop-blur-sm">
-      <Link href={`/nutrition?week=${prevWeekISO}`} className="px-2 py-1 text-sm text-white/80 hover:text-white">
+    <div className="flex items-center justify-between rounded-xl bg-[var(--header-stat-bg)] px-2 py-1.5 backdrop-blur-sm">
+      <Link
+        href={`/nutrition?week=${prevWeekISO}`}
+        className="px-2 py-1 text-sm text-[var(--text-on-header-muted)] hover:text-[var(--text-on-header)]"
+      >
         ‹
       </Link>
-      <span className="text-xs font-medium text-white">{rangeLabel}</span>
-      <Link href={`/nutrition?week=${nextWeekISO}`} className="px-2 py-1 text-sm text-white/80 hover:text-white">
+      <span className="text-xs font-medium text-[var(--text-on-header)]">{rangeLabel}</span>
+      <Link
+        href={`/nutrition?week=${nextWeekISO}`}
+        className="px-2 py-1 text-sm text-[var(--text-on-header-muted)] hover:text-[var(--text-on-header)]"
+      >
         ›
       </Link>
     </div>
