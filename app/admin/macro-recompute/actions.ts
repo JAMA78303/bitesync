@@ -2,9 +2,9 @@
 
 import { setCofidLookupSupabase } from "@/lib/nutrition/cofidLookup";
 import {
-  formatMacroRecomputeReport,
+  formatMacroRecomputeBatchReport,
+  type PlannerChangeSnapshot,
   runMacroRecomputeMigration,
-  type MacroRecomputeReport,
 } from "@/lib/recipes/macroRecompute";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -29,25 +29,49 @@ async function assertAdmin(): Promise<{ error?: string }> {
 
 export type MacroRecomputeActionResult =
   | { error: string }
-  | { report: MacroRecomputeReport; summary: string };
+  | {
+      summary: string;
+      hasMore: boolean;
+      nextOffset: number;
+      significantSnapshots: PlannerChangeSnapshot[];
+    };
 
+/** Single batch — prefer API route from UI for long runs. */
 export async function runMacroRecomputeAdmin(
   dryRun: boolean,
+  offset = 0,
+  plannerSnapshots: PlannerChangeSnapshot[] = [],
 ): Promise<MacroRecomputeActionResult> {
-  const auth = await assertAdmin();
-  if (auth.error) return { error: auth.error };
+  try {
+    const auth = await assertAdmin();
+    if (auth.error) return { error: auth.error };
 
-  const admin = createSupabaseAdmin();
-  setCofidLookupSupabase(admin);
+    const admin = createSupabaseAdmin();
+    setCofidLookupSupabase(admin);
 
-  const report = await runMacroRecomputeMigration({
-    supabase: admin,
-    dryRun,
-    aiEnabled: false,
-  });
+    const batch = await runMacroRecomputeMigration({
+      supabase: admin,
+      dryRun,
+      aiEnabled: false,
+      offset,
+      plannerSnapshots,
+    });
 
-  return {
-    report,
-    summary: formatMacroRecomputeReport(report),
-  };
+    return {
+      summary: formatMacroRecomputeBatchReport(batch),
+      hasMore: batch.hasMore,
+      nextOffset: batch.nextOffset,
+      significantSnapshots: batch.significantChanges.map((r) => ({
+        recipeId: r.recipeId,
+        recipeName: r.recipeName,
+        userId: r.userId,
+        oldCalories: r.oldCalories,
+        newCalories: r.newCalories,
+      })),
+    };
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
 }

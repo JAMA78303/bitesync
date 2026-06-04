@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { MacroRecomputePanel } from "@/components/admin/MacroRecomputePanel";
 
+export const maxDuration = 60;
+
 export default function AdminMacroRecomputePage() {
   return (
     <div>

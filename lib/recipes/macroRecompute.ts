@@ -88,6 +88,15 @@ export type MacroRecomputeReport = {
   errors: { recipeId: string; message: string }[];
 };
 
+export const MACRO_RECOMPUTE_BATCH_SIZE = 15;
+
+export type MacroRecomputeBatchResult = MacroRecomputeReport & {
+  batchOffset: number;
+  batchProcessed: number;
+  hasMore: boolean;
+  nextOffset: number;
+};
+
 function toTitleCase(value: string): string {
   return value
     .toLowerCase()
@@ -321,9 +330,17 @@ export async function loadRecipesForRecompute(
     .filter((recipe) => recipe.ingredients.length > 0);
 }
 
+export type PlannerChangeSnapshot = {
+  recipeId: string;
+  recipeName: string;
+  userId: string;
+  oldCalories: number | null;
+  newCalories: number;
+};
+
 async function loadPlannerImpact(
   supabase: SupabaseClient,
-  changed: RecipeRecomputeResult[],
+  changed: PlannerChangeSnapshot[],
 ): Promise<PlannerSlotReport[]> {
   if (!changed.length) return [];
   const recipeIds = changed.map((r) => r.recipeId);
@@ -415,13 +432,22 @@ export async function runMacroRecomputeMigration(opts: {
   userId?: string;
   aiEnabled?: boolean;
   outlierThreshold?: number;
-}): Promise<MacroRecomputeReport> {
-  const recipes = await loadRecipesForRecompute(opts.supabase, opts.userId);
+  offset?: number;
+  limit?: number;
+  /** Aggregated significant changes from prior batches (for planner report on final batch). */
+  plannerSnapshots?: PlannerChangeSnapshot[];
+}): Promise<MacroRecomputeBatchResult> {
+  const allRecipes = await loadRecipesForRecompute(opts.supabase, opts.userId);
+  const offset = Math.max(0, opts.offset ?? 0);
+  const limit = Math.max(1, opts.limit ?? MACRO_RECOMPUTE_BATCH_SIZE);
+  const recipes = allRecipes.slice(offset, offset + limit);
+  const hasMore = offset + limit < allRecipes.length;
+
   const report: MacroRecomputeReport = {
     dryRun: opts.dryRun,
     aiEnabled: opts.aiEnabled ?? false,
     outlierThreshold: opts.outlierThreshold ?? DEFAULT_OUTLIER_THRESHOLD,
-    totalRecipes: recipes.length,
+    totalRecipes: allRecipes.length,
     recomputed: 0,
     unchanged: 0,
     significantChanges: [],
@@ -467,12 +493,42 @@ export async function runMacroRecomputeMigration(opts: {
     }
   }
 
-  report.plannerSlotsAffected = await loadPlannerImpact(opts.supabase, changedResults);
-  report.highCaloriePlannerSlotsAfter = report.plannerSlotsAffected.filter(
-    (slot) => slot.newCalories >= 1000 || (slot.oldCalories != null && slot.oldCalories >= 1000),
-  );
+  if (!hasMore) {
+    const batchSnapshots: PlannerChangeSnapshot[] = changedResults
+      .filter((r) => r.significantChange)
+      .map((r) => ({
+        recipeId: r.recipeId,
+        recipeName: r.recipeName,
+        userId: r.userId,
+        oldCalories: r.oldCalories,
+        newCalories: r.newCalories,
+      }));
+    const allSnapshots = [...(opts.plannerSnapshots ?? []), ...batchSnapshots];
+    report.plannerSlotsAffected = await loadPlannerImpact(opts.supabase, allSnapshots);
+    report.highCaloriePlannerSlotsAfter = report.plannerSlotsAffected.filter(
+      (slot) => slot.newCalories >= 1000 || (slot.oldCalories != null && slot.oldCalories >= 1000),
+    );
+  }
 
-  return report;
+  return {
+    ...report,
+    batchOffset: offset,
+    batchProcessed: recipes.length,
+    hasMore,
+    nextOffset: offset + recipes.length,
+  };
+}
+
+export function formatMacroRecomputeBatchReport(batch: MacroRecomputeBatchResult): string {
+  const batchNum = Math.floor(batch.batchOffset / MACRO_RECOMPUTE_BATCH_SIZE) + 1;
+  const totalBatches = Math.max(1, Math.ceil(batch.totalRecipes / MACRO_RECOMPUTE_BATCH_SIZE));
+  const header = batch.hasMore
+    ? `Batch ${batchNum}/${totalBatches} (recipes ${batch.batchOffset + 1}–${batch.batchOffset + batch.batchProcessed} of ${batch.totalRecipes})`
+    : batch.totalRecipes > MACRO_RECOMPUTE_BATCH_SIZE
+      ? `Final batch ${batchNum}/${totalBatches}`
+      : "";
+  const body = formatMacroRecomputeReport(batch);
+  return header ? `${header}\n${body}` : body;
 }
 
 export function formatMacroRecomputeReport(report: MacroRecomputeReport): string {
