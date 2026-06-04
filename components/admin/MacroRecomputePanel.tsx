@@ -53,7 +53,10 @@ export function MacroRecomputePanel() {
         setSummary(parts.join("\n\n---\n\n"));
 
         if (!data.hasMore) break;
-        offset = data.nextOffset ?? offset + 15;
+        if (data.nextOffset == null) {
+          throw new Error("Batch response missing nextOffset");
+        }
+        offset = data.nextOffset;
       }
 
       setProgress(null);

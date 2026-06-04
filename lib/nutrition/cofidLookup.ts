@@ -153,6 +153,10 @@ function addCandidates(
   }
 }
 
+type CofidCandidateRow = Pick<CofidDbRow, "food_code" | "food_name" | "food_group">;
+
+const COFID_CANDIDATE_SELECT = "food_code,food_name,food_group";
+
 async function collectCofidCandidates(
   supabase: SupabaseClient,
   normalised: string,
@@ -161,49 +165,58 @@ async function collectCofidCandidates(
   const seen = new Set<string>();
   const variants = cofidQueryVariants(normalised);
 
+  type TaggedFetch = { kind: CoFIDMatchKind; data: CofidCandidateRow[] | null };
+  const pending: Promise<TaggedFetch>[] = [
+    supabase
+      .from("cofid_foods")
+      .select(COFID_CANDIDATE_SELECT)
+      .ilike("food_name", `%${normalised}%`)
+      .limit(35)
+      .then(({ data }) => ({ kind: "partial" as const, data })),
+  ];
+
   for (const variant of variants) {
-    const { data: exactRows } = await supabase
-      .from("cofid_foods")
-      .select("food_code,food_name,food_group")
-      .ilike("food_name", variant)
-      .limit(5);
-    addCandidates(candidates, seen, exactRows, "exact");
-
-    const { data: primaryRows } = await supabase
-      .from("cofid_foods")
-      .select("food_code,food_name,food_group")
-      .ilike("food_name", `${variant},%`)
-      .limit(15);
-    addCandidates(candidates, seen, primaryRows, "partial");
+    pending.push(
+      supabase
+        .from("cofid_foods")
+        .select(COFID_CANDIDATE_SELECT)
+        .ilike("food_name", `${variant},%`)
+        .limit(20)
+        .then(({ data }) => ({ kind: "partial" as const, data })),
+    );
   }
-
-  const { data: containsRows } = await supabase
-    .from("cofid_foods")
-    .select("food_code,food_name,food_group")
-    .ilike("food_name", `%${normalised}%`)
-    .limit(40);
-  addCandidates(candidates, seen, containsRows, "partial");
 
   const ftsQuery = normalised.replace(/\s+/g, " & ");
   if (ftsQuery.length >= 2) {
-    const { data: ftsRows } = await supabase
-      .from("cofid_foods")
-      .select("food_code,food_name,food_group")
-      .textSearch("search_vector", ftsQuery, { type: "websearch", config: "english" })
-      .limit(25);
-    addCandidates(candidates, seen, ftsRows, "fulltext");
+    pending.push(
+      supabase
+        .from("cofid_foods")
+        .select(COFID_CANDIDATE_SELECT)
+        .textSearch("search_vector", ftsQuery, { type: "websearch", config: "english" })
+        .limit(20)
+        .then(({ data }) => ({ kind: "fulltext" as const, data })),
+    );
   }
 
   const words = normalised.split(/\s+/).filter((w) => w.length > 2);
-  for (const word of words.slice(0, 4)) {
-    for (const variant of cofidQueryVariants(word)) {
-      const { data: wordRows } = await supabase
-        .from("cofid_foods")
-        .select("food_code,food_name,food_group")
-        .ilike("food_name", `${variant},%`)
-        .limit(10);
-      addCandidates(candidates, seen, wordRows, "partial");
+  if (words.length > 1) {
+    for (const word of words.slice(0, 3)) {
+      for (const variant of cofidQueryVariants(word)) {
+        pending.push(
+          supabase
+            .from("cofid_foods")
+            .select(COFID_CANDIDATE_SELECT)
+            .ilike("food_name", `${variant},%`)
+            .limit(10)
+            .then(({ data }) => ({ kind: "partial" as const, data })),
+        );
+      }
     }
+  }
+
+  const results = await Promise.all(pending);
+  for (const { kind, data } of results) {
+    addCandidates(candidates, seen, data, kind);
   }
 
   return candidates;

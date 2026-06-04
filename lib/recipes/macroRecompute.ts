@@ -88,7 +88,8 @@ export type MacroRecomputeReport = {
   errors: { recipeId: string; message: string }[];
 };
 
-export const MACRO_RECOMPUTE_BATCH_SIZE = 15;
+/** Small batches — each recipe triggers many parallel CoFID lookups (Vercel 60s limit). */
+export const MACRO_RECOMPUTE_BATCH_SIZE = 5;
 
 export type MacroRecomputeBatchResult = MacroRecomputeReport & {
   batchOffset: number;
