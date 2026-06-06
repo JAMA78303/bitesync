@@ -2,7 +2,7 @@
 
 One place to track every build spec, merge order, and **verified-in-code** status.
 
-Last updated: 2026-06-03
+Last updated: 2026-06-04
 
 ---
 
@@ -21,13 +21,20 @@ Status key: ✅ verified in code · 🟡 partial / needs migration run · ❌ no
 | 1 | `BITESYNC_FIXES.md` | Parser, kcal outlier, planner cards, social import | ✅ code done; kcal outliers repaired via Spec 4 |
 | 2 | `BITESYNC_RECIPE_MAKER.md` | CoFID ranking, context units, zero-qty block | ✅ verified in code |
 | 3 | `BITESYNC_TARGET_MISMATCH.md` | 2027 vs 2227 calorie target | ✅ verified in code |
-| 4 | `BITESYNC_MACRO_RECOMPUTE.md` | One-off macro repair migration | 🟡 see [Spec 4 run log](#spec-4--macro_recompute-run-log) |
+| 4 | `BITESYNC_MACRO_RECOMPUTE.md` | One-off macro repair migration | 🟡 run via admin UI or `npm run recompute:macros` |
 | 5 | `BITESYNC_UI_UX.md` | Goals nav, grocery modal, TDEE, dashboard labels | ✅ verified in code |
 | 6 | `BITESYNC_LANDING_DARKMODE.md` | Landing dark-mode contrast | ✅ verified in code |
 | + | `BITESYNC_BUTTON_CONTRAST.md` | Generate grocery list invisible label | ✅ verified in code |
 | + | `BITESYNC_PLANNER_NAMES.md` | Single-letter meal card titles | ✅ diagnosed + fixed (layout) |
 | + | `BITESYNC_SERVING_CONVERSION.md` | Fajitas ~184 kcal/serving import bug | ✅ STEP 2B parsing fix shipped (`40da026`) |
-| + | Pantry spec | Cook from what you have + shared matching | ✅ shipped (`2e53a8e`); SQL `2026-06-03_pantry_items.sql` applied |
+| + | Pantry spec | Cook from what you have + shared matching | ✅ shipped (`2e53a8e`); SQL applied |
+| + | `BITESYNC_MOBILE_DARKMODE.md` | Mobile nav, dark mode, safe-area padding | ✅ shipped (`fc1b98f`, `728d5de`) |
+| + | `BITESYNC_OVER_UNDER_COLOUR.md` | Distinct over/under macro colours | ✅ shipped (`f1d4325`) |
+| + | `BITESYNC_DATE_ORDINALS.md` | Monday 1st date formatting | ✅ shipped (`92cf64a`) |
+| + | `BITESYNC_PLANNER_TIP.md` | Breakfast empty-state tip repeats 7× | ✅ shipped (`b01982c`) |
+| + | `BITESYNC_RECIPES_CONTRAST.md` | My Recipes header pill/search contrast | ✅ shipped |
+| + | Fill My Library | Bulk recipe generator | ✅ shipped (`df5a9ea`) |
+| + | `LANDING_UI_IMPROVEMENTS.md` | Landing hero, mockups, pricing, footer | ✅ verified in code |
 
 ---
 
@@ -38,61 +45,9 @@ Status key: ✅ verified in code · 🟡 partial / needs migration run · ❌ no
 3. **Spec 3** — target mismatch
 4. **Spec 4** — macro recompute — run after Specs 1+2 + serving fix merged; `--dry-run` first
 5. **Specs 5, 6, button, planner names** — UI/contrast (independent)
-6. **Serving conversion fix** — import parser extensions (chicken, tortillas, salsa, spices)
-7. **Pantry** — independent feature; requires pantry SQL migration
-
----
-
-## Serving conversion — diagnosis (BITESYNC_SERVING_CONVERSION)
-
-**Verdict: STEP 2B — parsing bug (not scaling).**
-
-| Metric | Before fix | After fix | BBC target |
-|---|---|---|---|
-| Full recipe (4 servings) | 668 kcal | ~2,307 kcal | ~1,920–1,976 |
-| Per serving | ~167 kcal (~184 reported) | ~577 kcal | ~480–494 |
-| Scaling linearity | 1.00 | 1.00 | — |
-
-Scaling math was correct; missing gram weights and nutrition matches collapsed totals. Fix in `40da026`: count nouns (`breasts`, `tortillas`), lookup aliases, `flour tortilla` entry, spice defaults.
-
-**Verify:** `npx tsx scripts/diagnose-fajitas-servings.ts`
-
-**Note:** Recipes imported before the fix need Spec 4 recompute (or delete + re-import).
-
----
-
-## Pantry + shared matching (shipped 2026-06-03)
-
-| Area | Status | Evidence |
-|---|---|---|
-| Pantry table + RLS | ✅ SQL applied | `sql/2026-06-03_pantry_items.sql` |
-| Pantry UI | ✅ | `/pantry`, `components/pantry/PantryPageClient.tsx` |
-| Shared matching engine | ✅ | `lib/matching/ingredient-overlap.ts`, `suggest-meals.ts` |
-| Grocery leftovers (AGD-002) | ✅ | `LeftoverSuggestionsPanel.tsx` on grocery page |
-| CoFID normalisation exports | ✅ | `normalizeIngredientForMatch` in `cofidMatch.ts` |
-
----
-
-## Planner single-letter names — diagnosis (BITESYNC_PLANNER_NAMES)
-
-**Verdict: STEP 2B — layout/width bug (not missing CSS, not DB truncation by default).**
-
-Evidence from code review (no DB credentials in CI):
-
-| Finding | Detail |
-|---|---|
-| Committed layout | Horizontal card: 48px emoji + badge + `truncate` title in ~100px grid column |
-| Visible width | ~20px left for title after emoji → **one character** before ellipsis |
-| Stored names | Loaded via `recipe:recipes (id, name)` — full string unless user data is corrupt |
-| Fix applied | `variant="grid"`: vertical stack, badge above title, `line-clamp-2`, `min-w-0`, wider columns |
-
-**Confirm in your DB** (optional):
-
-```bash
-NEXT_PUBLIC_SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... npx tsx scripts/diagnose-planner-names.ts
-```
-
-If any name is ≤2 chars → data bug (Step 2A); else layout fix is sufficient.
+6. **Serving conversion fix** — import parser extensions
+7. **Pantry** — independent feature
+8. **Mobile / nutrition UI** — nav, dark mode, ordinals, macro colours (2026-06-04 batch)
 
 ---
 
@@ -100,118 +55,51 @@ If any name is ≤2 chars → data bug (Step 2A); else layout fix is sufficient.
 
 **Verdict: `grocery_items` is a persisted snapshot. Macro recompute does not touch it.**
 
-The Spec 4 migration (`lib/recipes/macroRecompute.ts`) writes **only** to `recipe_ingredients` and `recipe_nutrition`. Confirmed in `applyRecipeRecompute()` — no `grocery_items` reads or writes. A stale line like `1 bottle ½ Tbsp Olive Oil Plus An Extra Drizzle (1 piece needed)` is a frozen row from an old generate; regenerating the list rebuilds from current `recipe_ingredients` via `generateGroceryList()` → `mergeScaledRecipeIngredients` → `normalizeIngredientsForShopping` → `replaceGroceryItemsWithMerged`.
+Regenerate in-app (**Grocery → Generate list**) or use the audit script:
 
-**These are independent repairs.** Run Spec 4 for bad recipe nutrition / mangled ingredient rows. Fix stale grocery display separately — do not delay macro recompute because of a grocery line.
+```bash
+npm run regenerate:grocery -- --dry-run    # list affected meal plans
+npm run regenerate:grocery -- --apply     # rebuild from current recipes
+```
 
-### Decision rule
+Scope queries: `sql/2026-06-03_grocery_scope_and_recompute_checks.sql` (Part A).
 
 | Scope query result | Action |
 |---|---|
-| One list, or a handful | **Regenerate by hand** (Grocery → Generate list). No migration extension, no code. |
-| Many affected plans | **Separate task:** re-derive `grocery_items` for affected `meal_plan_id`s through the existing `generateGroceryList` pipeline, with dry-run + idempotent pattern. Do **not** bolt onto Spec 4. |
-
-### Scope queries (run in Supabase SQL editor)
-
-**All queries in one file:** `sql/2026-06-03_grocery_scope_and_recompute_checks.sql` (Part A = grocery scope, Part B = post-recompute checks).
-
-**Count plans with likely stale recipe-derived rows** (not manual items):
-
-```sql
-SELECT meal_plan_id, COUNT(*) AS stale_items
-FROM grocery_items
-WHERE archived_at IS NULL
-  AND COALESCE(is_manual, false) = false
-  AND (
-    unit IN ('piece', 'pieces')
-    OR name ~* '(tbsp|tsp|tablespoon|teaspoon|½|plus an extra)'
-  )
-GROUP BY meal_plan_id
-ORDER BY stale_items DESC;
-```
-
-**Caution:** the `name ~*` pattern can false-positive on legitimate lines (e.g. a user-typed name containing "tbsp"). `is_manual = false` helps but is not enough — **eyeball the actual rows**, not just the count, before deciding "many."
-
-**Optional — plans with piece-unit rows only** (broader, review manually):
-
-```sql
-SELECT COUNT(DISTINCT meal_plan_id) AS plans_with_piece_unit_grocery
-FROM grocery_items
-WHERE archived_at IS NULL
-  AND COALESCE(is_manual, false) = false
-  AND unit IN ('piece', 'pieces');
-```
+| One list, or a handful | Regenerate by hand or `--apply` for one `--meal-plan-id` |
+| Many affected plans | `npm run regenerate:grocery -- --apply` (review dry-run first) |
 
 ---
 
-## Verified in code (2026-06-03)
-
-### Spec 1 — FIXES
-
-| Task | Status | Evidence |
-|---|---|---|
-| Ingredient parser | ✅ | `lib/recipes/parseIngredient.ts` — verified via fajitas diagnosis script |
-| Social / URL import | ✅ | `app/api/recipes/import/route.ts` |
-| Planner card layout | ✅ | `RecipeSlotCard` `variant="grid"`, `PlannerGrid` passes it |
-| kcal outlier | 🟡 | Parser fixed; saved macros repaired by Spec 4 recompute |
-
-### Spec 2 — RECIPE_MAKER
-
-| Task | Status | Evidence |
-|---|---|---|
-| CoFID match ranking | ✅ | `lib/nutrition/cofidMatch.ts`, ranked `lookupCoFID()` |
-| Context-aware units | ✅ | `getUnitsForIngredient()`; RecipeForm + EditRecipeForm |
-| Zero-qty block | ✅ | `lib/recipes/ingredientValidation.ts`; forms + actions |
-
-### Spec 3 — TARGET_MISMATCH
-
-| Task | Status | Evidence |
-|---|---|---|
-| Single source of truth | ✅ | `lib/utils/nutrition-targets.ts` |
-| Stale target heal | ✅ | `getProfile()` auto-sync |
-| All consumers wired | ✅ | nutrition, today, planner, ai-actions, goals |
-
-### Spec 4 — MACRO_RECOMPUTE
-
-| Task | Status | Evidence |
-|---|---|---|
-| Dry-run script | ✅ | `npm run recompute:macros -- --dry-run` |
-| Env loading | ✅ | `lib/supabase/loadEnv.ts` reads `.env.local` |
-| **Executed** | 🟡 | Admin UI at `/admin/macro-recompute` or `npm run recompute:macros` |
-| Grocery list repair | ➖ N/A | **Not in scope** — see [Stale grocery snapshots](#stale-grocery-snapshots-separate-from-spec-4) |
-
-#### Spec 4 — MACRO_RECOMPUTE run log
+## Spec 4 — MACRO_RECOMPUTE run log
 
 | Step | Status | Notes |
 |---|---|---|
-| Dry-run #1 | 🟡 | `/admin/macro-recompute` → **Dry run**, or `npm run recompute:macros -- --dry-run` |
-| Real run | 🟡 | Admin → **Apply recompute**, or `npm run recompute:macros` |
-| Dry-run #2 (expect 0 changes) | 🟡 | Admin → **Verify**, or dry-run npm again |
+| Dry-run #1 | 🟡 | Admin UI or `npm run recompute:macros -- --dry-run` |
+| Real run | 🟡 | User ran via admin after CoFID banana fix; breakfast ~646 kcal |
+| Dry-run #2 (expect 0 changes) | 🟡 | Admin → **Verify** or dry-run npm again |
 
-**Run locally** (create `.env.local` with `NEXT_PUBLIC_SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`):
+**GitHub Actions:** add `NEXT_PUBLIC_SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` — see `.github/workflows/README.md`.
+
+**Run locally** (`.env.local` with Supabase service role):
 
 ```bash
 npm run recompute:macros -- --dry-run
-# review scripts/reports/
 npm run recompute:macros
-npm run recompute:macros -- --dry-run   # expect unchanged = totalRecipes, recomputed = 0
+npm run recompute:macros -- --dry-run   # expect 0 changes
 ```
-
-### Specs 5, 6, button
-
-All ✅ — see prior commits.
 
 ---
 
 ## Next actions
 
-1. **Spec 4** — [Admin → Macro recompute](https://bitesync.io/admin/macro-recompute): dry-run → apply → verify. Or locally with `.env.local`: `npm run recompute:macros -- --dry-run` etc.
-2. **Stale grocery lists** — run [scope queries](#scope-queries-run-in-supabase-sql-editor); few → regenerate in app; many → separate migration task
-3. ~~Run `sql/2026-06-02_recipes_source_type.sql`~~ — applied
-4. ~~Run `sql/2026-06-03_pantry_items.sql`~~ — applied
+1. **Spec 4 verify** — dry-run #2 should show 0 recipe changes
+2. **Stale grocery** — `npm run regenerate:grocery -- --dry-run` then `--apply` if needed
+3. **GitHub secrets** — enable Actions macro recompute (optional)
+4. **Phone QA** — Settings tab, dark mode, ordinals, planner tip, recipes contrast
 
 ---
 
 ## Note
 
-Parser + CoFID matcher fixes are highest leverage — bad output flows into grocery, planner totals, and dashboard. Macro recompute (Spec 4) repairs already-saved **recipe** rows once Specs 1+2 and the serving fix are deployed; saved **grocery** snapshots only refresh on regenerate (or a future dedicated migration if scope is high).
+Parser + CoFID matcher fixes are highest leverage — bad output flows into grocery, planner totals, and dashboard. Macro recompute repairs **recipe** rows; **grocery** snapshots only refresh on regenerate.

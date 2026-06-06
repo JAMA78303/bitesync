@@ -104,10 +104,10 @@ export function PlannerGrid({
     <>
       <div className="hidden overflow-x-auto rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900 sm:block">
         <div className="grid min-w-[980px] grid-cols-[120px_repeat(7,minmax(112px,1fr))]">
-          <div className="border-b border-gray-200 p-2" />
+          <div className="border-b border-gray-200 p-2 dark:border-gray-700" />
           {Array.from({ length: 7 }, (_, day) => (
-            <div key={`head-${day}`} className="border-b border-l border-gray-200 p-2 text-center">
-              <p className="text-xs font-medium text-gray-500">{DAY_LABELS[day]}</p>
+            <div key={`head-${day}`} className="border-b border-l border-gray-200 p-2 text-center dark:border-gray-700">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{DAY_LABELS[day]}</p>
               <p className="text-sm font-semibold text-gray-900 dark:text-white">{formatDayWithOrdinal(weekDates[day].getDate())}</p>
             </div>
           ))}
@@ -121,7 +121,7 @@ export function PlannerGrid({
                 const entry = grid[day][mealType];
                 const snackEntries = mealType === "snack" ? snackEntriesForDay(day) : [];
                 return (
-                  <div key={`${mealType}-${day}`} className="min-w-0 border-b border-l border-gray-200 p-2">
+                  <div key={`${mealType}-${day}`} className="min-w-0 border-b border-l border-gray-200 p-2 dark:border-gray-700">
                     {mealType === "snack" ? (
                       <div className="space-y-1">
                         {snackEntries.length > 0 ? (

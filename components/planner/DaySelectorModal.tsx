@@ -73,8 +73,8 @@ export function DaySelectorModal({ open, onClose, mealPlanId, weekStart, filledD
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
-      <DialogContent className="max-w-md gap-0 p-0 sm:max-w-lg">
-        <div className="space-y-1 border-b border-slate-100 px-5 pb-4 pt-5">
+      <DialogContent className="max-w-md gap-0 p-0 sm:max-w-lg dark:border-gray-800 dark:bg-gray-900">
+        <div className="space-y-1 border-b border-slate-100 px-5 pb-4 pt-5 dark:border-gray-800">
           <DialogHeader>
             <div className="flex items-start justify-between gap-2">
               <DialogTitle>Build your grocery list</DialogTitle>
@@ -82,20 +82,20 @@ export function DaySelectorModal({ open, onClose, mealPlanId, weekStart, filledD
                 type="button"
                 onClick={onClose}
                 aria-label="Close"
-                className="-mr-1 -mt-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                className="-mr-1 -mt-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
           </DialogHeader>
-          <p className="text-sm text-slate-500">Choose which days and meals to shop for.</p>
+          <p className="text-sm text-slate-500 dark:text-gray-400">Choose which days and meals to shop for.</p>
         </div>
 
         <div className="space-y-6 px-5 py-5">
           <section className="space-y-3">
             <div className="flex items-baseline justify-between gap-2">
-              <h3 className="text-sm font-semibold text-slate-800">Days</h3>
-              <span className="text-xs text-slate-400">{selected.length} of 7 selected</span>
+              <h3 className="text-sm font-semibold text-slate-800 dark:text-gray-100">Days</h3>
+              <span className="text-xs text-slate-400 dark:text-gray-500">{selected.length} of 7 selected</span>
             </div>
             <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
               {Array.from({ length: 7 }, (_, day) => {
@@ -107,20 +107,22 @@ export function DaySelectorModal({ open, onClose, mealPlanId, weekStart, filledD
                     type="button"
                     onClick={() => toggleDay(day)}
                     className={`flex flex-col items-center rounded-xl px-1 py-2.5 text-center transition-all ${
-                      isSelected ? "bg-[#1A4731] text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      isSelected
+                        ? "bg-[#1A4731] text-white shadow-sm"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                     }`}
                   >
                     <span className="text-[10px] font-semibold uppercase tracking-wide">
                       {DAY_NAMES[day].slice(0, 3)}
                     </span>
-                    <span className={`mt-1 text-[9px] ${isSelected ? "text-green-200" : "text-slate-400"}`}>
+                    <span className={`mt-1 text-[9px] ${isSelected ? "text-green-200" : "text-slate-400 dark:text-gray-500"}`}>
                       {hasMeals ? "planned" : "empty"}
                     </span>
                   </button>
                 );
               })}
             </div>
-            <div className="flex items-center gap-2 text-xs text-slate-400">
+            <div className="flex items-center gap-2 text-xs text-slate-400 dark:text-gray-500">
               <button type="button" onClick={() => setSelected([...WEEK_DAYS])} className="hover:text-[#1A4731] hover:underline">
                 Select all
               </button>
@@ -131,10 +133,10 @@ export function DaySelectorModal({ open, onClose, mealPlanId, weekStart, filledD
             </div>
           </section>
 
-          <section className="space-y-3 border-t border-slate-100 pt-5">
+          <section className="space-y-3 border-t border-slate-100 pt-5 dark:border-gray-800">
             <div className="flex items-baseline justify-between gap-2">
-              <h3 className="text-sm font-semibold text-slate-800">Meal types</h3>
-              <span className="text-xs text-slate-400">{selectedMeals.length} selected</span>
+              <h3 className="text-sm font-semibold text-slate-800 dark:text-gray-100">Meal types</h3>
+              <span className="text-xs text-slate-400 dark:text-gray-500">{selectedMeals.length} selected</span>
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {visibleMealTypes.map((mealType) => {
@@ -147,7 +149,7 @@ export function DaySelectorModal({ open, onClose, mealPlanId, weekStart, filledD
                     className={`rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
                       isSelected
                         ? "bg-[#1A4731] text-white shadow-sm"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                     }`}
                   >
                     {MEAL_LABELS[mealType]}
@@ -156,9 +158,9 @@ export function DaySelectorModal({ open, onClose, mealPlanId, weekStart, filledD
               })}
             </div>
             {snackUnavailable ? (
-              <p className="text-xs text-slate-400">No snacks planned this week — snack meals are omitted.</p>
+              <p className="text-xs text-slate-400 dark:text-gray-500">No snacks planned this week — snack meals are omitted.</p>
             ) : null}
-            <div className="flex items-center gap-2 text-xs text-slate-400">
+            <div className="flex items-center gap-2 text-xs text-slate-400 dark:text-gray-500">
               <button
                 type="button"
                 onClick={() => setSelectedMeals([...availableMealTypes])}
@@ -174,13 +176,13 @@ export function DaySelectorModal({ open, onClose, mealPlanId, weekStart, filledD
           </section>
         </div>
 
-        <div className="flex flex-col-reverse gap-2 border-t border-slate-100 px-5 py-4 sm:flex-row sm:items-center">
+        <div className="flex flex-col-reverse gap-2 border-t border-slate-100 px-5 py-4 sm:flex-row sm:items-center dark:border-gray-800">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
             disabled={isPending}
-            className="w-full border-gray-300 bg-white text-gray-800 hover:bg-gray-50 sm:flex-1"
+            className="w-full border-gray-300 bg-white text-gray-800 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800 sm:flex-1"
           >
             Cancel
           </Button>

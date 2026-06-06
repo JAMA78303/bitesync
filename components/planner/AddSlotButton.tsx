@@ -39,16 +39,16 @@ export function AddSlotButton({ day, mealType, dayLabel, mealPlanId, slotIndex =
         type="button"
         onClick={() => setMode("quickadd")}
         aria-label={`Add ${mealType} for ${dayLabel}`}
-        className="flex h-full min-h-[64px] w-full items-center justify-center rounded-lg border-2 border-dashed border-slate-200 text-slate-300 transition-all duration-150 hover:border-[#6EE7B7] hover:bg-[#F0FDF4] hover:text-[#1A4731]"
+        className="flex h-full min-h-[64px] w-full items-center justify-center rounded-lg border-2 border-dashed border-slate-200 text-slate-300 transition-all duration-150 hover:border-[#6EE7B7] hover:bg-[#F0FDF4] hover:text-[#1A4731] dark:border-gray-700 dark:text-gray-600 dark:hover:border-emerald-600 dark:hover:bg-emerald-950/30 dark:hover:text-emerald-300"
       >
         <Plus className="h-4 w-4" />
       </button>
 
-      <div className="absolute inset-0 z-10 hidden flex-col divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm group-hover:flex">
+      <div className="absolute inset-0 z-10 hidden flex-col divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm group-hover:flex dark:divide-gray-800 dark:border-gray-700 dark:bg-gray-900">
         <button
           type="button"
           onClick={() => setMode("quickadd")}
-          className="flex flex-1 items-center gap-2 px-3 text-xs text-slate-500 transition-colors hover:bg-[#F0FDF4] hover:text-[#1A4731]"
+          className="flex flex-1 items-center gap-2 px-3 text-xs text-slate-500 transition-colors hover:bg-[#F0FDF4] hover:text-[#1A4731] dark:text-gray-400 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-300"
         >
           <PenLine className="h-3 w-3 shrink-0" />
           Quick add
@@ -56,7 +56,7 @@ export function AddSlotButton({ day, mealType, dayLabel, mealPlanId, slotIndex =
         <button
           type="button"
           onClick={() => onPickRecipe(day, mealType, slotIndex)}
-          className="flex flex-1 items-center gap-2 px-3 text-xs text-slate-500 transition-colors hover:bg-[#F0FDF4] hover:text-[#1A4731]"
+          className="flex flex-1 items-center gap-2 px-3 text-xs text-slate-500 transition-colors hover:bg-[#F0FDF4] hover:text-[#1A4731] dark:text-gray-400 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-300"
         >
           <BookOpen className="h-3 w-3 shrink-0" />
           From recipes

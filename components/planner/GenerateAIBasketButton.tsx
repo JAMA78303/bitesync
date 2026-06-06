@@ -346,12 +346,12 @@ export function GenerateAIBasketButton({
       </div>
 
       {isPanelOpen ? (
-        <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50/60">
+        <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50/60 dark:border-gray-700 dark:bg-gray-800/60">
           <div className="flex items-center justify-between px-3 py-2.5">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-slate-800">AI grocery plan</span>
+              <span className="text-sm font-medium text-slate-800 dark:text-gray-100">AI grocery plan</span>
               {isPending ? (
-                <span className="inline-flex items-center gap-1 text-xs text-slate-500">
+                <span className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-gray-400">
                   <Loader2 className="h-3 w-3 animate-spin" />
                   Generating...
                 </span>
@@ -361,7 +361,7 @@ export function GenerateAIBasketButton({
               <button
                 type="button"
                 onClick={() => setIsPanelMinimised((v) => !v)}
-                className="rounded p-1 text-slate-500 hover:bg-slate-200/70"
+                className="rounded p-1 text-slate-500 hover:bg-slate-200/70 dark:text-gray-400 dark:hover:bg-gray-700"
                 aria-label={isPanelMinimised ? "Expand panel" : "Minimise panel"}
               >
                 {isPanelMinimised ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
@@ -369,7 +369,7 @@ export function GenerateAIBasketButton({
               <button
                 type="button"
                 onClick={closePanel}
-                className="rounded p-1 text-slate-500 hover:bg-slate-200/70"
+                className="rounded p-1 text-slate-500 hover:bg-slate-200/70 dark:text-gray-400 dark:hover:bg-gray-700"
                 aria-label="Close panel"
               >
                 <X className="h-4 w-4" />
@@ -378,14 +378,14 @@ export function GenerateAIBasketButton({
           </div>
 
           {!isPanelMinimised ? (
-            <div className="space-y-3 border-t border-slate-200 px-3 pb-3 pt-2">
+            <div className="space-y-3 border-t border-slate-200 px-3 pb-3 pt-2 dark:border-gray-700">
               {lastSummary ? (
-                <p className="line-clamp-2 text-[11px] text-slate-500 md:line-clamp-none md:text-xs">{lastSummary}</p>
+                <p className="line-clamp-2 text-[11px] text-slate-500 dark:text-gray-400 md:line-clamp-none md:text-xs">{lastSummary}</p>
               ) : null}
               <div>{storeAndDaysRow}</div>
               {hasCollapsibleContent ? (
-                <details className="group rounded-lg border border-slate-200 bg-white/70 md:hidden">
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2.5 text-sm font-medium text-slate-800 [&::-webkit-details-marker]:hidden">
+                <details className="group rounded-lg border border-slate-200 bg-white/70 dark:border-gray-700 dark:bg-gray-900/70 md:hidden">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2.5 text-sm font-medium text-slate-800 dark:text-gray-100 [&::-webkit-details-marker]:hidden">
                     <span>Store totals &amp; more</span>
                     <ChevronDown className="h-4 w-4 shrink-0 text-slate-500 transition-transform group-open:rotate-180" />
                   </summary>
