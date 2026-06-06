@@ -27,6 +27,16 @@ type Recipe = {
 const BREAKFAST_EMPTY_TIP =
   "Tip: add recipes whose names mention oats, eggs, yoghurt… so hints and AI picks align better.";
 
+function BreakfastEmptyTip({ className = "" }: { className?: string }) {
+  return (
+    <p
+      className={`text-[11px] font-normal normal-case leading-snug text-slate-500 dark:text-gray-400 ${className}`.trim()}
+    >
+      {BREAKFAST_EMPTY_TIP}
+    </p>
+  );
+}
+
 function isBreakfastRowEmpty(grid: PlannerGridType): boolean {
   for (let day = 0; day < 7; day++) {
     if (grid[day]?.breakfast) return false;
@@ -104,13 +114,8 @@ export function PlannerGrid({
 
           {MEAL_TYPES.map((mealType) => (
             <Fragment key={mealType}>
-              <div className="border-b border-gray-200 p-2 text-xs font-semibold uppercase text-gray-500">
+              <div className="border-b border-gray-200 p-2 text-xs font-semibold uppercase text-gray-500 dark:border-gray-700 dark:text-gray-400">
                 {MEAL_LABELS[mealType]}
-                {mealType === "breakfast" && showBreakfastTip ? (
-                  <p className="mt-2 text-[11px] font-normal normal-case leading-snug text-slate-500">
-                    {BREAKFAST_EMPTY_TIP}
-                  </p>
-                ) : null}
               </div>
               {Array.from({ length: 7 }, (_, day) => {
                 const entry = grid[day][mealType];
@@ -158,6 +163,11 @@ export function PlannerGrid({
                   </div>
                 );
               })}
+              {mealType === "breakfast" && showBreakfastTip ? (
+                <div className="col-span-8 border-b border-gray-200 bg-[#f0f7f0]/60 px-3 py-2 dark:border-gray-700 dark:bg-[#1a2e1d]/40">
+                  <BreakfastEmptyTip />
+                </div>
+              ) : null}
             </Fragment>
           ))}
 
@@ -181,6 +191,7 @@ export function PlannerGrid({
         dailyProteinTarget={dailyProteinTarget}
         dietPrefs={dietPrefs}
         dietaryPreferences={dietaryPreferences}
+        showBreakfastTip={showBreakfastTip}
       />
 
       <RecipePickerModal
@@ -211,6 +222,7 @@ type MobileProps = {
   dailyProteinTarget?: number | null;
   dietPrefs?: ProfileDietPrefs | null;
   dietaryPreferences?: string[];
+  showBreakfastTip: boolean;
 };
 
 function PlannerGridMobileInline({
@@ -225,6 +237,7 @@ function PlannerGridMobileInline({
   dailyProteinTarget,
   dietPrefs,
   dietaryPreferences = [],
+  showBreakfastTip,
 }: MobileProps) {
   const [activeDay, setActiveDay] = useState(initialActiveDay);
 
@@ -263,8 +276,8 @@ function PlannerGridMobileInline({
           return (
             <div key={mealType} className="meal-section space-y-2">
               <p className="meal-type-label">{MEAL_LABELS[mealType]}</p>
-              {mealType === "breakfast" && !entry ? (
-                <p className="text-[11px] leading-snug text-slate-500 dark:text-gray-400">{BREAKFAST_EMPTY_TIP}</p>
+              {mealType === "breakfast" && showBreakfastTip ? (
+                <BreakfastEmptyTip className="rounded-xl bg-[#f0f7f0]/80 px-3 py-2 dark:bg-[#1a2e1d]/50" />
               ) : null}
               {mealType === "snack" ? (
                 <div className="space-y-1">
