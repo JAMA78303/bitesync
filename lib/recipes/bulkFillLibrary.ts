@@ -32,10 +32,10 @@ const MEAL_DISTRIBUTION: GoalMealSlot[] = [
   "breakfast",
   "lunch",
   "lunch",
-  "lunch",
   "dinner",
   "dinner",
   "dinner",
+  "snack",
   "snack",
 ];
 

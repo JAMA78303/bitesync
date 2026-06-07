@@ -205,22 +205,39 @@ async function buildGoalMatchedRecipeIngredientsRaw(
       return await findBestCarbAdjustment(base, carb, target);
     }
     if (opts.mealSlot === "snack") {
-      const v = pickVariant(seed, 4);
-      const v2 = pickVariantAlt(seed, 2);
+      const v = pickVariant(seed, 8);
+      const v2 = pickVariantAlt(seed, 3);
+      const fruit = v2 === 0 ? "strawberries" : v2 === 1 ? "orange" : "blueberries";
       if (v === 0) {
-        const base = [ing("tofu", 90, "g"), ing(v2 === 0 ? "banana" : "apple", 100, "g")];
+        const base = [ing("tofu", 90, "g"), ing(fruit, 90, "g"), ing("almonds", 15, "g")];
         return await findBestCarbAdjustment(base, { name: "quinoa", minG: 0, maxG: 180 }, target);
       }
       if (v === 1) {
-        const base = [ing("chickpeas", 100, "g"), ing(v2 === 0 ? "banana" : "apple", 100, "g")];
+        const base = [ing("chickpeas", 100, "g"), ing("carrot", 80, "g"), ing("red pepper", 60, "g")];
         return await findBestCarbAdjustment(base, { name: "quinoa", minG: 0, maxG: 200 }, target);
       }
       if (v === 2) {
-        const base = [ing("lentils", 80, "g"), ing("apple", 120, "g")];
+        const base = [ing("lentils", 80, "g"), ing("spinach", 70, "g"), ing("tomato", 80, "g")];
         return await findBestCarbAdjustment(base, { name: "quinoa", minG: 0, maxG: 160 }, target);
       }
-      const base = [ing("tofu", 85, "g"), ing("carrot", 100, "g")];
-      return await findBestCarbAdjustment(base, { name: "quinoa", minG: 0, maxG: 170 }, target);
+      if (v === 3) {
+        const base = [ing("tofu", 85, "g"), ing("broccoli", 90, "g"), ing("almonds", 12, "g")];
+        return await findBestCarbAdjustment(base, { name: "quinoa", minG: 0, maxG: 170 }, target);
+      }
+      if (v === 4) {
+        const base = [ing("peanut butter", 18, "g"), ing("banana", 100, "g"), ing("chia seeds", 10, "g")];
+        return await findBestCarbAdjustment(base, { name: "oats", minG: 0, maxG: 45 }, target);
+      }
+      if (v === 5) {
+        const base = [ing("chickpeas", 90, "g"), ing("kale", 60, "g"), ing("carrot", 70, "g")];
+        return await findBestCarbAdjustment(base, { name: "quinoa", minG: 0, maxG: 150 }, target);
+      }
+      if (v === 6) {
+        const base = [ing("tofu", 80, "g"), ing("sweet potato", 100, "g"), ing("spinach", 50, "g")];
+        return await findBestCarbAdjustment(base, { name: "quinoa", minG: 0, maxG: 120 }, target);
+      }
+      const base = [ing("lentils", 75, "g"), ing("walnuts", 15, "g"), ing(fruit, 80, "g")];
+      return await findBestCarbAdjustment(base, { name: "quinoa", minG: 0, maxG: 140 }, target);
     }
     const v = pickVariant(seed, 5);
     if (v === 0) {
@@ -244,16 +261,14 @@ async function buildGoalMatchedRecipeIngredientsRaw(
   }
 
   if (opts.vegetarian) {
-    if (opts.mealSlot === "breakfast" || opts.mealSlot === "snack") {
+    if (opts.mealSlot === "breakfast") {
       const v = pickVariant(seed, 2);
       const base =
         v === 0
           ? [ing("egg", 2, "piece"), ing("banana", 100, "g")]
           : [ing("egg", 2, "piece"), ing("greek yogurt", 100, "g")];
       const carb = opts.glutenFree
-        ? opts.mealSlot === "breakfast"
-          ? glutenFreeBreakfastCarbTune(seed)
-          : glutenFreeSnackCarbTune(seed)
+        ? glutenFreeBreakfastCarbTune(seed)
         : { name: "oats" as const, minG: 15, maxG: 120 };
       const out = await findBestCarbAdjustment(base, carb, target);
       const p = (await getRecipeNutritionTotals(out, { aiEnabled: false })).totals.protein_g;
@@ -265,6 +280,36 @@ async function buildGoalMatchedRecipeIngredientsRaw(
         return await findBestCarbAdjustment(base2, carb, target);
       }
       return out;
+    }
+    if (opts.mealSlot === "snack") {
+      const v = pickVariant(seed, 6);
+      const v2 = pickVariantAlt(seed, 3);
+      const fruit = v2 === 0 ? "strawberries" : v2 === 1 ? "blueberries" : "orange";
+      const carb = opts.glutenFree
+        ? glutenFreeSnackCarbTune(seed)
+        : { name: "oats" as const, minG: 0, maxG: 50 };
+      if (v === 0) {
+        const base = [ing("greek yogurt", 120, "g"), ing(fruit, 90, "g"), ing("almonds", 15, "g")];
+        return await findBestCarbAdjustment(base, carb, target);
+      }
+      if (v === 1) {
+        const base = [ing("cottage cheese", 100, "g"), ing("blueberries", 80, "g"), ing("walnuts", 12, "g")];
+        return await findBestCarbAdjustment(base, carb, target);
+      }
+      if (v === 2) {
+        const base = [ing("egg", 2, "piece"), ing("spinach", 60, "g"), ing("feta cheese", 30, "g")];
+        return await findBestCarbAdjustment(base, carb, target);
+      }
+      if (v === 3) {
+        const base = [ing("chickpeas", 90, "g"), ing("carrot", 80, "g"), ing("red pepper", 60, "g")];
+        return await findBestCarbAdjustment(base, carb, target);
+      }
+      if (v === 4) {
+        const base = [ing("greek yogurt", 110, "g"), ing("banana", 90, "g"), ing("chia seeds", 10, "g")];
+        return await findBestCarbAdjustment(base, carb, target);
+      }
+      const base = [ing("egg", 2, "piece"), ing("broccoli", 80, "g"), ing("cheddar cheese", 25, "g")];
+      return await findBestCarbAdjustment(base, carb, target);
     }
     const v = pickVariant(seed, 5);
     if (v === 0) {
@@ -295,14 +340,15 @@ async function buildGoalMatchedRecipeIngredientsRaw(
 
   // Omnivore
   if (opts.mealSlot === "snack") {
-    const v = pv(5);
-    const fruit = pickVariantAlt(seed, 2) === 0 ? "banana" : "apple";
+    const v = pv(10);
+    const v2 = pickVariantAlt(seed, 3);
+    const fruit = v2 === 0 ? "strawberries" : v2 === 1 ? "orange" : "banana";
     if (v === 0) {
       const base = [ing("greek yogurt", 130, "g"), ing(fruit, 90, "g")];
       return await findBestCarbAdjustment(base, { name: carbName, minG: opts.glutenFree ? 0 : 10, maxG: 100 }, target);
     }
     if (v === 1) {
-      const base = [ing("egg", 2, "piece"), ing(fruit, 100, "g")];
+      const base = [ing("egg", 2, "piece"), ing("spinach", 50, "g"), ing(fruit, 80, "g")];
       return await findBestCarbAdjustment(base, { name: carbName, minG: opts.glutenFree ? 0 : 10, maxG: 90 }, target);
     }
     if (v === 2) {
@@ -313,8 +359,28 @@ async function buildGoalMatchedRecipeIngredientsRaw(
       const base = [ing("turkey breast", 110, "g"), ing("carrot", 80, "g")];
       return await findBestCarbAdjustment(base, { name: "rice", minG: 0, maxG: 110 }, target);
     }
-    const base = [ing("tuna", 120, "g"), ing("bell pepper", 70, "g")];
-    return await findBestCarbAdjustment(base, { name: "rice", minG: 0, maxG: 130 }, target);
+    if (v === 4) {
+      const base = [ing("tuna", 120, "g"), ing("cucumber", 80, "g"), ing("carrot", 60, "g")];
+      return await findBestCarbAdjustment(base, { name: "rice", minG: 0, maxG: 130 }, target);
+    }
+    if (v === 5) {
+      const base = [ing("cottage cheese", 100, "g"), ing("strawberries", 90, "g"), ing("almonds", 15, "g")];
+      return await findBestCarbAdjustment(base, { name: carbName, minG: opts.glutenFree ? 0 : 8, maxG: 70 }, target);
+    }
+    if (v === 6) {
+      const base = [ing("salmon", 75, "g"), ing("avocado", 55, "g"), ing("broccoli", 70, "g")];
+      return await findBestCarbAdjustment(base, { name: "rice", minG: 0, maxG: 80 }, target);
+    }
+    if (v === 7) {
+      const base = [ing("greek yogurt", 110, "g"), ing("blueberries", 80, "g"), ing("chia seeds", 10, "g")];
+      return await findBestCarbAdjustment(base, { name: carbName, minG: opts.glutenFree ? 0 : 8, maxG: 65 }, target);
+    }
+    if (v === 8) {
+      const base = [ing("egg", 2, "piece"), ing("broccoli", 80, "g"), ing("cheddar cheese", 25, "g")];
+      return await findBestCarbAdjustment(base, { name: carbName, minG: opts.glutenFree ? 0 : 10, maxG: 75 }, target);
+    }
+    const base = [ing("peanut butter", 16, "g"), ing("banana", 90, "g"), ing("walnuts", 12, "g")];
+    return await findBestCarbAdjustment(base, { name: carbName, minG: opts.glutenFree ? 0 : 8, maxG: 55 }, target);
   }
 
   if (opts.mealSlot === "breakfast") {
@@ -448,6 +514,10 @@ const VEG_FRUIT_KEYWORDS = [
   "raspberr",
   "grape",
   "avocado",
+  "kale",
+  "almonds",
+  "walnuts",
+  "chia",
 ];
 const CARB_KEYWORDS = [
   "rice",
@@ -520,6 +590,10 @@ function ensureDraftStructure(
   const addables =
     mealSlot === "breakfast" || mealSlot === "snack"
       ? [
+          ["strawberries", 90, "g"],
+          ["orange", 130, "g"],
+          ["spinach", 60, "g"],
+          ["almonds", 15, "g"],
           ["banana", 100, "g"],
           ["blueberries", 80, "g"],
           ["apple", 120, "g"],

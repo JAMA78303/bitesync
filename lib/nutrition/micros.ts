@@ -317,6 +317,9 @@ export const MICRO_DB: Record<string, MicroEntry> = {
   apple: {
     vitamin_a_mcg: 3, vitamin_c_mg: 4.6, vitamin_d_mcg: 0, vitamin_b12_mcg: 0, folate_mcg: 3, iron_mg: 0.1, calcium_mg: 6, zinc_mg: 0, magnesium_mg: 5, potassium_mg: 107, selenium_mcg: 0, iodine_mcg: 0, saturated_fat_g: 0, salt_g: 0, sugar_g: 10,
   },
+  orange: {
+    vitamin_a_mcg: 11, vitamin_c_mg: 53, vitamin_d_mcg: 0, vitamin_b12_mcg: 0, folate_mcg: 30, iron_mg: 0.1, calcium_mg: 40, zinc_mg: 0.1, magnesium_mg: 10, potassium_mg: 181, selenium_mcg: 0.5, iodine_mcg: 0, saturated_fat_g: 0, salt_g: 0, sugar_g: 9,
+  },
   courgette: {
     vitamin_a_mcg: 10, vitamin_c_mg: 17, vitamin_d_mcg: 0, vitamin_b12_mcg: 0, folate_mcg: 24, iron_mg: 0.4, calcium_mg: 16, zinc_mg: 0.3, magnesium_mg: 18, potassium_mg: 262, selenium_mcg: 0.2, iodine_mcg: 0, saturated_fat_g: 0.1, salt_g: 0, sugar_g: 2.5,
   },
@@ -386,7 +389,21 @@ export const MICRO_DB: Record<string, MicroEntry> = {
 };
 
 export function lookupMicros(name: string): MicroEntry | null {
-  return MICRO_DB[name.toLowerCase().trim()] ?? null;
+  const key = name.toLowerCase().trim();
+  if (MICRO_DB[key]) return MICRO_DB[key];
+  const aliases: Record<string, string> = {
+    egg: "eggs",
+    "greek yogurt": "greek yoghurt",
+    "natural yogurt": "greek yoghurt",
+    "bell pepper": "red pepper",
+    carrot: "carrots",
+    tomato: "tomatoes",
+    tuna: "tuna canned",
+    "salmon fillet": "salmon",
+    "brown rice": "brown rice",
+  };
+  const aliased = aliases[key];
+  return aliased ? (MICRO_DB[aliased] ?? null) : null;
 }
 
 export function scaleMicros(micros: MicroEntry, quantityG: number): MicroEntry {
