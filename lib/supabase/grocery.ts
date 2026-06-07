@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { applyPantryToShoppingList } from "@/lib/grocery/applyPantryToShoppingList";
 import { getMonday, toLocalISO } from "@/lib/utils/dates";
+import { getPantryItems, pantryRowToAvailable } from "@/lib/supabase/pantry";
 import {
   mealPlanRecipeServings,
   mergeScaledRecipeIngredients,
@@ -325,7 +327,16 @@ export async function generateGroceryList(meal_plan_id: string, selectedDays?: n
     servingsByRecipe,
   );
   const merged = normalizeIngredientsForShopping(mergedRaw);
-  return replaceGroceryItemsWithMerged(meal_plan_id, merged, selectedDays);
+  const pantryRows = await getPantryItems();
+  const { items: afterPantry, omittedCount, reducedCount } = applyPantryToShoppingList(
+    merged,
+    pantryRows.map(pantryRowToAvailable),
+  );
+  const result = await replaceGroceryItemsWithMerged(meal_plan_id, afterPantry, selectedDays);
+  if ("success" in result && result.success) {
+    return { success: true as const, pantryOmitted: omittedCount, pantryReduced: reducedCount };
+  }
+  return result;
 }
 
 export async function addManualGroceryItem(meal_plan_id: string, name: string, quantity: number, unit: string) {

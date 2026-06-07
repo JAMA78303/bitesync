@@ -51,13 +51,21 @@ export function DaySelectorModal({ open, onClose, mealPlanId, weekStart, filledD
     startTransition(async () => {
       const mealTypesArg = plannerHasRecipeSlots ? selectedMeals : undefined;
       const result = await generateGroceryList(mealPlanId, selected, mealTypesArg);
-      if (result?.error) {
+      if ("error" in result && result.error) {
         toast({
           title: "Failed to generate",
           description: result.error,
           variant: "destructive",
         });
         return;
+      }
+      const omitted = "pantryOmitted" in result ? (result.pantryOmitted ?? 0) : 0;
+      const reduced = "pantryReduced" in result ? (result.pantryReduced ?? 0) : 0;
+      if (omitted > 0 || reduced > 0) {
+        const parts: string[] = [];
+        if (omitted > 0) parts.push(`${omitted} item${omitted !== 1 ? "s" : ""} skipped from pantry`);
+        if (reduced > 0) parts.push(`${reduced} quantity reduced`);
+        toast({ title: "Grocery list ready", description: parts.join("; ") + "." });
       }
       onClose();
       router.push(`/grocery?week=${weekStart}&plan=${mealPlanId}`);
@@ -88,7 +96,9 @@ export function DaySelectorModal({ open, onClose, mealPlanId, weekStart, filledD
               </button>
             </div>
           </DialogHeader>
-          <p className="text-sm text-slate-500 dark:text-gray-400">Choose which days and meals to shop for.</p>
+          <p className="text-sm text-slate-500 dark:text-gray-400">
+            Choose which days and meals to shop for. Items already in your pantry are excluded.
+          </p>
         </div>
 
         <div className="space-y-6 px-5 py-5">

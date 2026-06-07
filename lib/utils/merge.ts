@@ -52,7 +52,7 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
-function normalizeUnitLabel(unit: string): string {
+export function normalizeUnitLabel(unit: string): string {
   const u = unit.toLowerCase().trim();
   if (!u) return "piece";
   if (["pieces", "each", "item", "items", "whole", "unit", "units"].includes(u)) return "piece";

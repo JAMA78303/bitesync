@@ -12,7 +12,9 @@ import type {
   SubstitutionSuggestion,
 } from "@/lib/pricing/types";
 import { mealPlanRecipeServings, mergeIngredients, mergeScaledRecipeIngredients } from "@/lib/utils/merge";
+import { applyPantryToShoppingList } from "@/lib/grocery/applyPantryToShoppingList";
 import { replaceGroceryItemsWithMerged } from "@/lib/supabase/grocery";
+import { getPantryItems, pantryRowToAvailable } from "@/lib/supabase/pantry";
 import { fetchRecipeNutritionMap } from "@/lib/supabase/recipe-nutrition-query";
 import { getProfile } from "@/lib/supabase/profile";
 import { getDailyCalorieTarget, getDailyProteinTarget } from "@/lib/utils/nutrition-targets";
@@ -1495,9 +1497,11 @@ export async function applyAIBasketToGrocery(snapshotId: string) {
   if (!mealPlanId) return { error: "Could not find a meal plan for this snapshot week." };
 
   const merged = mergeIngredients(basketItems);
+  const pantryRows = await getPantryItems();
+  const { items: afterPantry } = applyPantryToShoppingList(merged, pantryRows.map(pantryRowToAvailable));
   const applied = await replaceGroceryItemsWithMerged(
     mealPlanId,
-    merged,
+    afterPantry,
     aiSelectedDays?.length ? aiSelectedDays : undefined,
   );
   if ("error" in applied) return applied;

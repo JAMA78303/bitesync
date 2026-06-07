@@ -1,4 +1,5 @@
 import { revalidatePath } from "next/cache";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AvailableIngredient } from "@/lib/matching/ingredient-overlap";
 import type { PantryItemRow } from "@/lib/pantry/constants";
 import { PANTRY_STAPLES } from "@/lib/pantry/constants";
@@ -25,6 +26,23 @@ export function pantryRowToAvailable(row: PantryItemRow): AvailableIngredient {
   };
 }
 
+const PANTRY_SELECT = "id,user_id,name,quantity,unit,running_low,archived_at,created_at,updated_at";
+
+export async function fetchPantryAvailableForUser(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<AvailableIngredient[]> {
+  const { data, error } = await supabase
+    .from("pantry_items")
+    .select(PANTRY_SELECT)
+    .eq("user_id", userId)
+    .is("archived_at", null)
+    .order("name", { ascending: true });
+
+  if (error) return [];
+  return ((data as PantryItemRow[]) ?? []).map(pantryRowToAvailable);
+}
+
 export async function getPantryItems(): Promise<PantryItemRow[]> {
   const supabase = await createClient();
   const {
@@ -34,7 +52,7 @@ export async function getPantryItems(): Promise<PantryItemRow[]> {
 
   const { data, error } = await supabase
     .from("pantry_items")
-    .select("id,user_id,name,quantity,unit,running_low,archived_at,created_at,updated_at")
+    .select(PANTRY_SELECT)
     .eq("user_id", user.id)
     .is("archived_at", null)
     .order("name", { ascending: true });

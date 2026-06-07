@@ -1,4 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { applyPantryToShoppingList } from "@/lib/grocery/applyPantryToShoppingList";
+import { fetchPantryAvailableForUser } from "@/lib/supabase/pantry";
 import {
   mealPlanRecipeServings,
   mergeScaledRecipeIngredients,
@@ -119,9 +121,13 @@ export async function regeneratePlanGrocery(
     ),
   );
 
+  const { data: planRow } = await supabase.from("meal_plans").select("user_id").eq("id", mealPlanId).maybeSingle();
+  const pantry = planRow?.user_id ? await fetchPantryAvailableForUser(supabase, planRow.user_id) : [];
+  const { items: afterPantry } = applyPantryToShoppingList(merged, pantry);
+
   const { error: rpcError } = await supabase.rpc("replace_grocery_items", {
     p_meal_plan_id: mealPlanId,
-    p_items: merged,
+    p_items: afterPantry,
   });
 
   if (rpcError) return { ok: false, error: rpcError.message };
@@ -131,5 +137,5 @@ export async function regeneratePlanGrocery(
     await supabase.from("meal_plans").update({ grocery_scope_days: sorted }).eq("id", mealPlanId);
   }
 
-  return { ok: true, itemCount: merged.length };
+  return { ok: true, itemCount: afterPantry.length };
 }
