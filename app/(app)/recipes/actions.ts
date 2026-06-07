@@ -10,9 +10,11 @@ import {
 import { getRecipeNutritionTotals } from "@/lib/nutrition/recipeNutritionTotals";
 import {
   buildGoalMatchedRecipeIngredients,
+  buildGoalMatchedRecipeTitle,
   fractionForMealSlot,
   type GoalMealSlot,
 } from "@/lib/ai/goal-matched-recipe";
+import { dietaryPreferencesToLegacyFlags, parseDietaryPreferences } from "@/lib/dietary/constraints";
 import { randomInt } from "node:crypto";
 import { canCreateRecipe, getRecipeCount, getUserTier } from "@/lib/subscription";
 import { getProfile } from "@/lib/supabase/profile";
@@ -130,6 +132,8 @@ export async function generateGoalMatchedRecipeDraft(payload: {
   variationSeed?: number;
   /** Fresh UUID each click so templates rotate reliably (server actions may reuse timing-only seeds). */
   draftNonce?: string;
+  /** When mealSlot is snack, bias ingredients toward this micronutrient key. */
+  microNutrientKey?: string;
 }): Promise<
   ActionResult<{
     name: string;
@@ -178,21 +182,55 @@ export async function generateGoalMatchedRecipeDraft(payload: {
     vegetarian,
     glutenFree,
     variantSeed,
+    microFocusKey: payload.microNutrientKey?.trim() || undefined,
   });
 
   const { totals } = await getRecipeNutritionTotals(ingredients, { aiEnabled: true });
+  const title = buildGoalMatchedRecipeTitle(ingredients, payload.mealSlot);
 
   return {
     success: true,
     data: {
-      name: "",
-      description: "",
+      name: title,
+      description: payload.microNutrientKey
+        ? `Snack to help with ${payload.microNutrientKey.replace(/_/g, " ")} — review ingredients and save.`
+        : "",
       ingredients,
       targetMealCalories,
       achievedCalories: Math.round(totals.calories * 10) / 10,
       achievedProteinG: Math.round(totals.protein_g * 10) / 10,
     },
   };
+}
+
+export async function generateMicroFocusedSnackDraft(payload: {
+  nutrientKey: string;
+  draftNonce?: string;
+}): Promise<
+  ActionResult<{
+    name: string;
+    description: string;
+    ingredients: RecipeIngredientInput[];
+    targetMealCalories: number;
+    achievedCalories: number;
+    achievedProteinG: number;
+  }>
+> {
+  const nutrientKey = payload.nutrientKey.trim();
+  if (!nutrientKey) return { error: "Missing nutrient." };
+
+  const profile = await getProfile();
+  const prefs = parseDietaryPreferences(profile?.dietary_preferences);
+  const flags = dietaryPreferencesToLegacyFlags(prefs);
+
+  return generateGoalMatchedRecipeDraft({
+    mealSlot: "snack",
+    fitsVegan: flags.followsVegan,
+    fitsVegetarian: flags.followsVegetarian,
+    fitsGlutenFree: flags.followsGlutenFree,
+    microNutrientKey: nutrientKey,
+    draftNonce: payload.draftNonce,
+  });
 }
 
 export async function createRecipe(

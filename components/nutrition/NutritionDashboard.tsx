@@ -8,6 +8,7 @@ import { getGoalStatus, type GoalMetric } from "@/lib/today/goal-status";
 import { formatWeekdayWithOrdinal } from "@/lib/utils/dates";
 import { ds } from "@/lib/ui/classes";
 import { CofidAttribution } from "@/components/nutrition/CofidAttribution";
+import { DeficiencyRecommendations } from "@/components/planner/DeficiencyRecommendations";
 import { MicronutrientPanel } from "@/components/planner/MicronutrientPanel";
 import type { MicroAnalysis } from "@/lib/supabase/nutrition";
 
@@ -49,6 +50,15 @@ export function NutritionDashboard({
     { label: "Avg. Carbs", value: weekAvg.carbs, target: targets.carbs, unit: "g" },
     { label: "Avg. Fat", value: weekAvg.fat, target: targets.fat, unit: "g" },
   ];
+
+  const microDeficiencies = useMemo(
+    () => microAnalysis?.must_hit.filter((n) => n.traffic === "red" || n.traffic === "amber") ?? [],
+    [microAnalysis],
+  );
+  const microExcesses = useMemo(
+    () => microAnalysis?.must_limit.filter((n) => n.traffic === "red") ?? [],
+    [microAnalysis],
+  );
 
   return (
     <div className={ds.mobilePage}>
@@ -151,7 +161,10 @@ export function NutritionDashboard({
             <span className="text-xs text-gray-400">vs UK DRVs</span>
           </div>
           {isProUser && microAnalysis ? (
-            <MicronutrientPanel analysis={microAnalysis} />
+            <div className="space-y-4">
+              <DeficiencyRecommendations deficiencies={microDeficiencies} excesses={microExcesses} />
+              <MicronutrientPanel analysis={microAnalysis} />
+            </div>
           ) : isProUser ? (
             <div className={`${ds.card} ${ds.cardPadding} text-center`}>
               <p className="text-sm text-gray-500">Add meals to your planner to see micronutrient analysis.</p>

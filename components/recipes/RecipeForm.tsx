@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { formatIngredientWeightSuffix, defaultUnitForIngredient, getUnitsForIngredient } from "@/lib/nutrition/convert";
 import type { RecipeIngredientInput } from "@/lib/nutrition/calculate";
@@ -10,6 +10,7 @@ import { getAllFoodNames, getIngredientAutocompleteLabel } from "@/lib/nutrition
 import { NutritionPreview } from "@/components/recipes/NutritionPreview";
 import { createRecipe, generateGoalMatchedRecipeDraft } from "@/app/(app)/recipes/actions";
 import type { GoalMealSlot } from "@/lib/ai/goal-matched-recipe";
+import { PENDING_RECIPE_DRAFT_KEY, type PendingRecipeDraft } from "@/lib/recipes/pending-draft";
 
 type IngredientRow = {
   id: string;
@@ -114,6 +115,26 @@ export function RecipeForm({ profileTargets = null }: RecipeFormProps) {
   const [aiMealSlot, setAiMealSlot] = useState<GoalMealSlot>("lunch");
   const [formMessage, setFormMessage] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(PENDING_RECIPE_DRAFT_KEY);
+      if (!raw) return;
+      sessionStorage.removeItem(PENDING_RECIPE_DRAFT_KEY);
+      const draft = JSON.parse(raw) as PendingRecipeDraft;
+      if (!draft.ingredients?.length) return;
+      setIngredients(mapServerIngredientsToRows(draft.ingredients));
+      if (draft.name) setName(draft.name);
+      if (draft.mealSlot) setAiMealSlot(draft.mealSlot);
+      setFormMessage(
+        draft.label
+          ? `Loaded snack draft for ${draft.label.toLowerCase()} — review and save.`
+          : "Loaded snack draft — review and save.",
+      );
+    } catch {
+      /* ignore malformed draft */
+    }
+  }, []);
 
   const parsedIngredients: RecipeIngredientInput[] = useMemo(
     () =>

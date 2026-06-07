@@ -30,7 +30,8 @@ Status key: ✅ verified in code · 🟡 partial / needs migration run · ❌ no
 | + | Pantry spec | Cook from what you have + shared matching | ✅ shipped (`2e53a8e`); SQL applied |
 | + | Pantry-aware grocery | Exclude/subtract pantry stock when generating lists | ✅ shipped (`ed0b7ee`) |
 | + | Micro-rich snacks | Goal-matched snack templates + eligibility | ✅ shipped (`76c2c0e`) |
-| + | Micro-aware planner snacks | Bias AI heuristic snack picks toward deficient nutrients | ✅ shipped |
+| + | Micro-aware planner snacks | Bias AI heuristic snack picks toward deficient nutrients | ✅ shipped (`91b9d98`) |
+| + | Generate snack for gap | One-click micro-focused snack draft from Nutrition view | ✅ shipped |
 | + | `BITESYNC_MOBILE_DARKMODE.md` | Mobile nav, dark mode, safe-area padding | ✅ shipped (`fc1b98f`, `728d5de`) |
 | + | `BITESYNC_OVER_UNDER_COLOUR.md` | Distinct over/under macro colours | ✅ shipped (`f1d4325`) |
 | + | `BITESYNC_DATE_ORDINALS.md` | Monday 1st date formatting | ✅ shipped (`92cf64a`) |
