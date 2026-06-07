@@ -2,7 +2,7 @@
 
 One place to track every build spec, merge order, and **verified-in-code** status.
 
-Last updated: 2026-06-04
+Last updated: 2026-06-05
 
 ---
 
@@ -28,6 +28,9 @@ Status key: ✅ verified in code · 🟡 partial / needs migration run · ❌ no
 | + | `BITESYNC_PLANNER_NAMES.md` | Single-letter meal card titles | ✅ diagnosed + fixed (layout) |
 | + | `BITESYNC_SERVING_CONVERSION.md` | Fajitas ~184 kcal/serving import bug | ✅ STEP 2B parsing fix shipped (`40da026`) |
 | + | Pantry spec | Cook from what you have + shared matching | ✅ shipped (`2e53a8e`); SQL applied |
+| + | Pantry-aware grocery | Exclude/subtract pantry stock when generating lists | ✅ shipped (`ed0b7ee`) |
+| + | Micro-rich snacks | Goal-matched snack templates + eligibility | ✅ shipped (`76c2c0e`) |
+| + | Micro-aware planner snacks | Bias AI heuristic snack picks toward deficient nutrients | ✅ shipped |
 | + | `BITESYNC_MOBILE_DARKMODE.md` | Mobile nav, dark mode, safe-area padding | ✅ shipped (`fc1b98f`, `728d5de`) |
 | + | `BITESYNC_OVER_UNDER_COLOUR.md` | Distinct over/under macro colours | ✅ shipped (`f1d4325`) |
 | + | `BITESYNC_DATE_ORDINALS.md` | Monday 1st date formatting | ✅ shipped (`92cf64a`) |
@@ -93,10 +96,11 @@ npm run recompute:macros -- --dry-run   # expect 0 changes
 
 ## Next actions
 
-1. **Spec 4 verify** — dry-run #2 should show 0 recipe changes
+1. **Spec 4 verify** — dry-run #2 should show 0 recipe changes (needs `.env.local` with service role)
 2. **Stale grocery** — `npm run regenerate:grocery -- --dry-run` then `--apply` if needed
-3. **GitHub secrets** — enable Actions macro recompute (optional)
-4. **Phone QA** — Settings tab, dark mode, ordinals, planner tip, recipes contrast
+3. **Fill library with snacks** — bulk fill or generate Snack goal-matched recipes
+4. **GitHub secrets** — enable Actions macro recompute (optional)
+5. **Phone QA** — pantry grocery toast, micro snack picks after AI plan
 
 ---
 

@@ -24,6 +24,14 @@ import {
   type ClaudeMealPlanResult,
 } from "@/lib/ai/client";
 import { buildDietaryConstraints, dietaryPreferencesToLegacyFlags, parseDietaryPreferences } from "@/lib/dietary/constraints";
+import {
+  DEFAULT_SNACK_MICRO_PRIORITIES,
+  microPrioritiesFromDeficiencies,
+  scoreRecipeMicroBoost,
+  type MicroPriority,
+} from "@/lib/nutrition/micro-rich-foods";
+import type { Sex } from "@/lib/nutrition/drv";
+import { getWeeklyMicroAnalysis } from "@/lib/supabase/nutrition";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   AI_BREAKFAST_BLOCKED,
@@ -426,6 +434,7 @@ function scoreRecipeForDaySlot(
   targetSlot: MealPlanInsertRow["meal_type"],
   targetCal: number,
   targetPro: number,
+  snackMicroPriorities?: MicroPriority[],
 ): number {
   const cal = r.calories;
   const pro = r.protein;
@@ -433,10 +442,14 @@ function scoreRecipeForDaySlot(
   const calUnder = Math.max(0, targetCal - cal);
   const proOver = Math.max(0, pro - targetPro);
   const proUnder = Math.max(0, targetPro - pro);
-  const baseScore = -(calOver * 5 + calUnder + proOver * 3 + proUnder);
+  let baseScore = -(calOver * 5 + calUnder + proOver * 3 + proUnder);
   const types = classifyRecipeMealType(r.name, r.ingredientNames ?? []);
   const mult = getMealTypeMultiplier(types, targetSlot);
-  return baseScore * mult;
+  baseScore *= mult;
+  if (targetSlot === "snack" && snackMicroPriorities?.length) {
+    baseScore += scoreRecipeMicroBoost(r.ingredientNames ?? [], snackMicroPriorities);
+  }
+  return baseScore;
 }
 
 function pickRecipeWithBudgetAndUsage(
@@ -448,6 +461,7 @@ function pickRecipeWithBudgetAndUsage(
   remainingPro: number,
   strictAffordableMisses: { count: number },
   logCtx: { day: number; meal_type: MealPlanInsertRow["meal_type"]; slot_index: number },
+  snackMicroPriorities?: MicroPriority[],
 ): RecipeWithNutrition | null {
   const slotCalTarget = Math.max(targetCal, 0);
   const slotProTarget = Math.max(targetPro, 0);
@@ -528,6 +542,7 @@ function pickRecipeWithBudgetAndUsage(
         logCtx.meal_type,
         Math.max(effectiveCal, 1),
         Math.max(effectivePro, 0.5),
+        snackMicroPriorities,
       ),
     }))
     .sort((a, b) => b.s - a.s);
@@ -700,7 +715,7 @@ export async function generateAIWeekPlan(input: GenerateAIWeekPlanInput) {
 
   const { data: plan } = await supabase
     .from("meal_plans")
-    .select("id")
+    .select("id, week_start_date")
     .eq("id", input.mealPlanId)
     .eq("user_id", user.id)
     .single();
@@ -758,6 +773,19 @@ export async function generateAIWeekPlan(input: GenerateAIWeekPlanInput) {
   const dailyProteinTarget = Math.round(
     Number(input.goals.proteinTarget ?? getDailyProteinTarget(profile) ?? 120),
   );
+
+  let snackMicroPriorities: MicroPriority[] = DEFAULT_SNACK_MICRO_PRIORITIES;
+  const sex = profile?.sex === "male" || profile?.sex === "female" ? (profile.sex as Sex) : null;
+  if (sex && plan.week_start_date) {
+    const microAnalysis = await getWeeklyMicroAnalysis(input.mealPlanId, plan.week_start_date, sex);
+    if (microAnalysis) {
+      snackMicroPriorities = microPrioritiesFromDeficiencies(microAnalysis.must_hit);
+      const lowKeys = microAnalysis.must_hit.filter((n) => n.traffic === "red" || n.traffic === "amber").map((n) => n.key);
+      if (lowKeys.length) {
+        console.warn("[heuristic] snack micro priorities from current plan:", lowKeys.join(", "));
+      }
+    }
+  }
 
   const formattedRecipes = withNutrition.map((r) => ({
     id: r.id,
@@ -862,6 +890,7 @@ export async function generateAIWeekPlan(input: GenerateAIWeekPlanInput) {
           remainingPro,
           strictAffordableMisses,
           { day, meal_type: spec.meal_type, slot_index: spec.slot_index },
+          snackMicroPriorities,
         );
         if (!picked) {
           continue;

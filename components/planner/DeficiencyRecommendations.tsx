@@ -1,20 +1,6 @@
 import { AlertTriangle, TrendingUp } from "lucide-react";
+import { MICRO_RICH_FOODS } from "@/lib/nutrition/micro-rich-foods";
 import type { NutrientResult } from "@/lib/supabase/nutrition";
-
-const RICH_FOODS: Record<string, string[]> = {
-  vitamin_a_mcg: ["sweet potato", "spinach", "carrots", "eggs"],
-  vitamin_c_mg: ["peppers", "broccoli", "strawberries", "orange"],
-  vitamin_d_mcg: ["salmon", "mackerel", "eggs", "tuna canned"],
-  vitamin_b12_mcg: ["salmon", "tuna canned", "eggs", "greek yoghurt"],
-  folate_mcg: ["spinach", "broccoli", "lentils", "chickpeas"],
-  iron_mg: ["lentils", "spinach", "oats", "tofu"],
-  calcium_mg: ["greek yoghurt", "milk", "almonds", "broccoli"],
-  zinc_mg: ["almonds", "oats", "chicken breast", "lentils"],
-  magnesium_mg: ["almonds", "oats", "spinach", "lentils"],
-  potassium_mg: ["banana", "sweet potato", "salmon", "spinach"],
-  selenium_mcg: ["tuna canned", "salmon", "eggs", "oats"],
-  iodine_mcg: ["milk", "greek yoghurt", "eggs", "salmon"],
-};
 
 const LIMIT_TIPS: Record<string, string> = {
   saturated_fat_g: "Try swapping butter for olive oil and choosing leaner cuts of meat.",
@@ -45,7 +31,7 @@ export function DeficiencyRecommendations({ deficiencies, excesses }: Props) {
   return (
     <div className="space-y-3">
       {deficiencies.map((nutrient) => {
-        const richFoods = RICH_FOODS[nutrient.key] ?? [];
+        const richFoods = MICRO_RICH_FOODS[nutrient.key] ?? [];
         return (
           <div key={nutrient.key} className="rounded-xl border border-red-200 bg-red-50 p-4">
             <div className="mb-2 flex items-start gap-2">
