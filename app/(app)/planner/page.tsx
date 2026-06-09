@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Activity } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getMonday, toLocalISO, addDays, isCurrentWeek } from "@/lib/utils/dates";
 import { fetchRecipeNutritionMap } from "@/lib/supabase/recipe-nutrition-query";
@@ -12,6 +11,7 @@ import { PlannerGrid } from "@/components/planner/PlannerGrid";
 import { WeekNav } from "@/components/planner/WeekNav";
 import { GenerateListButton } from "@/components/planner/GenerateListButton";
 import { GenerateAIBasketButton } from "@/components/planner/GenerateAIBasketButton";
+import { PlannerMicroSummary } from "@/components/planner/PlannerMicroSummary";
 import { getWeeklyMicroAnalysis } from "@/lib/supabase/nutrition";
 import { ds } from "@/lib/ui/classes";
 import { MEAL_TYPES } from "@/types";
@@ -176,42 +176,7 @@ export default async function PlannerPage({ searchParams }: Props) {
         />
 
         {microAnalysis ? (
-          <Link
-            href={`/nutrition?week=${weekStartISO}`}
-            className={`${ds.card} group flex items-center justify-between px-4 py-3 transition-all hover:border-[#7ab87a] dark:hover:border-[#4a7a50]`}
-          >
-            <div className="flex items-center gap-3">
-              <Activity className="h-4 w-4 text-[#3a5a40]" />
-              <div>
-                <p className="text-sm font-semibold text-gray-900 dark:text-white">Weekly nutrition</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {(() => {
-                    const reds = [
-                      ...microAnalysis.must_hit.filter((n) => n.traffic === "red"),
-                      ...microAnalysis.must_limit.filter((n) => n.traffic === "red"),
-                    ];
-                    if (reds.length === 0) return "All nutrients on track this week";
-                    const names = reds
-                      .slice(0, 2)
-                      .map((n) => n.label)
-                      .join(" and ");
-                    return `${names} need${reds.length === 1 ? "s" : ""} attention`;
-                  })()}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1 text-xs text-gray-400">
-              {[...microAnalysis.must_hit, ...microAnalysis.must_limit].slice(0, 6).map((n) => (
-                <div
-                  key={n.key}
-                  className={`h-2 w-2 rounded-full ${
-                    n.traffic === "green" ? "bg-green-500" : n.traffic === "amber" ? "bg-amber-400" : "bg-red-500"
-                  }`}
-                />
-              ))}
-              →
-            </div>
-          </Link>
+          <PlannerMicroSummary analysis={microAnalysis} weekStartISO={weekStartISO} />
         ) : null}
 
         {!microAnalysis && userTier === "pro" ? (

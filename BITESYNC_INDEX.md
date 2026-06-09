@@ -101,7 +101,7 @@ npm run recompute:macros -- --dry-run   # expect 0 changes
 2. **Stale grocery** — `npm run regenerate:grocery -- --dry-run` then `--apply` if needed
 3. **Fill library with snacks** — bulk fill or generate Snack goal-matched recipes
 4. **GitHub secrets** — enable Actions macro recompute (optional)
-5. **Phone QA** — pantry grocery toast, micro snack picks after AI plan
+5. **Phone QA** — pantry grocery toast, generate snack from Planner + Nutrition
 
 ---
 

@@ -374,6 +374,27 @@ export const MICRO_DB: Record<string, MicroEntry> = {
   mozzarella: {
     vitamin_a_mcg: 179, vitamin_c_mg: 0, vitamin_d_mcg: 0.2, vitamin_b12_mcg: 0.7, folate_mcg: 7, iron_mg: 0.2, calcium_mg: 505, zinc_mg: 2.9, magnesium_mg: 20, potassium_mg: 76, selenium_mcg: 14, iodine_mcg: 29, saturated_fat_g: 11, salt_g: 1.6, sugar_g: 1,
   },
+  "cottage cheese": {
+    vitamin_a_mcg: 37, vitamin_c_mg: 0, vitamin_d_mcg: 0.1, vitamin_b12_mcg: 0.4, folate_mcg: 12, iron_mg: 0.1, calcium_mg: 83, zinc_mg: 0.4, magnesium_mg: 8, potassium_mg: 104, selenium_mcg: 9, iodine_mcg: 26, saturated_fat_g: 1.7, salt_g: 0.4, sugar_g: 2.7,
+  },
+  "feta cheese": {
+    vitamin_a_mcg: 125, vitamin_c_mg: 0, vitamin_d_mcg: 0.2, vitamin_b12_mcg: 1.7, folate_mcg: 32, iron_mg: 0.7, calcium_mg: 492, zinc_mg: 2.9, magnesium_mg: 19, potassium_mg: 62, selenium_mcg: 8, iodine_mcg: 28, saturated_fat_g: 13, salt_g: 2.5, sugar_g: 0.5,
+  },
+  "turkey breast": {
+    vitamin_a_mcg: 0, vitamin_c_mg: 0, vitamin_d_mcg: 0.1, vitamin_b12_mcg: 0.4, folate_mcg: 7, iron_mg: 0.7, calcium_mg: 11, zinc_mg: 1.5, magnesium_mg: 28, potassium_mg: 293, selenium_mcg: 24, iodine_mcg: 3, saturated_fat_g: 0.3, salt_g: 0.2, sugar_g: 0,
+  },
+  "beef mince": {
+    vitamin_a_mcg: 0, vitamin_c_mg: 0, vitamin_d_mcg: 0.1, vitamin_b12_mcg: 2.5, folate_mcg: 8, iron_mg: 2.5, calcium_mg: 18, zinc_mg: 4.5, magnesium_mg: 20, potassium_mg: 318, selenium_mcg: 15, iodine_mcg: 2, saturated_fat_g: 5.5, salt_g: 0.2, sugar_g: 0,
+  },
+  mackerel: {
+    vitamin_a_mcg: 50, vitamin_c_mg: 0, vitamin_d_mcg: 16, vitamin_b12_mcg: 7, folate_mcg: 10, iron_mg: 1.6, calcium_mg: 12, zinc_mg: 0.6, magnesium_mg: 76, potassium_mg: 314, selenium_mcg: 44, iodine_mcg: 130, saturated_fat_g: 3.3, salt_g: 0.1, sugar_g: 0,
+  },
+  "green beans": {
+    vitamin_a_mcg: 35, vitamin_c_mg: 12, vitamin_d_mcg: 0, vitamin_b12_mcg: 0, folate_mcg: 33, iron_mg: 1, calcium_mg: 37, zinc_mg: 0.2, magnesium_mg: 25, potassium_mg: 211, selenium_mcg: 0.6, iodine_mcg: 1, saturated_fat_g: 0, salt_g: 0, sugar_g: 3.3,
+  },
+  quinoa: {
+    vitamin_a_mcg: 1, vitamin_c_mg: 0, vitamin_d_mcg: 0, vitamin_b12_mcg: 0, folate_mcg: 42, iron_mg: 1.5, calcium_mg: 17, zinc_mg: 1.1, magnesium_mg: 64, potassium_mg: 172, selenium_mcg: 2.8, iodine_mcg: 0, saturated_fat_g: 0.2, salt_g: 0, sugar_g: 0.9,
+  },
   "soy sauce": {
     vitamin_a_mcg: 0, vitamin_c_mg: 0, vitamin_d_mcg: 0, vitamin_b12_mcg: 0, folate_mcg: 18, iron_mg: 1.9, calcium_mg: 20, zinc_mg: 0.3, magnesium_mg: 40, potassium_mg: 435, selenium_mcg: 0.9, iodine_mcg: 0, saturated_fat_g: 0, salt_g: 14.6, sugar_g: 1.7,
   },
@@ -395,12 +416,20 @@ export function lookupMicros(name: string): MicroEntry | null {
     egg: "eggs",
     "greek yogurt": "greek yoghurt",
     "natural yogurt": "greek yoghurt",
+    "natural yoghurt": "greek yoghurt",
     "bell pepper": "red pepper",
+    peppers: "red pepper",
+    "red peppers": "red pepper",
     carrot: "carrots",
     tomato: "tomatoes",
+    tomatoes: "tomatoes",
     tuna: "tuna canned",
     "salmon fillet": "salmon",
-    "brown rice": "brown rice",
+    "beef": "beef mince",
+    "mince": "beef mince",
+    "turkey": "turkey breast",
+    rocket: "spinach",
+    lettuce: "spinach",
   };
   const aliased = aliases[key];
   return aliased ? (MICRO_DB[aliased] ?? null) : null;
