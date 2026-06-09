@@ -30,14 +30,14 @@ export default async function TargetsGoalsPage() {
 
   return (
     <div className={`${ds.mobilePage} ${ds.pageContent}`}>
-      <div className={`border-b border-gray-100 bg-white app-mobile-gutter app-header-safe-top pb-4 dark:border-gray-900 dark:bg-gray-950`}>
-        <Link href="/goals" className="mb-2 inline-block text-sm font-medium text-[#3a5a40]">
+      <div className={ds.gradientHeaderCompact}>
+        <Link href="/goals" className={`mb-2 inline-block text-sm font-medium ${ds.pageSubtitle}`}>
           ← Nutrition &amp; goals
         </Link>
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white">Calorie &amp; macro targets</h1>
-        <p className="mt-0.5 text-sm text-gray-500">Based on your body stats and goal</p>
+        <h1 className={ds.pageTitle}>Calorie &amp; macro targets</h1>
+        <p className={`mt-0.5 ${ds.pageSubtitle}`}>Based on your body stats and goal</p>
       </div>
-      <div className={`${ds.mobileGutter} pt-4`}>
+      <div className={`${ds.mobileGutter} ${ds.overlap} pt-2`}>
         {isPro ? (
           <div className={`${ds.card} ${ds.cardPadding}`}>
             <TDEEForm defaultValues={defaultValues} />

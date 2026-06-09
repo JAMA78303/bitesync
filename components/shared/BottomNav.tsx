@@ -4,15 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
-  BarChart2,
   CalendarDays,
   ChefHat,
   Home,
   MoreHorizontal,
-  Package,
-  Settings,
   ShoppingCart,
-  Target,
+  BarChart2,
 } from "lucide-react";
 import { MobileNavMoreSheet } from "@/components/shared/MobileNavMoreSheet";
 
@@ -21,10 +18,10 @@ const PRIMARY_ITEMS = [
   { href: "/planner", label: "Plan", Icon: CalendarDays },
   { href: "/recipes", label: "Recipes", Icon: ChefHat },
   { href: "/grocery", label: "Grocery", Icon: ShoppingCart },
-  { href: "/settings", label: "Settings", Icon: Settings },
+  { href: "/nutrition", label: "Nutrition", Icon: BarChart2 },
 ] as const;
 
-const MORE_PATHS = ["/nutrition", "/pantry", "/goals"];
+const MORE_PATHS = ["/pantry", "/goals", "/settings"];
 
 export function BottomNav() {
   const pathname = usePathname();

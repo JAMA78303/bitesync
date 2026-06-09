@@ -34,7 +34,7 @@ export function TodayDashboard({ meals, totals, targets, dietaryPreferences }: P
       </div>
 
       <div className={`${ds.mobileGutter} ${ds.overlap}`}>
-        <div className="mb-4 rounded-3xl bg-white p-6 shadow-sm dark:bg-gray-900">
+        <div className={`mb-4 ${ds.card} p-6`}>
           <div className="mb-6 flex items-center gap-6">
             <CalorieRing consumed={totals.kcal} target={targets.kcal} />
             <div>

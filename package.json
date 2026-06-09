@@ -10,6 +10,7 @@
     "icons": "node scripts/write-brand-icons.mjs",
     "import:cofid": "tsx scripts/import-cofid.ts",
     "recompute:macros": "tsx scripts/recompute-recipe-macros.ts",
+    "verify:recompute": "tsx scripts/verify-breakfast-recompute.ts",
     "regenerate:grocery": "tsx scripts/regenerate-stale-grocery.ts",
     "export:cofid-sql": "tsx scripts/generate-cofid-sql.ts",
     "export:cofid-copy-page": "tsx scripts/generate-cofid-copy-page.ts",

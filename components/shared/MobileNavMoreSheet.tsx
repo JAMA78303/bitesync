@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart2, Package, Target, X } from "lucide-react";
+import { Package, Settings, Target, X } from "lucide-react";
 
 const MORE_ITEMS = [
-  { href: "/nutrition", label: "Nutrition", Icon: BarChart2 },
   { href: "/pantry", label: "Pantry", Icon: Package },
   { href: "/goals", label: "Goals", Icon: Target },
+  { href: "/settings", label: "Settings", Icon: Settings },
 ] as const;
 
 type Props = {
