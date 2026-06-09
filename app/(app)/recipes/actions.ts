@@ -9,11 +9,10 @@ import {
 } from "@/lib/nutrition/asyncTotals";
 import { getRecipeNutritionTotals } from "@/lib/nutrition/recipeNutritionTotals";
 import {
-  buildGoalMatchedRecipeIngredients,
-  buildGoalMatchedRecipeTitle,
   fractionForMealSlot,
   type GoalMealSlot,
 } from "@/lib/ai/goal-matched-recipe";
+import { resolveGoalMatchedDraft } from "@/lib/recipes/libraryRecipeMatch";
 import { dietaryPreferencesToLegacyFlags, parseDietaryPreferences } from "@/lib/dietary/constraints";
 import { randomInt } from "node:crypto";
 import { canCreateRecipe, getRecipeCount, getUserTier } from "@/lib/subscription";
@@ -175,7 +174,7 @@ export async function generateGoalMatchedRecipeDraft(payload: {
     payload.variationSeed,
   );
 
-  const ingredients = await buildGoalMatchedRecipeIngredients({
+  const draft = await resolveGoalMatchedDraft(supabase, user.id, {
     targetCalories: targetMealCalories,
     mealSlot: payload.mealSlot,
     vegan,
@@ -185,17 +184,20 @@ export async function generateGoalMatchedRecipeDraft(payload: {
     microFocusKey: payload.microNutrientKey?.trim() || undefined,
   });
 
-  const { totals } = await getRecipeNutritionTotals(ingredients, { aiEnabled: true });
-  const title = buildGoalMatchedRecipeTitle(ingredients, payload.mealSlot);
+  const { totals } = await getRecipeNutritionTotals(draft.ingredients, { aiEnabled: true });
+  const libraryNote =
+    draft.source === "library"
+      ? "From your recipe library — review portions and save."
+      : payload.microNutrientKey
+        ? `Snack to help with ${payload.microNutrientKey.replace(/_/g, " ")} — review ingredients and save.`
+        : "";
 
   return {
     success: true,
     data: {
-      name: title,
-      description: payload.microNutrientKey
-        ? `Snack to help with ${payload.microNutrientKey.replace(/_/g, " ")} — review ingredients and save.`
-        : "",
-      ingredients,
+      name: draft.name,
+      description: libraryNote,
+      ingredients: draft.ingredients,
       targetMealCalories,
       achievedCalories: Math.round(totals.calories * 10) / 10,
       achievedProteinG: Math.round(totals.protein_g * 10) / 10,
