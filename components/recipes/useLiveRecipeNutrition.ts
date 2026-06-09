@@ -136,12 +136,7 @@ export function useLiveRecipeNutrition(ingredients: RecipeIngredientInput[]) {
         continue;
       }
 
-      const hint =
-        result.cofid_matched_by &&
-        result.cofid_matched_by !== "exact" &&
-        result.cofid_food_name
-          ? `Matched to: ${result.cofid_food_name}`
-          : null;
+      const hint = result.cofid_food_name ? `Matched to: ${result.cofid_food_name}` : null;
 
       meta[i] = { lookingUp: false, matchHint: hint, unknown: false };
     }

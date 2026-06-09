@@ -23,7 +23,8 @@ export function fractionForMealSlot(slot: GoalMealSlot): number {
 }
 
 function ing(name: string, quantity: number, unit: string): RecipeIngredientInput {
-  return { name, quantity, unit };
+  const normalizedUnit = unit === "piece" || unit === "pieces" ? "each" : unit;
+  return { name, quantity, unit: normalizedUnit };
 }
 
 function cloneIngs(ings: RecipeIngredientInput[]): RecipeIngredientInput[] {
@@ -200,7 +201,7 @@ function filterRichFoodsForDiet(foods: readonly string[], vegan: boolean, vegeta
 
 function defaultQuantityForRichFood(name: string): { quantity: number; unit: string } {
   const lower = name.toLowerCase();
-  if (lower.includes("egg")) return { quantity: 2, unit: "piece" };
+  if (lower.includes("egg")) return { quantity: 2, unit: "each" };
   if (lower.includes("oats")) return { quantity: 30, unit: "g" };
   if (["almonds", "walnuts", "chia seeds", "peanut butter"].some((n) => lower.includes(n))) {
     return { quantity: lower.includes("peanut butter") ? 16 : 15, unit: "g" };
@@ -231,9 +232,8 @@ async function buildMicroFocusedSnack(
   const i1 = pickVariantAlt(seed, rich.length);
   const primary = rich[i0]!;
   const secondary = rich[i1 === i0 ? (i1 + 1) % rich.length : i1]!;
-  const tertiary = rich.find((f) => f !== primary && f !== secondary) ?? primary;
 
-  const base = [primary, secondary, tertiary].map((name) => {
+  const base = [primary, secondary].map((name) => {
     const { quantity, unit } = defaultQuantityForRichFood(name);
     return ing(name, quantity, unit);
   });
@@ -485,14 +485,14 @@ async function buildGoalMatchedRecipeIngredientsRaw(
       return await findBestCarbAdjustment(base, carb, target);
     }
     if (v === 4) {
-      const base = [ing("chicken breast", 75, "g"), ing("egg", 1, "piece"), ing("spinach", 70, "g")];
+      const base = [ing("peanut butter", 24, "g"), ing("banana", 110, "g"), ing("chia seeds", 10, "g")];
       return await findBestCarbAdjustment(base, carb, target);
     }
     if (v === 5) {
       const base = [ing("peanut butter", 28, "g"), ing("banana", 110, "g"), ing("chia seeds", 10, "g")];
       return await findBestCarbAdjustment(base, carb, target);
     }
-    const base = [ing("egg", 2, "piece"), ing("greek yogurt", 90, "g")];
+    const base = [ing("egg", 2, "each"), ing("blueberries", 80, "g")];
     return await findBestCarbAdjustment(base, carb, target);
   }
 
@@ -549,6 +549,68 @@ async function buildGoalMatchedRecipeIngredientsRaw(
   }
   const base = [ing("shrimp", 140, "g"), ing("broccoli", 110, "g"), ing("bell pepper", 70, "g")];
   return await findBestCarbAdjustment(base, { name: "rice", minG: 0, maxG: 260 }, target);
+}
+
+const DAIRY_SOFT_PROTEINS = [
+  "greek yogurt",
+  "greek yoghurt",
+  "cottage cheese",
+  "yogurt",
+  "yoghurt",
+  "skyr",
+  "cream cheese",
+];
+const MEAT_FISH_PROTEINS = [
+  "chicken breast",
+  "turkey breast",
+  "salmon",
+  "tuna",
+  "beef",
+  "shrimp",
+  "turkey",
+  "mackerel",
+  "cod",
+];
+const OIL_FILLERS = ["olive oil", "vegetable oil", "sunflower oil"];
+
+function nameMatchesAny(name: string, patterns: readonly string[]): boolean {
+  const n = name.toLowerCase();
+  return patterns.some((p) => n.includes(p));
+}
+
+function removeRedundantRoles(ings: RecipeIngredientInput[]): RecipeIngredientInput[] {
+  const out: RecipeIngredientInput[] = [];
+  let seenDairy = false;
+  let seenMeatFish = false;
+  let seenEgg = false;
+
+  for (const row of ings) {
+    const n = row.name.toLowerCase();
+    if (nameMatchesAny(n, DAIRY_SOFT_PROTEINS)) {
+      if (seenDairy) continue;
+      seenDairy = true;
+    }
+    if (nameMatchesAny(n, MEAT_FISH_PROTEINS)) {
+      if (seenMeatFish) continue;
+      seenMeatFish = true;
+    }
+    if (/\begg(s)?\b/.test(n)) {
+      if (seenEgg) continue;
+      seenEgg = true;
+    }
+    out.push(row);
+  }
+  return out;
+}
+
+function removeOilCalorieFiller(ings: RecipeIngredientInput[]): RecipeIngredientInput[] {
+  const saladLike = ings.some((row) => /lettuce|rocket|salad|cucumber|tomato/.test(row.name.toLowerCase()));
+  if (saladLike) return ings;
+  return ings.filter((row) => !nameMatchesAny(row.name, OIL_FILLERS));
+}
+
+function removeBreakfastMeats(ings: RecipeIngredientInput[]): RecipeIngredientInput[] {
+  return ings.filter((row) => !nameMatchesAny(row.name, MEAT_FISH_PROTEINS));
 }
 
 const PROTEIN_KEYWORDS = [
@@ -613,8 +675,6 @@ const CARB_KEYWORDS = [
   "wrap",
   "tortilla",
 ];
-const FAT_KEYWORDS = ["olive oil", "avocado", "almonds", "walnuts", "peanut butter", "chia"];
-
 function hasKeyword(ings: RecipeIngredientInput[], keywords: string[]): boolean {
   return ings.some((ingr) => {
     const n = ingr.name.toLowerCase();
@@ -639,12 +699,23 @@ function ensureDraftStructure(
   ingredients: RecipeIngredientInput[],
   ctx?: { glutenFree?: boolean; variantSeed?: number },
 ): RecipeIngredientInput[] {
-  const out = cloneIngs(ingredients);
+  let out = cloneIngs(ingredients);
+  out = removeRedundantRoles(out);
+  out = removeOilCalorieFiller(out);
+  if (mealSlot === "breakfast") {
+    out = removeBreakfastMeats(out);
+  }
+
   const seed = ctx?.variantSeed ?? 0;
 
   if (!hasKeyword(out, PROTEIN_KEYWORDS)) {
-    ensureIngredient(out, mealSlot === "snack" || mealSlot === "breakfast" ? "greek yogurt" : "chicken breast", mealSlot === "snack" ? 80 : 120, "g");
+    if (mealSlot === "breakfast" || mealSlot === "snack") {
+      ensureIngredient(out, "egg", 2, "each");
+    } else {
+      ensureIngredient(out, "chicken breast", 120, "g");
+    }
   }
+
   if (!hasKeyword(out, CARB_KEYWORDS)) {
     if (ctx?.glutenFree && mealSlot === "breakfast") {
       const c = glutenFreeBreakfastCarbTune(seed ^ 0x4f2b6d19);
@@ -656,15 +727,6 @@ function ensureDraftStructure(
       ensureIngredient(out, mealSlot === "breakfast" ? "oats" : "brown rice", mealSlot === "snack" ? 20 : 60, "g");
     }
   }
-  if (!hasKeyword(out, FAT_KEYWORDS)) {
-    if (mealSlot === "breakfast") {
-      ensureIngredient(out, "chia seeds", 10, "g");
-    } else if (mealSlot === "snack") {
-      ensureIngredient(out, "peanut butter", 8, "g");
-    } else {
-      ensureIngredient(out, "olive oil", 10, "ml");
-    }
-  }
 
   const vegTarget = mealSlot === "lunch" || mealSlot === "dinner" ? 2 : 1;
   const addables =
@@ -673,7 +735,6 @@ function ensureDraftStructure(
           ["strawberries", 90, "g"],
           ["orange", 130, "g"],
           ["spinach", 60, "g"],
-          ["almonds", 15, "g"],
           ["banana", 100, "g"],
           ["blueberries", 80, "g"],
           ["apple", 120, "g"],
@@ -691,13 +752,7 @@ function ensureDraftStructure(
     ensureIngredient(out, String(next[0]), Number(next[1]), String(next[2]));
   }
 
-  while (out.length < 5) {
-    const filler = addables.find(([n]) => !out.some((i) => i.name.toLowerCase() === String(n).toLowerCase()));
-    if (!filler) break;
-    ensureIngredient(out, String(filler[0]), Number(filler[1]), String(filler[2]));
-  }
-
-  return out;
+  return removeRedundantRoles(removeOilCalorieFiller(out));
 }
 
 export async function buildGoalMatchedRecipeIngredients(
