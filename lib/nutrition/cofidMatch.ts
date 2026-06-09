@@ -28,7 +28,6 @@ const PROCESSED_MODIFIERS = [
   "babyfood",
 ];
 
-/** Head noun of a composite product — not the produce the user asked for. */
 const COMPOSITE_HEAD_NOUNS = new Set([
   "bread",
   "cake",
@@ -78,6 +77,68 @@ const COMPOSITE_HEAD_NOUNS = new Set([
   "concentrate",
 ]);
 
+/** Descriptors that do not distinguish one whole food from another (prep/state, not species). */
+const GENERIC_FOOD_DESCRIPTORS = new Set([
+  "eating",
+  "raw",
+  "boiled",
+  "steamed",
+  "grilled",
+  "baked",
+  "fried",
+  "roasted",
+  "poached",
+  "scrambled",
+  "flesh",
+  "skin",
+  "whole",
+  "old",
+  "new",
+  "average",
+  "weighed",
+  "only",
+  "and",
+  "with",
+  "without",
+  "unsalted",
+  "salted",
+  "pasteurised",
+  "pasteurized",
+  "plain",
+  "fresh",
+  "frozen",
+  "canned",
+  "tinned",
+  "dried",
+  "drained",
+  "reheated",
+  "homemade",
+  "retail",
+  "fortified",
+  "unfortified",
+  "long",
+  "grain",
+  "short",
+  "medium",
+  "lean",
+  "meat",
+  "fillets",
+  "fillet",
+  "breast",
+  "thigh",
+  "drumstick",
+  "mince",
+  "chopped",
+  "sliced",
+  "diced",
+  "grated",
+  "shredded",
+  "cooked",
+  "uncooked",
+  "ripe",
+  "unripe",
+]);
+
 function normalizeForMatch(value: string): string {
   return value
     .toLowerCase()
@@ -121,7 +182,19 @@ function singularForm(token: string): string {
   const t = token.toLowerCase();
   if (t.endsWith("ies") && t.length > 4) return `${t.slice(0, -3)}y`;
   if (t.endsWith("oes") && t.length > 4) return t.slice(0, -2);
-  if (t.endsWith("es") && t.length > 4 && !t.endsWith("ses")) return t.slice(0, -2);
+  if (
+    t.endsWith("es") &&
+    t.length > 4 &&
+    !t.endsWith("ses") &&
+    !t.endsWith("les") &&
+    !t.endsWith("pes") &&
+    !t.endsWith("ges") &&
+    !t.endsWith("nes") &&
+    !t.endsWith("res") &&
+    !t.endsWith("tes")
+  ) {
+    return t.slice(0, -2);
+  }
   if (t.endsWith("s") && t.length > 3 && !t.endsWith("ss")) return t.slice(0, -1);
   return t;
 }
@@ -180,8 +253,14 @@ export function scoreCofidMatch(
       const head = pTokens[pTokens.length - 1];
       const queryMatchesHead = tokenMatches(qt, head);
       const queryMatchesModifier = pTokens.slice(0, -1).some((t) => tokenMatches(qt, t));
+      const distinguishingPrefixes = pTokens.slice(0, -1).filter(
+        (t) => !GENERIC_FOOD_DESCRIPTORS.has(t) && !tokenMatches(qt, t),
+      );
 
       if (queryMatchesHead) score += 750;
+      if (queryMatchesHead && distinguishingPrefixes.length > 0) {
+        score -= 700;
+      }
       if (queryMatchesModifier && isCompositeHead(head)) score -= 700;
       else if (queryMatchesModifier && !queryMatchesHead) score -= 80;
     }

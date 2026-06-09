@@ -59,6 +59,13 @@ const appleCandidates: CofidCandidate[] = [
 ];
 assertMatch("apple", appleCandidates, "apples, eating, raw", ["juice", "pudding", "bread"]);
 
+const sugarAppleCandidates: CofidCandidate[] = [
+  { food_code: "14-319", food_name: "Apples, eating, raw, flesh and skin", food_group: "FA", matchKind: "partial" },
+  { food_code: "14-500", food_name: "Sugar apple, flesh only", food_group: "FA", matchKind: "partial" },
+  { food_code: "14-331", food_name: "Apple juice, clear, ambient and chilled", food_group: "FC", matchKind: "partial" },
+];
+assertMatch("apple", sugarAppleCandidates, "apples, eating", ["sugar apple", "juice"]);
+
 const oatCandidates: CofidCandidate[] = [
   { food_code: "11-788", food_name: "Porridge oats, unfortified", food_group: "A", matchKind: "partial" },
   { food_code: "11-792", food_name: "Breakfast cereal, instant hot oat, plain, raw, fortified", food_group: "AI", matchKind: "partial" },

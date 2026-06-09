@@ -32,5 +32,7 @@ INSERT INTO public.cofid_overrides (ingredient_name, food_code, note) VALUES
   ('kidney beans', '13-660', 'Beans, red kidney, canned in water, re-heated, drained'),
   ('red lentils', '13-658', 'Lentils, red, split, dried, boiled in unsalted water'),
   ('peanut butter', '14-892', 'Peanut butter, smooth'),
-  ('honey', '17-050', 'Honey')
+  ('honey', '17-050', 'Honey'),
+  ('apple', '14-319', 'Apples, eating, raw, flesh and skin'),
+  ('apples', '14-319', 'Apples, eating, raw, flesh and skin')
 ON CONFLICT (ingredient_name) DO NOTHING;
