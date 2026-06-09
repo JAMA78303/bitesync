@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Heart } from "lucide-react";
+import { Heart, X } from "lucide-react";
 import { useState, useTransition } from "react";
 import { toggleRecipeFavourite } from "@/app/(app)/recipes/actions";
 import { getDietTag } from "@/lib/ui/dietTags";
@@ -24,9 +24,16 @@ export type RecipeListItem = {
 type Props = {
   recipe: RecipeListItem;
   dietaryPreferences?: string[];
+  onQuickDelete?: (recipe: RecipeListItem) => void;
+  quickDeleteDisabled?: boolean;
 };
 
-export function RecipeListCard({ recipe, dietaryPreferences = [] }: Props) {
+export function RecipeListCard({
+  recipe,
+  dietaryPreferences = [],
+  onQuickDelete,
+  quickDeleteDisabled = false,
+}: Props) {
   const [isFavourite, setIsFavourite] = useState(recipe.isFavourite);
   const [isPending, startTransition] = useTransition();
 
@@ -47,6 +54,13 @@ export function RecipeListCard({ recipe, dietaryPreferences = [] }: Props) {
         setIsFavourite(!next);
       }
     });
+  }
+
+  function handleQuickDelete(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!onQuickDelete || quickDeleteDisabled) return;
+    onQuickDelete(recipe);
   }
 
   return (
@@ -95,14 +109,25 @@ export function RecipeListCard({ recipe, dietaryPreferences = [] }: Props) {
         </div>
       </Link>
 
-      <div className="flex flex-shrink-0 flex-col items-center gap-2">
+      <div className="flex flex-shrink-0 flex-col items-center gap-3 pl-1">
+        {onQuickDelete ? (
+          <button
+            type="button"
+            onClick={handleQuickDelete}
+            disabled={quickDeleteDisabled}
+            aria-label={`Delete ${recipe.name}`}
+            className="flex h-11 w-11 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-40 dark:hover:bg-red-950/30 dark:hover:text-red-400"
+          >
+            <X className="h-5 w-5" strokeWidth={2.25} />
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={handleToggleFavourite}
           disabled={isPending}
           aria-label={isFavourite ? "Remove from favourites" : "Add to favourites"}
           aria-pressed={isFavourite}
-          className={`rounded-full p-1.5 transition-colors ${
+          className={`flex h-11 w-11 items-center justify-center rounded-full transition-colors ${
             isFavourite
               ? "text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
               : "text-gray-300 hover:bg-gray-50 hover:text-red-400 dark:text-gray-600 dark:hover:bg-gray-800"
@@ -110,15 +135,6 @@ export function RecipeListCard({ recipe, dietaryPreferences = [] }: Props) {
         >
           <Heart className={`h-5 w-5 ${isFavourite ? "fill-current" : ""}`} strokeWidth={2} />
         </button>
-        <svg
-          className="h-4 w-4 text-gray-300 dark:text-gray-600"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          aria-hidden
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
       </div>
     </div>
   );

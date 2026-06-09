@@ -2,19 +2,22 @@
 
 import Link from "next/link";
 import { Heart } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ImportRecipeModal } from "@/components/recipes/ImportRecipeModal";
 import { FillMyLibraryModal } from "@/components/recipes/FillMyLibraryModal";
 import { RecipeListCard, type RecipeListItem } from "@/components/recipes/RecipeListCard";
-import { createImportedRecipe } from "@/app/(app)/recipes/actions";
+import { archiveRecipe, createImportedRecipe, restoreRecipe } from "@/app/(app)/recipes/actions";
 import {
   parsedIngredientsToInputs,
   scaleParsedIngredients,
 } from "@/lib/recipes/parseIngredient";
 import { getDietTag } from "@/lib/ui/dietTags";
 import { ds } from "@/lib/ui/classes";
+import { UndoToast } from "@/components/ui/UndoToast";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
+
+const UNDO_MS = 5000;
 
 const FILTER_TAGS = ["All", "High Protein", "Low Calorie", "Vegan", "Vegetarian", "Low Carb"] as const;
 
@@ -43,11 +46,83 @@ export function RecipesPageClient({
   const [activeFilter, setActiveFilter] = useState<string>("All");
   const [showImport, setShowImport] = useState(false);
   const [showFillLibrary, setShowFillLibrary] = useState(false);
+  const [listRecipes, setListRecipes] = useState(recipes);
+  const [undoRecipe, setUndoRecipe] = useState<RecipeListItem | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
+  useEffect(() => {
+    setListRecipes(recipes);
+  }, [recipes]);
+
+  useEffect(() => {
+    return () => {
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    };
+  }, []);
+
+  const clearUndoTimer = useCallback(() => {
+    if (undoTimerRef.current) {
+      clearTimeout(undoTimerRef.current);
+      undoTimerRef.current = null;
+    }
+  }, []);
+
+  const handleQuickDelete = useCallback(
+    (recipe: RecipeListItem) => {
+      if (showArchived) return;
+
+      setDeleteError(null);
+      setListRecipes((current) => current.filter((r) => r.id !== recipe.id));
+
+      clearUndoTimer();
+      setUndoRecipe(null);
+
+      startTransition(async () => {
+        const result = await archiveRecipe(recipe.id);
+        if (result && "error" in result) {
+          setListRecipes((current) => {
+            if (current.some((r) => r.id === recipe.id)) return current;
+            return [...current, recipe].sort((a, b) => a.name.localeCompare(b.name));
+          });
+          setDeleteError(result.error);
+          return;
+        }
+
+        setUndoRecipe(recipe);
+        undoTimerRef.current = setTimeout(() => {
+          setUndoRecipe(null);
+          undoTimerRef.current = null;
+        }, UNDO_MS);
+      });
+    },
+    [clearUndoTimer, showArchived],
+  );
+
+  const handleUndoDelete = useCallback(() => {
+    if (!undoRecipe) return;
+    const recipe = undoRecipe;
+    clearUndoTimer();
+    setUndoRecipe(null);
+
+    setListRecipes((current) => {
+      if (current.some((r) => r.id === recipe.id)) return current;
+      return [...current, recipe].sort((a, b) => a.name.localeCompare(b.name));
+    });
+
+    startTransition(async () => {
+      const result = await restoreRecipe(recipe.id);
+      if (result && "error" in result) {
+        setListRecipes((current) => current.filter((r) => r.id !== recipe.id));
+        setDeleteError(result.error);
+      }
+    });
+  }, [clearUndoTimer, undoRecipe]);
+
   const filtered = useMemo(() => {
-    let list = recipes;
+    let list = listRecipes;
     const q = search.trim().toLowerCase();
     if (q) list = list.filter((r) => r.name.toLowerCase().includes(q));
     if (activeFilter === "Favourites") {
@@ -60,7 +135,7 @@ export function RecipesPageClient({
       });
     }
     return list;
-  }, [recipes, search, activeFilter, dietaryPreferences]);
+  }, [listRecipes, search, activeFilter, dietaryPreferences]);
 
   return (
   <div className={ds.mobilePage}>
@@ -180,7 +255,7 @@ export function RecipesPageClient({
       </div>
     ) : null}
 
-    {!hasBreakfastFriendlyRecipe && !showArchived && recipes.length > 0 ? (
+    {!hasBreakfastFriendlyRecipe && !showArchived && listRecipes.length > 0 ? (
       <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/20 dark:text-amber-100">
         Tip: add breakfast-named recipes (oats, eggs, yoghurt) for better AI planning.
       </div>
@@ -193,16 +268,16 @@ export function RecipesPageClient({
             🍽️
           </div>
           <p className="mb-1 font-bold text-gray-900 dark:text-white">
-            {recipes.length === 0 ? "No recipes yet" : "No matches"}
+            {listRecipes.length === 0 ? "No recipes yet" : "No matches"}
           </p>
           <p className="mb-6 text-sm text-gray-500">
-            {recipes.length === 0
+            {listRecipes.length === 0
               ? "Add your first recipe or import one from a website"
               : activeFilter === "Favourites"
                 ? "Tap the heart on a recipe to save it here"
                 : "Try a different search or filter"}
           </p>
-          {!showArchived && recipes.length === 0 ? (
+          {!showArchived && listRecipes.length === 0 ? (
             <Link href="/recipes/new" className={ds.primaryBtn}>
               Add your first recipe
             </Link>
@@ -210,7 +285,13 @@ export function RecipesPageClient({
         </div>
       ) : (
         filtered.map((recipe) => (
-          <RecipeListCard key={recipe.id} recipe={recipe} dietaryPreferences={dietaryPreferences} />
+          <RecipeListCard
+            key={recipe.id}
+            recipe={recipe}
+            dietaryPreferences={dietaryPreferences}
+            onQuickDelete={showArchived ? undefined : handleQuickDelete}
+            quickDeleteDisabled={isPending}
+          />
         ))
       )}
     </div>
@@ -244,6 +325,18 @@ export function RecipesPageClient({
         }}
       />
     ) : null}
+
+    {deleteError ? (
+      <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+        {deleteError}
+      </p>
+    ) : null}
+
+    <UndoToast
+      visible={undoRecipe != null}
+      message="Recipe deleted"
+      onUndo={handleUndoDelete}
+    />
   </div>
   );
 }
