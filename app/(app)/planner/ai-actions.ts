@@ -746,7 +746,8 @@ function toLegacyInsertRow(row: MealPlanInsertRow) {
   };
 }
 
-function toLegacyInsertRow(row: MealPlanInsertRow) {
+/** Remove meal-plan rows not present in the newly generated week. */
+async function pruneStaleMealPlanEntries(
   supabase: SupabaseClient,
   mealPlanId: string,
   keepKeys: Set<string>,
