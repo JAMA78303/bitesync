@@ -59,8 +59,28 @@ function assertNoPieceUnit(value: unknown): void {
 
   const ricotta = parseIngredientLine("100g/3½oz ricotta");
   if (ricotta.grams !== 100) throw new Error(`ricotta grams: ${ricotta.grams}`);
-  if (!ricotta.name.includes("ricotta")) throw new Error(`ricotta name: ${ricotta.name}`);
+  if (ricotta.name !== "ricotta") throw new Error(`ricotta name: ${ricotta.name}`);
   if (ricotta.unit === "oz") throw new Error("ricotta should not keep oz unit");
+
+  const pasta = parseIngredientLine("75g/5½oz spaghetti or tagliatelle");
+  if (pasta.grams !== 75) throw new Error(`pasta grams: ${pasta.grams}`);
+  if (!pasta.name.includes("spaghetti")) throw new Error(`pasta name: ${pasta.name}`);
+
+  const spinach = parseIngredientLine("25g/1¾oz baby spinach");
+  if (spinach.grams !== 25) throw new Error(`spinach grams: ${spinach.grams}`);
+  if (!spinach.name.includes("baby spinach")) throw new Error(`spinach name: ${spinach.name}`);
+}
+
+{
+  const garlic = parseIngredientLine("1 garlic clove, crushed");
+  if (!garlic.name.includes("garlic") || garlic.name.includes(",")) {
+    throw new Error(`garlic name: ${garlic.name}`);
+  }
+
+  const parmesan = parseIngredientLine("1 tbsp grated Parmesan (optional, plus extra to serve)");
+  if (!parmesan.name.includes("parmesan") || parmesan.name.includes("(")) {
+    throw new Error(`parmesan name: ${parmesan.name}`);
+  }
 }
 
 // Descriptive amounts

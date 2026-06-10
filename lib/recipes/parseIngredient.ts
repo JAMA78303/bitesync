@@ -119,11 +119,9 @@ function canonicalUnit(raw: string | undefined): string | null {
   return UNIT_ALIASES[key] ?? null;
 }
 
-/** UK recipe sites often use dual metric/imperial weights, e.g. `250g/9oz chicken mince`. */
+/** UK recipe sites often use dual metric/imperial weights, e.g. `250g/9oz` or `100g/3½oz`. */
 function extractUkDualMetricWeight(text: string): { grams: number | null; remainder: string } {
-  const match = text.match(
-    /^(\d+(?:\.\d+)?)\s*g\s*\/\s*(?:[½¼¾⅓⅔⅛]|\d+(?:\.\d+)?(?:\s*\/\s*\d+)?)?\s*oz\.?\s*/i,
-  );
+  const match = text.match(/^(\d+(?:\.\d+)?)\s*g\s*\/\s*.+?\s*oz\.?\s*/i);
   if (!match) return { grams: null, remainder: text };
   const grams = Number(match[1]);
   if (!Number.isFinite(grams) || grams <= 0) return { grams: null, remainder: text };
@@ -203,15 +201,19 @@ function cleanIngredientName(name: string): string {
     .replace(TRAILING_SERVING, "")
     .replace(TRAILING_PREP, "")
     .replace(/\([^)]*\)/g, " ")
+    .replace(/\s*\([^)]*$/g, " ")
     .replace(SIZE_PREFIXES, "")
     .replace(/^[/\s]+/, "")
+    .replace(/^[½¼¾⅓⅔⅛\d./\s]+/i, "")
     .replace(/^\d+(?:\.\d+)?\s*oz\.?\s+/i, "")
-    .replace(/,\s*$/g, "")
+    .replace(/\s*,\s*/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 
   cleaned = cleaned
     .replace(/\b(chopped|sliced|diced|grated|minced|crushed|peeled|finely|roughly|thinly|juiced)\b/gi, " ")
+    .replace(/\b(clove|cloves)\b/gi, " ")
+    .replace(/\b(optional)\b/gi, " ")
     .replace(/\s+/g, " ")
     .trim();
 
