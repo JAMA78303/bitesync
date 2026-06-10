@@ -98,11 +98,13 @@ export async function POST(request: NextRequest) {
   const sourceUrl = normalizeSourceUrl(rawUrl);
   const sourceType = detectSourceType(sourceUrl);
 
+  // Only block when an active (non-archived) recipe exists — archived/deleted-from-list recipes can be re-imported.
   const { data: existing } = await supabase
     .from("recipes")
     .select("id,name")
     .eq("user_id", user.id)
     .eq("source_url", sourceUrl)
+    .is("archived_at", null)
     .maybeSingle();
 
   if (existing) {
