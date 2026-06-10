@@ -153,8 +153,8 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
  const hasValidIngredients = (result?.ingredients ?? []).some((i) => i.name.trim().length > 0);
 
  return (
- <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center">
- <div className="max-h-[90vh] w-full overflow-y-auto rounded-t-2xl bg-[var(--surface-card)] p-6 sm:max-w-2xl sm:rounded-2xl">
+ <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/50 sm:items-center">
+ <div className="max-h-[90vh] w-full overflow-y-auto rounded-t-2xl bg-[var(--surface-card)] p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:max-w-2xl sm:rounded-2xl sm:pb-6">
  <div className="mb-4 flex items-center justify-between">
  <h2 className="text-lg font-semibold">Import recipe</h2>
  <button onClick={onClose} className="rounded-lg p-1 hover:bg-[var(--btn-secondary-hover)]" aria-label="Close import modal">
@@ -168,23 +168,25 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
  Paste a link from a recipe site, TikTok, Instagram, or Facebook. You&apos;ll review everything before
  saving.
  </p>
- <div className="flex gap-2">
- <div className="flex flex-1 items-center gap-2 rounded-xl border px-3 py-2">
+ <div className="flex flex-col gap-3 sm:flex-row sm:gap-2">
+ <div className="flex min-h-11 flex-1 items-center gap-2 rounded-xl border border-[var(--border-default)] bg-[var(--surface-input)] px-3 py-2">
  <LinkIcon className="h-4 w-4 shrink-0 text-[var(--text-muted)]" />
  <input
  type="url"
+ inputMode="url"
+ autoComplete="url"
  value={url}
  onChange={(e) => setUrl(e.target.value)}
  onKeyDown={(e) => e.key ==="Enter" && handleFetch()}
  placeholder="https://..."
- className="flex-1 bg-transparent text-sm outline-none"
+ className="min-w-0 flex-1 bg-transparent text-base outline-none sm:text-sm"
  autoFocus
  />
  </div>
  <button
  onClick={handleFetch}
  disabled={!canImport}
- className="flex items-center gap-2 rounded-xl bg-[var(--btn-primary-bg)] px-4 py-2 text-sm font-medium text-[var(--btn-primary-text)] disabled:opacity-50"
+ className="flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[var(--btn-primary-bg)] px-4 text-sm font-medium text-[var(--btn-primary-text)] disabled:opacity-50 sm:h-auto sm:py-2"
  >
  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> :"Import"}
  </button>
