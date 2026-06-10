@@ -24,7 +24,7 @@ export function Logo({ size ="md", href ="/planner", className }: Props) {
  </span>
  <span className={`font-semibold tracking-tight ${s.text}`}>
  <span className="text-[var(--text-primary)]">Bite</span>
- <span className="text-[var(--brand-primary)]">Sync</span>
+ <span className="text-[var(--text-link)]">Sync</span>
  </span>
  </>
  );

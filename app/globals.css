@@ -26,6 +26,7 @@ html {
   --brand-dark: #2d4a32;
   --brand-sage: #3a5a40;
   --brand-amber: #d97706;
+  --text-link: #2d4a32;
 
   /* Surfaces */
   --surface-page: #f8faf8;
@@ -86,6 +87,10 @@ html {
   --background: #0b1220;
   --foreground: #e5e7eb;
 
+  /* Brand surfaces stay dark green; links use lighter accent for contrast on dark bg */
+  --brand-primary: #3a5a40;
+  --text-link: #86efac;
+
   --surface-page: #0b1220;
   --surface-card: #111827;
   --surface-muted: #0f172a;
@@ -143,6 +148,26 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+}
+
+/* Keyboard focus — visible on all interactive elements */
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+}
+
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
 }
 
 html[data-theme="light"],

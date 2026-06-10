@@ -179,7 +179,7 @@ export default function LandingPage() {
  <a
  key={link.href}
  href={link.href}
- className="text-sm text-[var(--text-secondary)] transition-colors hover:text-[var(--brand-primary)]"
+ className="text-sm text-[var(--text-secondary)] transition-colors hover:text-[var(--text-link)]"
  >
  {link.label}
  </a>
@@ -202,6 +202,7 @@ export default function LandingPage() {
  </div>
  </nav>
 
+ <main id="main-content">
  <header className="relative overflow-hidden bg-[var(--hero-gradient)] px-4 pt-14 pb-10 text-center text-[var(--text-on-brand)] sm:pt-20 sm:pb-28">
  <div
  aria-hidden
@@ -226,7 +227,7 @@ export default function LandingPage() {
  </p>
  <Link
  href="/signup"
- className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--surface-card)] px-6 py-3 text-sm font-semibold text-[var(--brand-primary)] transition-colors hover:bg-[var(--surface-brand-subtle)] sm:w-auto"
+ className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--surface-card)] px-6 py-3 text-sm font-semibold text-[var(--text-link)] transition-colors hover:bg-[var(--surface-brand-subtle)] sm:w-auto"
  >
  Start planning for free
  <ChevronRight className="h-4 w-4" aria-hidden />
@@ -331,7 +332,7 @@ export default function LandingPage() {
  <ul className="mb-8 mt-6 space-y-3">
  {FREE_FEATURES.map((item) => (
  <li key={item} className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
- <Check className="h-4 w-4 shrink-0 text-[var(--brand-primary)]" aria-hidden />
+ <Check className="h-4 w-4 shrink-0 text-[var(--text-link)]" aria-hidden />
  {item}
  </li>
  ))}
@@ -352,22 +353,22 @@ export default function LandingPage() {
  £6.99<span className="text-base font-normal text-[var(--text-on-brand-muted)]">/month</span>
  </p>
  <div className="mt-2 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
- <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
+ <span className="rounded-full bg-amber-300 px-2 py-0.5 text-2xs font-semibold text-amber-950">
  SAVE 30%
  </span>
  <span className="text-xs text-[var(--text-on-brand-muted)]">£59/year · works out to £4.92/mo</span>
  </div>
  <ul className="mb-8 mt-6 space-y-3">
  {PRO_FEATURES.map((item) => (
- <li key={item} className="flex items-center gap-2 text-sm text-green-50">
- <Check className="h-4 w-4 shrink-0 text-green-200" aria-hidden />
+ <li key={item} className="flex items-center gap-2 text-sm text-[var(--text-on-brand)]">
+ <Check className="h-4 w-4 shrink-0 text-[var(--text-on-brand-muted)]" aria-hidden />
  {item}
  </li>
  ))}
  </ul>
  <Link
  href="/signup"
- className="block w-full rounded-xl bg-[var(--surface-card)] py-2.5 text-center text-sm font-semibold text-[var(--brand-primary)] hover:bg-[var(--surface-brand-subtle)]"
+ className="block w-full rounded-xl bg-[var(--surface-card)] py-2.5 text-center text-sm font-semibold text-[var(--text-link)] hover:bg-[var(--surface-brand-subtle)]"
  >
  Start free trial
  </Link>
@@ -424,15 +425,15 @@ export default function LandingPage() {
  key={post.slug}
  className="group flex flex-col rounded-2xl border border-[var(--border-default)] bg-[var(--surface-card)] p-5 transition-shadow hover:shadow-md"
  >
- <p className="text-xs font-medium text-[var(--brand-primary)]">{post.category}</p>
- <h3 className="mt-2 text-base font-semibold text-[var(--text-primary)] group-hover:text-[var(--brand-primary)]">
+ <p className="text-xs font-medium text-[var(--text-link)]">{post.category}</p>
+ <h3 className="mt-2 text-base font-semibold text-[var(--text-primary)] group-hover:text-[var(--text-link)]">
  <Link href={`/blog/${post.slug}`}>{post.title}</Link>
  </h3>
  <p className="mt-2 flex-1 text-sm leading-relaxed text-[var(--text-muted)]">{post.desc}</p>
  <p className="mt-4 text-xs text-[var(--text-muted)]">{post.readTime}</p>
  <Link
  href="/signup"
- className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-[var(--brand-primary)] hover:underline"
+ className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-[var(--text-link)] hover:underline"
  >
  Try BiteSync free
  <ChevronRight className="h-3 w-3" aria-hidden />
@@ -452,13 +453,14 @@ export default function LandingPage() {
  </p>
  <Link
  href="/signup"
- className="inline-flex items-center gap-2 rounded-xl bg-[var(--surface-card)] px-8 py-3 text-sm font-semibold text-[var(--brand-primary)] transition-colors hover:bg-[var(--surface-brand-subtle)]"
+ className="inline-flex items-center gap-2 rounded-xl bg-[var(--surface-card)] px-8 py-3 text-sm font-semibold text-[var(--text-link)] transition-colors hover:bg-[var(--surface-brand-subtle)]"
  >
  Get started free
  <ChevronRight className="h-4 w-4" aria-hidden />
  </Link>
  </div>
  </section>
+ </main>
 
  <footer className="border-t border-[var(--border-subtle)] bg-[var(--surface-muted)] py-10">
  <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-4">

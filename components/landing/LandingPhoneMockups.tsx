@@ -29,7 +29,7 @@ function MockToday() {
  return (
  <PhoneFrame label="BiteSync Today dashboard preview">
  <section className="bg-gradient-to-b from-[var(--header-from)] to-[var(--header-to)] px-3 pt-7 pb-3">
- <p className="text-[9px] text-[var(--text-on-brand-muted)]">Saturday, 16 May</p>
+ <p className="text-2xs text-[var(--text-on-brand-muted)]">Saturday, 16 May</p>
  <p className="text-xs font-bold text-[var(--text-on-brand)]">Your Goals</p>
  </section>
  <section className="space-y-2 px-2 pb-3 pt-2">
@@ -37,9 +37,9 @@ function MockToday() {
  <div className="flex items-center gap-2">
  <MiniRing />
  <div>
- <p className="text-[8px] text-[var(--text-muted)]">Calories</p>
+ <p className="text-2xs text-[var(--text-muted)]">Calories</p>
  <p className="text-sm font-bold text-[var(--text-primary)]">
- 1,240 <span className="text-[9px] font-normal text-[var(--text-muted)]">/ 2,000</span>
+ 1,240 <span className="text-2xs font-normal text-[var(--text-muted)]">/ 2,000</span>
  </p>
  </div>
  </div>
@@ -57,7 +57,7 @@ function MockToday() {
 function MacroMini({ label, value, color }: { label: string; value: number; color: string }) {
  return (
  <div>
- <div className="mb-0.5 flex justify-between text-[7px] text-[var(--text-muted)]">
+ <div className="mb-0.5 flex justify-between text-2xs text-[var(--text-muted)]">
  <span>{label}</span>
  <span>{value}g</span>
  </div>
@@ -73,8 +73,8 @@ function MealRow({ emoji, name, meta }: { emoji: string; name: string; meta: str
  <article className="flex gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-2">
  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--surface-brand-subtle)] text-base">{emoji}</span>
  <div className="min-w-0 flex-1">
- <p className="truncate text-[10px] font-bold text-[var(--text-primary)]">{name}</p>
- <p className="text-[8px] text-[var(--text-muted)]">{meta}</p>
+ <p className="truncate text-2xs font-bold text-[var(--text-primary)]">{name}</p>
+ <p className="text-2xs text-[var(--text-muted)]">{meta}</p>
  </div>
  </article>
  );
@@ -90,8 +90,8 @@ export function MockPlanner() {
  {days.map((label, i) => (
  <span
  key={`${label}-${i}`}
- className={`flex flex-col items-center rounded-lg px-1 py-1 text-[8px] ${
- i === 5 ?"bg-[var(--surface-card)] text-[var(--brand-primary)]" :"text-[var(--text-on-brand-muted)]"
+ className={`flex flex-col items-center rounded-lg px-1 py-1 text-2xs ${
+ i === 5 ?"bg-[var(--surface-card)] text-[var(--text-link)]" :"text-[var(--text-on-brand-muted)]"
  }`}
  >
  <span>{label}</span>
@@ -101,9 +101,9 @@ export function MockPlanner() {
  </div>
  </section>
  <section className="space-y-1.5 px-2 pb-3 pt-2">
- <p className="text-[7px] font-bold uppercase tracking-wide text-[var(--text-muted)]">Lunch</p>
+ <p className="text-2xs font-bold uppercase tracking-wide text-[var(--text-muted)]">Lunch</p>
  <MealRow emoji="🥗" name="Chicken quinoa bowl" meta="485 kcal · 42g P" />
- <p className="text-[7px] font-bold uppercase tracking-wide text-[var(--text-muted)]">Dinner</p>
+ <p className="text-2xs font-bold uppercase tracking-wide text-[var(--text-muted)]">Dinner</p>
  <MealRow emoji="🍝" name="Pesto pasta primavera" meta="620 kcal · 28g P" />
  </section>
  </PhoneFrame>
@@ -123,7 +123,7 @@ function MockGrocery() {
  <PhoneFrame label="BiteSync grocery list preview">
  <header className="border-b border-[var(--border-subtle)] bg-[var(--surface-card)] px-3 pt-7 pb-2">
  <p className="text-xs font-bold text-[var(--text-primary)]">Grocery list</p>
- <p className="text-[8px] text-[var(--text-muted)]">12 items · Mon–Sun</p>
+ <p className="text-2xs text-[var(--text-muted)]">12 items · Mon–Sun</p>
  </header>
  <ul className="space-y-1 px-2 py-2">
  {items.map((item) => (
@@ -134,21 +134,21 @@ function MockGrocery() {
  }`}
  >
  <span
- className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[8px] ${
+ className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border text-2xs ${
  item.checked ?"border-[var(--brand-primary)] bg-[var(--brand-primary)] text-[var(--text-on-brand)]" :"border-[var(--border-default)]"
  }`}
  >
  {item.checked ?"✓" :""}
  </span>
  <span
- className={`min-w-0 flex-1 truncate text-[9px] font-medium ${
+ className={`min-w-0 flex-1 truncate text-2xs font-medium ${
  item.checked ?"text-[var(--text-muted)] line-through" :"text-[var(--text-secondary)]"
  }`}
  >
  {item.name}
  </span>
  <span
- className="rounded px-1 py-0.5 text-[7px] font-bold text-[var(--text-on-brand)]"
+ className="rounded px-1 py-0.5 text-2xs font-bold text-[var(--text-on-brand)]"
  style={{ backgroundColor: storeColor[item.store] }}
  >
  {item.store}

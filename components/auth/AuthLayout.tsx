@@ -40,14 +40,14 @@ export function AuthLayout({ children, mode, error, success }: Props) {
 
  <p className="mt-6 text-center text-sm text-[var(--text-muted)]">
  {isLogin ?"Don't have an account?" :"Already have an account?"}
- <Link href={isLogin ?"/signup" :"/login"} className="font-semibold text-[var(--brand-primary)]">
+ <Link href={isLogin ?"/signup" :"/login"} className="font-semibold text-[var(--text-link)]">
  {isLogin ?"Sign up free" :"Sign in"}
  </Link>
  </p>
 
  {isLogin ? (
  <p className="mt-3 text-center text-sm text-[var(--text-muted)]">
- <Link href="/reset" className="text-[var(--brand-primary)] hover:underline">
+ <Link href="/reset" className="text-[var(--text-link)] hover:underline">
  Forgot password?
  </Link>
  </p>
