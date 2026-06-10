@@ -17,9 +17,33 @@ import {
  Sparkles,
  MapPin,
 } from "lucide-react";
-import { LandingFaq } from "@/components/landing/LandingFaq";
-import { LandingPhoneMockups, MockPlanner } from "@/components/landing/LandingPhoneMockups";
+import dynamic from "next/dynamic";
 import { Logo } from "@/components/shared/Logo";
+
+const LandingPhoneMockups = dynamic(
+ () =>
+ import("@/components/landing/LandingPhoneMockups").then((m) => ({
+ default: m.LandingPhoneMockups,
+ })),
+ { loading: () => <div className="mx-auto h-72 max-w-4xl animate-pulse rounded-2xl bg-[var(--surface-muted)]" aria-hidden /> },
+);
+
+const LandingFaq = dynamic(
+ () => import("@/components/landing/LandingFaq").then((m) => ({ default: m.LandingFaq })),
+ { loading: () => <div className="h-48" aria-hidden /> },
+);
+
+const MockPlanner = dynamic(
+ () =>
+ import("@/components/landing/LandingPhoneMockups").then((m) => ({
+ default: m.MockPlanner,
+ })),
+ {
+ loading: () => (
+ <div className="relative z-10 -mb-20 hidden h-[320px] w-[280px] sm:block" aria-hidden />
+ ),
+ },
+);
 
 const NAV_LINKS = [
  { href:"#how-it-works", label:"How it works" },

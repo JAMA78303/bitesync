@@ -1,10 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { Heart } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ImportRecipeModal } from "@/components/recipes/ImportRecipeModal";
-import { FillMyLibraryModal } from "@/components/recipes/FillMyLibraryModal";
+
+const ImportRecipeModal = dynamic(
+ () => import("@/components/recipes/ImportRecipeModal").then((m) => ({ default: m.ImportRecipeModal })),
+ { ssr: false },
+);
+const FillMyLibraryModal = dynamic(
+ () => import("@/components/recipes/FillMyLibraryModal").then((m) => ({ default: m.FillMyLibraryModal })),
+ { ssr: false },
+);
 import { RecipeListCard, type RecipeListItem } from "@/components/recipes/RecipeListCard";
 import { archiveRecipe, createImportedRecipe, restoreRecipe } from "@/app/(app)/recipes/actions";
 import {
