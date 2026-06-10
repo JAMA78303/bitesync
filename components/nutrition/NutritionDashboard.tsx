@@ -66,7 +66,7 @@ export function NutritionDashboard({
  <h1 className={`${ds.pageTitle} mb-1`}>Nutrition</h1>
  <p className={`mb-4 ${ds.pageSubtitle}`}>Weekly averages vs your daily targets</p>
  <div className="mb-4">{weekNav}</div>
- <p className={`mb-2 text-[10px] font-semibold uppercase tracking-wider ${ds.headerStatLabel}`}>
+ <p className={`mb-2 text-2xs font-semibold uppercase tracking-wider ${ds.headerStatLabel}`}>
  Weekly average
  </p>
  <div className="grid grid-cols-2 gap-2">
@@ -81,7 +81,7 @@ export function NutritionDashboard({
  <span className={ds.headerStatUnit}> {m.unit}</span>
  </p>
  <p
- className={`mt-0.5 text-[9px] font-semibold ${onTrack ? ds.headerStatAccent : ds.headerStatWarn}`}
+ className={`mt-0.5 text-2xs font-semibold ${onTrack ? ds.headerStatAccent : ds.headerStatWarn}`}
  >
  {pct}% of daily target (week avg)
  </p>
@@ -108,7 +108,7 @@ export function NutritionDashboard({
  :"text-[var(--text-muted)] hover:bg-[var(--surface-muted)]"
  }`}
  >
- <p className="text-[8px] font-medium">{d.short}</p>
+ <p className="text-2xs font-medium">{d.short}</p>
  <p className="text-xs font-bold">{d.num}</p>
  </button>
  ))}

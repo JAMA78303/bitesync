@@ -54,7 +54,7 @@ export default async function GoalsPage() {
  <span className="flex items-center gap-2">
  <span className="text-sm font-medium text-[var(--text-secondary)]">{item.label}</span>
  {"pro" in item && item.pro && !isPro ? (
- <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+ <span className="rounded-full bg-amber-100 px-2 py-0.5 text-2xs font-semibold text-amber-700">
  Pro
  </span>
  ) : null}

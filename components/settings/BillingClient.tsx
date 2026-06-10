@@ -118,7 +118,7 @@ export function BillingClient({
  <div className="min-w-0 flex-1 space-y-2">
  <div className="flex flex-wrap items-center gap-2">
  <p className="font-semibold text-[var(--text-primary)]">AI-assisted planning</p>
- <span className="rounded-full bg-amber-200/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-950 dark:bg-amber-800/80 dark:text-amber-50">
+ <span className="rounded-full bg-amber-200/90 px-2 py-0.5 text-2xs font-semibold uppercase tracking-wide text-amber-950 dark:bg-amber-800/80 dark:text-amber-50">
  Pro · beta
  </span>
  </div>

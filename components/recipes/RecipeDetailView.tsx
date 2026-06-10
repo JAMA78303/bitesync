@@ -112,8 +112,8 @@ export function RecipeDetailView({
  {macroCells.map((m) => (
  <div key={m.label} className="rounded-xl bg-[var(--surface-brand-subtle)] p-2.5 text-center">
  <p className="text-xs font-bold text-[var(--text-primary)]">{m.value}</p>
- <p className="text-[9px] text-[var(--text-muted)]">{m.unit}</p>
- <p className="mt-0.5 text-[8px] text-[var(--text-muted)]">{m.label}</p>
+ <p className="text-2xs text-[var(--text-muted)]">{m.unit}</p>
+ <p className="mt-0.5 text-2xs text-[var(--text-muted)]">{m.label}</p>
  </div>
  ))}
  </div>

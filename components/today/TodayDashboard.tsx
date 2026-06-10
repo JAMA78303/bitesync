@@ -46,7 +46,7 @@ export function TodayDashboard({ meals, totals, targets, dietaryPreferences }: P
  <p className="mt-0.5 text-xs font-medium text-[var(--text-muted)]">
  {remaining} kcal remaining
  </p>
- <p className={`text-[10px] font-medium ${calorieStatus.textClassName}`}>{calorieStatus.label}</p>
+ <p className={`text-2xs font-medium ${calorieStatus.textClassName}`}>{calorieStatus.label}</p>
  </div>
  </div>
 

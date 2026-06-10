@@ -36,7 +36,7 @@ export function GroceryHeader({ subtitle, total, checked, actions }: Props) {
  />
  </div>
 
- <p className={`mt-3 text-[10px] ${ds.headerStatLabel}`}>
+ <p className={`mt-3 text-2xs ${ds.headerStatLabel}`}>
  Quantities use shopping units (slices → loaf, cloves → bulb).
  </p>
  </header>

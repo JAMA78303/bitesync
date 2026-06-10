@@ -24,7 +24,7 @@ export function MacroBar({ metric, label, value, target, unit }: Props) {
  {target}
  {unit}
  </span>
- <p className={`text-[10px] font-medium leading-tight ${status.textClassName}`}>{status.label}</p>
+ <p className={`text-2xs font-medium leading-tight ${status.textClassName}`}>{status.label}</p>
  </div>
  </div>
  <div className="h-1.5 overflow-hidden rounded-full bg-[var(--surface-muted)]">

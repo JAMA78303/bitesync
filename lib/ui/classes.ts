@@ -1,3 +1,34 @@
+/** Type scale tokens — ≤7 sizes, ≤3 weights */
+export const type = {
+  micro: "text-2xs",
+  xs: "text-xs",
+  sm: "text-sm",
+  base: "text-base",
+  lg: "text-lg",
+  xl: "text-xl",
+  "2xl": "text-2xl",
+} as const;
+
+/** Spacing scale — 4px base */
+export const space = {
+  1: "1",
+  2: "2",
+  3: "3",
+  4: "4",
+  5: "5",
+  6: "6",
+  8: "8",
+  10: "10",
+  12: "12",
+  16: "16",
+} as const;
+
+/** Border radii — ≤2 values */
+export const radius = {
+  md: "rounded-lg",
+  lg: "rounded-2xl",
+} as const;
+
 /** Shared Tailwind class groups — BiteSync design system */
 export const ds = {
   /** Full-width mobile page shell — no negative margins (prevents edge bleed) */
@@ -15,7 +46,7 @@ export const ds = {
   pageTitle: "text-xl font-bold text-[var(--text-on-header)]",
   pageSubtitle: "text-sm text-[var(--text-on-header-muted)]",
   headerStatCard: "rounded-2xl bg-[var(--header-stat-bg)] p-3 backdrop-blur-sm",
-  headerStatLabel: "text-[9px] text-[var(--text-on-header-subtle)]",
+  headerStatLabel: "text-2xs text-[var(--text-on-header-subtle)]",
   headerStatValue: "text-base font-bold text-[var(--text-on-header)]",
   headerStatUnit: "text-xs font-normal text-[var(--text-on-header-muted)]",
   headerStatAccent: "text-[var(--header-stat-accent)]",

@@ -143,7 +143,7 @@ export function PantryPageClient({ items }: Props) {
  onClick={() => handleToggleLow(item.id, !item.running_low)}
  disabled={isPending}
  title="Mark running low"
- className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+ className={`rounded-full px-2 py-0.5 text-2xs font-medium ${
  item.running_low
  ?"bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
  :"bg-[var(--surface-muted)] text-[var(--text-muted)]"

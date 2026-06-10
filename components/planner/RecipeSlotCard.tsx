@@ -101,7 +101,7 @@ export function RecipeSlotCard({
  >
  {dietTag ? (
  <span
- className={`mb-1 inline-flex w-fit max-w-full shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium leading-tight ${getDietTagStyle(dietTag)}`}
+ className={`mb-1 inline-flex w-fit max-w-full shrink-0 rounded-full px-2 py-0.5 text-2xs font-medium leading-tight ${getDietTagStyle(dietTag)}`}
  >
  {dietTag}
  </span>
@@ -115,7 +115,7 @@ export function RecipeSlotCard({
  {macroLine}
  {dietWarnings.length > 0 ? (
  <p
- className="mt-1 line-clamp-1 text-[10px] font-medium text-amber-700 dark:text-amber-400"
+ className="mt-1 line-clamp-1 text-2xs font-medium text-amber-700 dark:text-amber-400"
  title={dietWarnings.join(" ·")}
  >
  {dietWarnings.join(" ·")}
@@ -149,7 +149,7 @@ export function RecipeSlotCard({
  {macroLine}
  {dietWarnings.length > 0 ? (
  <p
- className="mt-1 line-clamp-1 text-[10px] font-medium text-amber-700 dark:text-amber-400"
+ className="mt-1 line-clamp-1 text-2xs font-medium text-amber-700 dark:text-amber-400"
  title={dietWarnings.join(" ·")}
  >
  {dietWarnings.join(" ·")}

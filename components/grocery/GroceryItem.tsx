@@ -103,7 +103,7 @@ export function GroceryItem({
  {cheapestStore ? (
  <div className="flex flex-shrink-0 items-center gap-1.5">
  <span
- className="rounded-lg px-2 py-0.5 text-[10px] font-bold text-[var(--text-on-brand)]"
+ className="rounded-lg px-2 py-0.5 text-2xs font-bold text-[var(--text-on-brand)]"
  style={{ backgroundColor: storeColor ?? "var(--brand-primary)" }}
  >
  {cheapestStore}

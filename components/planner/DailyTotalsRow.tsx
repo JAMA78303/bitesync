@@ -24,7 +24,7 @@ export function DailyTotalsRow({ grid, dailyCalorieTarget, dailyProteinTarget }:
  return (
  <>
  <div className="flex items-center justify-end border-t border-[var(--border-default)] px-2 py-2">
- <span className="text-[10px] font-medium uppercase tracking-wide text-[var(--text-muted)]">Totals</span>
+ <span className="text-2xs font-medium uppercase tracking-wide text-[var(--text-muted)]">Totals</span>
  </div>
  {Array.from({ length: 7 }, (_, day) => {
  const slots = Object.values(grid[day]).filter(Boolean);
@@ -54,9 +54,9 @@ export function DailyTotalsRow({ grid, dailyCalorieTarget, dailyProteinTarget }:
  <>
  <span className="tabular-nums text-xs font-semibold text-[var(--text-secondary)]">
  {Math.round(calories)}
- <span className="ml-0.5 text-[10px] font-normal text-[var(--text-muted)]">kcal</span>
+ <span className="ml-0.5 text-2xs font-normal text-[var(--text-muted)]">kcal</span>
  </span>
- <span className="tabular-nums text-[10px] font-medium text-[var(--brand-primary)]">{Math.round(protein)}g P</span>
+ <span className="tabular-nums text-2xs font-medium text-[var(--brand-primary)]">{Math.round(protein)}g P</span>
  {hasTargets ? (
  <div className="mt-1 w-full space-y-0.5">
  <div className="h-1 overflow-hidden rounded-full bg-[var(--surface-muted)]">

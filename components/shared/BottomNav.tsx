@@ -53,7 +53,7 @@ export function BottomNav() {
  strokeWidth={isActive ? 2.5 : 1.8}
  />
  <span
- className={`max-w-full truncate text-[10px] font-medium leading-tight ${
+ className={`max-w-full truncate text-2xs font-medium leading-tight ${
  isActive ?"text-[var(--text-on-header)]" :"text-[var(--text-on-header-muted)]"
  }`}
  >
@@ -78,7 +78,7 @@ export function BottomNav() {
  strokeWidth={moreActive ? 2.5 : 1.8}
  />
  <span
- className={`text-[10px] font-medium leading-tight ${
+ className={`text-2xs font-medium leading-tight ${
  moreActive ?"text-[var(--text-on-header)]" :"text-[var(--text-on-header-muted)]"
  }`}
  >

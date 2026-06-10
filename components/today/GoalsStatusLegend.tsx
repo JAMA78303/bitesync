@@ -14,7 +14,7 @@ export function GoalsStatusLegend() {
  aria-label="Goal progress colour key"
  >
  {LEGEND_ITEMS.map((item) => (
- <span key={item.label} className="inline-flex items-center gap-1.5 text-[10px] text-[var(--text-muted)]">
+ <span key={item.label} className="inline-flex items-center gap-1.5 text-2xs text-[var(--text-muted)]">
  <span
  className="inline-block h-2 w-2 shrink-0 rounded-full"
  style={{ backgroundColor: item.color }}

@@ -122,10 +122,10 @@ export function DaySelectorModal({ open, onClose, mealPlanId, weekStart, filledD
  :"bg-[var(--surface-muted)] text-[var(--text-secondary)] hover:bg-[var(--surface-muted)]"
  }`}
  >
- <span className="text-[10px] font-semibold uppercase tracking-wide">
+ <span className="text-2xs font-semibold uppercase tracking-wide">
  {DAY_NAMES[day].slice(0, 3)}
  </span>
- <span className={`mt-1 text-[9px] ${isSelected ?"text-green-200" :"text-[var(--text-muted)]"}`}>
+ <span className={`mt-1 text-2xs ${isSelected ?"text-green-200" :"text-[var(--text-muted)]"}`}>
  {hasMeals ?"planned" :"empty"}
  </span>
  </button>

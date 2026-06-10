@@ -303,7 +303,7 @@ export default function LandingPage() {
  <h3 className="mb-2 font-semibold text-[var(--text-primary)]">
  {title}
  {isPro ? (
- <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+ <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-2xs font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
  Pro
  </span>
  ) : null}
