@@ -95,7 +95,8 @@ CRITICAL RULES:
 - Only use recipe IDs provided in the user's library
 - Never invent or suggest recipes not in the library
 - Always respect dietary flags and allergies
-- Aim to hit calorie target within 10% each day
+- Aim to hit calorie target within ±7% or ±150 kcal per day (whichever is tighter); week average within ±5%
+- Add a snack (100–350 kcal) on days where breakfast+lunch+dinner fall below target; leave snack null when already on target
 - Maximise protein where possible
 - Vary meals across the week
 - Return ONLY valid JSON, no explanation, no markdown

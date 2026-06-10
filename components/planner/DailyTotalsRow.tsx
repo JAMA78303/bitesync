@@ -1,6 +1,9 @@
 import {
- normalizeRecipeNutritionEmbed,
- type RecipeNutritionSummary,
+  dailyCalorieBand,
+} from "@/lib/planner/calorie-bands";
+import {
+  normalizeRecipeNutritionEmbed,
+  type RecipeNutritionSummary,
 } from "@/lib/utils/recipe-nutrition";
 import type { PlannerGrid } from "@/types";
 
@@ -11,12 +14,17 @@ type Props = {
 };
 
 function getBarColour(actual: number, target: number): string {
+ if (!target) return "bg-[var(--surface-muted)]";
+ const { min, max } = dailyCalorieBand(target);
+ if (actual >= min && actual <= max) return "bg-[var(--btn-primary-bg)]";
+ if (actual > max) {
+  const pct = (actual / target) * 100;
+  if (pct > 110) return "bg-red-500";
+  return "bg-amber-500";
+ }
  const pct = (actual / target) * 100;
- if (pct > 110) return"bg-red-500";
- if (pct > 105) return"bg-amber-500";
- if (pct >= 90 && pct <= 105) return"bg-[var(--btn-primary-bg)]";
- if (pct >= 70) return"bg-amber-400";
- return"bg-red-400";
+ if (pct < 70) return "bg-red-400";
+ return "bg-amber-400";
 }
 
 export function DailyTotalsRow({ grid, dailyCalorieTarget, dailyProteinTarget }: Props) {
