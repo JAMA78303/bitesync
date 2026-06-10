@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
+import { CalendarDays } from "lucide-react";
 import { CalorieRing } from "@/components/today/CalorieRing";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { GoalsStatusLegend } from "@/components/today/GoalsStatusLegend";
 import { MacroBar } from "@/components/today/MacroBar";
 import { getGoalStatus } from "@/lib/today/goal-status";
@@ -38,12 +39,12 @@ export function TodayDashboard({ meals, totals, targets, dietaryPreferences }: P
  <div className="mb-6 flex items-center gap-6">
  <CalorieRing consumed={totals.kcal} target={targets.kcal} />
  <div>
- <p className="mb-0.5 text-xs text-[var(--text-muted)]">Calories</p>
- <p className="text-2xl font-bold text-[var(--text-primary)]">
+ <p className={ds.statLabel}>Calories</p>
+ <p className={ds.statValue}>
  {Math.round(totals.kcal)}
- <span className="text-base font-normal text-[var(--text-muted)]"> / {targets.kcal}</span>
+ <span className={ds.statUnit}> / {targets.kcal}</span>
  </p>
- <p className="mt-0.5 text-xs font-medium text-[var(--text-muted)]">
+ <p className={`mt-0.5 ${ds.tierMeta}`}>
  {remaining} kcal remaining
  </p>
  <p className={`text-2xs font-medium ${calorieStatus.textClassName}`}>{calorieStatus.label}</p>
@@ -60,21 +61,18 @@ export function TodayDashboard({ meals, totals, targets, dietaryPreferences }: P
  </div>
 
  <div className="mb-4">
- <h2 className="mb-3 flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
+ <h2 className={`mb-3 flex items-center gap-2 ${ds.sectionTitle}`}>
  Meals for Today
- <span aria-hidden>🍽️</span>
  </h2>
 
  {meals.length === 0 ? (
- <div className="py-10 text-center">
- <p className="mb-3 text-sm text-[var(--text-muted)]">No meals planned for today</p>
- <Link
- href="/planner"
- className="inline-block rounded-xl bg-[var(--btn-primary-bg)] px-5 py-2.5 text-sm font-medium text-[var(--btn-primary-text)] hover:bg-[var(--btn-primary-hover)]"
- >
- Go to planner
- </Link>
- </div>
+ <EmptyState
+ icon={CalendarDays}
+ title="Nothing planned for today"
+ description="Add meals to your weekly planner and they will show up here"
+ action={{ href: "/planner", label: "Go to planner" }}
+ className="py-12"
+ />
  ) : (
  MEAL_ORDER.map((mealType) => {
  const typeMeals = meals.filter((m) => m.mealType === mealType);

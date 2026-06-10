@@ -51,8 +51,16 @@ export const ds = {
   headerStatUnit: "text-xs font-normal text-[var(--text-on-header-muted)]",
   headerStatAccent: "text-[var(--header-stat-accent)]",
   headerStatWarn: "text-[var(--header-stat-warn)]",
-  sectionTitle: "text-base font-bold text-[var(--text-primary)]",
-  cardTitle: "text-sm font-bold text-[var(--text-primary)]",
+  sectionTitle: "text-base font-bold text-[var(--brand-navy)] dark:text-[var(--text-primary)]",
+  /** 3-tier typography — primary / secondary / metadata */
+  tierPrimary: "text-base font-semibold text-[var(--text-primary)]",
+  tierSecondary: "text-sm font-bold tabular-nums text-[var(--text-primary)]",
+  tierMeta: "text-xs text-[var(--text-muted)]",
+  statValue: "text-2xl font-bold tabular-nums text-[var(--text-primary)]",
+  statValueSm: "text-sm font-bold tabular-nums text-[var(--text-primary)]",
+  statLabel: "text-xs text-[var(--text-muted)]",
+  statUnit: "text-xs font-normal text-[var(--text-muted)]",
+  cardTitle: "text-base font-semibold text-[var(--text-primary)]",
   cardSubtitle: "text-xs text-[var(--text-muted)]",
   label: "text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]",
   primaryBtn:
@@ -60,7 +68,7 @@ export const ds = {
   secondaryBtn:
     "inline-flex items-center justify-center rounded-2xl border border-[var(--btn-secondary-border)] bg-[var(--btn-secondary-bg)] px-5 py-3 text-sm font-semibold text-[var(--btn-secondary-text)] transition-colors hover:bg-[var(--btn-secondary-hover)]",
   input:
-    "w-full rounded-2xl border border-[var(--border-default)] bg-[var(--surface-input)] px-4 py-3.5 text-sm text-[var(--text-primary)] outline-none transition-all focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)]/10",
+    "w-full rounded-2xl border border-[var(--border-default)] bg-[var(--surface-input)] px-4 py-3.5 text-sm text-[var(--text-primary)] outline-none transition-all focus:border-[var(--brand-action)] focus:ring-2 focus:ring-[var(--brand-action)]/10",
   formCard:
     "space-y-4 rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] p-5 shadow-sm",
   /** Muted info / guidelines callout (Create Recipe, etc.) */
@@ -84,7 +92,7 @@ export const ds = {
   sectionGap: "mb-6",
   cardGap: "gap-3",
   thumbnail:
-    "flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[var(--surface-brand-subtle)] text-2xl",
+    "flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl",
   /** @deprecated use mobilePage */
   page: "min-h-screen w-full max-w-full overflow-x-hidden bg-[var(--surface-page)]",
 } as const;
