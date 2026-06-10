@@ -28,6 +28,29 @@ html {
   --brand-amber: #d97706;
   --text-link: #2d4a32;
 
+  /* Role split: navy = structure, green = action */
+  --brand-navy: #102818;
+  --brand-navy-mid: #1a2e3b;
+  --brand-navy-soft: #243d4d;
+  --brand-navy-subtle: #eef2f4;
+  --brand-action: #3a5a40;
+  --brand-action-hover: #2d4a32;
+  --brand-action-mid: #4a7a50;
+  --brand-action-subtle: #f0f7f0;
+  --surface-action-subtle: var(--brand-action-subtle);
+
+  /* Meal thumbnail tints by type */
+  --meal-tint-breakfast-bg: #fff7ed;
+  --meal-tint-breakfast-icon: #c2410c;
+  --meal-tint-lunch-bg: #eff6ff;
+  --meal-tint-lunch-icon: #1d4ed8;
+  --meal-tint-dinner-bg: #fef2f2;
+  --meal-tint-dinner-icon: #b45309;
+  --meal-tint-snack-bg: #f0fdf4;
+  --meal-tint-snack-icon: #15803d;
+  --meal-tint-default-bg: var(--surface-action-subtle);
+  --meal-tint-default-icon: var(--brand-action);
+
   /* Surfaces */
   --surface-page: #f8faf8;
   --surface-card: #ffffff;
@@ -50,9 +73,9 @@ html {
   --text-on-brand-muted: rgba(255, 255, 255, 0.78);
   --text-on-brand-subtle: rgba(255, 255, 255, 0.6);
 
-  /* Buttons */
-  --btn-primary-bg: #3a5a40;
-  --btn-primary-hover: #2d4a32;
+  /* Buttons — green = action */
+  --btn-primary-bg: var(--brand-action);
+  --btn-primary-hover: var(--brand-action-hover);
   --btn-primary-text: #ffffff;
   --btn-secondary-bg: #ffffff;
   --btn-secondary-hover: #f9fafb;
@@ -68,8 +91,8 @@ html {
   --header-stat-bg: rgba(255, 255, 255, 0.16);
   --header-stat-accent: #bbf7d0;
   --header-stat-warn: #fde68a;
-  --nav-bar-bg: #2d4a32;
-  --admin-nav-bg: #1a4731;
+  --nav-bar-bg: var(--brand-navy);
+  --admin-nav-bg: var(--brand-navy);
   --hero-gradient: radial-gradient(ellipse at top left, #4a7a50 0%, #3a5a40 40%, #2d4a33 100%);
   --landing-section-muted: #f8fafc;
   --landing-accent-surface: #f5f9f5;
@@ -88,8 +111,29 @@ html {
   --foreground: #e5e7eb;
 
   /* Brand surfaces stay dark green; links use lighter accent for contrast on dark bg */
-  --brand-primary: #3a5a40;
+  --brand-primary: var(--brand-action);
   --text-link: #86efac;
+
+  --brand-navy: #0b1220;
+  --brand-navy-mid: #131c28;
+  --brand-navy-soft: #1e293b;
+  --brand-navy-subtle: #131c28;
+  --brand-action: #4a7a50;
+  --brand-action-hover: #3a5a40;
+  --brand-action-mid: #6db876;
+  --brand-action-subtle: #1a2e1d;
+  --surface-action-subtle: var(--brand-action-subtle);
+
+  --meal-tint-breakfast-bg: rgba(120, 53, 15, 0.22);
+  --meal-tint-breakfast-icon: #fdba74;
+  --meal-tint-lunch-bg: rgba(30, 58, 138, 0.22);
+  --meal-tint-lunch-icon: #93c5fd;
+  --meal-tint-dinner-bg: rgba(127, 29, 29, 0.22);
+  --meal-tint-dinner-icon: #fca5a5;
+  --meal-tint-snack-bg: rgba(20, 83, 45, 0.22);
+  --meal-tint-snack-icon: #86efac;
+  --meal-tint-default-bg: var(--surface-action-subtle);
+  --meal-tint-default-icon: var(--brand-action-mid);
 
   --surface-page: #0b1220;
   --surface-card: #111827;
@@ -110,8 +154,8 @@ html {
   --text-on-brand-muted: rgba(249, 250, 251, 0.78);
   --text-on-brand-subtle: rgba(249, 250, 251, 0.58);
 
-  --btn-primary-bg: #4a7a50;
-  --btn-primary-hover: #3a5a40;
+  --btn-primary-bg: var(--brand-action);
+  --btn-primary-hover: var(--brand-action-hover);
   --btn-primary-text: #ffffff;
   --btn-secondary-bg: #1f2937;
   --btn-secondary-hover: #273247;
@@ -126,8 +170,8 @@ html {
   --header-stat-bg: rgba(255, 255, 255, 0.1);
   --header-stat-accent: #86efac;
   --header-stat-warn: #fcd34d;
-  --nav-bar-bg: #152318;
-  --admin-nav-bg: #152318;
+  --nav-bar-bg: var(--brand-navy);
+  --admin-nav-bg: var(--brand-navy);
   --hero-gradient: radial-gradient(ellipse at top left, #243d28 0%, #1a2e1d 40%, #0f1a12 100%);
   --landing-section-muted: #111827;
   --landing-accent-surface: #0b1220;
@@ -181,7 +225,7 @@ body {
 }
 
 :focus-visible {
-  outline: 2px solid var(--brand-primary);
+  outline: 2px solid var(--brand-action);
   outline-offset: 2px;
 }
 
@@ -191,7 +235,7 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid var(--brand-primary);
+  outline: 2px solid var(--brand-action);
   outline-offset: 2px;
 }
 

@@ -23,7 +23,7 @@ export function Logo({ size ="md", href ="/planner", className }: Props) {
  <Utensils className={`${s.icon} text-[var(--text-on-brand)]`} aria-hidden="true" />
  </span>
  <span className={`font-semibold tracking-tight ${s.text}`}>
- <span className="text-[var(--text-primary)]">Bite</span>
+ <span className="text-[var(--brand-navy)] dark:text-[var(--text-primary)]">Bite</span>
  <span className="text-[var(--text-link)]">Sync</span>
  </span>
  </>

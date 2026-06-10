@@ -37,7 +37,7 @@ export function NavLink({ href, label, icon, compact = false }: NavLinkProps) {
  compact ?"w-auto flex-col gap-1 px-2 py-1 text-xs" :"w-full gap-2 px-3 py-2 text-sm"
  } ${
  isActive
- ?"bg-[var(--brand-sage)] text-[var(--text-on-brand)]"
+ ?"bg-[var(--brand-navy)] text-[var(--text-on-brand)]"
  :"text-[var(--text-secondary)] hover:bg-[var(--btn-secondary-hover)]"
  }`}
  >
