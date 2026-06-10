@@ -36,6 +36,7 @@ export const metadata: Metadata = {
  siteName:"BiteSync",
  title:"BiteSync — Meal Planning & Grocery Sync",
  description:"Plan your meals, track your nutrition, and generate your grocery list automatically.",
+ images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "BiteSync — meal planning and grocery sync" }],
  },
  twitter: {
  card:"summary_large_image",
