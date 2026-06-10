@@ -1,8 +1,10 @@
 "use client";
 
+import { Package } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { MealMatchSuggestions } from "@/components/matching/MealMatchSuggestions";
+import { EmptyState } from "@/components/ui/EmptyState";
 import {
  addPantryItemsFromText,
  addPantryStaple,
@@ -69,7 +71,7 @@ export function PantryPageClient({ items }: Props) {
 
  return (
  <div className="space-y-4">
- <div className={`${ds.card} ${ds.cardPadding} space-y-3`}>
+ <div id="pantry-quick-add" className={`${ds.card} ${ds.cardPadding} space-y-3`}>
  <h2 className="text-sm font-bold text-[var(--text-primary)]">Quick add</h2>
  <p className="text-xs text-[var(--text-muted)]">
  Type what you have — comma-separated works: chicken, rice, broccoli, eggs
@@ -121,7 +123,13 @@ export function PantryPageClient({ items }: Props) {
  In your pantry ({items.length})
  </h2>
  {items.length === 0 ? (
- <p className="text-sm text-[var(--text-muted)]">Nothing here yet — add a few staples above.</p>
+ <EmptyState
+ icon={Package}
+ title="Your pantry is empty"
+ description="Add staples above, pick quick-add chips, or seed common UK kitchen items"
+ action={{ onClick: handleSeedStaples, label: "Add common staples" }}
+ className="border-0 py-10 shadow-none"
+ />
  ) : (
  <ul className="space-y-2">
  {items.map((item) => (

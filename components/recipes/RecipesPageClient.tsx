@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import dynamic from "next/dynamic";
-import { Heart } from "lucide-react";
+import Link from "next/link";
+import { ChefHat, Heart } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const ImportRecipeModal = dynamic(
@@ -14,6 +14,7 @@ const FillMyLibraryModal = dynamic(
  { ssr: false },
 );
 import { RecipeListCard, type RecipeListItem } from "@/components/recipes/RecipeListCard";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { archiveRecipe, createImportedRecipe, restoreRecipe } from "@/app/(app)/recipes/actions";
 import {
  parsedIngredientsToInputs,
@@ -272,26 +273,27 @@ export function RecipesPageClient({
 
  <div className="space-y-3">
  {filtered.length === 0 ? (
- <div className="flex flex-col items-center px-4 py-20 text-center">
- <div className="mb-4 text-5xl" aria-hidden>
- 🍽️
- </div>
- <p className="mb-1 font-bold text-[var(--text-primary)]">
- {listRecipes.length === 0 ?"No recipes yet" :"No matches"}
- </p>
- <p className="mb-6 text-sm text-[var(--text-muted)]">
- {listRecipes.length === 0
- ?"Add your first recipe or import one from a website"
- : activeFilter ==="Favourites"
- ?"Tap the heart on a recipe to save it here"
- :"Try a different search or filter"}
- </p>
- {!showArchived && listRecipes.length === 0 ? (
- <Link href="/recipes/new" className={ds.primaryBtn}>
- Add your first recipe
- </Link>
- ) : null}
- </div>
+ listRecipes.length === 0 && !showArchived ? (
+ <EmptyState
+ icon={ChefHat}
+ title="No recipes yet"
+ description="Add your first recipe manually or import one from a website"
+ action={{ href: "/recipes/new", label: "Add your first recipe" }}
+ />
+ ) : (
+ <EmptyState
+ icon={ChefHat}
+ title={listRecipes.length === 0 ? "No recipes yet" : "No matches"}
+ description={
+ listRecipes.length === 0
+ ? "Add your first recipe or import one from a website"
+ : activeFilter === "Favourites"
+ ? "Tap the heart on a recipe to save it here"
+ : "Try a different search or filter"
+ }
+ className="py-12"
+ />
+ )
  ) : (
  filtered.map((recipe) => (
  <RecipeListCard

@@ -1,7 +1,9 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
+import { CalendarDays } from "lucide-react";
 import { formatDayWithOrdinal } from "@/lib/utils/dates";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { RecipeSlotCard } from "@/components/planner/RecipeSlotCard";
 import { AddSlotButton } from "@/components/planner/AddSlotButton";
 import { DailyTotalsRow } from "@/components/planner/DailyTotalsRow";
@@ -99,9 +101,19 @@ export function PlannerGrid({
  function handleAssigned() {}
 
  const showBreakfastTip = isBreakfastRowEmpty(grid);
+ const hasAnyMeals = entries.some((entry) => entry.recipe_id != null || !!entry.quick_add_name);
 
  return (
  <>
+ {!hasAnyMeals ? (
+ <EmptyState
+ icon={CalendarDays}
+ title="Your week is empty"
+ description="Tap any meal slot to add a recipe — breakfast-named recipes help AI picks work better"
+ action={{ href: "/recipes", label: "Browse recipes" }}
+ className="mb-4"
+ />
+ ) : null}
  <div className="hidden overflow-x-auto rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] sm:block">
  <div className="grid min-w-[980px] grid-cols-[120px_repeat(7,minmax(112px,1fr))]">
  <div className="border-b border-[var(--border-default)] p-2" />

@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { BarChart2, Dna } from "lucide-react";
 import type { DayMacros } from "@/lib/planner/weekly-macros";
+import { EmptyState } from "@/components/ui/EmptyState";
 import type { UserNutritionTargets } from "@/lib/utils/nutrition-targets";
 import { getGoalStatus, type GoalMetric } from "@/lib/today/goal-status";
 import { formatWeekdayWithOrdinal } from "@/lib/utils/dates";
@@ -60,6 +62,8 @@ export function NutritionDashboard({
  [microAnalysis],
  );
 
+ const hasWeekData = days.some((d) => d.kcal > 0);
+
  return (
  <div className={ds.mobilePage}>
  <header className={ds.gradientHeader}>
@@ -92,6 +96,15 @@ export function NutritionDashboard({
  </header>
 
  <div className={`${ds.mobileGutter} ${ds.overlap} ${ds.pageContent}`}>
+ {!hasWeekData ? (
+ <EmptyState
+ icon={BarChart2}
+ title="No nutrition data yet"
+ description="Plan meals for this week and your macros will appear here"
+ action={{ href: "/planner", label: "Go to planner" }}
+ />
+ ) : (
+ <>
  <div className="mb-3">
  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
  Selected day
@@ -104,7 +117,7 @@ export function NutritionDashboard({
  onClick={() => setSelectedDay(d.dateISO)}
  className={`flex-1 rounded-xl py-2 text-center transition-all ${
  selectedDay === d.dateISO
- ?"bg-[var(--brand-primary)] text-[var(--text-on-brand)]"
+ ?"bg-[var(--brand-action)] text-[var(--text-on-brand)]"
  :"text-[var(--text-muted)] hover:bg-[var(--surface-muted)]"
  }`}
  >
@@ -168,16 +181,16 @@ export function NutritionDashboard({
  ) : isProUser ? (
  <div className={`${ds.card} ${ds.cardPadding} text-center`}>
  <p className="text-sm text-[var(--text-muted)]">Add meals to your planner to see micronutrient analysis.</p>
- <Link href="/planner" className="mt-2 inline-block text-sm font-semibold text-[var(--brand-primary)]">
+ <Link href="/planner" className="mt-2 inline-block text-sm font-semibold text-[var(--text-link)]">
  Go to planner →
  </Link>
  </div>
  ) : (
- <div className="rounded-2xl bg-[var(--surface-brand-subtle)] p-5 text-center">
- <p className="mb-2 text-2xl" aria-hidden>
- 🧬
- </p>
- <p className="mb-1 text-sm font-bold text-[var(--text-primary)]">Micronutrient analysis</p>
+ <div className="rounded-2xl bg-[var(--surface-action-subtle)] p-5 text-center">
+ <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand-navy-subtle)] text-[var(--brand-navy)] dark:bg-[var(--brand-navy-soft)] dark:text-[var(--text-on-header-muted)]" aria-hidden>
+ <Dna className="h-6 w-6" strokeWidth={1.75} />
+ </div>
+ <p className={`mb-1 ${ds.tierPrimary}`}>Micronutrient analysis</p>
  <p className="mb-4 text-xs text-[var(--text-muted)]">
  See how your diet compares to UK Government DRVs for vitamins and minerals.
  </p>
@@ -189,6 +202,8 @@ export function NutritionDashboard({
  </div>
 
  <CofidAttribution className="mt-6 px-1" />
+ </>
+ )}
  </div>
  </div>
  );
