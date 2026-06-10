@@ -1,6 +1,7 @@
 import {
   parseIngredientLine,
   parsedIngredientToInput,
+  scaleParsedIngredients,
 } from "@/lib/recipes/parseIngredient";
 
 function assertNoPieceUnit(value: unknown): void {
@@ -44,6 +45,39 @@ function assertNoPieceUnit(value: unknown): void {
   if (parsed.unit !== "clove") throw new Error(`unit: ${parsed.unit}`);
   if (!parsed.name.includes("garlic")) throw new Error(`name: ${parsed.name}`);
   assertNoPieceUnit(parsedIngredientToInput(parsed));
+}
+
+// BBC-style dual metric/imperial weights → metric grams only, clean name
+{
+  const chicken = parseIngredientLine("250g/9oz chicken mince");
+  if (chicken.grams !== 250) throw new Error(`chicken grams: ${chicken.grams}`);
+  if (chicken.gramsSource !== "explicit") throw new Error("chicken source");
+  if (!chicken.name.includes("chicken mince")) throw new Error(`chicken name: ${chicken.name}`);
+  if (chicken.unit != null || chicken.quantity != null) {
+    throw new Error(`chicken should be weight-only: ${JSON.stringify(chicken)}`);
+  }
+
+  const ricotta = parseIngredientLine("100g/3½oz ricotta");
+  if (ricotta.grams !== 100) throw new Error(`ricotta grams: ${ricotta.grams}`);
+  if (!ricotta.name.includes("ricotta")) throw new Error(`ricotta name: ${ricotta.name}`);
+  if (ricotta.unit === "oz") throw new Error("ricotta should not keep oz unit");
+}
+
+// Descriptive amounts
+{
+  const drizzle = parseIngredientLine("drizzle olive oil");
+  if (drizzle.unit !== "tbsp") throw new Error(`drizzle unit: ${drizzle.unit}`);
+  if (!drizzle.name.includes("olive oil")) throw new Error(`drizzle name: ${drizzle.name}`);
+
+  const taste = parseIngredientLine("salt and freshly ground black pepper, to taste");
+  if (taste.unit !== "pinch") throw new Error(`to taste unit: ${taste.unit}`);
+  if (taste.quantity !== 1) throw new Error(`to taste qty: ${taste.quantity}`);
+}
+
+// Halving scaled import (2 servings → 1 person)
+{
+  const scaled = scaleParsedIngredients([parseIngredientLine("250g/9oz chicken mince")], 0.5);
+  if (scaled[0]?.grams !== 125) throw new Error(`scaled grams: ${scaled[0]?.grams}`);
 }
 
 console.log("OK: ingredient parser regression tests passed");

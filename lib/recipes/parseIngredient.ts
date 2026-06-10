@@ -119,9 +119,28 @@ function canonicalUnit(raw: string | undefined): string | null {
   return UNIT_ALIASES[key] ?? null;
 }
 
+/** UK recipe sites often use dual metric/imperial weights, e.g. `250g/9oz chicken mince`. */
+function extractUkDualMetricWeight(text: string): { grams: number | null; remainder: string } {
+  const match = text.match(
+    /^(\d+(?:\.\d+)?)\s*g\s*\/\s*(?:[½¼¾⅓⅔⅛]|\d+(?:\.\d+)?(?:\s*\/\s*\d+)?)?\s*oz\.?\s*/i,
+  );
+  if (!match) return { grams: null, remainder: text };
+  const grams = Number(match[1]);
+  if (!Number.isFinite(grams) || grams <= 0) return { grams: null, remainder: text };
+  return {
+    grams,
+    remainder: normalizeSpaces(text.slice(match[0].length)),
+  };
+}
+
 function extractExplicitWeight(text: string): { grams: number | null; remainder: string } {
   let working = text;
   let grams: number | null = null;
+
+  const dual = extractUkDualMetricWeight(working);
+  if (dual.grams != null) {
+    return dual;
+  }
 
   const patterns: RegExp[] = [
     /\((?:about|approx\.?|approximately|around|~)?\s*(\d+(?:\.\d+)?)\s*(kg|g)\s*\)/gi,
@@ -185,6 +204,9 @@ function cleanIngredientName(name: string): string {
     .replace(TRAILING_PREP, "")
     .replace(/\([^)]*\)/g, " ")
     .replace(SIZE_PREFIXES, "")
+    .replace(/^[/\s]+/, "")
+    .replace(/^\d+(?:\.\d+)?\s*oz\.?\s+/i, "")
+    .replace(/,\s*$/g, "")
     .replace(/\s+/g, " ")
     .trim();
 
@@ -202,9 +224,46 @@ function estimateGrams(quantity: number | null, unit: string | null, name: strin
   return grams != null && grams > 0 ? Math.round(grams * 10) / 10 : null;
 }
 
+function parseDescriptiveAmount(rawText: string): ParsedIngredient | null {
+  const lower = rawText.toLowerCase();
+
+  if (/\bto taste\b/i.test(rawText)) {
+    return {
+      quantity: 1,
+      unit: "pinch",
+      name: cleanIngredientName(rawText),
+      grams: 1,
+      gramsSource: "estimated",
+      rawText,
+    };
+  }
+
+  if (/\bdrizzle\b/i.test(rawText)) {
+    const name = cleanIngredientName(rawText.replace(/^drizzle\s+(?:of\s+)?/i, ""));
+    return {
+      quantity: 0.5,
+      unit: "tbsp",
+      name: name || "olive oil",
+      grams: 7,
+      gramsSource: "estimated",
+      rawText,
+    };
+  }
+
+  if (/\b(optional|plus extra to serve)\b/i.test(lower) && !/\d/.test(rawText)) {
+    return null;
+  }
+
+  return null;
+}
+
 /** Parse a single ingredient line into a structured, nutrition-ready shape. */
 export function parseIngredientLine(raw: string): ParsedIngredient {
   const rawText = normalizeSpaces(raw.replace(/^[•\-*]\s*/, ""));
+
+  const descriptive = parseDescriptiveAmount(rawText);
+  if (descriptive) return descriptive;
+
   let working = rawText;
 
   const { grams: explicitGrams, remainder: afterWeight } = extractExplicitWeight(working);
@@ -257,7 +316,7 @@ export function parseIngredientLine(raw: string): ParsedIngredient {
   if (quantityResolved == null && unit != null) {
     quantityResolved = 1;
   }
-  if (quantityResolved == null && SPICE_ONLY_PATTERN.test(name)) {
+  if (quantityResolved == null && SPICE_ONLY_PATTERN.test(name) && !/\bto taste\b/i.test(rawText)) {
     quantityResolved = 1;
     if (!unit) unit = "tsp";
   }
@@ -275,6 +334,11 @@ export function parseIngredientLine(raw: string): ParsedIngredient {
       grams = estimated;
       gramsSource = "estimated";
     }
+  }
+
+  if (grams != null && gramsSource === "explicit") {
+    quantityResolved = null;
+    unit = null;
   }
 
   return {

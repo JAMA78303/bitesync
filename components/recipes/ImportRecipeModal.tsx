@@ -243,26 +243,29 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
  <input
  value={ing.name}
  onChange={(e) => updateIngredient(i, { name: e.target.value })}
- className="h-9 rounded-md border border-[var(--border-default)] bg-[var(--surface-card)] px-2 text-sm"
+ className="h-9 rounded-md border border-[var(--border-default)] bg-[var(--surface-card)] px-2 text-sm text-[var(--text-primary)]"
  placeholder="Ingredient name"
  />
  <input
- value={ing.quantity ??""}
+ value={ing.gramsSource ==="explicit" ?"" : (ing.quantity ??"")}
  onChange={(e) =>
  updateIngredient(i, {
  quantity: e.target.value ? Number(e.target.value) : null,
+ gramsSource: ing.gramsSource ==="explicit" ?"estimated" : ing.gramsSource,
  })
  }
  type="number"
  min="0"
  step="0.1"
- className="h-9 rounded-md border border-[var(--border-default)] bg-[var(--surface-card)] px-2 text-sm"
+ disabled={ing.gramsSource ==="explicit"}
+ className="h-9 rounded-md border border-[var(--border-default)] bg-[var(--surface-card)] px-2 text-sm text-[var(--text-primary)] disabled:opacity-40"
  placeholder="Qty"
  />
  <input
- value={ing.unit ??""}
+ value={ing.gramsSource ==="explicit" ?"g" : (ing.unit ??"")}
  onChange={(e) => updateIngredient(i, { unit: e.target.value.toLowerCase() || null })}
- className="h-9 rounded-md border border-[var(--border-default)] bg-[var(--surface-card)] px-2 text-sm"
+ disabled={ing.gramsSource ==="explicit"}
+ className="h-9 rounded-md border border-[var(--border-default)] bg-[var(--surface-card)] px-2 text-sm text-[var(--text-primary)] disabled:opacity-40"
  placeholder="Unit"
  />
  <input
@@ -347,7 +350,9 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
  <h3 className="font-semibold">{result.name}</h3>
  {detected > 1 ? (
  <p className="mt-1 text-sm text-[var(--text-muted)]">
- This recipe makes about {detected} servings. How many people are you cooking for?
+ This recipe makes {detected} servings on the original site. Choose how many people you&apos;re
+ cooking for — we&apos;ll scale ingredients and calories (e.g. 1 person from a 2-serving recipe uses
+ half the ingredients, about one serving).
  </p>
  ) : (
  <p className="mt-1 text-sm text-[var(--text-muted)]">How many people are these ingredient amounts for?</p>
