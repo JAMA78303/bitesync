@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "next-themes";
-import"./globals.css";
+import { ThemeSync } from "@/components/shared/ThemeSync";
+import "./globals.css";
 
 const inter = Inter({
  variable:"--font-inter",
@@ -76,6 +77,7 @@ export default function RootLayout({
  root.classList.remove("light","dark");
  root.classList.add(theme);
  root.setAttribute("data-theme", theme);
+ root.style.colorScheme = theme;
  } catch (e) {}
 })();`,
  }}
@@ -83,12 +85,13 @@ export default function RootLayout({
  </head>
  <body className="min-h-full flex flex-col">
  <ThemeProvider
- attribute="class"
+ attribute="data-theme"
  defaultTheme="system"
  enableSystem
  disableTransitionOnChange
  storageKey="theme"
  >
+ <ThemeSync />
  {children}
  </ThemeProvider>
  </body>

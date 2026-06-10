@@ -140,13 +140,16 @@ export default async function SettingsPage() {
  ))}
 
  {isAdmin ? (
- <div className="rounded-2xl bg-[var(--surface-elevated)] p-4">
+ <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--surface-elevated)] p-4">
  <div className="flex items-center justify-between">
  <div>
- <p className="text-sm font-semibold text-[var(--text-on-brand)]">Admin</p>
+ <p className="text-sm font-semibold text-[var(--text-primary)]">Admin</p>
  <p className="mt-0.5 text-xs text-[var(--text-muted)]">Internal tools</p>
  </div>
- <Link href="/admin/prices" className="text-xs text-[var(--text-on-brand-muted)] hover:text-[var(--text-on-brand)]">
+ <Link
+ href="/admin/prices"
+ className="text-xs font-medium text-[var(--brand-primary)] hover:underline"
+ >
  Price manager →
  </Link>
  </div>

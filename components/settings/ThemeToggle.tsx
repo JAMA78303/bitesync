@@ -12,13 +12,6 @@ export function ThemeToggle() {
  setMounted(true);
  }, []);
 
- useEffect(() => {
- if (!mounted || !resolvedTheme) return;
- // Keep legacy selectors working while the app transitions to class-based theming.
- document.documentElement.setAttribute("data-theme", resolvedTheme);
- localStorage.setItem("bitesync-theme", resolvedTheme);
- }, [mounted, resolvedTheme]);
-
  if (!mounted) return null;
 
  const isDark = resolvedTheme ==="dark";

@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Match app theme toggle — do not use prefers-color-scheme (breaks light app + dark OS). */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
@@ -8,10 +11,11 @@
 }
 
 html {
-  color-scheme: light;
+  color-scheme: light dark;
 }
 
-:root {
+:root,
+:root[data-theme="light"] {
   color-scheme: light;
   --background: #f9fafb;
   --foreground: #111827;
@@ -197,8 +201,11 @@ html[data-theme="dark"] body {
   color: var(--text-muted);
 }
 
+:root.dark input:not([data-force-light]),
 :root[data-theme="dark"] input:not([data-force-light]),
+:root.dark textarea:not([data-force-light]),
 :root[data-theme="dark"] textarea:not([data-force-light]),
+:root.dark select:not([data-force-light]),
 :root[data-theme="dark"] select:not([data-force-light]) {
   background-color: var(--surface-input) !important;
   color: var(--text-primary) !important;

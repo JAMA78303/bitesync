@@ -9,12 +9,6 @@ export function SettingsThemeRow() {
 
  useEffect(() => setMounted(true), []);
 
- useEffect(() => {
- if (!mounted || !resolvedTheme) return;
- document.documentElement.setAttribute("data-theme", resolvedTheme);
- localStorage.setItem("bitesync-theme", resolvedTheme);
- }, [mounted, resolvedTheme]);
-
  if (!mounted) return null;
 
  const isDark = resolvedTheme ==="dark";

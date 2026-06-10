@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { ExternalLink, Link as LinkIcon, Loader2, Plus, Trash2, X } from "lucide-react";
+import { ModalPortal } from "@/components/ui/ModalPortal";
 import type { RecipeSourceType } from "@/lib/recipes/detectSourceType";
 import type { ParsedIngredient } from "@/lib/recipes/parseIngredient";
 
@@ -153,10 +154,11 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
  const hasValidIngredients = (result?.ingredients ?? []).some((i) => i.name.trim().length > 0);
 
  return (
- <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/50 sm:items-center">
- <div className="max-h-[90vh] w-full overflow-y-auto rounded-t-2xl bg-[var(--surface-card)] p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:max-w-2xl sm:rounded-2xl sm:pb-6">
+ <ModalPortal>
+ <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
+ <div className="max-h-[min(90vh,calc(100dvh-2rem))] w-full max-w-2xl overflow-y-auto rounded-2xl bg-[var(--surface-card)] p-6 shadow-xl">
  <div className="mb-4 flex items-center justify-between">
- <h2 className="text-lg font-semibold">Import recipe</h2>
+ <h2 className="text-lg font-semibold text-[var(--text-primary)]">Import recipe</h2>
  <button onClick={onClose} className="rounded-lg p-1 hover:bg-[var(--btn-secondary-hover)]" aria-label="Close import modal">
  <X className="h-5 w-5" />
  </button>
@@ -179,7 +181,7 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
  onChange={(e) => setUrl(e.target.value)}
  onKeyDown={(e) => e.key ==="Enter" && handleFetch()}
  placeholder="https://..."
- className="min-w-0 flex-1 bg-transparent text-base outline-none sm:text-sm"
+ className="min-w-0 flex-1 bg-transparent text-base text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)] sm:text-sm"
  autoFocus
  />
  </div>
@@ -401,5 +403,6 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
  {error ? <p className="mt-3 text-sm text-red-500">{error}</p> : null}
  </div>
  </div>
+ </ModalPortal>
  );
 }

@@ -8,6 +8,7 @@ import {
  saveFillLibraryRecipes,
 } from "@/app/(app)/recipes/bulkFillActions";
 import { ds } from "@/lib/ui/classes";
+import { ModalPortal } from "@/components/ui/ModalPortal";
 import type { HybridRecipeDraft } from "@/lib/recipes/hybridRecipeEngine";
 
 type DraftRow = HybridRecipeDraft & {
@@ -166,7 +167,8 @@ export function FillMyLibraryModal({ onClose }: Props) {
  }
 
  return (
- <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/40 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:pb-4">
+ <ModalPortal>
+ <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
  <div
  className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-[var(--surface-card)] shadow-xl"
  role="dialog"
@@ -302,5 +304,6 @@ export function FillMyLibraryModal({ onClose }: Props) {
  </div>
  </div>
  </div>
+ </ModalPortal>
  );
 }
