@@ -27,6 +27,7 @@ export type UserFacingErrorContext =
   | "billing"
   | "profile"
   | "pantry"
+  | "auth"
   | "generic";
 
 export const FRIENDLY_BY_CONTEXT: Record<UserFacingErrorContext, string> = {
@@ -39,6 +40,7 @@ export const FRIENDLY_BY_CONTEXT: Record<UserFacingErrorContext, string> = {
   billing: "Couldn't complete billing — please try again or contact support.",
   profile: "Couldn't save your settings — please try again.",
   pantry: "Couldn't update your pantry — please try again.",
+  auth: "Couldn't complete that — please check your details and try again.",
   generic: "Something went wrong — please try again.",
 };
 

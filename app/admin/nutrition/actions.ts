@@ -1,5 +1,6 @@
 "use server";
 
+import { toUserFacingError } from "@/lib/errors/userFacing";
 import { revalidatePath } from "next/cache";
 import { invalidateCofidOverrideCache } from "@/lib/nutrition/cofidLookup";
 import { createClient } from "@/lib/supabase/server";
@@ -43,7 +44,7 @@ export async function addCofidOverride(payload: {
     { onConflict: "ingredient_name" },
   );
 
-  if (error) return { error: error.message };
+  if (error) return { error: toUserFacingError(error, "generic", "adminNutrition") };
 
   invalidateCofidOverrideCache();
   revalidatePath("/admin/nutrition");
@@ -55,7 +56,7 @@ export async function removeCofidOverride(id: number): Promise<{ error?: string 
 
   const admin = createSupabaseAdmin();
   const { error } = await admin.from("cofid_overrides").delete().eq("id", id);
-  if (error) return { error: error.message };
+  if (error) return { error: toUserFacingError(error, "generic", "adminNutrition") };
 
   invalidateCofidOverrideCache();
   revalidatePath("/admin/nutrition");

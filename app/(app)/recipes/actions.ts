@@ -26,7 +26,6 @@ import {
 } from "@/lib/recipes/macroRecompute";
 import {
   filterValidRecipeIngredients,
-  ingredientQuantityError,
   validateRecipeIngredients,
 } from "@/lib/recipes/ingredientValidation";
 import type { ActionResult } from "@/types";

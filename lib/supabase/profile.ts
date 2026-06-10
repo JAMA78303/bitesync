@@ -8,7 +8,6 @@ import { dietaryPreferencesToLegacyFlags } from "@/lib/dietary/constraints";
 import { normalizeDietaryPreferencesForSave } from "@/lib/dietary/constants";
 import {
   computeNutritionTargetsFromProfile,
-  hasCompleteTdeeProfile,
   storedTargetsAreStale,
 } from "@/lib/utils/nutrition-targets";
 import { calculateNutritionTargetsWithSafety, type TDEEFormValues } from "@/lib/utils/tdee";

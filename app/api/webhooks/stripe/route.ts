@@ -76,7 +76,7 @@ export async function POST(request: Request) {
 
         let userId = session.metadata?.supabase_user_id ?? null;
         const customerId = normalizeStripeId(session.customer);
-        let subscriptionId = normalizeStripeId(session.subscription);
+        const subscriptionId = normalizeStripeId(session.subscription);
 
         if (!userId && subscriptionId) {
           const sub = await stripe.subscriptions.retrieve(subscriptionId);

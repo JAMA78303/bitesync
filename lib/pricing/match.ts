@@ -32,7 +32,7 @@ const LEADING_DESCRIPTORS = new Set([
 ]);
 
 function normalizeForCatalogMatch(raw: string): string {
-  let s = raw
+  const s = raw
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9,/]+/g, " ")

@@ -1,5 +1,6 @@
 "use server";
 
+import { toUserFacingError } from "@/lib/errors/userFacing";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
@@ -53,7 +54,7 @@ export async function updateStorePrice(
     })
     .eq("id", productId);
 
-  if (error) return { error: error.message };
+  if (error) return { error: toUserFacingError(error, "generic", "adminPrices") };
 
   revalidatePath("/admin/prices");
   revalidatePath("/planner");
@@ -87,7 +88,7 @@ export async function addCanonicalItem(data: {
     .insert(normalized)
     .select("id,name,category,default_unit")
     .single();
-  if (error) return { error: error.message };
+  if (error) return { error: toUserFacingError(error, "generic", "adminPrices") };
 
   const stores = ["tesco", "asda", "aldi"] as const;
   const nowIso = new Date().toISOString();

@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { signUp } from "@/app/(auth)/signup/actions";
-import { AuthSubmitButton } from "@/components/shared/AuthSubmitButton";
 import { ds } from "@/lib/ui/classes";
 
 export default async function SignupPage({

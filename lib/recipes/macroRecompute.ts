@@ -139,10 +139,6 @@ function looksMangledIngredient(name: string, unit: string): boolean {
   );
 }
 
-function looksMangled(row: StoredIngredientRow): boolean {
-  return looksMangledIngredient(row.name.trim(), (row.unit ?? "").trim().toLowerCase());
-}
-
 /** Re-parse stored ingredient rows using the corrected parser where possible. */
 export function repairStoredIngredient(row: StoredIngredientRow): IngredientRepairDetail {
   const before: RecipeIngredientInput = {

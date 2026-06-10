@@ -29,7 +29,8 @@ const SETTINGS_GROUPS = [
 
 export default async function SettingsPage() {
  const supabase = await createClient();
- let [profile, auth] = await Promise.all([getProfile(), supabase.auth.getUser()]);
+ const [initialProfile, auth] = await Promise.all([getProfile(), supabase.auth.getUser()]);
+ let profile = initialProfile;
  const {
  data: { user },
  } = auth;

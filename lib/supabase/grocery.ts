@@ -79,7 +79,11 @@ async function restoreManualGrocerySnapshot(
   if (!error) return { error: null };
 
   if (error.message.toLowerCase().includes("is_manual")) {
-    const legacyPayload = payload.map(({ is_manual: _, ...rest }) => rest);
+    const legacyPayload = payload.map((item) => {
+      const { is_manual: omitted, ...rest } = item;
+      void omitted;
+      return rest;
+    });
     const { error: legacyError } = await supabase.from("grocery_items").insert(legacyPayload);
     return { error: legacyError?.message ?? null };
   }

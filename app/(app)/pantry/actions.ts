@@ -10,7 +10,6 @@ import {
   namesToAvailableIngredients,
   type SuggestMealsResult,
 } from "@/lib/matching/suggest-meals";
-import { PANTRY_STAPLES } from "@/lib/pantry/constants";
 import {
   addPantryItem,
   getPantryItems,

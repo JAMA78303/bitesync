@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { BiteSyncLogoMark } from "@/components/auth/BiteSyncLogoMark";
-import { ds } from "@/lib/ui/classes";
 
 type Props = {
  children: ReactNode;

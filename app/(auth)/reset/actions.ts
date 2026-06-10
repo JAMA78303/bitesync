@@ -1,5 +1,6 @@
 "use server";
 
+import { toUserFacingError } from "@/lib/errors/userFacing";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -17,7 +18,7 @@ export async function requestPasswordReset(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/reset?error=${encodeURIComponent(error.message)}`);
+    redirect(`/reset?error=${encodeURIComponent(toUserFacingError(error, "auth", "reset"))}`);
   }
 
   redirect("/reset?success=Password%20reset%20email%20sent");
