@@ -1,13 +1,15 @@
 "use client";
 
-import { X } from "lucide-react";
+import { X, Flame, Leaf, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { removeSlotEntry } from "@/lib/supabase/meal-plans";
 import { useToast } from "@/components/ui/use-toast";
+import { MealThumbnail } from "@/components/ui/MealThumbnail";
 import { getDietTag } from "@/lib/ui/dietTags";
 import { getDietTagStyle } from "@/lib/ui/dietTagStyles";
-import { getMealEmoji } from "@/lib/ui/mealThumbnails";
+import { mealTintClasses, QUICK_ADD_VISUAL } from "@/lib/ui/mealVisuals";
+import { ds } from "@/lib/ui/classes";
 import { recipeDietWarnings, type ProfileDietPrefs } from "@/lib/utils/diet";
 import {
  normalizeRecipeNutritionEmbed,
@@ -74,22 +76,22 @@ export function RecipeSlotCard({
 
  const macroLine =
  calories != null ? (
- <div className={`flex flex-wrap items-center gap-x-2 gap-y-0.5 ${variant ==="grid" ?"mt-1" :"mt-1 gap-3"}`}>
- <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
- <span aria-hidden>🔥</span>
- <span className="font-medium text-[var(--text-secondary)]">{Math.round(calories)}</span>
- <span>kcal</span>
+ <div className={`flex flex-wrap items-center gap-x-2 gap-y-0.5 ${variant ==="grid" ?"mt-1" :"mt-1.5 gap-3"}`}>
+ <span className="flex items-baseline gap-1">
+ <Flame className="h-3 w-3 shrink-0 text-[var(--brand-action)]" aria-hidden />
+ <span className={ds.statValueSm}>{Math.round(calories)}</span>
+ <span className={ds.tierMeta}>kcal</span>
  </span>
  {protein != null ? (
- <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
- <span aria-hidden>🌿</span>
- <span className="font-medium text-[var(--text-secondary)]">{Math.round(protein)}g</span>
- <span>P</span>
+ <span className="flex items-baseline gap-1">
+ <Leaf className="h-3 w-3 shrink-0 text-[var(--brand-action)]" aria-hidden />
+ <span className={ds.statValueSm}>{Math.round(protein)}g</span>
+ <span className={ds.tierMeta}>P</span>
  </span>
  ) : null}
  </div>
  ) : isQuickAdd ? (
- <p className="mt-1 text-xs text-[var(--text-muted)]">Quick add</p>
+ <p className={`mt-1 ${ds.tierMeta}`}>Quick add</p>
  ) : null;
 
  const cardInner =
@@ -107,7 +109,7 @@ export function RecipeSlotCard({
  </span>
  ) : null}
  <p
- className="min-w-0 w-full break-words line-clamp-2 text-xs font-bold leading-snug text-[var(--text-primary)]"
+ className={`min-w-0 w-full break-words line-clamp-2 text-xs font-semibold leading-snug ${ds.tierPrimary}`}
  title={name}
  >
  {name}
@@ -128,9 +130,15 @@ export function RecipeSlotCard({
  isPending ?"opacity-50" :""
  }`}
  >
- <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-[var(--surface-brand-subtle)] text-2xl">
- {isQuickAdd ?"✨" : getMealEmoji(name, entry.meal_type)}
+ {isQuickAdd ? (
+ <div
+ className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${mealTintClasses(QUICK_ADD_VISUAL.mealType)}`}
+ >
+ <Sparkles className="h-5 w-5" aria-hidden strokeWidth={2} />
  </div>
+ ) : (
+ <MealThumbnail recipeName={name} mealType={entry.meal_type} size="sm" />
+ )}
 
  <div className="min-w-0 flex-1">
  {dietTag ? (
@@ -141,7 +149,7 @@ export function RecipeSlotCard({
  </span>
  ) : null}
  <p
- className="min-w-0 break-words line-clamp-2 text-sm font-bold leading-snug text-[var(--text-primary)]"
+ className={`min-w-0 break-words line-clamp-2 text-sm font-semibold leading-snug ${ds.tierPrimary}`}
  title={name}
  >
  {name}
@@ -176,7 +184,7 @@ export function RecipeSlotCard({
  {recipeIdForLink && !isQuickAdd ? (
  <Link
  href={`/recipes/${encodeURIComponent(String(recipeIdForLink))}`}
- className="block min-w-0 outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]"
+ className="block min-w-0 outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-[var(--brand-action)]"
  aria-label={`Open recipe ${name}`}
  >
  {cardInner}

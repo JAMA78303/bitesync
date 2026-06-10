@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { MealThumbnail } from "@/components/ui/MealThumbnail";
 import { getDietTag } from "@/lib/ui/dietTags";
 import { getDietTagStyle } from "@/lib/ui/dietTagStyles";
-import { getMealEmoji } from "@/lib/ui/mealThumbnails";
 import { formatIngredientWeightSuffix } from "@/lib/nutrition/convert";
 import { ds } from "@/lib/ui/classes";
 
@@ -79,10 +79,8 @@ export function RecipeDetailView({
 
  return (
  <div className={`${ds.mobilePage} ${ds.pageContent}`}>
- <div className="relative flex h-40 items-center justify-center rounded-b-none bg-[var(--surface-brand-subtle)]">
- <span className="text-7xl" aria-hidden>
- {getMealEmoji(recipe.name,"dinner")}
- </span>
+ <div className="relative flex h-40 items-center justify-center rounded-b-none bg-[var(--surface-action-subtle)]">
+ <MealThumbnail recipeName={recipe.name} mealType="dinner" size="lg" />
  {recipe.source_domain && recipe.source_url ? (
  <a
  href={recipe.source_url}

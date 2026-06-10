@@ -1,4 +1,5 @@
 import { PhoneFrame } from "@/components/landing/PhoneFrame";
+import { MealThumbnail } from "@/components/ui/MealThumbnail";
 
 function MiniRing() {
  const size = 44;
@@ -14,7 +15,7 @@ function MiniRing() {
  cy={half}
  r={r}
  fill="none"
- stroke="var(--brand-primary)"
+ stroke="var(--brand-action)"
  strokeWidth={5}
  strokeLinecap="round"
  strokeDasharray={c}
@@ -44,11 +45,11 @@ function MockToday() {
  </div>
  </div>
  <div className="mt-2 grid grid-cols-2 gap-1.5">
- <MacroMini label="Protein" value={78} color="var(--brand-primary)" />
+ <MacroMini label="Protein" value={78} color="var(--brand-action)" />
  <MacroMini label="Carbs" value={120} color="#f97316" />
  </div>
  </article>
- <MealRow emoji="🥣" name="Greek yoghurt & berries" meta="320 kcal · 24g protein" />
+ <MealRow name="Greek yoghurt & berries" meta="320 kcal · 24g protein" mealType="breakfast" />
  </section>
  </PhoneFrame>
  );
@@ -68,12 +69,12 @@ function MacroMini({ label, value, color }: { label: string; value: number; colo
  );
 }
 
-function MealRow({ emoji, name, meta }: { emoji: string; name: string; meta: string }) {
+function MealRow({ name, meta, mealType }: { name: string; meta: string; mealType: string }) {
  return (
  <article className="flex gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-2">
- <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--surface-brand-subtle)] text-base">{emoji}</span>
+ <MealThumbnail recipeName={name} mealType={mealType} size="sm" />
  <div className="min-w-0 flex-1">
- <p className="truncate text-2xs font-bold text-[var(--text-primary)]">{name}</p>
+ <p className="truncate text-2xs font-semibold text-[var(--text-primary)]">{name}</p>
  <p className="text-2xs text-[var(--text-muted)]">{meta}</p>
  </div>
  </article>
@@ -102,9 +103,9 @@ export function MockPlanner() {
  </section>
  <section className="space-y-1.5 px-2 pb-3 pt-2">
  <p className="text-2xs font-bold uppercase tracking-wide text-[var(--text-muted)]">Lunch</p>
- <MealRow emoji="🥗" name="Chicken quinoa bowl" meta="485 kcal · 42g P" />
+ <MealRow name="Chicken quinoa bowl" meta="485 kcal · 42g P" mealType="lunch" />
  <p className="text-2xs font-bold uppercase tracking-wide text-[var(--text-muted)]">Dinner</p>
- <MealRow emoji="🍝" name="Pesto pasta primavera" meta="620 kcal · 28g P" />
+ <MealRow name="Pesto pasta primavera" meta="620 kcal · 28g P" mealType="dinner" />
  </section>
  </PhoneFrame>
  );

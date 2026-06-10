@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { Heart, X } from "lucide-react";
+import { Heart, X, Flame, Leaf } from "lucide-react";
 import { useState, useTransition } from "react";
 import { toggleRecipeFavourite } from "@/app/(app)/recipes/actions";
+import { MealThumbnail } from "@/components/ui/MealThumbnail";
 import { getDietTag } from "@/lib/ui/dietTags";
 import { getDietTagStyle } from "@/lib/ui/dietTagStyles";
-import { getMealEmoji } from "@/lib/ui/mealThumbnails";
 import { ds } from "@/lib/ui/classes";
 
 export type RecipeListItem = {
@@ -41,7 +41,6 @@ export function RecipeListCard({
  recipe.kcal != null
  ? getDietTag(recipe.kcal, recipe.protein ?? 0, recipe.carbs, recipe.fat, dietaryPreferences)
  : null;
- const emoji = getMealEmoji(recipe.name,"dinner");
 
  function handleToggleFavourite(e: React.MouseEvent) {
  e.preventDefault();
@@ -69,14 +68,7 @@ export function RecipeListCard({
  href={`/recipes/${recipe.id}`}
  className="flex min-w-0 flex-1 items-center gap-3 transition-shadow hover:opacity-95"
  >
- <div className={ds.thumbnail}>
- {recipe.imageUrl ? (
- // eslint-disable-next-line @next/next/no-img-element
- <img src={recipe.imageUrl} alt="" className="h-full w-full rounded-xl object-cover" />
- ) : (
- <span>{emoji}</span>
- )}
- </div>
+ <MealThumbnail recipeName={recipe.name} mealType="dinner" imageUrl={recipe.imageUrl} />
 
  <div className="min-w-0 flex-1">
  {dietTag ? (
@@ -87,23 +79,23 @@ export function RecipeListCard({
  </span>
  ) : null}
  <p className={`${ds.cardTitle} truncate`}>{recipe.name}</p>
- <div className="mt-1 flex flex-wrap items-center gap-3">
+ <div className="mt-1.5 flex flex-wrap items-center gap-3">
  {recipe.kcal != null ? (
- <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
- <span aria-hidden>🔥</span>
- <span className="font-medium text-[var(--text-muted)]">{Math.round(recipe.kcal)}</span>
- <span>kcal</span>
+ <span className="flex items-baseline gap-1">
+ <Flame className="h-3.5 w-3.5 shrink-0 text-[var(--brand-action)]" aria-hidden />
+ <span className={ds.statValueSm}>{Math.round(recipe.kcal)}</span>
+ <span className={ds.tierMeta}>kcal</span>
  </span>
  ) : null}
  {recipe.protein != null ? (
- <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
- <span aria-hidden>🌿</span>
- <span className="font-medium text-[var(--text-muted)]">{Math.round(recipe.protein)}g</span>
- <span>protein</span>
+ <span className="flex items-baseline gap-1">
+ <Leaf className="h-3.5 w-3.5 shrink-0 text-[var(--brand-action)]" aria-hidden />
+ <span className={ds.statValueSm}>{Math.round(recipe.protein)}g</span>
+ <span className={ds.tierMeta}>protein</span>
  </span>
  ) : null}
  {recipe.sourceDomain ? (
- <span className="truncate text-xs text-[var(--text-muted)]">· {recipe.sourceDomain}</span>
+ <span className={`truncate ${ds.tierMeta}`}>· {recipe.sourceDomain}</span>
  ) : null}
  </div>
  </div>
