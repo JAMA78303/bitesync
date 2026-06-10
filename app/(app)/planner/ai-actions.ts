@@ -34,6 +34,18 @@ import {
 import type { Sex } from "@/lib/nutrition/drv";
 import { getWeeklyMicroAnalysis } from "@/lib/supabase/nutrition";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { dailyCalorieBand } from "@/lib/planner/calorie-bands";
+import {
+  buildPlanCalorieAccuracyWarning,
+  buildSnackLibraryNotice,
+  calorieGoalBiasFromProfile,
+  dayCaloriesFromRows,
+  mainMealSlotSpecs,
+  tuneDayTowardCalorieBand,
+  tuneWeekAvgTowardBand,
+  type CalorieGoalBias,
+  type PlanCalorieRow,
+} from "@/lib/planner/plan-calorie-tuning";
 import {
   AI_BREAKFAST_BLOCKED,
   SNACK_MAX_CALORIES,
@@ -110,7 +122,8 @@ async function replacePlanDaysWithClaudePlan(
   pool: RecipeWithNutrition[],
   dailyCalorieTarget: number,
   dailyProteinTarget: number,
-): Promise<{ error: string } | { success: true; warning?: string }> {
+  goalBias: CalorieGoalBias,
+): Promise<{ error: string } | { success: true; warning?: string; snackLibraryNotice?: string }> {
   const rows: MealPlanInsertRow[] = [];
   const calById = new Map(pool.map((r) => [r.id, r.calories]));
   const proById = new Map(pool.map((r) => [r.id, r.protein]));
@@ -148,46 +161,63 @@ async function replacePlanDaysWithClaudePlan(
     return { error: "Claude did not return any valid recipe IDs for the selected days." };
   }
 
-  for (const day of selectedDays) {
-    trimSnacksWhileDayCaloriesExceedRatio(rows, day, dailyCalorieTarget, calById, 1.1);
-    if (dayCaloriesTotal(rows, day, calById) > dailyCalorieTarget * 1.15) {
-      replaceDinnerWithLowestCalRecipe(rows, day, pool);
-    }
-    trimSnacksIfDayOverMacroCaps(
-      rows,
+  const tuneDay = (day: number) =>
+    tuneDayTowardCalorieBand({
+      rows: rows as PlanCalorieRow[],
       day,
-      dailyCalorieTarget,
-      dailyProteinTarget,
+      pool,
       calById,
-      proById,
-    );
-  }
+      mealPlanId,
+      dailyTarget: dailyCalorieTarget,
+      snackCountPerDay,
+      allowedRecipeIds,
+      goalBias,
+      trimSnacksWhileOver: (r, d, maxRatio) =>
+        trimSnacksWhileDayCaloriesExceedRatio(r as MealPlanInsertRow[], d, dailyCalorieTarget, calById, maxRatio),
+      trimSnacksIfOverMacroCaps: (r, d) =>
+        trimSnacksIfDayOverMacroCaps(
+          r as MealPlanInsertRow[],
+          d,
+          dailyCalorieTarget,
+          dailyProteinTarget,
+          calById,
+          proById,
+        ),
+    });
 
-  let warning: string | undefined;
-  const minPoolCal = Math.min(...pool.map((r) => r.calories ?? 0));
-  let worstDayCal = 0;
-  let minDayCal = Infinity;
-  for (const d of selectedDays) {
-    const dayCal = dayCaloriesTotal(rows, d, calById);
-    worstDayCal = Math.max(worstDayCal, dayCal);
-    minDayCal = Math.min(minDayCal, dayCal);
+  for (const day of selectedDays) {
+    tuneDay(day);
   }
-  const worstRatio = dailyCalorieTarget > 0 ? worstDayCal / dailyCalorieTarget : 1;
-  const minRatio =
-    dailyCalorieTarget > 0 && minDayCal !== Infinity ? minDayCal / dailyCalorieTarget : 1;
-  if (
-    worstRatio > 1.2 ||
-    minRatio < 0.8 ||
-    (minPoolCal > dailyCalorieTarget * 0.35 && worstRatio > 1.1)
-  ) {
-    warning =
-      `Your recipe library may not have enough lighter meals to land near your ${dailyCalorieTarget} kcal/day goal ` +
-      `(worst day ~${Math.round(worstRatio * 100)}% of target). Try adding salads, soups, or smaller portions.`;
-  }
+  tuneWeekAvgTowardBand(
+    rows as PlanCalorieRow[],
+    selectedDays,
+    pool,
+    calById,
+    mealPlanId,
+    dailyCalorieTarget,
+    snackCountPerDay,
+    allowedRecipeIds,
+    goalBias,
+    tuneDay,
+  );
+
+  const warning = buildPlanCalorieAccuracyWarning(
+    selectedDays,
+    rows as PlanCalorieRow[],
+    calById,
+    dailyCalorieTarget,
+  );
+  const snackLibraryNotice = buildSnackLibraryNotice(
+    pool,
+    selectedDays,
+    rows as PlanCalorieRow[],
+    calById,
+    dailyCalorieTarget,
+  );
 
   const persisted = await persistWeeklyMealPlanRows(supabase, mealPlanId, rows, selectedDays);
   if ("error" in persisted) return { error: persisted.error };
-  return { success: true as const, warning };
+  return { success: true as const, warning, snackLibraryNotice };
 }
 
 type GenerateAIWeekPlanInput = {
@@ -210,25 +240,6 @@ type RecipeWithNutrition = RecipeRow & {
   fat_g: number | null;
   ingredientNames: string[];
 };
-
-/** Per-slot share of daily calories (sums to 1 with snacks split). */
-function daySlotSpecs(snackCountPerDay: number): Array<{
-  meal_type: MealPlanInsertRow["meal_type"];
-  slot_index: number;
-  calFrac: number;
-}> {
-  const n = Math.max(1, Math.min(2, snackCountPerDay));
-  const snackEach = 0.07 / n;
-  const slots: Array<{ meal_type: MealPlanInsertRow["meal_type"]; slot_index: number; calFrac: number }> = [
-    { meal_type: "breakfast", slot_index: 0, calFrac: 0.25 },
-    { meal_type: "lunch", slot_index: 0, calFrac: 0.33 },
-    { meal_type: "dinner", slot_index: 0, calFrac: 0.35 },
-  ];
-  for (let s = 0; s < n; s += 1) {
-    slots.push({ meal_type: "snack", slot_index: s, calFrac: snackEach });
-  }
-  return slots;
-}
 
 function fixMisplacedBreakfastRecipesForDay(rows: MealPlanInsertRow[], day: number, pool: RecipeWithNutrition[]): void {
   const meta = new Map(pool.map((r) => [r.id, r]));
@@ -406,13 +417,14 @@ function enforceAiMealSlotSeparation(
   }
 }
 
-/** Higher is better: overshooting calories/protein is penalised much more than undershooting. */
+/** Higher is better: overshooting calories/protein is penalised more on deficit goals. */
 function scoreRecipeForDaySlot(
   r: RecipeWithNutrition,
   targetSlot: MealPlanInsertRow["meal_type"],
   targetCal: number,
   targetPro: number,
   snackMicroPriorities?: MicroPriority[],
+  goalBias: CalorieGoalBias = "neutral",
 ): number {
   const cal = r.calories;
   const pro = r.protein;
@@ -420,7 +432,14 @@ function scoreRecipeForDaySlot(
   const calUnder = Math.max(0, targetCal - cal);
   const proOver = Math.max(0, pro - targetPro);
   const proUnder = Math.max(0, targetPro - pro);
-  let baseScore = -(calOver * 5 + calUnder + proOver * 3 + proUnder);
+  let baseScore: number;
+  if (goalBias === "surplus") {
+    baseScore = -(calOver * 2 + calUnder * 4 + proOver * 2 + proUnder);
+  } else if (goalBias === "deficit") {
+    baseScore = -(calOver * 5 + calUnder + proOver * 3 + proUnder);
+  } else {
+    baseScore = -(calOver * 3 + calUnder * 3 + proOver * 3 + proUnder);
+  }
   const types = classifyRecipeMealType(r.name, r.ingredientNames ?? []);
   const mult = getMealTypeMultiplier(types, targetSlot);
   baseScore *= mult;
@@ -440,6 +459,7 @@ function pickRecipeWithBudgetAndUsage(
   strictAffordableMisses: { count: number },
   logCtx: { day: number; meal_type: MealPlanInsertRow["meal_type"]; slot_index: number },
   snackMicroPriorities?: MicroPriority[],
+  goalBias: CalorieGoalBias = "neutral",
 ): RecipeWithNutrition | null {
   const slotCalTarget = Math.max(targetCal, 0);
   const slotProTarget = Math.max(targetPro, 0);
@@ -521,6 +541,7 @@ function pickRecipeWithBudgetAndUsage(
         Math.max(effectiveCal, 1),
         Math.max(effectivePro, 0.5),
         snackMicroPriorities,
+        goalBias,
       ),
     }))
     .sort((a, b) => b.s - a.s);
@@ -586,25 +607,6 @@ function trimSnacksWhileDayCaloriesExceedRatio(
       `[heuristic] day ${day}: snack removed (cal ${Math.round(cal)} > ${Math.round(limit)} = ${Math.round(maxRatio * 100)}% target)`,
     );
   }
-}
-
-function replaceDinnerWithLowestCalRecipe(
-  rows: MealPlanInsertRow[],
-  day: number,
-  pool: RecipeWithNutrition[],
-): void {
-  const ix = rows.findIndex((r) => r.day_of_week === day && r.meal_type === "dinner");
-  if (ix < 0) return;
-  const mainsOk = pool.filter((r) => !excludeFromMainMealSlots(r.name, r.ingredientNames ?? []));
-  const sorted = [...(mainsOk.length ? mainsOk : pool)].sort((a, b) => a.calories - b.calories);
-  const best = sorted[0];
-  if (!best) return;
-  const prevId = rows[ix]!.recipe_id;
-  if (prevId === best.id) return;
-  rows[ix] = { ...rows[ix]!, recipe_id: best.id };
-  console.warn(
-    `[heuristic] day ${day}: dinner swapped to lowest-kcal pool recipe "${best.name}" (${Math.round(best.calories)} kcal)`,
-  );
 }
 
 /**
@@ -910,6 +912,7 @@ async function generateAIWeekPlanInner(input: GenerateAIWeekPlanInput) {
   const dailyProteinTarget = Math.round(
     Number(input.goals.proteinTarget ?? getDailyProteinTarget(profile) ?? 120),
   );
+  const goalBias = calorieGoalBiasFromProfile(profile);
 
   let snackMicroPriorities: MicroPriority[] = DEFAULT_SNACK_MICRO_PRIORITIES;
   const sex = profile?.sex === "male" || profile?.sex === "female" ? (profile.sex as Sex) : null;
@@ -938,6 +941,7 @@ async function generateAIWeekPlanInner(input: GenerateAIWeekPlanInput) {
   let claudeSucceeded = false;
   let claudeNotes: string | undefined;
   let heuristicWarning: string | undefined;
+  let snackLibraryNotice: string | undefined;
   let claudeApplyError: string | undefined;
 
   if (isAnthropicMealAiEnabled()) {
@@ -964,11 +968,13 @@ async function generateAIWeekPlanInner(input: GenerateAIWeekPlanInput) {
           withNutrition as RecipeWithNutrition[],
           dailyCalorieTarget,
           dailyProteinTarget,
+          goalBias,
         );
         if ("success" in applied && applied.success) {
           claudeSucceeded = true;
           claudeNotes = aiPlan.notes;
           heuristicWarning = applied.warning;
+          snackLibraryNotice = applied.snackLibraryNotice;
         } else if ("error" in applied) {
           claudeApplyError = applied.error;
           console.warn("[generateAIWeekPlan] Claude plan not applied:", applied.error);
@@ -985,8 +991,9 @@ async function generateAIWeekPlanInner(input: GenerateAIWeekPlanInput) {
     const rows: MealPlanInsertRow[] = [];
     const calById = new Map(pool.map((r) => [r.id, r.calories]));
     const proById = new Map(pool.map((r) => [r.id, r.protein]));
-    const slotPlan = daySlotSpecs(snackCountPerDay);
+    const slotPlan = mainMealSlotSpecs();
     const strictAffordableMisses = { count: 0 };
+    const bandMax = dailyCalorieBand(dailyCalorieTarget).max;
 
     console.log("=== HEURISTIC RECIPE LIBRARY ===");
     console.log(
@@ -1002,24 +1009,10 @@ async function generateAIWeekPlanInner(input: GenerateAIWeekPlanInput) {
     });
 
     for (let day = 0; day < 7; day += 1) {
-      let remainingCal = dailyCalorieTarget;
+      let remainingCal = bandMax;
       let remainingPro = dailyProteinTarget;
 
       for (const spec of slotPlan) {
-        if (spec.meal_type === "snack") {
-          const consumed = dailyCalorieTarget - remainingCal;
-          if (
-            remainingCal <= 150 ||
-            remainingCal < dailyCalorieTarget * 0.05 ||
-            consumed > dailyCalorieTarget * 0.95
-          ) {
-            console.warn(
-              `[heuristic] day ${day} snack#${spec.slot_index}: skipped (remaining ~${Math.round(remainingCal)} kcal, consumed ~${Math.round(consumed)} kcal)`,
-            );
-            continue;
-          }
-        }
-
         const slotCalTarget = dailyCalorieTarget * spec.calFrac;
         const slotProTarget = dailyProteinTarget * spec.calFrac;
         const picked = pickRecipeWithBudgetAndUsage(
@@ -1032,6 +1025,7 @@ async function generateAIWeekPlanInner(input: GenerateAIWeekPlanInput) {
           strictAffordableMisses,
           { day, meal_type: spec.meal_type, slot_index: spec.slot_index },
           snackMicroPriorities,
+          goalBias,
         );
         if (!picked) {
           continue;
@@ -1055,29 +1049,52 @@ async function generateAIWeekPlanInner(input: GenerateAIWeekPlanInput) {
       const dayTot = dayCaloriesTotal(rows, day, calById);
       const dayProt = dayProteinTotal(rows, day, proById);
       console.warn(
-        `[heuristic] day ${day}: planned ~${Math.round(dayTot)} kcal (target ${dailyCalorieTarget}), ` +
+        `[heuristic] day ${day}: main meals ~${Math.round(dayTot)} kcal (target ${dailyCalorieTarget}), ` +
           `~${Math.round(dayProt * 10) / 10}g P (target ${dailyProteinTarget}g)`,
-      );
-      trimSnacksWhileDayCaloriesExceedRatio(
-        rows,
-        day,
-        dailyCalorieTarget,
-        calById,
-        1.1,
-      );
-      if (dayCaloriesTotal(rows, day, calById) > dailyCalorieTarget * 1.15) {
-        replaceDinnerWithLowestCalRecipe(rows, day, pool);
-      }
-      trimSnacksIfDayOverMacroCaps(
-        rows,
-        day,
-        dailyCalorieTarget,
-        dailyProteinTarget,
-        calById,
-        proById,
       );
     }
     enforceAiMealSlotSeparation(rows, pool, selectedDaysFullWeek, allowedIds);
+
+    const tuneDay = (day: number) =>
+      tuneDayTowardCalorieBand({
+        rows: rows as PlanCalorieRow[],
+        day,
+        pool,
+        calById,
+        mealPlanId: input.mealPlanId,
+        dailyTarget: dailyCalorieTarget,
+        snackCountPerDay,
+        allowedRecipeIds: allowedIds,
+        snackMicroPriorities,
+        goalBias,
+        trimSnacksWhileOver: (r, d, maxRatio) =>
+          trimSnacksWhileDayCaloriesExceedRatio(r as MealPlanInsertRow[], d, dailyCalorieTarget, calById, maxRatio),
+        trimSnacksIfOverMacroCaps: (r, d) =>
+          trimSnacksIfDayOverMacroCaps(
+            r as MealPlanInsertRow[],
+            d,
+            dailyCalorieTarget,
+            dailyProteinTarget,
+            calById,
+            proById,
+          ),
+      });
+
+    for (let day = 0; day < 7; day += 1) {
+      tuneDay(day);
+    }
+    tuneWeekAvgTowardBand(
+      rows as PlanCalorieRow[],
+      selectedDaysFullWeek,
+      pool,
+      calById,
+      input.mealPlanId,
+      dailyCalorieTarget,
+      snackCountPerDay,
+      allowedIds,
+      goalBias,
+      tuneDay,
+    );
 
     const mealOrder: Record<string, number> = { breakfast: 0, lunch: 1, dinner: 2, snack: 3 };
     const nameById = new Map(pool.map((r) => [r.id, r.name]));
@@ -1110,27 +1127,29 @@ async function generateAIWeekPlanInner(input: GenerateAIWeekPlanInput) {
     }
 
     const minPoolCal = Math.min(...pool.map((r) => r.calories ?? 0));
-    let worstDayCal = 0;
-    for (let d = 0; d < 7; d += 1) {
-      worstDayCal = Math.max(worstDayCal, dayCaloriesTotal(rows, d, calById));
-    }
-    const worstRatio = dailyCalorieTarget > 0 ? worstDayCal / dailyCalorieTarget : 1;
-    let minDayCal = Infinity;
-    for (let d = 0; d < 7; d += 1) {
-      minDayCal = Math.min(minDayCal, dayCaloriesTotal(rows, d, calById));
-    }
-    const minRatio =
-      dailyCalorieTarget > 0 && minDayCal !== Infinity ? minDayCal / dailyCalorieTarget : 1;
-
+    heuristicWarning = buildPlanCalorieAccuracyWarning(
+      selectedDaysFullWeek,
+      rows as PlanCalorieRow[],
+      calById,
+      dailyCalorieTarget,
+    );
+    snackLibraryNotice = buildSnackLibraryNotice(
+      pool,
+      selectedDaysFullWeek,
+      rows as PlanCalorieRow[],
+      calById,
+      dailyCalorieTarget,
+    );
     if (
-      worstRatio > 1.2 ||
-      minRatio < 0.8 ||
       strictAffordableMisses.count >= 5 ||
-      (minPoolCal > dailyCalorieTarget * 0.35 && worstRatio > 1.1)
+      (minPoolCal > dailyCalorieTarget * 0.35 &&
+        selectedDaysFullWeek.some(
+          (d) => dayCaloriesFromRows(rows as PlanCalorieRow[], d, calById) > dailyCalorieTarget * 1.1,
+        ))
     ) {
-      heuristicWarning =
-        `Your recipe library may not have enough lighter meals to land near your ${dailyCalorieTarget} kcal/day goal ` +
-        `(worst day ~${Math.round(worstRatio * 100)}% of target). Try adding salads, soups, or smaller portions.`;
+      const extra =
+        "Your library may need more lighter meals for days that run high — try salads, soups, or smaller portions.";
+      heuristicWarning = heuristicWarning ? `${heuristicWarning} ${extra}` : extra;
     }
 
     const persisted = await persistWeeklyMealPlanRows(
@@ -1155,6 +1174,7 @@ async function generateAIWeekPlanInner(input: GenerateAIWeekPlanInput) {
     planSource: claudeSucceeded ? ("claude" as const) : ("heuristic" as const),
     notes: claudeNotes,
     heuristicWarning,
+    snackLibraryNotice,
   };
 }
 
@@ -1358,6 +1378,7 @@ export async function generateAIBasketForWeek(input: GenerateAIBasketInput) {
           withNutrition as RecipeWithNutrition[],
           dailyCalorieTarget,
           dailyProteinTarget,
+          calorieGoalBiasFromProfile(profile),
         );
         if ("success" in applied && applied.success) {
           goalContextRecord.planSource = "claude";

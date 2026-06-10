@@ -217,6 +217,12 @@ export function GenerateAIBasketButton({
  description: result.heuristicWarning,
  });
  }
+ if ("snackLibraryNotice" in result && result.snackLibraryNotice) {
+ toast({
+ title:"Snack library",
+ description: result.snackLibraryNotice,
+ });
+ }
  router.refresh();
  } catch (err) {
  const message = err instanceof Error ? err.message :"Something went wrong";
