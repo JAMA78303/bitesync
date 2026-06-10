@@ -35,7 +35,7 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
 export function DialogContent({ className = "", children }: { className?: string; children: ReactNode }) {
   return (
     <div
-      className={`max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-gray-200 bg-white p-4 shadow-xl ${className}`}
+      className={`max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-gray-200 bg-white p-4 shadow-xl dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 ${className}`}
       onClick={(e) => e.stopPropagation()}
       role="dialog"
       aria-modal="true"

@@ -190,6 +190,33 @@ html[data-theme="dark"] body {
   background-color: #273247 !important;
 }
 
+:root[data-theme="dark"] .bg-slate-50,
+:root[data-theme="dark"] .bg-slate-50\/80,
+:root[data-theme="dark"] .bg-slate-50\/90 {
+  background-color: #1f2937 !important;
+}
+
+:root[data-theme="dark"] .bg-slate-50\/60 {
+  background-color: rgba(31, 41, 55, 0.85) !important;
+}
+
+:root[data-theme="dark"] .bg-emerald-50,
+:root[data-theme="dark"] .bg-emerald-50\/60 {
+  background-color: rgba(6, 78, 59, 0.35) !important;
+}
+
+:root[data-theme="dark"] .border-slate-100 {
+  border-color: #334155 !important;
+}
+
+:root[data-theme="dark"] .border-emerald-100 {
+  border-color: rgba(16, 185, 129, 0.25) !important;
+}
+
+:root[data-theme="dark"] .text-emerald-900 {
+  color: #a7f3d0 !important;
+}
+
 :root[data-theme="dark"] .bg-red-50 {
   background-color: rgba(127, 29, 29, 0.28) !important;
 }

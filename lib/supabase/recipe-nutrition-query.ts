@@ -96,9 +96,29 @@ async function fillNutritionFromIngredients(
 
   const computed = await Promise.all(
     missing.map(async (rid) => {
-      const inputs = byRecipe.get(rid) ?? [];
-      const { totals } = await getRecipeNutritionTotals(inputs, { aiEnabled });
-      return { rid, totals, summary: totalsToNutritionSummary(totals) };
+      try {
+        const inputs = byRecipe.get(rid) ?? [];
+        const { totals } = await getRecipeNutritionTotals(inputs, { aiEnabled });
+        return { rid, totals, summary: totalsToNutritionSummary(totals) };
+      } catch (err) {
+        console.warn(`[fetchRecipeNutritionMap] failed to derive nutrition for ${rid}:`, err);
+        const totals: NutritionTotals = {
+          calories: 0,
+          protein_g: 0,
+          carbs_g: 0,
+          fat_g: 0,
+          fibre_g: 0,
+          sugar_g: 0,
+          sodium_mg: 0,
+          saturated_fat_g: 0,
+          coverage_pct: 0,
+        };
+        return {
+          rid,
+          totals,
+          summary: totalsToNutritionSummary(totals),
+        };
+      }
     }),
   );
 

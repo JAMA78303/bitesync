@@ -71,6 +71,7 @@ export function GenerateAIBasketButton({
 }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [isWeekPlanPending, startWeekPlanTransition] = useTransition();
   const [preferredPriceStores, setPreferredPriceStores] = useState<PriceStoreId[]>(() => [...ALL_PRICE_STORE_IDS]);
   const [daysToGenerate, setDaysToGenerate] = useState<number>(7);
   const [lastSummary, setLastSummary] = useState<string | null>(null);
@@ -194,28 +195,37 @@ export function GenerateAIBasketButton({
       });
       return;
     }
-    startTransition(async () => {
-      const result = await generateAIWeekPlan({ mealPlanId, goals });
-      if ("error" in result) {
-        toast({ title: "AI week plan failed", description: result.error, variant: "destructive" });
-        return;
-      }
-      const src =
-        "planSource" in result && result.planSource === "claude"
-          ? "Claude"
-          : "Heuristic";
-      const note = "notes" in result && result.notes ? ` ${result.notes}` : "";
-      toast({
-        title: "AI weekly plan applied",
-        description: `${src}: 7 days, ${result.snackCountPerDay} snack slot(s)/day, ${result.recipePool} recipes.${note}`,
-      });
-      if ("heuristicWarning" in result && result.heuristicWarning) {
+    startWeekPlanTransition(async () => {
+      try {
+        const result = await generateAIWeekPlan({ mealPlanId, goals });
+        if ("error" in result) {
+          toast({ title: "AI week plan failed", description: result.error, variant: "destructive" });
+          return;
+        }
+        const src =
+          "planSource" in result && result.planSource === "claude"
+            ? "Claude"
+            : "Heuristic";
+        const note = "notes" in result && result.notes ? ` ${result.notes}` : "";
         toast({
-          title: "Calorie goal note",
-          description: result.heuristicWarning,
+          title: "AI weekly plan applied",
+          description: `${src}: 7 days, ${result.snackCountPerDay} snack slot(s)/day, ${result.recipePool} recipes.${note}`,
+        });
+        if ("heuristicWarning" in result && result.heuristicWarning) {
+          toast({
+            title: "Calorie goal note",
+            description: result.heuristicWarning,
+          });
+        }
+        router.refresh();
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Something went wrong";
+        toast({
+          title: "AI week plan failed",
+          description: message,
+          variant: "destructive",
         });
       }
-      router.refresh();
     });
   }
 
@@ -322,19 +332,19 @@ export function GenerateAIBasketButton({
         <Button
           type="button"
           onClick={runWeekPlan}
-          disabled={isPending}
+          disabled={isWeekPlanPending || isPending}
           variant="outline"
           className="h-11 border-[#1A4731] text-[#1A4731] hover:bg-[#F0FDF4] md:h-9 md:text-sm"
         >
           <Sparkles className="mr-1.5 h-4 w-4 shrink-0 md:mr-2" />
           <span className="text-center text-[11px] font-medium leading-snug sm:text-xs md:text-sm md:truncate">
-            {isPending ? "Planning…" : "AI weekly plan"}
+            {isWeekPlanPending ? "Planning…" : "AI weekly plan"}
           </span>
         </Button>
         <Button
           type="button"
           onClick={run}
-          disabled={isPending}
+          disabled={isPending || isWeekPlanPending}
           variant="outline"
           className="h-11 border-[#1A4731] text-[#1A4731] hover:bg-[#F0FDF4] md:h-9 md:text-sm"
         >

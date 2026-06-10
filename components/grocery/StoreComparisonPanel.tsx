@@ -30,13 +30,13 @@ export function StoreComparisonPanel({ storeTotals, estimates = [] }: Props) {
   const best = ordered[0];
 
   return (
-    <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-4">
-      <p className="text-sm font-semibold text-slate-800">Store comparison</p>
+    <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
+      <p className="text-sm font-semibold text-slate-800 dark:text-gray-100">Store comparison</p>
       {ordered.map((s) => {
         const notes = packNotesForStore(s.store, estimates);
         return (
-          <div key={s.store} className="rounded-lg border border-slate-100 px-3 py-2">
-            <p className="text-sm font-medium text-slate-700">
+          <div key={s.store} className="rounded-lg border border-slate-100 px-3 py-2 dark:border-gray-700 dark:bg-gray-800/50">
+            <p className="text-sm font-medium text-slate-700 dark:text-gray-200">
               {s.store.toUpperCase()} ~£{s.total.toFixed(2)}
               {s.store === best.store ? <span className="ml-2 text-xs text-emerald-700">best</span> : null}
             </p>

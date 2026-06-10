@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { saveDietaryPreferences } from "@/lib/supabase/profile";
+import { ds } from "@/lib/ui/classes";
 
 type DietPrefs = {
   followsVegetarian: boolean;
@@ -41,10 +42,10 @@ export function DietPreferencesForm({ initialValues }: Props) {
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-slate-500 dark:text-gray-400">
         When enabled, the planner highlights recipes that aren&apos;t tagged as matching your diet so you can spot them when meal planning.
       </p>
-      <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2.5">
+      <label className={`flex cursor-pointer items-start gap-3 px-3 py-2.5 ${ds.formSection}`}>
         <input
           type="checkbox"
           checked={vegetarian}
@@ -52,11 +53,11 @@ export function DietPreferencesForm({ initialValues }: Props) {
           className="mt-1 h-4 w-4 rounded border-slate-300"
         />
         <span>
-          <span className="text-sm font-medium text-slate-700">Vegetarian</span>
-          <span className="mt-0.5 block text-xs text-slate-400">No meat or fish</span>
+          <span className="text-sm font-medium text-slate-700 dark:text-gray-200">Vegetarian</span>
+          <span className="mt-0.5 block text-xs text-slate-400 dark:text-gray-400">No meat or fish</span>
         </span>
       </label>
-      <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2.5">
+      <label className={`flex cursor-pointer items-start gap-3 px-3 py-2.5 ${ds.formSection}`}>
         <input
           type="checkbox"
           checked={vegan}
@@ -68,11 +69,11 @@ export function DietPreferencesForm({ initialValues }: Props) {
           className="mt-1 h-4 w-4 rounded border-slate-300"
         />
         <span>
-          <span className="text-sm font-medium text-slate-700">Vegan</span>
-          <span className="mt-0.5 block text-xs text-slate-400">No animal products</span>
+          <span className="text-sm font-medium text-slate-700 dark:text-gray-200">Vegan</span>
+          <span className="mt-0.5 block text-xs text-slate-400 dark:text-gray-400">No animal products</span>
         </span>
       </label>
-      <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2.5">
+      <label className={`flex cursor-pointer items-start gap-3 px-3 py-2.5 ${ds.formSection}`}>
         <input
           type="checkbox"
           checked={glutenFree}
@@ -80,8 +81,8 @@ export function DietPreferencesForm({ initialValues }: Props) {
           className="mt-1 h-4 w-4 rounded border-slate-300"
         />
         <span>
-          <span className="text-sm font-medium text-slate-700">Gluten-free</span>
-          <span className="mt-0.5 block text-xs text-slate-400">Avoid wheat, barley, rye</span>
+          <span className="text-sm font-medium text-slate-700 dark:text-gray-200">Gluten-free</span>
+          <span className="mt-0.5 block text-xs text-slate-400 dark:text-gray-400">Avoid wheat, barley, rye</span>
         </span>
       </label>
       {error ? <p className="text-sm text-red-600">{error}</p> : null}

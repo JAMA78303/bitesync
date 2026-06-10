@@ -29,6 +29,25 @@ export const ds = {
     "inline-flex items-center justify-center rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300",
   input:
     "w-full rounded-2xl border border-gray-200 bg-white px-4 py-3.5 text-sm text-gray-900 outline-none transition-all focus:border-[#3a5a40] focus:ring-2 focus:ring-[#3a5a40]/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white",
+  formCard:
+    "space-y-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900",
+  /** Muted info / guidelines callout (Create Recipe, etc.) */
+  infoCallout:
+    "rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600 dark:border-gray-700 dark:bg-gray-800/85 dark:text-gray-300",
+  /** Optional grouped form block (diet labels, prefs) */
+  formSection:
+    "space-y-2 rounded-lg border border-slate-100 bg-slate-50/80 p-3 dark:border-gray-700 dark:bg-gray-800/85",
+  formSectionLabel: "text-xs font-medium text-slate-600 dark:text-gray-300",
+  formSectionText: "text-sm text-slate-700 dark:text-gray-200",
+  /** Goal-matched draft panel on Create Recipe */
+  goalDraftPanel:
+    "space-y-3 rounded-lg border border-emerald-100 bg-emerald-50/60 p-3 dark:border-emerald-900/45 dark:bg-emerald-950/35",
+  goalDraftLabel: "flex flex-col gap-1 text-xs text-emerald-900 dark:text-emerald-100",
+  goalDraftSelect:
+    "theme-aware-select h-9 min-w-[140px] rounded-md border border-emerald-200 bg-white px-2 text-sm text-slate-900 dark:border-emerald-800 dark:bg-gray-900 dark:text-gray-100",
+  /** Header search on gradient backgrounds — keep light-on-green styling in dark mode */
+  headerSearchWrap:
+    "flex items-center gap-2 rounded-2xl border border-white/55 bg-white/35 px-4 py-3 backdrop-blur-sm dark:border-white/25 dark:bg-black/25",
   overlap: "-mt-4",
   sectionGap: "mb-6",
   cardGap: "gap-3",

@@ -7,7 +7,7 @@ export default function RecipesLoading() {
       </div>
       <div className="grid gap-3 md:grid-cols-2">
         {Array.from({ length: 6 }, (_, i) => (
-          <div key={i} className="h-36 rounded-xl border border-slate-200 bg-white" />
+          <div key={i} className="h-36 rounded-xl border border-slate-200 bg-white dark:border-gray-800 dark:bg-gray-900" />
         ))}
       </div>
     </section>

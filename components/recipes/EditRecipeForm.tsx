@@ -8,6 +8,7 @@ import { ingredientQuantityError } from "@/lib/recipes/ingredientValidation";
 import { useLiveRecipeNutrition } from "@/components/recipes/useLiveRecipeNutrition";
 import { getIngredientAutocompleteLabel, getNutritionIngredientNames } from "@/lib/nutrition/lookup";
 import { NutritionPreview } from "@/components/recipes/NutritionPreview";
+import { ds } from "@/lib/ui/classes";
 import { updateRecipe } from "@/app/(app)/recipes/actions";
 
 type IngredientSeed = { name: string; quantity: number; unit: string };
@@ -126,10 +127,10 @@ export function EditRecipeForm({
 
   return (
     <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-      <section className="space-y-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900">Edit Recipe</h2>
+      <section className={ds.formCard}>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Edit Recipe</h2>
         {formError ? (
-          <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">{formError}</p>
+          <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">{formError}</p>
         ) : null}
         <div className="space-y-3">
           <input
@@ -137,18 +138,18 @@ export function EditRecipeForm({
             value={name}
             onChange={(event) => setName(event.target.value)}
             autoComplete="off"
-            className="h-11 w-full rounded-md border border-gray-300 px-3 text-sm"
+            className={`h-11 ${ds.input}`}
           />
           <textarea
             rows={2}
             value={description}
             onChange={(event) => setDescription(event.target.value)}
-            className="w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className={`w-full resize-none ${ds.input}`}
           />
         </div>
-        <div className="space-y-2 rounded-lg border border-slate-100 bg-slate-50/80 p-3">
-          <p className="text-xs font-medium text-slate-600">Diet labels (optional)</p>
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+        <div className={ds.formSection}>
+          <p className={ds.formSectionLabel}>Diet labels (optional)</p>
+          <label className={`flex cursor-pointer items-center gap-2 ${ds.formSectionText}`}>
             <input
               type="checkbox"
               checked={fitsVegetarian}
@@ -157,7 +158,7 @@ export function EditRecipeForm({
             />
             Vegetarian-friendly
           </label>
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+          <label className={`flex cursor-pointer items-center gap-2 ${ds.formSectionText}`}>
             <input
               type="checkbox"
               checked={fitsVegan}
@@ -170,7 +171,7 @@ export function EditRecipeForm({
             />
             Vegan-friendly
           </label>
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+          <label className={`flex cursor-pointer items-center gap-2 ${ds.formSectionText}`}>
             <input
               type="checkbox"
               checked={fitsGlutenFree}
@@ -181,7 +182,7 @@ export function EditRecipeForm({
           </label>
         </div>
         <div className="space-y-3">
-          <h3 className="font-medium text-gray-900">Ingredients</h3>
+          <h3 className="font-medium text-gray-900 dark:text-white">Ingredients</h3>
           {ingredients.map((ingredient, index) => {
             const qty = Number.parseFloat(ingredient.quantity);
             const qtyError = ingredientQuantityError(ingredient.name, ingredient.quantity);

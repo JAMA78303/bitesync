@@ -11,17 +11,17 @@ export function AlertDialog({ children }: BaseProps) {
 export function AlertDialogContent({ children }: BaseProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-4 shadow-xl">{children}</div>
+      <div className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-4 shadow-xl dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100">{children}</div>
     </div>
   );
 }
 
 export function AlertDialogTitle({ children }: BaseProps) {
-  return <h3 className="text-lg font-semibold text-gray-900">{children}</h3>;
+  return <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{children}</h3>;
 }
 
 export function AlertDialogDescription({ children }: BaseProps) {
-  return <p className="mt-2 text-sm text-gray-600">{children}</p>;
+  return <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{children}</p>;
 }
 
 export function AlertDialogFooter({ children }: BaseProps) {
@@ -43,7 +43,7 @@ export function AlertDialogAction({ children, className = "", ...props }: BtnPro
 export function AlertDialogCancel({ children, className = "", ...props }: BtnProps) {
   return (
     <button
-      className={`inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 ${className}`}
+      className={`inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 ${className}`}
       {...props}
     >
       {children}

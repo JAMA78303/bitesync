@@ -8,10 +8,10 @@ export default function PlannerLoading() {
         </div>
         <div className="h-10 w-52 rounded bg-slate-200" />
       </div>
-      <div className="h-20 rounded-xl bg-slate-100" />
-      <div className="grid grid-cols-4 gap-2 rounded-xl border border-slate-200 bg-white p-3 sm:grid-cols-8">
+      <div className="h-20 rounded-xl bg-slate-100 dark:bg-gray-800" />
+      <div className="grid grid-cols-4 gap-2 rounded-xl border border-slate-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900 sm:grid-cols-8">
         {Array.from({ length: 32 }, (_, i) => (
-          <div key={i} className="h-12 rounded bg-slate-100" />
+          <div key={i} className="h-12 rounded bg-slate-100 dark:bg-gray-800" />
         ))}
       </div>
     </section>

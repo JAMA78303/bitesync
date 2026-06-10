@@ -11,6 +11,7 @@ import { NutritionPreview } from "@/components/recipes/NutritionPreview";
 import { createRecipe, generateGoalMatchedRecipeDraft } from "@/app/(app)/recipes/actions";
 import type { GoalMealSlot } from "@/lib/ai/goal-matched-recipe";
 import { PENDING_RECIPE_DRAFT_KEY, type PendingRecipeDraft } from "@/lib/recipes/pending-draft";
+import { ds } from "@/lib/ui/classes";
 
 type IngredientRow = {
   id: string;
@@ -250,15 +251,15 @@ export function RecipeForm({ profileTargets = null }: RecipeFormProps) {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-      <section className="space-y-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900">Create Recipe</h2>
+      <section className={ds.formCard}>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Create Recipe</h2>
         {formMessage ? (
-          <p className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-800">
+          <p className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-800 dark:border-green-800 dark:bg-green-950/30 dark:text-green-200">
             {formMessage}
           </p>
         ) : null}
         {formError ? (
-          <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
             {formError}
           </p>
         ) : null}
@@ -269,26 +270,26 @@ export function RecipeForm({ profileTargets = null }: RecipeFormProps) {
             value={name}
             onChange={(event) => setName(event.target.value)}
             autoComplete="off"
-            className="h-11 w-full rounded-md border border-gray-300 px-3 text-sm"
+            className={`h-11 ${ds.input}`}
           />
           <textarea
             placeholder="Description"
             rows={2}
             value={description}
             onChange={(event) => setDescription(event.target.value)}
-            className="w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className={`w-full resize-none ${ds.input}`}
           />
         </div>
 
         {profileTargets?.daily_calorie_target ? (
-          <div className="space-y-3 rounded-lg border border-emerald-100 bg-emerald-50/60 p-3">
+          <div className={ds.goalDraftPanel}>
             <div className="flex flex-wrap items-end gap-2">
-              <label className="flex flex-col gap-1 text-xs text-emerald-900">
+              <label className={ds.goalDraftLabel}>
                 <span>Meal</span>
                 <select
                   value={aiMealSlot}
                   onChange={(e) => setAiMealSlot(e.target.value as GoalMealSlot)}
-                  className="h-9 min-w-[140px] rounded-md border border-emerald-200 bg-white px-2 text-sm text-slate-900"
+                  className={ds.goalDraftSelect}
                 >
                   <option value="breakfast">Breakfast (~26%)</option>
                   <option value="lunch">Lunch (~33%)</option>
@@ -307,17 +308,17 @@ export function RecipeForm({ profileTargets = null }: RecipeFormProps) {
             </div>
           </div>
         ) : (
-          <p className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+          <p className={ds.infoCallout}>
             Set your calorie target in Settings to enable goal-matched recipe drafts (±100 kcal per meal slot).
           </p>
         )}
-        <p className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        <p className={ds.infoCallout}>
           UK guidelines recommend 5 portions of fruit and veg per day. Aim for 2 vegetables per main meal and 1 fruit per breakfast or snack.
         </p>
 
-        <div className="space-y-2 rounded-lg border border-slate-100 bg-slate-50/80 p-3">
-          <p className="text-xs font-medium text-slate-600">Diet labels (optional)</p>
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+        <div className={ds.formSection}>
+          <p className={ds.formSectionLabel}>Diet labels (optional)</p>
+          <label className={`flex cursor-pointer items-center gap-2 ${ds.formSectionText}`}>
             <input
               type="checkbox"
               checked={fitsVegetarian}
@@ -326,7 +327,7 @@ export function RecipeForm({ profileTargets = null }: RecipeFormProps) {
             />
             Vegetarian-friendly
           </label>
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+          <label className={`flex cursor-pointer items-center gap-2 ${ds.formSectionText}`}>
             <input
               type="checkbox"
               checked={fitsVegan}
@@ -339,7 +340,7 @@ export function RecipeForm({ profileTargets = null }: RecipeFormProps) {
             />
             Vegan-friendly
           </label>
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+          <label className={`flex cursor-pointer items-center gap-2 ${ds.formSectionText}`}>
             <input
               type="checkbox"
               checked={fitsGlutenFree}
@@ -351,7 +352,7 @@ export function RecipeForm({ profileTargets = null }: RecipeFormProps) {
         </div>
 
         <div className="space-y-3">
-          <h3 className="font-medium text-gray-900">Ingredients</h3>
+          <h3 className="font-medium text-gray-900 dark:text-white">Ingredients</h3>
           {ingredients.map((ingredient, index) => {
             const qty = Number.parseFloat(ingredient.quantity);
             const qtyError = ingredientQuantityError(ingredient.name, ingredient.quantity);

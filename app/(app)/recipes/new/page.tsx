@@ -24,8 +24,8 @@ export default async function NewRecipePage() {
   return (
     <section className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">New Recipe</h1>
-        <p className="text-gray-600">
+        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">New Recipe</h1>
+        <p className="text-gray-600 dark:text-gray-300">
           Build your ingredient list and BiteSync will estimate macro and micro totals live.
         </p>
       </div>

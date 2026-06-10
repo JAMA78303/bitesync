@@ -150,7 +150,7 @@ export function RecipesPageClient({
         </Link>
       </div>
 
-      <div className="flex items-center gap-2 rounded-2xl border border-white/55 bg-white/35 px-4 py-3 backdrop-blur-sm">
+      <div className={ds.headerSearchWrap}>
         <svg className="h-4 w-4 shrink-0 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
@@ -159,6 +159,7 @@ export function RecipesPageClient({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search recipes..."
+          data-force-light
           className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/90"
         />
       </div>

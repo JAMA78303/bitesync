@@ -3,7 +3,7 @@ import { Logo } from "@/components/shared/Logo";
 
 export function Sidebar() {
   return (
-    <aside className="hidden w-64 flex-col border-r border-gray-200 bg-white p-4 md:flex">
+    <aside className="hidden w-64 flex-col border-r border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-950 md:flex">
       <Logo size="md" href="/today" className="mb-6" />
       <nav className="flex flex-col gap-2">
         <NavLink href="/today" label="Today" icon="today" />

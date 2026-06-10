@@ -184,32 +184,9 @@ async function replacePlanDaysWithClaudePlan(
       `(worst day ~${Math.round(worstRatio * 100)}% of target). Try adding salads, soups, or smaller portions.`;
   }
 
-  const { error: delError } = await supabase
-    .from("meal_plan_entries")
-    .delete()
-    .eq("meal_plan_id", mealPlanId)
-    .in("day_of_week", selectedDays);
-  if (delError) return { error: delError.message };
-
-  const { error: insertError } = await supabase.from("meal_plan_entries").insert(rows);
-  if (!insertError) return { success: true as const, warning };
-
-  if (insertError.message.toLowerCase().includes("slot_index")) {
-    const legacyRows = rows
-      .filter((r) => r.slot_index === 0)
-      .map((r) => ({
-        meal_plan_id: r.meal_plan_id,
-        recipe_id: r.recipe_id,
-        day_of_week: r.day_of_week,
-        meal_type: r.meal_type,
-        quick_add_name: r.quick_add_name,
-        quick_add_calories: r.quick_add_calories,
-      }));
-    const { error: legacyInsertError } = await supabase.from("meal_plan_entries").insert(legacyRows);
-    if (legacyInsertError) return { error: legacyInsertError.message };
-    return { success: true as const, warning };
-  }
-  return { error: insertError.message };
+  const persisted = await persistWeeklyMealPlanRows(supabase, mealPlanId, rows, selectedDays);
+  if ("error" in persisted) return { error: persisted.error };
+  return { success: true as const, warning };
 }
 
 type GenerateAIWeekPlanInput = {
@@ -548,7 +525,8 @@ function pickRecipeWithBudgetAndUsage(
     .sort((a, b) => b.s - a.s);
 
   const top = scored.slice(0, 3).map((x) => x.r);
-  const picked = top[Math.floor(Math.random() * Math.max(top.length, 1))] ?? scored[0]!.r;
+  const picked = top[Math.floor(Math.random() * Math.max(top.length, 1))] ?? scored[0]?.r;
+  if (!picked) return null;
   usedCount.set(picked.id, (usedCount.get(picked.id) ?? 0) + 1);
 
   console.warn(
@@ -688,6 +666,162 @@ function trimSnacksIfDayOverMacroCaps(
   }
 }
 
+function mealPlanSlotKey(day: number, mealType: string, slotIndex: number): string {
+  return `${day}|${mealType}|${slotIndex}`;
+}
+
+const FRIENDLY_WEEK_PLAN_FAIL =
+  "Couldn't generate your week plan — please try again. If this keeps happening, refresh the page and try once more.";
+
+function userFacingPlanError(technical: string, logContext: string): string {
+  console.error(`[persistWeeklyMealPlanRows] ${logContext}:`, technical);
+  const lower = technical.toLowerCase();
+  if (
+    lower.includes("duplicate key") ||
+    lower.includes("unique constraint") ||
+    lower.includes("violates unique")
+  ) {
+    return FRIENDLY_WEEK_PLAN_FAIL;
+  }
+  if (
+    technical.startsWith("No meals could") ||
+    technical.startsWith("Only ") ||
+    technical.startsWith("Add at least")
+  ) {
+    return technical;
+  }
+  return FRIENDLY_WEEK_PLAN_FAIL;
+}
+
+/** Drop duplicate slots if the generator assigned the same day+meal+slot twice. */
+function dedupeMealPlanRowsBySlot(rows: MealPlanInsertRow[]): MealPlanInsertRow[] {
+  const seen = new Set<string>();
+  const out: MealPlanInsertRow[] = [];
+  for (const row of rows) {
+    const key = mealPlanSlotKey(row.day_of_week, row.meal_type, row.slot_index ?? 0);
+    if (seen.has(key)) {
+      console.warn(`[persistWeeklyMealPlanRows] dropping duplicate slot ${key}`);
+      continue;
+    }
+    seen.add(key);
+    out.push(row);
+  }
+  return out;
+}
+
+/** Legacy DB unique key is (meal_plan_id, day_of_week, meal_type) — only one snack per day. */
+function collapseRowsForLegacyUniqueConstraint(rows: MealPlanInsertRow[]): MealPlanInsertRow[] {
+  const out: MealPlanInsertRow[] = [];
+  const seen = new Set<string>();
+  const snackByDay = new Map<number, MealPlanInsertRow>();
+
+  for (const row of rows) {
+    if (row.meal_type === "snack") {
+      const existing = snackByDay.get(row.day_of_week);
+      if (!existing || (row.slot_index ?? 0) < (existing.slot_index ?? 0)) {
+        snackByDay.set(row.day_of_week, row);
+      }
+      continue;
+    }
+    const key = `${row.day_of_week}|${row.meal_type}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(row);
+  }
+
+  for (const snack of snackByDay.values()) {
+    out.push(snack);
+  }
+  return out;
+}
+
+function toLegacyInsertRow(row: MealPlanInsertRow) {
+  return {
+    meal_plan_id: row.meal_plan_id,
+    recipe_id: row.recipe_id,
+    day_of_week: row.day_of_week,
+    meal_type: row.meal_type,
+    quick_add_name: row.quick_add_name,
+    quick_add_calories: row.quick_add_calories,
+  };
+}
+
+function toLegacyInsertRow(row: MealPlanInsertRow) {
+  supabase: SupabaseClient,
+  mealPlanId: string,
+  keepKeys: Set<string>,
+  keyFn: (day: number, mealType: string, slotIndex?: number) => string,
+): Promise<void> {
+  const { data: existing } = await supabase
+    .from("meal_plan_entries")
+    .select("id, day_of_week, meal_type, slot_index")
+    .eq("meal_plan_id", mealPlanId);
+
+  const staleIds = (existing ?? [])
+    .filter((entry) => !keepKeys.has(keyFn(entry.day_of_week, entry.meal_type, entry.slot_index ?? 0)))
+    .map((entry) => entry.id);
+
+  if (staleIds.length) {
+    await supabase.from("meal_plan_entries").delete().in("id", staleIds);
+  }
+}
+
+async function persistWeeklyMealPlanRows(
+  supabase: SupabaseClient,
+  mealPlanId: string,
+  rows: MealPlanInsertRow[],
+  selectedDays: number[],
+): Promise<{ error: string } | { success: true }> {
+  const deduped = dedupeMealPlanRowsBySlot(rows);
+
+  if (!deduped.length) {
+    return {
+      error:
+        "No meals could be planned from your recipe library. Add more varied recipes (breakfast, lighter lunches, and snack-sized options) and try again.",
+    };
+  }
+
+  const daysWithMeals = new Set(deduped.map((r) => r.day_of_week));
+  if (daysWithMeals.size < Math.min(7, selectedDays.length)) {
+    return {
+      error: `Only ${daysWithMeals.size} of ${selectedDays.length} days could be filled. Add more recipes that fit breakfast, lunch, and dinner slots.`,
+    };
+  }
+
+  // Full-week replace: clear every slot for this plan (not only selectedDays subset).
+  const { error: clearError } = await supabase
+    .from("meal_plan_entries")
+    .delete()
+    .eq("meal_plan_id", mealPlanId);
+  if (clearError) return { error: userFacingPlanError(clearError.message, "clear") };
+
+  const { error: insertError } = await supabase.from("meal_plan_entries").insert(deduped);
+  if (!insertError) return { success: true as const };
+
+  console.warn("[persistWeeklyMealPlanRows] modern insert failed, trying legacy schema:", insertError.message);
+
+  // Legacy DB: unique (meal_plan_id, day_of_week, meal_type) — max one snack/day; slot_index may be absent.
+  await supabase.from("meal_plan_entries").delete().eq("meal_plan_id", mealPlanId);
+
+  const legacyRows = collapseRowsForLegacyUniqueConstraint(deduped).map(toLegacyInsertRow);
+  const { error: legacyUpsertError } = await supabase
+    .from("meal_plan_entries")
+    .upsert(legacyRows, { onConflict: "meal_plan_id,day_of_week,meal_type" });
+
+  if (!legacyUpsertError) {
+    const keepKeys = new Set(legacyRows.map((r) => `${r.day_of_week}|${r.meal_type}`));
+    await pruneStaleMealPlanEntries(
+      supabase,
+      mealPlanId,
+      keepKeys,
+      (day, mealType) => `${day}|${mealType}`,
+    );
+    return { success: true as const };
+  }
+
+  return { error: userFacingPlanError(legacyUpsertError.message, "legacy upsert") };
+}
+
 function dietaryFlagsFromProfile(profile: Awaited<ReturnType<typeof getProfile>>, goals: GoalContext) {
   const prefs = parseDietaryPreferences(profile?.dietary_preferences);
   const fromPrefs = dietaryPreferencesToLegacyFlags(prefs);
@@ -704,6 +838,15 @@ function dietaryFlagsFromProfile(profile: Awaited<ReturnType<typeof getProfile>>
 }
 
 export async function generateAIWeekPlan(input: GenerateAIWeekPlanInput) {
+  try {
+    return await generateAIWeekPlanInner(input);
+  } catch (err) {
+    console.error("[generateAIWeekPlan] unexpected failure:", err);
+    return { error: FRIENDLY_WEEK_PLAN_FAIL };
+  }
+}
+
+async function generateAIWeekPlanInner(input: GenerateAIWeekPlanInput) {
   const tier = await getUserTier();
   if (tier !== "pro") return { error: "Upgrade to Pro to generate AI weekly plans." };
 
@@ -728,7 +871,7 @@ export async function generateAIWeekPlan(input: GenerateAIWeekPlanInput) {
     .is("archived_at", null)
     .order("name", { ascending: true });
 
-  if (recipesError) return { error: recipesError.message };
+  if (recipesError) return { error: userFacingPlanError(recipesError.message, "load recipes") };
   const allRecipes = (recipes ?? []) as RecipeRow[];
   if (!allRecipes.length) {
     return { error: "Add at least one recipe to your library before generating a plan." };
@@ -737,6 +880,7 @@ export async function generateAIWeekPlan(input: GenerateAIWeekPlanInput) {
   const nutritionMap = await fetchRecipeNutritionMap(
     supabase,
     allRecipes.map((r) => r.id),
+    { fillMissing: false },
   );
   const { data: ingredientRows } = await supabase
     .from("recipe_ingredients")
@@ -801,6 +945,7 @@ export async function generateAIWeekPlan(input: GenerateAIWeekPlanInput) {
   let claudeSucceeded = false;
   let claudeNotes: string | undefined;
   let heuristicWarning: string | undefined;
+  let claudeApplyError: string | undefined;
 
   if (isAnthropicMealAiEnabled()) {
     try {
@@ -831,10 +976,13 @@ export async function generateAIWeekPlan(input: GenerateAIWeekPlanInput) {
           claudeSucceeded = true;
           claudeNotes = aiPlan.notes;
           heuristicWarning = applied.warning;
+        } else if ("error" in applied) {
+          claudeApplyError = applied.error;
+          console.warn("[generateAIWeekPlan] Claude plan not applied:", applied.error);
         }
       }
-    } catch {
-      /* heuristic fallback below */
+    } catch (err) {
+      console.warn("[generateAIWeekPlan] Claude planning failed, using heuristic:", err);
     }
   }
 
@@ -992,30 +1140,17 @@ export async function generateAIWeekPlan(input: GenerateAIWeekPlanInput) {
         `(worst day ~${Math.round(worstRatio * 100)}% of target). Try adding salads, soups, or smaller portions.`;
     }
 
-    const { error: clearError } = await supabase
-      .from("meal_plan_entries")
-      .delete()
-      .eq("meal_plan_id", input.mealPlanId);
-    if (clearError) return { error: clearError.message };
-
-    const { error: insertError } = await supabase.from("meal_plan_entries").insert(rows);
-    if (insertError) {
-      if (insertError.message.toLowerCase().includes("slot_index")) {
-        const legacyRows = rows
-          .filter((r) => r.slot_index === 0)
-          .map((r) => ({
-            meal_plan_id: r.meal_plan_id,
-            recipe_id: r.recipe_id,
-            day_of_week: r.day_of_week,
-            meal_type: r.meal_type,
-            quick_add_name: r.quick_add_name,
-            quick_add_calories: r.quick_add_calories,
-          }));
-        const { error: legacyInsertError } = await supabase.from("meal_plan_entries").insert(legacyRows);
-        if (legacyInsertError) return { error: legacyInsertError.message };
-      } else {
-        return { error: insertError.message };
+    const persisted = await persistWeeklyMealPlanRows(
+      supabase,
+      input.mealPlanId,
+      rows,
+      selectedDaysFullWeek,
+    );
+    if ("error" in persisted) {
+      if (claudeApplyError) {
+        console.warn("[generateAIWeekPlan] Claude apply error (also failed heuristic):", claudeApplyError);
       }
+      return { error: persisted.error };
     }
   }
 
