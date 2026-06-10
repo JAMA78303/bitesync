@@ -1,5 +1,7 @@
 "use server";
 
+import { toUserFacingError } from "@/lib/errors/userFacing";
+
 import { revalidatePath } from "next/cache";
 import { initialDietaryPreferencesFromProfile } from "@/lib/dietary/constraints";
 import { parseBulkIngredientInput } from "@/lib/matching/ingredient-overlap";
@@ -168,7 +170,7 @@ export async function suggestMealsFromLeftovers(
     .is("archived_at", null)
     .eq("is_checked", false);
 
-  if (error) return { error: error.message };
+  if (error) return { error: toUserFacingError(error, "pantry", "addPantryToGrocery") };
 
   const uncheckedNames = (items ?? []).map((row) => String(row.name ?? "")).filter(Boolean);
   if (!uncheckedNames.length) {

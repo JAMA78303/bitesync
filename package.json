@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test:nutrition": "tsx lib/nutrition/cofidMatch.test.ts && tsx lib/recipes/parseIngredient.test.ts",
     "icons": "node scripts/write-brand-icons.mjs",
     "import:cofid": "tsx scripts/import-cofid.ts",
     "recompute:macros": "tsx scripts/recompute-recipe-macros.ts",

@@ -11,79 +11,79 @@ import { deriveNutritionTargets } from "@/lib/utils/nutrition-targets";
 import { formatDayMonthOrdinal, getMonday, toLocalISO } from "@/lib/utils/dates";
 
 export default async function NutritionPage({
-  searchParams,
+ searchParams,
 }: {
-  searchParams: Promise<{ week?: string }>;
+ searchParams: Promise<{ week?: string }>;
 }) {
-  const params = await searchParams;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+ const params = await searchParams;
+ const supabase = await createClient();
+ const {
+ data: { user },
+ } = await supabase.auth.getUser();
+ if (!user) redirect("/login");
 
-  const weekStart = params.week ? getMonday(new Date(`${params.week}T00:00:00`)) : getMonday(new Date());
-  const weekStartISO = toLocalISO(weekStart);
-  const prevWeekISO = toLocalISO(new Date(weekStart.getTime() - 7 * 86400000));
-  const nextWeekISO = toLocalISO(new Date(weekStart.getTime() + 7 * 86400000));
+ const weekStart = params.week ? getMonday(new Date(`${params.week}T00:00:00`)) : getMonday(new Date());
+ const weekStartISO = toLocalISO(weekStart);
+ const prevWeekISO = toLocalISO(new Date(weekStart.getTime() - 7 * 86400000));
+ const nextWeekISO = toLocalISO(new Date(weekStart.getTime() + 7 * 86400000));
 
-  const [profile, mealPlan, tier] = await Promise.all([
-    getProfile(),
-    getMealPlanForWeek(weekStartISO),
-    getUserTier(),
-  ]);
+ const [profile, mealPlan, tier] = await Promise.all([
+ getProfile(),
+ getMealPlanForWeek(weekStartISO),
+ getUserTier(),
+ ]);
 
-  const targets = deriveNutritionTargets(profile);
-  let microAnalysis: Awaited<ReturnType<typeof getWeeklyMicroAnalysis>> = null;
-  let entries: Awaited<ReturnType<typeof getMealPlanEntries>>["data"] = [];
+ const targets = deriveNutritionTargets(profile);
+ let microAnalysis: Awaited<ReturnType<typeof getWeeklyMicroAnalysis>> = null;
+ let entries: Awaited<ReturnType<typeof getMealPlanEntries>>["data"] = [];
 
-  if (mealPlan) {
-    const { data } = await getMealPlanEntries(mealPlan.id);
-    entries = data ?? [];
-    if (tier === "pro") {
-      try {
-        microAnalysis = await getWeeklyMicroAnalysis(
-          mealPlan.id,
-          weekStartISO,
-          (profile?.sex as "male" | "female") ?? "male",
-        );
-      } catch (err) {
-        console.error("Micro analysis failed:", err);
-      }
-    }
-  }
+ if (mealPlan) {
+ const { data } = await getMealPlanEntries(mealPlan.id);
+ entries = data ?? [];
+ if (tier ==="pro") {
+ try {
+ microAnalysis = await getWeeklyMicroAnalysis(
+ mealPlan.id,
+ weekStartISO,
+ (profile?.sex as"male" |"female") ??"male",
+ );
+ } catch (err) {
+ console.error("Micro analysis failed:", err);
+ }
+ }
+ }
 
-  const { days, weekAvg } = computeWeeklyMacrosFromEntries(entries ?? [], weekStart);
+ const { days, weekAvg } = computeWeeklyMacrosFromEntries(entries ?? [], weekStart);
 
-  const weekEnd = new Date(weekStart.getTime() + 6 * 86400000);
-  const rangeLabel = `${formatDayMonthOrdinal(weekStart)} – ${formatDayMonthOrdinal(weekEnd)}`;
+ const weekEnd = new Date(weekStart.getTime() + 6 * 86400000);
+ const rangeLabel = `${formatDayMonthOrdinal(weekStart)} – ${formatDayMonthOrdinal(weekEnd)}`;
 
-  const weekNav = (
-    <div className="flex items-center justify-between rounded-xl bg-[var(--header-stat-bg)] px-2 py-1.5 backdrop-blur-sm">
-      <Link
-        href={`/nutrition?week=${prevWeekISO}`}
-        className="px-2 py-1 text-sm text-[var(--text-on-header-muted)] hover:text-[var(--text-on-header)]"
-      >
-        ‹
-      </Link>
-      <span className="text-xs font-medium text-[var(--text-on-header)]">{rangeLabel}</span>
-      <Link
-        href={`/nutrition?week=${nextWeekISO}`}
-        className="px-2 py-1 text-sm text-[var(--text-on-header-muted)] hover:text-[var(--text-on-header)]"
-      >
-        ›
-      </Link>
-    </div>
-  );
+ const weekNav = (
+ <div className="flex items-center justify-between rounded-xl bg-[var(--header-stat-bg)] px-2 py-1.5 backdrop-blur-sm">
+ <Link
+ href={`/nutrition?week=${prevWeekISO}`}
+ className="px-2 py-1 text-sm text-[var(--text-on-header-muted)] hover:text-[var(--text-on-header)]"
+ >
+ ‹
+ </Link>
+ <span className="text-xs font-medium text-[var(--text-on-header)]">{rangeLabel}</span>
+ <Link
+ href={`/nutrition?week=${nextWeekISO}`}
+ className="px-2 py-1 text-sm text-[var(--text-on-header-muted)] hover:text-[var(--text-on-header)]"
+ >
+ ›
+ </Link>
+ </div>
+ );
 
-  return (
-    <NutritionDashboard
-      weekAvg={weekAvg}
-      days={days}
-      targets={targets}
-      isProUser={tier === "pro"}
-      microAnalysis={microAnalysis}
-      weekNav={weekNav}
-    />
-  );
+ return (
+ <NutritionDashboard
+ weekAvg={weekAvg}
+ days={days}
+ targets={targets}
+ isProUser={tier ==="pro"}
+ microAnalysis={microAnalysis}
+ weekNav={weekNav}
+ />
+ );
 }

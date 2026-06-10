@@ -1,5 +1,6 @@
 "use server";
 
+import { toUserFacingError } from "@/lib/errors/userFacing";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { applyPantryToShoppingList } from "@/lib/grocery/applyPantryToShoppingList";
@@ -83,7 +84,7 @@ async function restoreManualGrocerySnapshot(
     return { error: legacyError?.message ?? null };
   }
 
-  return { error: error.message };
+  return { error: toUserFacingError(error, "grocery", "groceryDb") };
 }
 
 export async function replaceGroceryItemsWithMerged(
@@ -113,7 +114,7 @@ export async function replaceGroceryItemsWithMerged(
       isMissingArchivedAtColumn(error.message) ||
       schemaMissingColumn(error.message, "is_manual");
 
-    if (!shouldFallback) return { error: error.message };
+    if (!shouldFallback) return { error: toUserFacingError(error, "grocery", "groceryDb") };
 
     const now = new Date().toISOString();
 
@@ -231,7 +232,7 @@ export async function getGroceryItems(meal_plan_id: string) {
 export async function toggleGroceryItem(item_id: string, is_checked: boolean) {
   const supabase = await createClient();
   const { error } = await supabase.from("grocery_items").update({ is_checked }).eq("id", item_id);
-  if (error) return { error: error.message };
+  if (error) return { error: toUserFacingError(error, "grocery", "groceryDb") };
   revalidatePath("/grocery");
   return { success: true };
 }
@@ -245,7 +246,7 @@ export async function deleteGroceryItem(item_id: string) {
     const { error: fallbackError } = await supabase.from("grocery_items").delete().eq("id", item_id);
     if (fallbackError) return { error: fallbackError.message };
   } else if (error) {
-    return { error: error.message };
+    return { error: toUserFacingError(error, "grocery", "groceryDb") };
   }
 
   revalidatePath("/grocery");
@@ -370,7 +371,7 @@ export async function addManualGroceryItem(meal_plan_id: string, name: string, q
     const { error: fallbackError } = await supabase.from("grocery_items").insert(payload);
     if (fallbackError) return { error: fallbackError.message };
   } else if (error) {
-    return { error: error.message };
+    return { error: toUserFacingError(error, "grocery", "groceryDb") };
   }
 
   revalidatePath("/grocery");
@@ -407,7 +408,7 @@ export async function deleteGroceryList(meal_plan_id: string) {
     const { error: fallbackError } = await supabase.from("grocery_items").delete().eq("meal_plan_id", meal_plan_id);
     if (fallbackError) return { error: fallbackError.message };
   } else if (error) {
-    return { error: error.message };
+    return { error: toUserFacingError(error, "grocery", "groceryDb") };
   }
 
   await supabase.from("meal_plans").update({ grocery_scope_days: null }).eq("id", meal_plan_id);

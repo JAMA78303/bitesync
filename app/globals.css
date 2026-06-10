@@ -22,7 +22,39 @@ html {
   --brand-dark: #2d4a32;
   --brand-sage: #3a5a40;
   --brand-amber: #d97706;
-  /* App theme tokens (light / dark pairs) */
+
+  /* Surfaces */
+  --surface-page: #f8faf8;
+  --surface-card: #ffffff;
+  --surface-muted: #f9fafb;
+  --surface-elevated: #ffffff;
+  --surface-input: #ffffff;
+  --surface-info: #f8fafc;
+  --surface-brand-subtle: #f0f7f0;
+  --surface-overlay: #ffffff;
+
+  /* Borders */
+  --border-default: #e5e7eb;
+  --border-subtle: #f3f4f6;
+
+  /* Text */
+  --text-primary: #111827;
+  --text-secondary: #374151;
+  --text-muted: #6b7280;
+  --text-on-brand: #ffffff;
+  --text-on-brand-muted: rgba(255, 255, 255, 0.78);
+  --text-on-brand-subtle: rgba(255, 255, 255, 0.6);
+
+  /* Buttons */
+  --btn-primary-bg: #3a5a40;
+  --btn-primary-hover: #2d4a32;
+  --btn-primary-text: #ffffff;
+  --btn-secondary-bg: #ffffff;
+  --btn-secondary-hover: #f9fafb;
+  --btn-secondary-text: #374151;
+  --btn-secondary-border: #e5e7eb;
+
+  /* App chrome */
   --header-from: #3a5a40;
   --header-to: #4a7a50;
   --text-on-header: #ffffff;
@@ -32,9 +64,16 @@ html {
   --header-stat-accent: #bbf7d0;
   --header-stat-warn: #fde68a;
   --nav-bar-bg: #2d4a32;
-  --card-surface: #ffffff;
-  --card-text: #111827;
-  --card-text-muted: #6b7280;
+  --admin-nav-bg: #1a4731;
+  --hero-gradient: radial-gradient(ellipse at top left, #4a7a50 0%, #3a5a40 40%, #2d4a33 100%);
+  --landing-section-muted: #f8fafc;
+  --landing-accent-surface: #f5f9f5;
+  --progress-track: rgba(255, 255, 255, 0.2);
+
+  /* Legacy aliases */
+  --card-surface: var(--surface-card);
+  --card-text: var(--text-primary);
+  --card-text-muted: var(--text-muted);
 }
 
 :root.dark,
@@ -42,6 +81,34 @@ html {
   color-scheme: dark;
   --background: #0b1220;
   --foreground: #e5e7eb;
+
+  --surface-page: #0b1220;
+  --surface-card: #111827;
+  --surface-muted: #0f172a;
+  --surface-elevated: #1f2937;
+  --surface-input: #0f172a;
+  --surface-info: #1f2937;
+  --surface-brand-subtle: #1a2e1d;
+  --surface-overlay: #000000;
+
+  --border-default: #334155;
+  --border-subtle: #1f2937;
+
+  --text-primary: #f3f4f6;
+  --text-secondary: #e5e7eb;
+  --text-muted: #9ca3af;
+  --text-on-brand: #f9fafb;
+  --text-on-brand-muted: rgba(249, 250, 251, 0.78);
+  --text-on-brand-subtle: rgba(249, 250, 251, 0.58);
+
+  --btn-primary-bg: #4a7a50;
+  --btn-primary-hover: #3a5a40;
+  --btn-primary-text: #ffffff;
+  --btn-secondary-bg: #1f2937;
+  --btn-secondary-hover: #273247;
+  --btn-secondary-text: #d1d5db;
+  --btn-secondary-border: #374151;
+
   --header-from: #152318;
   --header-to: #243d28;
   --text-on-header: #f9fafb;
@@ -51,9 +118,15 @@ html {
   --header-stat-accent: #86efac;
   --header-stat-warn: #fcd34d;
   --nav-bar-bg: #152318;
-  --card-surface: #111827;
-  --card-text: #f3f4f6;
-  --card-text-muted: #9ca3af;
+  --admin-nav-bg: #152318;
+  --hero-gradient: radial-gradient(ellipse at top left, #243d28 0%, #1a2e1d 40%, #0f1a12 100%);
+  --landing-section-muted: #111827;
+  --landing-accent-surface: #0b1220;
+  --progress-track: rgba(255, 255, 255, 0.1);
+
+  --card-surface: var(--surface-card);
+  --card-text: var(--text-primary);
+  --card-text-muted: var(--text-muted);
 }
 
 @theme inline {
@@ -70,153 +143,17 @@ body {
 
 html[data-theme="light"],
 html[data-theme="light"] body {
-  background-color: #f8faf8 !important;
-  color: #1f2937 !important;
+  background-color: var(--surface-page) !important;
+  color: var(--text-primary) !important;
 }
 
 html[data-theme="dark"],
 html[data-theme="dark"] body {
-  background-color: #0b1220 !important;
-  color: #e5e7eb !important;
+  background-color: var(--surface-page) !important;
+  color: var(--text-primary) !important;
 }
 
-:root[data-theme="dark"] .bg-white {
-  background-color: #111827 !important;
-}
-
-:root[data-theme="dark"] .bg-gray-50 {
-  background-color: #1f2937 !important;
-}
-
-:root[data-theme="dark"] .bg-gray-100 {
-  background-color: #273247 !important;
-}
-
-:root[data-theme="dark"] .text-gray-900 {
-  color: #f3f4f6 !important;
-}
-
-:root[data-theme="dark"] .text-gray-800 {
-  color: #e5e7eb !important;
-}
-
-:root[data-theme="dark"] .text-gray-700 {
-  color: #e2e8f0 !important;
-}
-
-:root[data-theme="dark"] .text-gray-600 {
-  color: #dbe3ef !important;
-}
-
-:root[data-theme="dark"] .text-gray-500 {
-  color: #d1d9e6 !important;
-}
-
-:root[data-theme="dark"] .text-slate-500 {
-  color: #c6d0df !important;
-}
-
-:root[data-theme="dark"] .text-slate-900 {
-  color: #f3f4f6 !important;
-}
-
-:root[data-theme="dark"] .text-slate-800 {
-  color: #e5e7eb !important;
-}
-
-:root[data-theme="dark"] .text-slate-700 {
-  color: #e2e8f0 !important;
-}
-
-:root[data-theme="dark"] .text-slate-600 {
-  color: #dbe3ef !important;
-}
-
-:root[data-theme="dark"] .text-gray-400 {
-  color: #bac6d8 !important;
-}
-
-:root[data-theme="dark"] .text-slate-400 {
-  color: #bac6d8 !important;
-}
-
-:root[data-theme="dark"] .text-black {
-  color: #f3f4f6 !important;
-}
-
-:root[data-theme="dark"] .text-zinc-900 {
-  color: #f3f4f6 !important;
-}
-
-:root[data-theme="dark"] .text-zinc-800 {
-  color: #e5e7eb !important;
-}
-
-:root[data-theme="dark"] .text-zinc-700 {
-  color: #dbe3ef !important;
-}
-
-:root[data-theme="dark"] .text-zinc-600 {
-  color: #d1d9e6 !important;
-}
-
-:root[data-theme="dark"] input::placeholder,
-:root[data-theme="dark"] textarea::placeholder {
-  color: #95a3b8 !important;
-  opacity: 1;
-}
-
-:root[data-theme="dark"] .border-gray-100 {
-  border-color: #2e3b53 !important;
-}
-
-:root[data-theme="dark"] .border-gray-300 {
-  border-color: #3a4963 !important;
-}
-
-:root[data-theme="dark"] .border-gray-200 {
-  border-color: #334155 !important;
-}
-
-:root[data-theme="dark"] .border-slate-200 {
-  border-color: #334155 !important;
-}
-
-:root[data-theme="dark"] .hover\:bg-gray-50:hover {
-  background-color: #1f2a3d !important;
-}
-
-:root[data-theme="dark"] .hover\:bg-gray-100:hover {
-  background-color: #273247 !important;
-}
-
-:root[data-theme="dark"] .bg-slate-50,
-:root[data-theme="dark"] .bg-slate-50\/80,
-:root[data-theme="dark"] .bg-slate-50\/90 {
-  background-color: #1f2937 !important;
-}
-
-:root[data-theme="dark"] .bg-slate-50\/60 {
-  background-color: rgba(31, 41, 55, 0.85) !important;
-}
-
-:root[data-theme="dark"] .bg-emerald-50,
-:root[data-theme="dark"] .bg-emerald-50\/60 {
-  background-color: rgba(6, 78, 59, 0.35) !important;
-}
-
-:root[data-theme="dark"] .border-slate-100 {
-  border-color: #334155 !important;
-}
-
-:root[data-theme="dark"] .border-emerald-100 {
-  border-color: rgba(16, 185, 129, 0.25) !important;
-}
-
-:root[data-theme="dark"] .text-emerald-900 {
-  color: #a7f3d0 !important;
-}
-
+/* Status / semantic colors — kept for alerts, not structural surfaces */
 :root[data-theme="dark"] .bg-red-50 {
   background-color: rgba(127, 29, 29, 0.28) !important;
 }
@@ -257,34 +194,27 @@ html[data-theme="dark"] body {
 }
 
 :root[data-theme="dark"] .meal-type-label {
-  color: #9ca3af;
+  color: var(--text-muted);
 }
 
 :root[data-theme="dark"] input:not([data-force-light]),
 :root[data-theme="dark"] textarea:not([data-force-light]),
 :root[data-theme="dark"] select:not([data-force-light]) {
-  background-color: #0f172a !important;
-  color: #e5e7eb !important;
-  border-color: #334155 !important;
+  background-color: var(--surface-input) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-default) !important;
 }
 
-/* Explicit theme-aware select styling for form controls that must track app theme reliably on mobile browsers */
 select.theme-aware-select {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
+  background-color: var(--surface-input) !important;
+  color: var(--text-primary) !important;
 }
 
 :root[data-theme="dark"] select.theme-aware-select,
 :root.dark select.theme-aware-select {
-  background-color: #0f172a !important;
-  color: #e5e7eb !important;
-  border-color: #334155 !important;
-}
-
-:root[data-theme="dark"] button.bg-white {
-  background-color: #1f2937 !important;
-  color: #e5e7eb !important;
-  border-color: #334155 !important;
+  background-color: var(--surface-input) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-default) !important;
 }
 
 :root[data-theme="dark"] .line-through {
@@ -307,7 +237,7 @@ select.theme-aware-select {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #6b7280;
+  color: var(--text-muted);
   margin-bottom: 0.5rem;
 }
 
@@ -324,7 +254,6 @@ select.theme-aware-select {
   padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
 }
 
-/** Horizontal gutters + notch/rounded-corner safe areas on phones */
 .app-mobile-gutter {
   padding-left: max(1rem, env(safe-area-inset-left));
   padding-right: max(1rem, env(safe-area-inset-right));

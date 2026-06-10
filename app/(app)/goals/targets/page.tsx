@@ -6,58 +6,58 @@ import { isProSubscriptionStatus } from "@/lib/subscription";
 import { getProfile } from "@/lib/supabase/profile";
 import { ds } from "@/lib/ui/classes";
 
-export const dynamic = "force-dynamic";
+export const dynamic ="force-dynamic";
 
 export default async function TargetsGoalsPage() {
-  const profile = await getProfile();
-  const isPro = isProSubscriptionStatus(profile?.subscription_status);
+ const profile = await getProfile();
+ const isPro = isProSubscriptionStatus(profile?.subscription_status);
 
-  const defaultValues = profile?.weight_kg
-    ? {
-        weightKg: Number(profile.weight_kg),
-        heightCm: Number(profile.height_cm),
-        age: Number(profile.age),
-        sex: profile.sex as "male" | "female",
-        activityLevel: profile.activity_level as
-          | "sedentary"
-          | "light"
-          | "moderate"
-          | "active"
-          | "extra_active",
-        goal: profile.goal as "lose" | "maintain" | "gain",
-      }
-    : undefined;
+ const defaultValues = profile?.weight_kg
+ ? {
+ weightKg: Number(profile.weight_kg),
+ heightCm: Number(profile.height_cm),
+ age: Number(profile.age),
+ sex: profile.sex as"male" |"female",
+ activityLevel: profile.activity_level as
+ |"sedentary"
+ |"light"
+ |"moderate"
+ |"active"
+ |"extra_active",
+ goal: profile.goal as"lose" |"maintain" |"gain",
+ }
+ : undefined;
 
-  return (
-    <div className={`${ds.mobilePage} ${ds.pageContent}`}>
-      <div className={ds.gradientHeaderCompact}>
-        <Link href="/goals" className={`mb-2 inline-block text-sm font-medium ${ds.pageSubtitle}`}>
-          ← Nutrition &amp; goals
-        </Link>
-        <h1 className={ds.pageTitle}>Calorie &amp; macro targets</h1>
-        <p className={`mt-0.5 ${ds.pageSubtitle}`}>Based on your body stats and goal</p>
-      </div>
-      <div className={`${ds.mobileGutter} ${ds.overlap} pt-2`}>
-        {isPro ? (
-          <div className={`${ds.card} ${ds.cardPadding}`}>
-            <TDEEForm defaultValues={defaultValues} />
-          </div>
-        ) : (
-          <div className={`${ds.card} ${ds.cardPadding} text-center`}>
-            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
-              <Lock className="h-5 w-5 text-amber-600" />
-            </div>
-            <p className="mb-1 text-sm font-medium text-gray-600">Pro feature</p>
-            <p className="mb-4 text-xs text-gray-400">
-              Set calorie and protein targets based on body stats, activity level, and goal.
-            </p>
-            <Link href="/billing" className={ds.primaryBtn}>
-              Upgrade to Pro
-            </Link>
-          </div>
-        )}
-        <CofidAttribution className="mt-6 px-1" />
-      </div>
-    </div>
-  );
+ return (
+ <div className={`${ds.mobilePage} ${ds.pageContent}`}>
+ <div className={ds.gradientHeaderCompact}>
+ <Link href="/goals" className={`mb-2 inline-block text-sm font-medium ${ds.pageSubtitle}`}>
+ ← Nutrition &amp; goals
+ </Link>
+ <h1 className={ds.pageTitle}>Calorie &amp; macro targets</h1>
+ <p className={`mt-0.5 ${ds.pageSubtitle}`}>Based on your body stats and goal</p>
+ </div>
+ <div className={`${ds.mobileGutter} ${ds.overlap} pt-2`}>
+ {isPro ? (
+ <div className={`${ds.card} ${ds.cardPadding}`}>
+ <TDEEForm defaultValues={defaultValues} />
+ </div>
+ ) : (
+ <div className={`${ds.card} ${ds.cardPadding} text-center`}>
+ <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
+ <Lock className="h-5 w-5 text-amber-600" />
+ </div>
+ <p className="mb-1 text-sm font-medium text-[var(--text-secondary)]">Pro feature</p>
+ <p className="mb-4 text-xs text-[var(--text-muted)]">
+ Set calorie and protein targets based on body stats, activity level, and goal.
+ </p>
+ <Link href="/billing" className={ds.primaryBtn}>
+ Upgrade to Pro
+ </Link>
+ </div>
+ )}
+ <CofidAttribution className="mt-6 px-1" />
+ </div>
+ </div>
+ );
 }

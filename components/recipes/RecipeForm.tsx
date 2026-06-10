@@ -14,504 +14,504 @@ import { PENDING_RECIPE_DRAFT_KEY, type PendingRecipeDraft } from "@/lib/recipes
 import { ds } from "@/lib/ui/classes";
 
 type IngredientRow = {
-  id: string;
-  name: string;
-  quantity: string;
-  unit: string;
+ id: string;
+ name: string;
+ quantity: string;
+ unit: string;
 };
 
-const DEFAULT_UNIT = "g";
+const DEFAULT_UNIT ="g";
 
 function createId(): string {
-  if (typeof globalThis !== "undefined" && globalThis.crypto?.randomUUID) {
-    return globalThis.crypto.randomUUID();
-  }
-  return `ing-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+ if (typeof globalThis !=="undefined" && globalThis.crypto?.randomUUID) {
+ return globalThis.crypto.randomUUID();
+ }
+ return `ing-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 function createIngredientRow(): IngredientRow {
-  return {
-    id: createId(),
-    name: "",
-    quantity: "",
-    unit: DEFAULT_UNIT,
-  };
+ return {
+ id: createId(),
+ name:"",
+ quantity:"",
+ unit: DEFAULT_UNIT,
+ };
 }
 
 const ingredientSuggestions = getAllFoodNames();
 const FRUIT_AND_VEG = [
-  "broccoli",
-  "spinach",
-  "kale",
-  "lettuce",
-  "rocket",
-  "cucumber",
-  "tomatoes",
-  "tomato",
-  "onion",
-  "carrots",
-  "carrot",
-  "celery",
-  "peppers",
-  "red pepper",
-  "green pepper",
-  "courgette",
-  "aubergine",
-  "mushrooms",
-  "cauliflower",
-  "cabbage",
-  "leeks",
-  "asparagus",
-  "green beans",
-  "peas",
-  "sweetcorn",
-  "beetroot",
-  "butternut squash",
-  "sweet potato",
-  "banana",
-  "apple",
-  "orange",
-  "mango",
-  "strawberries",
-  "blueberries",
-  "raspberries",
-  "grapes",
-  "pineapple",
-  "watermelon",
-  "avocado",
-  "lemon",
-  "lime",
-  "pear",
-  "peach",
-  "kiwi",
+"broccoli",
+"spinach",
+"kale",
+"lettuce",
+"rocket",
+"cucumber",
+"tomatoes",
+"tomato",
+"onion",
+"carrots",
+"carrot",
+"celery",
+"peppers",
+"red pepper",
+"green pepper",
+"courgette",
+"aubergine",
+"mushrooms",
+"cauliflower",
+"cabbage",
+"leeks",
+"asparagus",
+"green beans",
+"peas",
+"sweetcorn",
+"beetroot",
+"butternut squash",
+"sweet potato",
+"banana",
+"apple",
+"orange",
+"mango",
+"strawberries",
+"blueberries",
+"raspberries",
+"grapes",
+"pineapple",
+"watermelon",
+"avocado",
+"lemon",
+"lime",
+"pear",
+"peach",
+"kiwi",
 ];
 
 export type RecipeFormProfileTargets = {
-  daily_calorie_target: number | null;
-  daily_protein_target: number | null;
+ daily_calorie_target: number | null;
+ daily_protein_target: number | null;
 } | null;
 
 type RecipeFormProps = {
-  profileTargets?: RecipeFormProfileTargets;
+ profileTargets?: RecipeFormProfileTargets;
 };
 
 function mapServerIngredientsToRows(server: { name: string; quantity: number; unit: string }[]): IngredientRow[] {
-  return server.map((row) => ({
-    id: createId(),
-    name: row.name,
-    quantity: String(row.quantity),
-    unit: row.unit,
-  }));
+ return server.map((row) => ({
+ id: createId(),
+ name: row.name,
+ quantity: String(row.quantity),
+ unit: row.unit,
+ }));
 }
 
 export function RecipeForm({ profileTargets = null }: RecipeFormProps) {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [ingredients, setIngredients] = useState<IngredientRow[]>(() => [createIngredientRow()]);
-  const [fitsVegetarian, setFitsVegetarian] = useState(false);
-  const [fitsVegan, setFitsVegan] = useState(false);
-  const [fitsGlutenFree, setFitsGlutenFree] = useState(false);
-  const [aiMealSlot, setAiMealSlot] = useState<GoalMealSlot>("lunch");
-  const [formMessage, setFormMessage] = useState<string | null>(null);
-  const [formError, setFormError] = useState<string | null>(null);
+ const router = useRouter();
+ const [isPending, startTransition] = useTransition();
+ const [name, setName] = useState("");
+ const [description, setDescription] = useState("");
+ const [ingredients, setIngredients] = useState<IngredientRow[]>(() => [createIngredientRow()]);
+ const [fitsVegetarian, setFitsVegetarian] = useState(false);
+ const [fitsVegan, setFitsVegan] = useState(false);
+ const [fitsGlutenFree, setFitsGlutenFree] = useState(false);
+ const [aiMealSlot, setAiMealSlot] = useState<GoalMealSlot>("lunch");
+ const [formMessage, setFormMessage] = useState<string | null>(null);
+ const [formError, setFormError] = useState<string | null>(null);
 
-  useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem(PENDING_RECIPE_DRAFT_KEY);
-      if (!raw) return;
-      sessionStorage.removeItem(PENDING_RECIPE_DRAFT_KEY);
-      const draft = JSON.parse(raw) as PendingRecipeDraft;
-      if (!draft.ingredients?.length) return;
-      setIngredients(mapServerIngredientsToRows(draft.ingredients));
-      if (draft.name) setName(draft.name);
-      if (draft.mealSlot) setAiMealSlot(draft.mealSlot);
-      setFormMessage(
-        draft.label
-          ? `Loaded snack draft for ${draft.label.toLowerCase()} — review and save.`
-          : "Loaded snack draft — review and save.",
-      );
-    } catch {
-      /* ignore malformed draft */
-    }
-  }, []);
+ useEffect(() => {
+ try {
+ const raw = sessionStorage.getItem(PENDING_RECIPE_DRAFT_KEY);
+ if (!raw) return;
+ sessionStorage.removeItem(PENDING_RECIPE_DRAFT_KEY);
+ const draft = JSON.parse(raw) as PendingRecipeDraft;
+ if (!draft.ingredients?.length) return;
+ setIngredients(mapServerIngredientsToRows(draft.ingredients));
+ if (draft.name) setName(draft.name);
+ if (draft.mealSlot) setAiMealSlot(draft.mealSlot);
+ setFormMessage(
+ draft.label
+ ? `Loaded snack draft for ${draft.label.toLowerCase()} — review and save.`
+ :"Loaded snack draft — review and save.",
+ );
+ } catch {
+ /* ignore malformed draft */
+ }
+ }, []);
 
-  const parsedIngredients: RecipeIngredientInput[] = useMemo(
-    () =>
-      ingredients.map((ingredient) => ({
-        name: ingredient.name,
-        quantity: Number(ingredient.quantity),
-        unit: ingredient.unit,
-      })),
-    [ingredients],
-  );
+ const parsedIngredients: RecipeIngredientInput[] = useMemo(
+ () =>
+ ingredients.map((ingredient) => ({
+ name: ingredient.name,
+ quantity: Number(ingredient.quantity),
+ unit: ingredient.unit,
+ })),
+ [ingredients],
+ );
 
-  const { totals: nutrition, lookingUp, lineMetaByIngredientIndex } =
-    useLiveRecipeNutrition(parsedIngredients);
-  const fruitAndVegCount = useMemo(
-    () =>
-      ingredients.filter((ing) =>
-        FRUIT_AND_VEG.some((fv) => ing.name.toLowerCase().includes(fv)),
-      ).length,
-    [ingredients],
-  );
+ const { totals: nutrition, lookingUp, lineMetaByIngredientIndex } =
+ useLiveRecipeNutrition(parsedIngredients);
+ const fruitAndVegCount = useMemo(
+ () =>
+ ingredients.filter((ing) =>
+ FRUIT_AND_VEG.some((fv) => ing.name.toLowerCase().includes(fv)),
+ ).length,
+ [ingredients],
+ );
 
-  function updateIngredient(id: string, key: keyof IngredientRow, value: string) {
-    setIngredients((current) =>
-      current.map((ingredient) => {
-        if (ingredient.id !== id) return ingredient;
-        if (key === "name") {
-          const allowedUnits = getUnitsForIngredient(value);
-          const unit = allowedUnits.includes(ingredient.unit)
-            ? ingredient.unit
-            : defaultUnitForIngredient(value);
-          return { ...ingredient, name: value, unit };
-        }
-        return { ...ingredient, [key]: value };
-      }),
-    );
-  }
+ function updateIngredient(id: string, key: keyof IngredientRow, value: string) {
+ setIngredients((current) =>
+ current.map((ingredient) => {
+ if (ingredient.id !== id) return ingredient;
+ if (key ==="name") {
+ const allowedUnits = getUnitsForIngredient(value);
+ const unit = allowedUnits.includes(ingredient.unit)
+ ? ingredient.unit
+ : defaultUnitForIngredient(value);
+ return { ...ingredient, name: value, unit };
+ }
+ return { ...ingredient, [key]: value };
+ }),
+ );
+ }
 
-  function addIngredient() {
-    setIngredients((current) => [...current, createIngredientRow()]);
-  }
+ function addIngredient() {
+ setIngredients((current) => [...current, createIngredientRow()]);
+ }
 
-  function removeIngredient(id: string) {
-    setIngredients((current) => {
-      if (current.length === 1) {
-        return current;
-      }
-      return current.filter((ingredient) => ingredient.id !== id);
-    });
-  }
+ function removeIngredient(id: string) {
+ setIngredients((current) => {
+ if (current.length === 1) {
+ return current;
+ }
+ return current.filter((ingredient) => ingredient.id !== id);
+ });
+ }
 
-  function onDraftFromGoals() {
-    if (!profileTargets?.daily_calorie_target) return;
-    setFormError(null);
-    setFormMessage(null);
-    startTransition(async () => {
-      const variationSeed = Date.now() ^ Math.floor(Math.random() * 0x7fffffff);
-      const draftNonce =
-        typeof globalThis.crypto !== "undefined" && "randomUUID" in globalThis.crypto
-          ? globalThis.crypto.randomUUID()
-          : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-      const result = await generateGoalMatchedRecipeDraft({
-        mealSlot: aiMealSlot,
-        fitsVegan,
-        fitsVegetarian,
-        fitsGlutenFree,
-        variationSeed,
-        draftNonce,
-      });
-      if ("error" in result) {
-        setFormError(result.error);
-        return;
-      }
-      if (!result.data) {
-        setFormError("Unexpected empty response.");
-        return;
-      }
-      const d = result.data;
-      setIngredients(mapServerIngredientsToRows(d.ingredients));
-      setFormMessage(`Draft applied: ~${d.achievedCalories} kcal · ${d.achievedProteinG}g protein`);
-    });
-  }
+ function onDraftFromGoals() {
+ if (!profileTargets?.daily_calorie_target) return;
+ setFormError(null);
+ setFormMessage(null);
+ startTransition(async () => {
+ const variationSeed = Date.now() ^ Math.floor(Math.random() * 0x7fffffff);
+ const draftNonce =
+ typeof globalThis.crypto !=="undefined" &&"randomUUID" in globalThis.crypto
+ ? globalThis.crypto.randomUUID()
+ : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+ const result = await generateGoalMatchedRecipeDraft({
+ mealSlot: aiMealSlot,
+ fitsVegan,
+ fitsVegetarian,
+ fitsGlutenFree,
+ variationSeed,
+ draftNonce,
+ });
+ if ("error" in result) {
+ setFormError(result.error);
+ return;
+ }
+ if (!result.data) {
+ setFormError("Unexpected empty response.");
+ return;
+ }
+ const d = result.data;
+ setIngredients(mapServerIngredientsToRows(d.ingredients));
+ setFormMessage(`Draft applied: ~${d.achievedCalories} kcal · ${d.achievedProteinG}g protein`);
+ });
+ }
 
-  function onSaveRecipe() {
-    setFormError(null);
-    setFormMessage(null);
+ function onSaveRecipe() {
+ setFormError(null);
+ setFormMessage(null);
 
-    const qtyError = ingredients.map((row) => ingredientQuantityError(row.name, row.quantity)).find(Boolean);
-    if (qtyError) {
-      setFormError(qtyError);
-      return;
-    }
+ const qtyError = ingredients.map((row) => ingredientQuantityError(row.name, row.quantity)).find(Boolean);
+ if (qtyError) {
+ setFormError(qtyError);
+ return;
+ }
 
-    startTransition(async () => {
-      const result = await createRecipe({
-        name,
-        description,
-        ingredients: parsedIngredients,
-        fitsVegetarian: fitsVegetarian ? true : undefined,
-        fitsVegan: fitsVegan ? true : undefined,
-        fitsGlutenFree: fitsGlutenFree ? true : undefined,
-      });
+ startTransition(async () => {
+ const result = await createRecipe({
+ name,
+ description,
+ ingredients: parsedIngredients,
+ fitsVegetarian: fitsVegetarian ? true : undefined,
+ fitsVegan: fitsVegan ? true : undefined,
+ fitsGlutenFree: fitsGlutenFree ? true : undefined,
+ });
 
-      if ("error" in result) {
-        setFormError(result.error);
-        return;
-      }
+ if ("error" in result) {
+ setFormError(result.error);
+ return;
+ }
 
-      setFormMessage(result.message ?? "Recipe created.");
-      router.push("/recipes");
-      router.refresh();
-    });
-  }
+ setFormMessage(result.message ??"Recipe created.");
+ router.push("/recipes");
+ router.refresh();
+ });
+ }
 
-  return (
-    <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-      <section className={ds.formCard}>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Create Recipe</h2>
-        {formMessage ? (
-          <p className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-800 dark:border-green-800 dark:bg-green-950/30 dark:text-green-200">
-            {formMessage}
-          </p>
-        ) : null}
-        {formError ? (
-          <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-            {formError}
-          </p>
-        ) : null}
-        <div className="space-y-3">
-          <input
-            type="text"
-            placeholder="Recipe name"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            autoComplete="off"
-            className={`h-11 ${ds.input}`}
-          />
-          <textarea
-            placeholder="Description"
-            rows={2}
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            className={`w-full resize-none ${ds.input}`}
-          />
-        </div>
+ return (
+ <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+ <section className={ds.formCard}>
+ <h2 className="text-lg font-semibold text-[var(--text-primary)]">Create Recipe</h2>
+ {formMessage ? (
+ <p className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-800 dark:border-green-800 dark:bg-green-950/30">
+ {formMessage}
+ </p>
+ ) : null}
+ {formError ? (
+ <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+ {formError}
+ </p>
+ ) : null}
+ <div className="space-y-3">
+ <input
+ type="text"
+ placeholder="Recipe name"
+ value={name}
+ onChange={(event) => setName(event.target.value)}
+ autoComplete="off"
+ className={`h-11 ${ds.input}`}
+ />
+ <textarea
+ placeholder="Description"
+ rows={2}
+ value={description}
+ onChange={(event) => setDescription(event.target.value)}
+ className={`w-full resize-none ${ds.input}`}
+ />
+ </div>
 
-        {profileTargets?.daily_calorie_target ? (
-          <div className={ds.goalDraftPanel}>
-            <div className="flex flex-wrap items-end gap-2">
-              <label className={ds.goalDraftLabel}>
-                <span>Meal</span>
-                <select
-                  value={aiMealSlot}
-                  onChange={(e) => setAiMealSlot(e.target.value as GoalMealSlot)}
-                  className={ds.goalDraftSelect}
-                >
-                  <option value="breakfast">Breakfast (~26%)</option>
-                  <option value="lunch">Lunch (~33%)</option>
-                  <option value="dinner">Dinner (~34%)</option>
-                  <option value="snack">Snack (~12%)</option>
-                </select>
-              </label>
-              <button
-                type="button"
-                onClick={onDraftFromGoals}
-                disabled={isPending}
-                className="inline-flex h-9 items-center justify-center rounded-md bg-[#1A4731] px-3 text-xs font-medium text-white hover:bg-[#153928] disabled:opacity-60"
-              >
-                {isPending ? "Drafting…" : "Draft meal from goals"}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <p className={ds.infoCallout}>
-            Set your calorie target in Settings to enable goal-matched recipe drafts (±100 kcal per meal slot).
-          </p>
-        )}
-        <p className={ds.infoCallout}>
-          UK guidelines recommend 5 portions of fruit and veg per day. Aim for 2 vegetables per main meal and 1 fruit per breakfast or snack.
-        </p>
+ {profileTargets?.daily_calorie_target ? (
+ <div className={ds.goalDraftPanel}>
+ <div className="flex flex-wrap items-end gap-2">
+ <label className={ds.goalDraftLabel}>
+ <span>Meal</span>
+ <select
+ value={aiMealSlot}
+ onChange={(e) => setAiMealSlot(e.target.value as GoalMealSlot)}
+ className={ds.goalDraftSelect}
+ >
+ <option value="breakfast">Breakfast (~26%)</option>
+ <option value="lunch">Lunch (~33%)</option>
+ <option value="dinner">Dinner (~34%)</option>
+ <option value="snack">Snack (~12%)</option>
+ </select>
+ </label>
+ <button
+ type="button"
+ onClick={onDraftFromGoals}
+ disabled={isPending}
+ className="inline-flex h-9 items-center justify-center rounded-md bg-[var(--btn-primary-bg)] px-3 text-xs font-medium text-[var(--btn-primary-text)] hover:bg-[var(--btn-primary-hover)] disabled:opacity-60"
+ >
+ {isPending ?"Drafting…" :"Draft meal from goals"}
+ </button>
+ </div>
+ </div>
+ ) : (
+ <p className={ds.infoCallout}>
+ Set your calorie target in Settings to enable goal-matched recipe drafts (±100 kcal per meal slot).
+ </p>
+ )}
+ <p className={ds.infoCallout}>
+ UK guidelines recommend 5 portions of fruit and veg per day. Aim for 2 vegetables per main meal and 1 fruit per breakfast or snack.
+ </p>
 
-        <div className={ds.formSection}>
-          <p className={ds.formSectionLabel}>Diet labels (optional)</p>
-          <label className={`flex cursor-pointer items-center gap-2 ${ds.formSectionText}`}>
-            <input
-              type="checkbox"
-              checked={fitsVegetarian}
-              onChange={(e) => setFitsVegetarian(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300"
-            />
-            Vegetarian-friendly
-          </label>
-          <label className={`flex cursor-pointer items-center gap-2 ${ds.formSectionText}`}>
-            <input
-              type="checkbox"
-              checked={fitsVegan}
-              onChange={(e) => {
-                const v = e.target.checked;
-                setFitsVegan(v);
-                if (v) setFitsVegetarian(true);
-              }}
-              className="h-4 w-4 rounded border-slate-300"
-            />
-            Vegan-friendly
-          </label>
-          <label className={`flex cursor-pointer items-center gap-2 ${ds.formSectionText}`}>
-            <input
-              type="checkbox"
-              checked={fitsGlutenFree}
-              onChange={(e) => setFitsGlutenFree(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300"
-            />
-            Gluten-free friendly
-          </label>
-        </div>
+ <div className={ds.formSection}>
+ <p className={ds.formSectionLabel}>Diet labels (optional)</p>
+ <label className={`flex cursor-pointer items-center gap-2 ${ds.formSectionText}`}>
+ <input
+ type="checkbox"
+ checked={fitsVegetarian}
+ onChange={(e) => setFitsVegetarian(e.target.checked)}
+ className="h-4 w-4 rounded border-[var(--border-default)]"
+ />
+ Vegetarian-friendly
+ </label>
+ <label className={`flex cursor-pointer items-center gap-2 ${ds.formSectionText}`}>
+ <input
+ type="checkbox"
+ checked={fitsVegan}
+ onChange={(e) => {
+ const v = e.target.checked;
+ setFitsVegan(v);
+ if (v) setFitsVegetarian(true);
+ }}
+ className="h-4 w-4 rounded border-[var(--border-default)]"
+ />
+ Vegan-friendly
+ </label>
+ <label className={`flex cursor-pointer items-center gap-2 ${ds.formSectionText}`}>
+ <input
+ type="checkbox"
+ checked={fitsGlutenFree}
+ onChange={(e) => setFitsGlutenFree(e.target.checked)}
+ className="h-4 w-4 rounded border-[var(--border-default)]"
+ />
+ Gluten-free friendly
+ </label>
+ </div>
 
-        <div className="space-y-3">
-          <h3 className="font-medium text-gray-900 dark:text-white">Ingredients</h3>
-          {ingredients.map((ingredient, index) => {
-            const qty = Number.parseFloat(ingredient.quantity);
-            const qtyError = ingredientQuantityError(ingredient.name, ingredient.quantity);
-            const rowUnits = getUnitsForIngredient(ingredient.name);
-            const weightHint =
-              Number.isFinite(qty) && qty > 0 && ingredient.name.trim()
-                ? formatIngredientWeightSuffix(qty, ingredient.unit || "", ingredient.name)
-                : null;
-            const lineMeta = lineMetaByIngredientIndex[index];
-            return (
-              <div key={ingredient.id} className="space-y-1">
-                <div className="flex flex-wrap items-center gap-2 md:hidden">
-                  <span className="text-sm font-medium text-gray-900">{ingredient.name || "Ingredient"}</span>
-                  {lineMeta?.lookingUp || (lookingUp && ingredient.name.trim()) ? (
-                    <svg
-                      className="h-3 w-3 animate-spin text-gray-400"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      aria-hidden
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8v8H4z"
-                      />
-                    </svg>
-                  ) : null}
-                  {lineMeta?.matchHint ? (
-                    <span className="text-xs italic text-gray-400" title={lineMeta.matchHint}>
-                      ~
-                    </span>
-                  ) : null}
-                  {lineMeta?.unknown ? (
-                    <span className="text-xs text-gray-400">Unknown ingredient</span>
-                  ) : null}
-                </div>
-                <div className="grid gap-2 md:grid-cols-[1fr_120px_120px_40px]">
-                  <input
-                    type="text"
-                    placeholder="Ingredient name"
-                    value={ingredient.name}
-                    onChange={(event) => updateIngredient(ingredient.id, "name", event.target.value)}
-                    list="nutrition-ingredient-suggestions"
-                    autoComplete="off"
-                    className="h-10 rounded-md border border-gray-300 px-3 text-sm"
-                  />
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    placeholder="e.g. 1 for one apple"
-                    title="Use unit “piece”, “item”, or “each” for whole foods"
-                    value={ingredient.quantity}
-                    onChange={(event) => updateIngredient(ingredient.id, "quantity", event.target.value)}
-                    className={`h-10 rounded-md border px-3 text-sm ${
-                      qtyError ? "border-amber-400 bg-amber-50/50" : "border-gray-300"
-                    }`}
-                  />
-                  <select
-                    value={ingredient.unit}
-                    onChange={(event) => updateIngredient(ingredient.id, "unit", event.target.value)}
-                    className="h-10 rounded-md border border-gray-300 px-3 text-sm"
-                  >
-                    {rowUnits.map((unit) => (
-                      <option key={unit} value={unit}>
-                        {unit}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => removeIngredient(ingredient.id)}
-                    aria-label="Remove ingredient row"
-                    title="Remove ingredient"
-                    className="h-10 rounded-md border border-gray-300 bg-white px-0 text-lg leading-none text-gray-700 hover:bg-gray-50"
-                  >
-                    ×
-                  </button>
-                </div>
-                {weightHint ? <p className="text-xs text-slate-500 md:pl-1">{weightHint}</p> : null}
-                {qtyError ? (
-                  <p className="text-xs text-amber-700 md:pl-1">{qtyError}</p>
-                ) : null}
-                {(lineMeta?.matchHint || lineMeta?.unknown) && ingredient.name.trim() ? (
-                  <p className="text-xs text-gray-400 md:pl-1">
-                    {lineMeta.matchHint ? (
-                      <span title={lineMeta.matchHint}>{lineMeta.matchHint}</span>
-                    ) : (
-                      "Unknown ingredient — nutrition may be incomplete until saved"
-                    )}
-                  </p>
-                ) : null}
-              </div>
-            );
-          })}
-        </div>
-        <datalist id="nutrition-ingredient-suggestions">
-          {ingredientSuggestions.map((suggestion) => (
-            <option key={suggestion} value={suggestion}>
-              {getIngredientAutocompleteLabel(suggestion)}
-            </option>
-          ))}
-        </datalist>
+ <div className="space-y-3">
+ <h3 className="font-medium text-[var(--text-primary)]">Ingredients</h3>
+ {ingredients.map((ingredient, index) => {
+ const qty = Number.parseFloat(ingredient.quantity);
+ const qtyError = ingredientQuantityError(ingredient.name, ingredient.quantity);
+ const rowUnits = getUnitsForIngredient(ingredient.name);
+ const weightHint =
+ Number.isFinite(qty) && qty > 0 && ingredient.name.trim()
+ ? formatIngredientWeightSuffix(qty, ingredient.unit ||"", ingredient.name)
+ : null;
+ const lineMeta = lineMetaByIngredientIndex[index];
+ return (
+ <div key={ingredient.id} className="space-y-1">
+ <div className="flex flex-wrap items-center gap-2 md:hidden">
+ <span className="text-sm font-medium text-[var(--text-primary)]">{ingredient.name ||"Ingredient"}</span>
+ {lineMeta?.lookingUp || (lookingUp && ingredient.name.trim()) ? (
+ <svg
+ className="h-3 w-3 animate-spin text-[var(--text-muted)]"
+ viewBox="0 0 24 24"
+ fill="none"
+ aria-hidden
+ >
+ <circle
+ className="opacity-25"
+ cx="12"
+ cy="12"
+ r="10"
+ stroke="currentColor"
+ strokeWidth="4"
+ />
+ <path
+ className="opacity-75"
+ fill="currentColor"
+ d="M4 12a8 8 0 018-8v8H4z"
+ />
+ </svg>
+ ) : null}
+ {lineMeta?.matchHint ? (
+ <span className="text-xs italic text-[var(--text-muted)]" title={lineMeta.matchHint}>
+ ~
+ </span>
+ ) : null}
+ {lineMeta?.unknown ? (
+ <span className="text-xs text-[var(--text-muted)]">Unknown ingredient</span>
+ ) : null}
+ </div>
+ <div className="grid gap-2 md:grid-cols-[1fr_120px_120px_40px]">
+ <input
+ type="text"
+ placeholder="Ingredient name"
+ value={ingredient.name}
+ onChange={(event) => updateIngredient(ingredient.id,"name", event.target.value)}
+ list="nutrition-ingredient-suggestions"
+ autoComplete="off"
+ className="h-10 rounded-md border border-[var(--border-default)] px-3 text-sm"
+ />
+ <input
+ type="number"
+ min="0"
+ step="0.1"
+ placeholder="e.g. 1 for one apple"
+ title="Use unit “piece”, “item”, or “each” for whole foods"
+ value={ingredient.quantity}
+ onChange={(event) => updateIngredient(ingredient.id,"quantity", event.target.value)}
+ className={`h-10 rounded-md border px-3 text-sm ${
+ qtyError ?"border-amber-400 bg-amber-50/50" :"border-[var(--border-default)]"
+ }`}
+ />
+ <select
+ value={ingredient.unit}
+ onChange={(event) => updateIngredient(ingredient.id,"unit", event.target.value)}
+ className="h-10 rounded-md border border-[var(--border-default)] px-3 text-sm"
+ >
+ {rowUnits.map((unit) => (
+ <option key={unit} value={unit}>
+ {unit}
+ </option>
+ ))}
+ </select>
+ <button
+ type="button"
+ onClick={() => removeIngredient(ingredient.id)}
+ aria-label="Remove ingredient row"
+ title="Remove ingredient"
+ className="h-10 rounded-md border border-[var(--border-default)] bg-[var(--surface-card)] px-0 text-lg leading-none text-[var(--text-secondary)] hover:bg-[var(--surface-muted)]"
+ >
+ ×
+ </button>
+ </div>
+ {weightHint ? <p className="text-xs text-[var(--text-muted)] md:pl-1">{weightHint}</p> : null}
+ {qtyError ? (
+ <p className="text-xs text-amber-700 md:pl-1">{qtyError}</p>
+ ) : null}
+ {(lineMeta?.matchHint || lineMeta?.unknown) && ingredient.name.trim() ? (
+ <p className="text-xs text-[var(--text-muted)] md:pl-1">
+ {lineMeta.matchHint ? (
+ <span title={lineMeta.matchHint}>{lineMeta.matchHint}</span>
+ ) : (
+"Unknown ingredient — nutrition may be incomplete until saved"
+ )}
+ </p>
+ ) : null}
+ </div>
+ );
+ })}
+ </div>
+ <datalist id="nutrition-ingredient-suggestions">
+ {ingredientSuggestions.map((suggestion) => (
+ <option key={suggestion} value={suggestion}>
+ {getIngredientAutocompleteLabel(suggestion)}
+ </option>
+ ))}
+ </datalist>
 
-        {ingredients.length > 0 ? (
-          <div
-            className={`mt-2 flex items-center gap-2 rounded-lg border px-3 py-2 text-xs ${
-              fruitAndVegCount >= 2
-                ? "border-[#6EE7B7] bg-[#D1FAE5] text-[#1A4731]"
-                : "border-amber-200 bg-amber-50 text-amber-700"
-            }`}
-          >
-            <span>{fruitAndVegCount} fruit/veg</span>
-            <span>{fruitAndVegCount >= 2 ? "✓ Good variety" : "· Aim for 2+ per meal towards 5-a-day"}</span>
-            <a
-              href="https://www.nhs.uk/live-well/eat-well/5-a-day/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="ml-auto underline opacity-70"
-            >
-              NHS 5-a-day
-            </a>
-          </div>
-        ) : null}
+ {ingredients.length > 0 ? (
+ <div
+ className={`mt-2 flex items-center gap-2 rounded-lg border px-3 py-2 text-xs ${
+ fruitAndVegCount >= 2
+ ?"border-[var(--brand-primary)] bg-[var(--surface-brand-subtle)] text-[var(--brand-primary)]"
+ :"border-amber-200 bg-amber-50 text-amber-700"
+ }`}
+ >
+ <span>{fruitAndVegCount} fruit/veg</span>
+ <span>{fruitAndVegCount >= 2 ?"✓ Good variety" :"· Aim for 2+ per meal towards 5-a-day"}</span>
+ <a
+ href="https://www.nhs.uk/live-well/eat-well/5-a-day/"
+ target="_blank"
+ rel="noopener noreferrer"
+ className="ml-auto underline opacity-70"
+ >
+ NHS 5-a-day
+ </a>
+ </div>
+ ) : null}
 
-        <button
-          type="button"
-          onClick={addIngredient}
-          className="inline-flex h-10 items-center justify-center rounded-md bg-[var(--brand-sage)] px-4 text-sm font-medium text-white hover:opacity-95"
-        >
-          Add Ingredient
-        </button>
-        <button
-          type="button"
-          onClick={onSaveRecipe}
-          disabled={
-            isPending ||
-            ingredients.some((row) => ingredientQuantityError(row.name, row.quantity) != null)
-          }
-          className="ml-3 inline-flex h-10 items-center justify-center rounded-md border border-gray-300 bg-white px-4 text-sm font-medium text-gray-800 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-70"
-        >
-          {isPending ? "Saving..." : "Save Recipe"}
-        </button>
-      </section>
+ <button
+ type="button"
+ onClick={addIngredient}
+ className="inline-flex h-10 items-center justify-center rounded-md bg-[var(--brand-sage)] px-4 text-sm font-medium text-[var(--btn-primary-text)] hover:opacity-95"
+ >
+ Add Ingredient
+ </button>
+ <button
+ type="button"
+ onClick={onSaveRecipe}
+ disabled={
+ isPending ||
+ ingredients.some((row) => ingredientQuantityError(row.name, row.quantity) != null)
+ }
+ className="ml-3 inline-flex h-10 items-center justify-center rounded-md border border-[var(--border-default)] bg-[var(--surface-card)] px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] disabled:cursor-not-allowed disabled:opacity-70"
+ >
+ {isPending ?"Saving..." :"Save Recipe"}
+ </button>
+ </section>
 
-      <div className="space-y-2">
-        {lookingUp ? (
-          <p className="text-center text-xs text-gray-400">Looking up nutrition…</p>
-        ) : null}
-        <NutritionPreview totals={nutrition} />
-      </div>
-    </div>
-  );
+ <div className="space-y-2">
+ {lookingUp ? (
+ <p className="text-center text-xs text-[var(--text-muted)]">Looking up nutrition…</p>
+ ) : null}
+ <NutritionPreview totals={nutrition} />
+ </div>
+ </div>
+ );
 }

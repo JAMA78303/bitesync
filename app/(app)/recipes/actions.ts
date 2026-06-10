@@ -1,5 +1,6 @@
 "use server";
 
+import { toUserFacingError } from "@/lib/errors/userFacing";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { RecipeIngredientInput } from "@/lib/nutrition/calculate";
@@ -290,7 +291,11 @@ export async function createRecipe(
     .single();
 
   if (recipeError || !recipe) {
-    return { error: recipeError?.message ?? "Failed to create recipe." };
+    return {
+      error: recipeError
+        ? toUserFacingError(recipeError, "recipe-save", "createRecipe")
+        : "Failed to create recipe.",
+    };
   }
 
   const { totals: nutrition, estimatedFlags, cofidMeta } = await calculateRecipeNutritionWithMeta(
@@ -305,7 +310,7 @@ export async function createRecipe(
     .insert(ingredientRows);
 
   if (ingredientsError) {
-    return { error: ingredientsError.message };
+    return { error: toUserFacingError(ingredientsError, "recipe-save", "saveRecipeIngredients") };
   }
 
   const { error: nutritionError } = await supabase.from("recipe_nutrition").upsert(
@@ -325,7 +330,7 @@ export async function createRecipe(
   );
 
   if (nutritionError) {
-    return { error: nutritionError.message };
+    return { error: toUserFacingError(nutritionError, "recipe-save", "saveRecipeNutrition") };
   }
 
   revalidatePath("/recipes");
@@ -405,7 +410,11 @@ export async function createImportedRecipe(
     .single();
 
   if (recipeError || !recipe) {
-    return { error: recipeError?.message ?? "Failed to create recipe." };
+    return {
+      error: recipeError
+        ? toUserFacingError(recipeError, "recipe-save", "createRecipe")
+        : "Failed to create recipe.",
+    };
   }
 
   const ingredientRows = buildIngredientRows(recipe.id, ingredients, estimatedFlags, cofidMeta);
@@ -413,7 +422,7 @@ export async function createImportedRecipe(
   const { error: ingredientsError } = await supabase.from("recipe_ingredients").insert(ingredientRows);
 
   if (ingredientsError) {
-    return { error: ingredientsError.message };
+    return { error: toUserFacingError(ingredientsError, "recipe-save", "saveRecipeIngredients") };
   }
 
   const { error: nutritionError } = await supabase.from("recipe_nutrition").upsert(
@@ -433,7 +442,7 @@ export async function createImportedRecipe(
   );
 
   if (nutritionError) {
-    return { error: nutritionError.message };
+    return { error: toUserFacingError(nutritionError, "recipe-save", "saveRecipeNutrition") };
   }
 
   revalidatePath("/recipes");
@@ -470,13 +479,15 @@ export async function updateRecipe(payload: UpdateRecipePayload): Promise<Action
     })
     .eq("id", recipeId)
     .eq("user_id", user.id);
-  if (recipeError) return { error: recipeError.message };
+  if (recipeError) return { error: toUserFacingError(recipeError, "recipe-save", "updateRecipe") };
 
   const { error: deleteIngredientsError } = await supabase
     .from("recipe_ingredients")
     .delete()
     .eq("recipe_id", recipeId);
-  if (deleteIngredientsError) return { error: deleteIngredientsError.message };
+  if (deleteIngredientsError) {
+    return { error: toUserFacingError(deleteIngredientsError, "recipe-save", "deleteRecipeIngredients") };
+  }
 
   const { totals: nutrition, estimatedFlags, cofidMeta } = await calculateRecipeNutritionWithMeta(
     ingredients,
@@ -487,7 +498,9 @@ export async function updateRecipe(payload: UpdateRecipePayload): Promise<Action
   const { error: insertIngredientsError } = await supabase
     .from("recipe_ingredients")
     .insert(ingredientRows);
-  if (insertIngredientsError) return { error: insertIngredientsError.message };
+  if (insertIngredientsError) {
+    return { error: toUserFacingError(insertIngredientsError, "recipe-save", "insertRecipeIngredients") };
+  }
 
   const { error: nutritionError } = await supabase.from("recipe_nutrition").upsert(
     {
@@ -504,7 +517,7 @@ export async function updateRecipe(payload: UpdateRecipePayload): Promise<Action
     },
     { onConflict: "recipe_id" },
   );
-  if (nutritionError) return { error: nutritionError.message };
+  if (nutritionError) return { error: toUserFacingError(nutritionError, "recipe-save", "saveRecipeNutrition") };
 
   revalidatePath("/recipes");
   revalidatePath(`/recipes/${recipeId}`);
@@ -522,7 +535,7 @@ export async function deleteRecipe(recipeId: string): Promise<ActionResult> {
   if (!user) return { error: "Unauthorized" };
 
   const { error } = await supabase.from("recipes").delete().eq("id", id).eq("user_id", user.id);
-  if (error) return { error: error.message };
+  if (error) return { error: toUserFacingError(error, "recipe-save", "recipeAction") };
 
   revalidatePath("/recipes");
   revalidatePath("/planner");
@@ -545,7 +558,7 @@ export async function archiveRecipe(recipeId: string): Promise<ActionResult> {
     .eq("id", id)
     .eq("user_id", user.id);
 
-  if (error) return { error: error.message };
+  if (error) return { error: toUserFacingError(error, "recipe-save", "recipeAction") };
 
   revalidatePath("/recipes");
   revalidatePath("/planner");
@@ -571,7 +584,7 @@ export async function toggleRecipeFavourite(
     .eq("id", id)
     .eq("user_id", user.id);
 
-  if (error) return { error: error.message };
+  if (error) return { error: toUserFacingError(error, "recipe-save", "recipeAction") };
 
   revalidatePath("/recipes");
   revalidatePath(`/recipes/${id}`);
@@ -594,7 +607,7 @@ export async function restoreRecipe(recipeId: string): Promise<ActionResult> {
     .eq("id", id)
     .eq("user_id", user.id);
 
-  if (error) return { error: error.message };
+  if (error) return { error: toUserFacingError(error, "recipe-save", "recipeAction") };
 
   revalidatePath("/recipes");
   revalidatePath("/planner");

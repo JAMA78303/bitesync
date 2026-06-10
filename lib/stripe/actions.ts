@@ -1,5 +1,6 @@
 "use server";
 
+import { toUserFacingError } from "@/lib/errors/userFacing";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getStripeServer } from "@/lib/stripe/server";
@@ -139,7 +140,7 @@ export async function syncSubscriptionFromStripe(): Promise<
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: toUserFacingError(error, "billing", "syncBillingSubscription") };
   }
 
   revalidatePath("/billing");

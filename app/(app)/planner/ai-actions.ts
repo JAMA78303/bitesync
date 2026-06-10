@@ -1,5 +1,6 @@
 "use server";
 
+import { FRIENDLY_BY_CONTEXT, toUserFacingError } from "@/lib/errors/userFacing";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getUserTier } from "@/lib/subscription";
@@ -670,27 +671,18 @@ function mealPlanSlotKey(day: number, mealType: string, slotIndex: number): stri
   return `${day}|${mealType}|${slotIndex}`;
 }
 
-const FRIENDLY_WEEK_PLAN_FAIL =
-  "Couldn't generate your week plan — please try again. If this keeps happening, refresh the page and try once more.";
+const FRIENDLY_WEEK_PLAN_FAIL = FRIENDLY_BY_CONTEXT["week-plan"];
 
 function userFacingPlanError(technical: string, logContext: string): string {
-  console.error(`[persistWeeklyMealPlanRows] ${logContext}:`, technical);
-  const lower = technical.toLowerCase();
-  if (
-    lower.includes("duplicate key") ||
-    lower.includes("unique constraint") ||
-    lower.includes("violates unique")
-  ) {
-    return FRIENDLY_WEEK_PLAN_FAIL;
-  }
   if (
     technical.startsWith("No meals could") ||
     technical.startsWith("Only ") ||
     technical.startsWith("Add at least")
   ) {
+    console.error(`[persistWeeklyMealPlanRows] ${logContext}:`, technical);
     return technical;
   }
-  return FRIENDLY_WEEK_PLAN_FAIL;
+  return toUserFacingError(technical, "week-plan", `persistWeeklyMealPlanRows:${logContext}`);
 }
 
 /** Drop duplicate slots if the generator assigned the same day+meal+slot twice. */
@@ -1250,7 +1242,7 @@ export async function getLiveStorePricingForMealPlan(input: {
       },
     };
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Could not estimate store prices." };
+    return { error: toUserFacingError(e, "grocery", "estimateStorePrices") };
   }
 }
 
@@ -1289,7 +1281,7 @@ export async function generateAIBasketForWeek(input: GenerateAIBasketInput) {
     .is("archived_at", null)
     .order("name", { ascending: true });
 
-  if (recipesError) return { error: recipesError.message };
+  if (recipesError) return { error: toUserFacingError(recipesError, "grocery", "loadRecipesForGrocery") };
   const allRecipes = (recipes ?? []) as RecipeRow[];
   if (!allRecipes.length) {
     return { error: "Add at least one recipe to your library before generating a plan." };
@@ -1407,7 +1399,7 @@ export async function generateAIBasketForWeek(input: GenerateAIBasketInput) {
     .select("id")
     .single();
 
-  if (error) return { error: error.message };
+  if (error) return { error: toUserFacingError(error, "grocery", "aiGroceryAction") };
   revalidatePath("/planner");
   revalidatePath("/grocery");
   return {
@@ -1436,7 +1428,7 @@ export async function getStoreComparison(snapshotId: string) {
     .select("id, recommended_store, store_totals, basket_confidence, freshness_days, estimated_total_gbp")
     .eq("id", snapshotId)
     .single();
-  if (error) return { error: error.message };
+  if (error) return { error: toUserFacingError(error, "grocery", "aiGroceryAction") };
   return { success: true as const, data };
 }
 
@@ -1568,7 +1560,7 @@ export async function getSubstitutionSuggestions(
     .eq("id", snapshotId)
     .eq("user_id", user.id)
     .single();
-  if (error) return { error: error.message };
+  if (error) return { error: toUserFacingError(error, "grocery", "aiGroceryAction") };
 
   const items = Array.isArray(data?.items) ? (data.items as BasketIngredient[]) : [];
   if (!items.length) return { success: true, suggestions: [] };
@@ -1636,7 +1628,7 @@ export async function applyAIBasketToGrocery(snapshotId: string) {
     .eq("id", snapshotId)
     .eq("user_id", user.id)
     .single();
-  if (error) return { error: error.message };
+  if (error) return { error: toUserFacingError(error, "grocery", "aiGroceryAction") };
 
   const basketItems = Array.isArray(snapshot?.items) ? (snapshot.items as BasketIngredient[]) : [];
   if (!basketItems.length) return { error: "Snapshot has no basket items to apply." };

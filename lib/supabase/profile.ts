@@ -2,6 +2,7 @@
 
 import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 import { isProSubscriptionStatus } from "@/lib/subscription";
+import { toUserFacingError } from "@/lib/errors/userFacing";
 import { createClient } from "@/lib/supabase/server";
 import { dietaryPreferencesToLegacyFlags } from "@/lib/dietary/constraints";
 import { normalizeDietaryPreferencesForSave } from "@/lib/dietary/constants";
@@ -53,7 +54,7 @@ export async function saveDietaryPreferenceKeys(
 
   const { error } = await supabase.from("profiles").update(update).eq("id", user.id);
 
-  if (error) return { error: error.message };
+  if (error) return { error: toUserFacingError(error, "profile", "updateProfile") };
 
   revalidatePath("/settings");
   revalidatePath("/goals");
@@ -97,7 +98,7 @@ export async function saveTDEEProfile(values: TDEEFormValues) {
     })
     .eq("id", user.id);
 
-  if (error) return { error: error.message };
+  if (error) return { error: toUserFacingError(error, "profile", "updateProfile") };
 
   revalidatePath("/settings");
   revalidatePath("/goals");

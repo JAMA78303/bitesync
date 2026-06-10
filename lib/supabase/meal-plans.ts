@@ -1,5 +1,6 @@
 "use server";
 
+import { toUserFacingError } from "@/lib/errors/userFacing";
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
@@ -72,7 +73,9 @@ export async function getOrCreateMealPlan(weekStartDate: string) {
       .select("*")
       .single();
 
-    if (error && error.code !== "23505") return { error: error.message, data: null };
+    if (error && error.code !== "23505") {
+      return { error: toUserFacingError(error, "week-plan", "ensureMealPlan"), data: null };
+    }
 
     if (error?.code === "23505") {
       const { data: existing } = await supabase
@@ -212,7 +215,9 @@ export async function assignRecipeToSlot(
   if (error) {
     const missingQuickAddColumns = isMissingQuickAddColumns(error.message);
     const missingSlot = isMissingSlotIndexColumn(error.message);
-    if (!missingQuickAddColumns && !missingSlot) return { error: error.message };
+    if (!missingQuickAddColumns && !missingSlot) {
+      return { error: toUserFacingError(error, "week-plan", "addMealPlanEntry") };
+    }
 
     // Backward-compatible retry for databases that have not yet added quick_add_* columns.
     const { error: fallbackError } = await supabase.from("meal_plan_entries").upsert(
@@ -293,7 +298,7 @@ export async function quickAddMeal(
           "Quick add requires the latest planner migration (quick_add columns + nullable recipe_id). Run sql/2026-04-30_flexible_input_and_selective_grocery.sql, then try again.",
       };
     }
-    return { error: error.message };
+    return { error: toUserFacingError(error, "week-plan", "upsertMealPlanEntry") };
   }
   revalidatePath("/planner");
   return { success: true };
@@ -302,7 +307,7 @@ export async function quickAddMeal(
 export async function removeSlotEntry(entry_id: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("meal_plan_entries").delete().eq("id", entry_id);
-  if (error) return { error: error.message };
+  if (error) return { error: toUserFacingError(error, "week-plan", "removeMealPlanEntry") };
   revalidatePath("/planner");
   return { success: true };
 }

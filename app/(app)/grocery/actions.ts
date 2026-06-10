@@ -1,5 +1,6 @@
 "use server";
 
+import { toUserFacingError } from "@/lib/errors/userFacing";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
@@ -16,9 +17,9 @@ export async function toggleGroceryItem(itemId: string, current: boolean) {
       .from("grocery_items")
       .update({ is_checked: !current })
       .eq("id", itemId);
-    if (fallbackError) return { error: fallbackError.message };
+    if (fallbackError) return { error: toUserFacingError(fallbackError, "grocery", "toggleGroceryItem") };
   } else if (error) {
-    return { error: error.message };
+    return { error: toUserFacingError(error, "grocery", "toggleGroceryItem") };
   }
   revalidatePath("/grocery");
   return { success: true };

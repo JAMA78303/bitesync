@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test-and-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Theme token guard (no hardcoded light surfaces)
+        run: |
+          set -e
+          PATTERN='bg-white|bg-gray-50|bg-slate-50|text-white|text-black'
+          if rg -n "$PATTERN" components app lib/ui --glob '*.{tsx,ts}' 2>/dev/null; then
+            echo "::error::Hardcoded colour classes found — use theme tokens (var(--surface-*), etc.)"
+            exit 1
+          fi
+          echo "Theme token guard passed"
+
+      - name: Nutrition regression tests
+        run: npm run test:nutrition
+
+      - run: npm run lint

@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AvailableIngredient } from "@/lib/matching/ingredient-overlap";
 import type { PantryItemRow } from "@/lib/pantry/constants";
 import { PANTRY_STAPLES } from "@/lib/pantry/constants";
+import { toUserFacingError } from "@/lib/errors/userFacing";
 import { createClient } from "@/lib/supabase/server";
 
 export type { PantryItemRow } from "@/lib/pantry/constants";
@@ -84,7 +85,7 @@ export async function addPantryItem(payload: {
     running_low: payload.runningLow ?? false,
   });
 
-  if (error) return { error: error.message };
+  if (error) return { error: toUserFacingError(error, "pantry", "pantryDb") };
 
   revalidatePath("/pantry");
   return {};
@@ -104,7 +105,7 @@ export async function removePantryItem(itemId: string): Promise<{ error?: string
     .eq("id", itemId)
     .eq("user_id", user.id);
 
-  if (error) return { error: error.message };
+  if (error) return { error: toUserFacingError(error, "pantry", "pantryDb") };
 
   revalidatePath("/pantry");
   return {};
@@ -126,7 +127,7 @@ export async function togglePantryRunningLow(
     .eq("id", itemId)
     .eq("user_id", user.id);
 
-  if (error) return { error: error.message };
+  if (error) return { error: toUserFacingError(error, "pantry", "pantryDb") };
 
   revalidatePath("/pantry");
   return {};
@@ -153,7 +154,7 @@ export async function seedPantryStaples(): Promise<{ error?: string; added?: num
   if (!toInsert.length) return { added: 0 };
 
   const { error } = await supabase.from("pantry_items").insert(toInsert);
-  if (error) return { error: error.message };
+  if (error) return { error: toUserFacingError(error, "pantry", "pantryDb") };
 
   revalidatePath("/pantry");
   return { added: toInsert.length };

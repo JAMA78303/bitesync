@@ -5,55 +5,55 @@ import { reconcileBillingSubscriptionFromStripe } from "@/lib/stripe/reconcile-b
 import { BillingClient } from "@/components/settings/BillingClient";
 
 type Props = {
-  searchParams: Promise<{ success?: string; cancelled?: string }>;
+ searchParams: Promise<{ success?: string; cancelled?: string }>;
 };
 
-export const dynamic = "force-dynamic";
+export const dynamic ="force-dynamic";
 
 export default async function BillingPage({ searchParams }: Props) {
-  const params = await searchParams;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+ const params = await searchParams;
+ const supabase = await createClient();
+ const {
+ data: { user },
+ } = await supabase.auth.getUser();
 
-  let isPro = false;
-  let hasStripeCustomer = false;
-  if (user) {
-    unstable_noStore();
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("subscription_status, stripe_customer_id, stripe_subscription_id")
-      .eq("id", user.id)
-      .maybeSingle();
+ let isPro = false;
+ let hasStripeCustomer = false;
+ if (user) {
+ unstable_noStore();
+ const { data: profile } = await supabase
+ .from("profiles")
+ .select("subscription_status, stripe_customer_id, stripe_subscription_id")
+ .eq("id", user.id)
+ .maybeSingle();
 
-    isPro = isProSubscriptionStatus(profile?.subscription_status);
-    hasStripeCustomer = Boolean(profile?.stripe_customer_id?.trim());
+ isPro = isProSubscriptionStatus(profile?.subscription_status);
+ hasStripeCustomer = Boolean(profile?.stripe_customer_id?.trim());
 
-    if (!isPro) {
-      const reconciled = await reconcileBillingSubscriptionFromStripe({
-        userId: user.id,
-        subscriptionStatus: profile?.subscription_status,
-        stripeCustomerId: profile?.stripe_customer_id ?? null,
-        stripeSubscriptionId: profile?.stripe_subscription_id ?? null,
-      });
-      if (reconciled.isPro) {
-        isPro = true;
-      }
-      if (reconciled.hasStripeCustomer) {
-        hasStripeCustomer = true;
-      }
-    }
-  }
+ if (!isPro) {
+ const reconciled = await reconcileBillingSubscriptionFromStripe({
+ userId: user.id,
+ subscriptionStatus: profile?.subscription_status,
+ stripeCustomerId: profile?.stripe_customer_id ?? null,
+ stripeSubscriptionId: profile?.stripe_subscription_id ?? null,
+ });
+ if (reconciled.isPro) {
+ isPro = true;
+ }
+ if (reconciled.hasStripeCustomer) {
+ hasStripeCustomer = true;
+ }
+ }
+ }
 
-  return (
-    <BillingClient
-      isPro={isPro}
-      hasStripeCustomer={hasStripeCustomer}
-      showSuccess={params.success === "true"}
-      showCancelled={params.cancelled === "true"}
-      monthlyPriceId={process.env.STRIPE_PRO_MONTHLY_PRICE_ID!}
-      annualPriceId={process.env.STRIPE_PRO_ANNUAL_PRICE_ID!}
-    />
-  );
+ return (
+ <BillingClient
+ isPro={isPro}
+ hasStripeCustomer={hasStripeCustomer}
+ showSuccess={params.success ==="true"}
+ showCancelled={params.cancelled ==="true"}
+ monthlyPriceId={process.env.STRIPE_PRO_MONTHLY_PRICE_ID!}
+ annualPriceId={process.env.STRIPE_PRO_ANNUAL_PRICE_ID!}
+ />
+ );
 }
