@@ -9,7 +9,7 @@ const DEMO_BEATS = [
     title: "Plan your week",
     caption: "Drop recipes onto the planner — daily calories and protein update as you build each day.",
     Mock: MockPlanner,
-    imageSrc: "/landing/planner.png",
+    image: { light: "/landing/planner.png", dark: "/landing/planner-dark.png", width: 284, height: 354 },
     imageAlt: "BiteSync weekly meal planner",
   },
   {
@@ -17,7 +17,7 @@ const DEMO_BEATS = [
     title: "Get one grocery list",
     caption: "Generate a merged shopping list from that exact week. Check items off as you shop.",
     Mock: MockGrocery,
-    imageSrc: "/landing/grocery.png",
+    image: { light: "/landing/grocery.png", dark: "/landing/grocery-dark.png", width: 284, height: 315 },
     imageAlt: "BiteSync grocery list",
   },
   {
@@ -25,7 +25,7 @@ const DEMO_BEATS = [
     title: "Hit your targets",
     caption: "Open Today to see your calorie ring, macro bars, and every meal against your goals.",
     Mock: MockToday,
-    imageSrc: "/landing/today.png",
+    image: { light: "/landing/today.png", dark: "/landing/today-dark.png", width: 284, height: 323 },
     imageAlt: "BiteSync Today dashboard",
   },
 ] as const;
@@ -44,7 +44,7 @@ export function LandingDemoFlow() {
       </div>
 
       <div className="flex flex-col items-center gap-8 lg:flex-row lg:items-start lg:justify-center lg:gap-6">
-        {DEMO_BEATS.map(({ step, title, caption, Mock, imageSrc, imageAlt }, index) => (
+        {DEMO_BEATS.map(({ step, title, caption, Mock, image, imageAlt }, index) => (
           <Fragment key={step}>
             <article className="flex w-full max-w-[260px] flex-col items-center">
               <div className="mb-4 flex items-center gap-2">
@@ -54,7 +54,14 @@ export function LandingDemoFlow() {
                 <h3 className="text-base font-semibold text-[var(--text-primary)]">{title}</h3>
               </div>
               <div className="mb-4 flex justify-center">
-                <LandingDemoShot src={imageSrc} alt={imageAlt} fallback={<Mock />} />
+                <LandingDemoShot
+                  srcLight={image.light}
+                  srcDark={image.dark}
+                  alt={imageAlt}
+                  width={image.width}
+                  height={image.height}
+                  fallback={<Mock />}
+                />
               </div>
               <p className="text-center text-sm leading-relaxed text-[var(--text-muted)]">{caption}</p>
             </article>

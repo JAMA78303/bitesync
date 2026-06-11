@@ -201,7 +201,10 @@ export function RecipeDetailView({
  ) : null}
 
  <div className="flex gap-3">
- <Link href="/planner" className={`${ds.secondaryBtn} flex-1 py-3.5 text-center`}>
+ <Link
+ href="/planner"
+ className={`${methodSteps.length ? ds.secondaryBtn : ds.primaryBtn} flex-1 py-3.5 text-center`}
+ >
  Add to planner
  </Link>
  <div className="flex gap-2">

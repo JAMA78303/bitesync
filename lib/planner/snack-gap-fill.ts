@@ -28,6 +28,7 @@ export async function createPlannerSnackRecipe(
   dailyCalorieTarget: number,
   profile: ProfileForTargets,
   gapKcal: number,
+  opts?: { attempt?: number; existingNames?: string[] },
 ): Promise<PlannerSnackRecipe | null> {
   const tier = await getUserTier();
   if (tier === "free") {
@@ -40,7 +41,8 @@ export async function createPlannerSnackRecipe(
     Math.max(SNACK_MIN_CALORIES, Math.round(gapKcal)),
   );
   const hard = hardConstraintsFromPreferences(initialDietaryPreferencesFromProfile(profile));
-  const variantSeed = (Date.now() ^ gapKcal) >>> 0;
+  const attempt = opts?.attempt ?? 0;
+  const variantSeed = (Date.now() ^ gapKcal ^ Math.imul(attempt + 1, 0x9e3779b9)) >>> 0;
 
   const hybrid = await generateHybridRecipeDraft({
     slot: {
@@ -52,7 +54,7 @@ export async function createPlannerSnackRecipe(
     },
     hard,
     targetDailyCalories: Math.round(targetSnack / fractionForMealSlot("snack")),
-    existing: { names: [], signatures: [] },
+    existing: { names: opts?.existingNames ?? [], signatures: [] },
     acceptedInBatch: [],
     useLlmMethod: true,
   });
@@ -136,6 +138,7 @@ export async function autoFillSnackRecipesForPlan(opts: {
   );
   const gapKcal = band.min - minDayCal;
   let created = 0;
+  const createdNames: string[] = [];
 
   for (let i = 0; i < 2; i += 1) {
     const snack = await createPlannerSnackRecipe(
@@ -144,8 +147,10 @@ export async function autoFillSnackRecipesForPlan(opts: {
       opts.dailyTarget,
       opts.profile,
       gapKcal,
+      { attempt: i, existingNames: createdNames },
     );
     if (!snack) break;
+    createdNames.push(snack.name);
 
     opts.pool.push(snack);
     opts.calById.set(snack.id, snack.calories);

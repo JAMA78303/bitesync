@@ -55,7 +55,7 @@ export default async function PlannerPage({ searchParams }: Props) {
  <h1 className={ds.pageTitle}>Weekly Plan</h1>
  </div>
  <div className={`${ds.mobileGutter} ${ds.overlap} space-y-3 ${ds.pageContent}`}>
- <p className={`${ds.warnCallout} rounded-2xl px-3 py-2`}>
+ <p className={`${ds.warnCallout} rounded-2xl px-3 py-2 text-sm`}>
  Could not load your planner yet. Check that the database schema and RLS policies are applied, then
  refresh.
  </p>

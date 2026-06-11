@@ -65,18 +65,18 @@ export function DeficiencyRecommendations({ deficiencies, excesses }: Props) {
  return (
  <div
  key={nutrient.key}
- className={ds.warnCallout + " p-4"}
+ className={`${ds.warnCallout} rounded-xl p-4`}
  >
  <div className="mb-2 flex items-start gap-2">
- <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
+ <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--semantic-warn-text)]" />
  <div>
- <p className="text-sm font-semibold text-amber-700 dark:text-amber-300">High {nutrient.label}</p>
- <p className="mt-0.5 text-xs text-amber-600 dark:text-amber-400">
+ <p className="text-sm font-semibold">High {nutrient.label}</p>
+ <p className="mt-0.5 text-xs opacity-80">
  {nutrient.pct_label} — exceeding daily limit
  </p>
  </div>
  </div>
- {tip ? <p className="ml-6 text-xs text-amber-600 dark:text-amber-400">{tip}</p> : null}
+ {tip ? <p className="ml-6 text-xs opacity-80">{tip}</p> : null}
  </div>
  );
  })}

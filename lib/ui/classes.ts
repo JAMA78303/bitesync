@@ -74,10 +74,11 @@ export const ds = {
   /** Muted info / guidelines callout (Create Recipe, etc.) */
   infoCallout:
     "rounded-md border border-[var(--border-default)] bg-[var(--surface-info)] px-3 py-2 text-xs text-[var(--text-secondary)]",
+  /** Colour-only warn/success tokens — call sites add shape, padding, text size */
   warnCallout:
-    "rounded-xl border border-[var(--semantic-warn-border)] bg-[var(--semantic-warn-bg)] px-3 py-2 text-sm text-[var(--semantic-warn-text)]",
+    "border border-[var(--semantic-warn-border)] bg-[var(--semantic-warn-bg)] text-[var(--semantic-warn-text)]",
   successCallout:
-    "rounded-xl border border-[var(--semantic-success-border)] bg-[var(--semantic-success-bg)] px-3 py-2 text-sm text-[var(--semantic-success-text)]",
+    "border border-[var(--semantic-success-border)] bg-[var(--semantic-success-bg)] text-[var(--semantic-success-text)]",
   estBadge:
     "rounded border border-[var(--semantic-warn-border)] bg-[var(--semantic-warn-bg)] text-xs text-[var(--semantic-warn-text)]",
   trafficGreen: "bg-[var(--traffic-green)]",
