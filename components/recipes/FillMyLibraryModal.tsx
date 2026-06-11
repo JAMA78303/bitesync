@@ -180,7 +180,7 @@ export function FillMyLibraryModal({ onClose }: Props) {
  Fill my library
  </h2>
  <p className="mt-1 text-sm text-[var(--text-muted)]">
- Generate varied breakfasts, lunches, and dinners sized to your daily target. Review before saving.
+ Generate varied breakfasts, lunches, dinners, and snacks sized to your daily target. Review before saving — if a slot fails, you can run fill again or add that meal type manually.
  </p>
  </div>
 

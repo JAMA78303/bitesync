@@ -314,6 +314,24 @@ async function buildComposedSnackIngredientsRaw(
           carb,
           target,
         ),
+      () =>
+        findBestCarbAdjustment(
+          [ing("egg", 1, "piece"), ing("avocado", 70, "g"), ing(fruit, 60, "g")],
+          { name: "oats", minG: 10, maxG: 32 },
+          target,
+        ),
+      () =>
+        findBestCarbAdjustment(
+          [ing("cottage cheese", 90, "g"), ing("walnuts", 10, "g"), ing("apple", 100, "g")],
+          carb,
+          target,
+        ),
+      () =>
+        findBestCarbAdjustment(
+          [ing("greek yogurt", 100, "g"), ing("peanut butter", 14, "g"), ing("banana", 80, "g")],
+          { name: "oats", minG: 10, maxG: 30 },
+          target,
+        ),
     ];
   }
 
@@ -571,10 +589,10 @@ async function buildGoalMatchedRecipeIngredientsRaw(
   }
 
   if (opts.mealSlot === "breakfast") {
-    const v = pv(7);
+    const v = pickVariant(seed, 10);
     const carb = opts.glutenFree ? glutenFreeBreakfastCarbTune(seed ^ 0x2c7e9f31) : { name: "oats" as const, minG: 20, maxG: 100 };
-    const v2 = pickVariantAlt(seed, 2);
-    const fruit = v2 === 0 ? "banana" : "apple";
+    const fruits = ["banana", "apple", "strawberries", "blueberries"] as const;
+    const fruit = fruits[pickVariantAlt(seed, fruits.length)]!;
     if (v === 0) {
       const base = [ing("egg", 2, "piece"), ing(fruit, 100, "g")];
       return await findBestCarbAdjustment(base, carb, target);
@@ -596,10 +614,22 @@ async function buildGoalMatchedRecipeIngredientsRaw(
       return await findBestCarbAdjustment(base, carb, target);
     }
     if (v === 5) {
-      const base = [ing("peanut butter", 28, "g"), ing("banana", 110, "g"), ing("chia seeds", 10, "g")];
+      const base = [ing("greek yogurt", 140, "g"), ing(fruit, 85, "g"), ing("walnuts", 12, "g")];
       return await findBestCarbAdjustment(base, carb, target);
     }
-    const base = [ing("egg", 2, "each"), ing("blueberries", 80, "g")];
+    if (v === 6) {
+      const base = [ing("egg", 2, "piece"), ing("avocado", 65, "g"), ing("tomato", 60, "g")];
+      return await findBestCarbAdjustment(base, carb, target);
+    }
+    if (v === 7) {
+      const base = [ing("cottage cheese", 110, "g"), ing("walnuts", 14, "g"), ing(fruit, 90, "g")];
+      return await findBestCarbAdjustment(base, carb, target);
+    }
+    if (v === 8) {
+      const base = [ing("egg", 2, "piece"), ing("spinach", 50, "g"), ing("cheddar cheese", 25, "g")];
+      return await findBestCarbAdjustment(base, carb, target);
+    }
+    const base = [ing("greek yogurt", 120, "g"), ing("peanut butter", 16, "g"), ing("banana", 90, "g")];
     return await findBestCarbAdjustment(base, carb, target);
   }
 
@@ -729,11 +759,24 @@ const PROTEIN_KEYWORDS = [
   "shrimp",
   "egg",
   "yogurt",
+  "yoghurt",
   "tofu",
   "lentils",
   "chickpeas",
   "beans",
   "protein",
+  "peanut butter",
+  "peanut",
+  "almond",
+  "walnut",
+  "cashew",
+  "chia",
+  "hummus",
+  "tahini",
+  "cottage cheese",
+  "cheese",
+  "skyr",
+  "milk",
 ];
 const VEG_FRUIT_KEYWORDS = [
   "broccoli",
@@ -804,7 +847,7 @@ function ensureIngredient(ings: RecipeIngredientInput[], name: string, quantity:
 function ensureDraftStructure(
   mealSlot: GoalMealSlot,
   ingredients: RecipeIngredientInput[],
-  ctx?: { glutenFree?: boolean; variantSeed?: number },
+  ctx?: { glutenFree?: boolean; variantSeed?: number; composedSnackOnly?: boolean },
 ): RecipeIngredientInput[] {
   let out = cloneIngs(ingredients);
   out = removeRedundantRoles(out);
@@ -816,7 +859,9 @@ function ensureDraftStructure(
   const seed = ctx?.variantSeed ?? 0;
 
   if (!hasKeyword(out, PROTEIN_KEYWORDS)) {
-    if (mealSlot === "breakfast" || mealSlot === "snack") {
+    if (ctx?.composedSnackOnly) {
+      // Composed bowls already include pb / yoghurt / tofu — do not inject eggs.
+    } else if (mealSlot === "breakfast" || mealSlot === "snack") {
       ensureIngredient(out, "egg", 2, "each");
     } else {
       ensureIngredient(out, "chicken breast", 120, "g");
@@ -869,6 +914,7 @@ export async function buildGoalMatchedRecipeIngredients(
   return ensureDraftStructure(opts.mealSlot, raw, {
     glutenFree: opts.glutenFree,
     variantSeed: opts.variantSeed,
+    composedSnackOnly: opts.composedSnackOnly,
   });
 }
 

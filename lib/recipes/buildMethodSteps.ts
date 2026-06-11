@@ -11,6 +11,73 @@ function titleCase(name: string): string {
     .join(" ");
 }
 
+function ingredientNames(ingredients: RecipeIngredientInput[]): string[] {
+  return ingredients.map((i) => i.name.toLowerCase());
+}
+
+function hasIngredient(ingredients: RecipeIngredientInput[], pattern: RegExp): boolean {
+  return ingredientNames(ingredients).some((n) => pattern.test(n));
+}
+
+function findIngredient(ingredients: RecipeIngredientInput[], pattern: RegExp): RecipeIngredientInput | undefined {
+  return ingredients.find((i) => pattern.test(i.name.toLowerCase()));
+}
+
+function formatQty(ing: RecipeIngredientInput): string {
+  return ing.unit === "g" || ing.unit === "ml"
+    ? `${ing.quantity}${ing.unit}`
+    : `${ing.quantity} ${ing.unit}`;
+}
+
+/** Oats / yoghurt / nut-butter bowls — no frying eggs or chicken. */
+function buildNoCookBowlSteps(ingredients: RecipeIngredientInput[], mealSlot: GoalMealSlot): string[] | null {
+  const oats = findIngredient(ingredients, /\boats?\b/);
+  const pb = findIngredient(ingredients, /peanut butter/);
+  const banana = findIngredient(ingredients, /banana/);
+  const yoghurt = findIngredient(ingredients, /yoghurt|yogurt|skyr/);
+  const cottage = findIngredient(ingredients, /cottage cheese/);
+  const chia = findIngredient(ingredients, /chia/);
+
+  const isBowl =
+    (oats || yoghurt || cottage) &&
+    (pb || yoghurt || cottage || chia) &&
+    !hasIngredient(ingredients, /\begg|chicken|salmon|tuna|beef|turkey|shrimp\b/);
+
+  if (!isBowl) return null;
+
+  const steps: string[] = [];
+
+  if (oats) {
+    steps.push(
+      `Stir ${formatQty(oats)} ${titleCase(oats.name)} with a splash of water or milk until creamy (microwave 90 seconds or soak 5 minutes).`,
+    );
+  }
+
+  if (pb && banana) {
+    steps.push(`Slice the ${titleCase(banana.name)} and stir ${formatQty(pb)} ${titleCase(pb.name)} through the oats.`);
+  } else if (pb) {
+    steps.push(`Stir ${formatQty(pb)} ${titleCase(pb.name)} through until evenly mixed.`);
+  } else if (banana && yoghurt) {
+    steps.push(`Slice the ${titleCase(banana.name)} and fold through ${formatQty(yoghurt!)} ${titleCase(yoghurt!.name)}.`);
+  } else if (yoghurt || cottage) {
+    const dairy = yoghurt ?? cottage!;
+    steps.push(`Spoon ${formatQty(dairy)} ${titleCase(dairy.name)} into a bowl.`);
+  }
+
+  if (chia) {
+    steps.push(`Sprinkle over ${formatQty(chia)} ${titleCase(chia.name)} and stir once more.`);
+  }
+
+  const berries = ingredients.filter((i) => /strawberr|blueberr|raspberr/i.test(i.name));
+  if (berries.length) {
+    steps.push(`Top with ${berries.map((b) => titleCase(b.name)).join(" and ")} and serve.`);
+  } else {
+    steps.push(`Serve straight away as a ${mealLabel(mealSlot).toLowerCase()}.`);
+  }
+
+  return steps.length >= 2 ? steps : null;
+}
+
 function mainProtein(ingredients: RecipeIngredientInput[]): string | null {
   const proteins = [
     "chicken breast",
@@ -28,8 +95,9 @@ function mainProtein(ingredients: RecipeIngredientInput[]): string | null {
     "eggs",
     "greek yogurt",
     "cottage cheese",
+    "peanut butter",
   ];
-  const names = ingredients.map((i) => i.name.toLowerCase());
+  const names = ingredientNames(ingredients);
   for (const p of proteins) {
     if (names.some((n) => n.includes(p))) return titleCase(p);
   }
@@ -42,6 +110,9 @@ export function buildMethodStepsFromIngredients(
   ingredients: RecipeIngredientInput[],
   mealSlot: GoalMealSlot,
 ): string[] {
+  const bowlSteps = buildNoCookBowlSteps(ingredients, mealSlot);
+  if (bowlSteps) return bowlSteps;
+
   const slot = mealLabel(mealSlot);
   const protein = mainProtein(ingredients);
   const veg = ingredients
@@ -52,8 +123,14 @@ export function buildMethodStepsFromIngredients(
     `Gather and weigh ingredients for this ${slot.toLowerCase()} recipe.`,
   ];
 
-  if (protein) {
-    steps.push(`Prepare ${protein}: season lightly and cook through until safe to eat.`);
+  if (protein && !/peanut butter/i.test(protein)) {
+    if (/egg/i.test(protein)) {
+      steps.push(`Beat or fry the eggs until cooked to your liking.`);
+    } else if (/yoghurt|yogurt|cottage/i.test(protein)) {
+      steps.push(`Spoon the ${protein} into a bowl — no cooking needed.`);
+    } else {
+      steps.push(`Prepare ${protein}: season lightly and cook through until safe to eat.`);
+    }
   }
 
   if (veg.length) {
@@ -64,14 +141,17 @@ export function buildMethodStepsFromIngredients(
     /rice|oats|pasta|quinoa|potato|sweet potato|bread|tortilla/i.test(i.name),
   );
   if (carbs) {
-    const qty =
-      carbs.unit === "g" || carbs.unit === "ml"
-        ? `${carbs.quantity}${carbs.unit}`
-        : `${carbs.quantity} ${carbs.unit}`;
-    steps.push(`Cook ${titleCase(carbs.name)} (${qty}) according to pack instructions or until done.`);
+    steps.push(
+      `Cook ${titleCase(carbs.name)} (${formatQty(carbs)}) according to pack instructions or until done.`,
+    );
   }
 
-  steps.push("Combine everything on a plate or bowl, adjust seasoning, and serve warm.");
+  if (hasIngredient(ingredients, /peanut butter/) && !steps.some((s) => /peanut butter/i.test(s))) {
+    const pb = findIngredient(ingredients, /peanut butter/)!;
+    steps.push(`Stir ${formatQty(pb)} ${titleCase(pb.name)} through before serving.`);
+  }
+
+  steps.push("Combine everything on a plate or bowl, adjust seasoning, and serve.");
   return steps;
 }
 

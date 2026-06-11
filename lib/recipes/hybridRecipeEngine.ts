@@ -5,7 +5,10 @@ import {
   mealLabel,
   type GoalMealSlot,
 } from "@/lib/ai/goal-matched-recipe";
-import { generateFullRecipeFromIngredients } from "@/lib/ai/generateFullRecipe";
+import {
+  generateFullRecipeForSlot,
+  generateFullRecipeFromIngredients,
+} from "@/lib/ai/generateFullRecipe";
 import { generateRecipeMethodWithLLM } from "@/lib/ai/generateRecipeMethod";
 import { buildDietaryConstraints } from "@/lib/dietary/constraints";
 import type { RecipeIngredientInput } from "@/lib/nutrition/calculate";
@@ -16,13 +19,16 @@ import {
 } from "@/lib/recipes/buildMethodSteps";
 import {
   dietFlagsForSlot,
+  duplicateDraftOptsForAttempt,
   isDuplicateDraft,
+  normalizeRecipeName,
   type BulkFillSlotPlan,
   type ExistingLibrarySnapshot,
   type HardDietConstraints,
 } from "@/lib/recipes/bulkFillLibrary";
 import { inferDietLabelsFromIngredients } from "@/lib/recipes/inferDietLabels";
 import { isIngredientPileSnack } from "@/lib/recipes/snackRecipeQuality";
+import { stepsMentionUnlistedIngredients } from "@/lib/recipes/stepIngredientAlignment";
 
 export type HybridRecipeDraft = {
   name: string;
@@ -53,7 +59,7 @@ export type GenerateHybridRecipeInput = {
   requireFullLlmRecipe?: boolean;
 };
 
-const MAX_DEDUPE_RETRIES = 4;
+const MAX_DEDUPE_RETRIES = 16;
 
 /**
  * Hybrid recipe engine: nutrition DB templates first, optional LLM for method copy.
@@ -69,8 +75,15 @@ export async function generateHybridRecipeDraft(
   const requireFullLlm =
     input.requireFullLlmRecipe ?? input.slot.mealSlot === "snack";
 
+  const dietaryLine = buildDietaryConstraints(input.hard.dietaryPreferences);
+  const bannedTitles = [
+    ...input.existing.names,
+    ...input.acceptedInBatch.map((d) => d.name),
+  ];
+
   for (let attempt = 0; attempt < MAX_DEDUPE_RETRIES; attempt++) {
-    const variantSeed = (input.slot.variantSeed ^ (attempt * 0x517cc1b7)) >>> 0;
+    const variantSeed =
+      (input.slot.variantSeed ^ (attempt * 0x517cc1b7) ^ (attempt << 12) ^ (attempt * 0x85ebca6b)) >>> 0;
 
     const ingredients = await buildGoalMatchedRecipeIngredients({
       targetCalories: targetMealCalories,
@@ -87,7 +100,12 @@ export async function generateHybridRecipeDraft(
     let name = buildGoalMatchedRecipeTitle(ingredients, input.slot.mealSlot);
     const draftCheck = { name, ingredients };
     if (
-      isDuplicateDraft(draftCheck, input.existing, input.acceptedInBatch)
+      isDuplicateDraft(
+        draftCheck,
+        input.existing,
+        input.acceptedInBatch,
+        duplicateDraftOptsForAttempt(attempt),
+      )
     ) {
       continue;
     }
@@ -100,7 +118,6 @@ export async function generateHybridRecipeDraft(
     let fullLlmRecipe = false;
 
     if (input.useLlmMethod !== false) {
-      const dietaryLine = buildDietaryConstraints(input.hard.dietaryPreferences);
       const full = await generateFullRecipeFromIngredients({
         mealSlot: input.slot.mealSlot,
         seedIngredients: ingredients,
@@ -108,10 +125,17 @@ export async function generateHybridRecipeDraft(
         dietaryConstraintsLine: dietaryLine,
         bannedIngredientTerms: [],
       });
-      if (full) {
+      if (full && !stepsMentionUnlistedIngredients(full.steps, full.ingredients)) {
         name = full.title;
         intro = full.description;
         steps = full.steps;
+        workingIngredients = full.ingredients;
+        source = "db+llm";
+        fullLlmRecipe = true;
+      } else if (full && !stepsMentionUnlistedIngredients(templateSteps, ingredients)) {
+        name = full.title;
+        intro = full.description;
+        steps = templateSteps;
         workingIngredients = full.ingredients;
         source = "db+llm";
         fullLlmRecipe = true;
@@ -145,6 +169,18 @@ export async function generateHybridRecipeDraft(
     const { totals } = await getRecipeNutritionTotals(workingIngredients, { aiEnabled: true });
     const inferred = inferDietLabelsFromIngredients(workingIngredients);
 
+    const postLlmCheck = { name, ingredients: workingIngredients };
+    if (
+      isDuplicateDraft(
+        postLlmCheck,
+        input.existing,
+        input.acceptedInBatch,
+        duplicateDraftOptsForAttempt(attempt),
+      )
+    ) {
+      continue;
+    }
+
     return {
       name,
       description,
@@ -160,6 +196,46 @@ export async function generateHybridRecipeDraft(
       source,
       slotLabel: input.slot.label,
     };
+  }
+
+  if (input.useLlmMethod !== false) {
+    const scratch = await generateFullRecipeForSlot({
+      mealSlot: input.slot.mealSlot,
+      targetCalories: targetMealCalories,
+      dietaryConstraintsLine: dietaryLine,
+      proteinAxis: input.slot.proteinAxis,
+      bannedTitles,
+      variantSeed: input.slot.variantSeed ^ 0xdeadbeef,
+    });
+    if (scratch) {
+      const norm = normalizeRecipeName(scratch.title);
+      const titleTaken =
+        input.existing.names.some((n) => normalizeRecipeName(n) === norm) ||
+        input.acceptedInBatch.some((d) => normalizeRecipeName(d.name) === norm);
+      const pile =
+        input.slot.mealSlot === "snack" &&
+        isIngredientPileSnack(scratch.title, scratch.ingredients, scratch.steps);
+      if (!titleTaken && !pile) {
+        const description = formatDescriptionWithMethod(scratch.description, scratch.steps);
+        const { totals } = await getRecipeNutritionTotals(scratch.ingredients, { aiEnabled: true });
+        const inferred = inferDietLabelsFromIngredients(scratch.ingredients);
+        return {
+          name: scratch.title,
+          description,
+          steps: scratch.steps,
+          ingredients: scratch.ingredients,
+          mealSlot: input.slot.mealSlot,
+          targetMealCalories,
+          achievedCalories: Math.round(totals.calories * 10) / 10,
+          achievedProteinG: Math.round(totals.protein_g * 10) / 10,
+          fitsVegetarian: inferred.fitsVegetarian,
+          fitsVegan: inferred.fitsVegan,
+          fitsGlutenFree: inferred.fitsGlutenFree,
+          source: "db+llm",
+          slotLabel: input.slot.label,
+        };
+      }
+    }
   }
 
   return null;

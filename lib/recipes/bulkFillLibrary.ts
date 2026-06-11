@@ -58,9 +58,15 @@ export function hardConstraintsFromPreferences(prefs: string[]): HardDietConstra
 function proteinAxisForSlot(
   index: number,
   hard: HardDietConstraints,
+  mealSlot: GoalMealSlot,
 ): BulkProteinAxis {
   if (hard.vegan) return "vegan";
   if (hard.vegetarian) return index % 2 === 0 ? "vegetarian" : "plant";
+  // Breakfast/snack templates are eggs, dairy, and composed bowls — not meat mains.
+  if (mealSlot === "breakfast" || mealSlot === "snack") {
+    const soft: BulkProteinAxis[] = ["plant", "vegetarian", "plant"];
+    return soft[index % soft.length];
+  }
   return OMNIVORE_AXIS_ROTATION[index % OMNIVORE_AXIS_ROTATION.length];
 }
 
@@ -92,7 +98,7 @@ export function planBulkFillBatch(
 
   for (let i = 0; i < n; i++) {
     const mealSlot = MEAL_DISTRIBUTION[i % MEAL_DISTRIBUTION.length];
-    const proteinAxis = proteinAxisForSlot(i, hard);
+    const proteinAxis = proteinAxisForSlot(i, hard, mealSlot);
     const variantSeed = (baseSeed ^ (i * 0x9e3779b9) ^ (mealSlot.length << 12)) >>> 0;
     slots.push({
       slotId: `slot-${i}`,
@@ -160,23 +166,47 @@ function overlapRatio(a: string, b: string): number {
   return union > 0 ? inter / union : 0;
 }
 
+export type DuplicateDraftOptions = {
+  /** Ingredient overlap vs batch (default 0.85). */
+  batchOverlap?: number;
+  /** Ingredient overlap vs library (default 0.9). */
+  libraryOverlap?: number;
+  /** When true, only reject identical normalized titles. */
+  nameOnly?: boolean;
+};
+
 export function isDuplicateDraft(
   draft: { name: string; ingredients: RecipeIngredientInput[] },
   existing: ExistingLibrarySnapshot,
   acceptedInBatch: { name: string; ingredients: RecipeIngredientInput[] }[],
+  opts?: DuplicateDraftOptions,
 ): boolean {
   const normName = normalizeRecipeName(draft.name);
   const sig = ingredientSignature(draft.ingredients);
+  const batchOverlap = opts?.batchOverlap ?? 0.85;
+  const libraryOverlap = opts?.libraryOverlap ?? 0.9;
 
   for (const name of existing.names) {
     if (normalizeRecipeName(name) === normName) return true;
   }
   for (const prior of acceptedInBatch) {
     if (normalizeRecipeName(prior.name) === normName) return true;
-    if (overlapRatio(sig, ingredientSignature(prior.ingredients)) >= 0.85) return true;
+    if (!opts?.nameOnly && overlapRatio(sig, ingredientSignature(prior.ingredients)) >= batchOverlap) {
+      return true;
+    }
   }
-  for (const priorSig of existing.signatures) {
-    if (overlapRatio(sig, priorSig) >= 0.9) return true;
+  if (!opts?.nameOnly) {
+    for (const priorSig of existing.signatures) {
+      if (overlapRatio(sig, priorSig) >= libraryOverlap) return true;
+    }
   }
   return false;
+}
+
+/** Loosen dedupe as generation retries exhaust finite template variety. */
+export function duplicateDraftOptsForAttempt(attempt: number): DuplicateDraftOptions {
+  if (attempt >= 10) return { nameOnly: true };
+  if (attempt >= 6) return { batchOverlap: 0.95, libraryOverlap: 0.97 };
+  if (attempt >= 3) return { batchOverlap: 0.9, libraryOverlap: 0.93 };
+  return {};
 }
