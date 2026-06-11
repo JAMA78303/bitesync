@@ -64,9 +64,9 @@ export const ds = {
   cardSubtitle: "text-xs text-[var(--text-muted)]",
   label: "text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]",
   primaryBtn:
-    "inline-flex items-center justify-center rounded-2xl bg-[var(--btn-primary-bg)] px-5 py-3 text-sm font-semibold text-[var(--btn-primary-text)] transition-colors hover:bg-[var(--btn-primary-hover)]",
+    "inline-flex items-center justify-center rounded-2xl bg-[var(--btn-primary-bg)] px-5 py-3 text-sm font-semibold text-[var(--btn-primary-text)] transition-[background-color,transform] duration-150 hover:bg-[var(--btn-primary-hover)] active:scale-[0.98]",
   secondaryBtn:
-    "inline-flex items-center justify-center rounded-2xl border border-[var(--btn-secondary-border)] bg-[var(--btn-secondary-bg)] px-5 py-3 text-sm font-semibold text-[var(--btn-secondary-text)] transition-colors hover:bg-[var(--btn-secondary-hover)]",
+    "inline-flex items-center justify-center rounded-2xl border border-[var(--btn-secondary-border)] bg-[var(--btn-secondary-bg)] px-5 py-3 text-sm font-semibold text-[var(--btn-secondary-text)] transition-[background-color,transform] duration-150 hover:bg-[var(--btn-secondary-hover)] active:scale-[0.98]",
   input:
     "w-full rounded-2xl border border-[var(--border-default)] bg-[var(--surface-input)] px-4 py-3.5 text-sm text-[var(--text-primary)] outline-none transition-all focus:border-[var(--brand-action)] focus:ring-2 focus:ring-[var(--brand-action)]/10",
   formCard:
@@ -74,11 +74,16 @@ export const ds = {
   /** Muted info / guidelines callout (Create Recipe, etc.) */
   infoCallout:
     "rounded-md border border-[var(--border-default)] bg-[var(--surface-info)] px-3 py-2 text-xs text-[var(--text-secondary)]",
-  /** Colour-only warn/success tokens — call sites add shape, padding, text size */
+  /** Colour-only warn/success/error/info tokens — call sites add shape, padding, text size */
   warnCallout:
     "border border-[var(--semantic-warn-border)] bg-[var(--semantic-warn-bg)] text-[var(--semantic-warn-text)]",
   successCallout:
     "border border-[var(--semantic-success-border)] bg-[var(--semantic-success-bg)] text-[var(--semantic-success-text)]",
+  errorCallout:
+    "border border-[var(--semantic-error-border)] bg-[var(--semantic-error-bg)] text-[var(--semantic-error-text)]",
+  infoTint:
+    "border border-[var(--semantic-info-border)] bg-[var(--semantic-info-bg)] text-[var(--semantic-info-text)]",
+  errorText: "text-[var(--semantic-error-text)]",
   estBadge:
     "rounded border border-[var(--semantic-warn-border)] bg-[var(--semantic-warn-bg)] text-xs text-[var(--semantic-warn-text)]",
   trafficGreen: "bg-[var(--traffic-green)]",

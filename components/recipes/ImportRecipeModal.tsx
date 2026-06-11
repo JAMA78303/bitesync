@@ -199,7 +199,7 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
  {step ==="preview" && result ? (
  <>
  {result.importNotice ? (
- <p className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">{result.importNotice}</p>
+ <p className="mb-4 rounded-lg bg-[var(--semantic-warn-bg)] px-3 py-2 text-sm text-[var(--semantic-warn-text)]">{result.importNotice}</p>
  ) : null}
 
  <div className="mb-4">
@@ -284,7 +284,7 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
  />
  <button
  onClick={() => removeIngredient(i)}
- className="rounded-md text-[var(--text-muted)] hover:bg-red-50 hover:text-red-500"
+ className="rounded-md text-[var(--text-muted)] hover:bg-[var(--semantic-error-bg)] hover:text-[var(--semantic-error-text)]"
  aria-label="Remove ingredient"
  >
  <Trash2 className="mx-auto h-4 w-4" />
@@ -337,7 +337,7 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
  </button>
  </div>
  {!hasValidIngredients ? (
- <p className="mt-2 text-xs text-amber-700">
+ <p className="mt-2 text-xs text-[var(--semantic-warn-text)]">
  Add at least one ingredient on the next screen before saving, or go back to fill them in now.
  </p>
  ) : null}
@@ -405,7 +405,7 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
  </>
  ) : null}
 
- {error ? <p className="mt-3 text-sm text-red-500">{error}</p> : null}
+ {error ? <p className="mt-3 text-sm text-[var(--semantic-error-text)]">{error}</p> : null}
  </div>
  </div>
  </ModalPortal>

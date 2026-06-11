@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/shared/Logo";
 import { createClient } from "@/lib/supabase/client";
+import { ds } from "@/lib/ui/classes";
 
 export default function ResetConfirmPage() {
  const [password, setPassword] = useState("");
@@ -42,12 +43,12 @@ export default function ResetConfirmPage() {
  </div>
  </div>
  {message ? (
- <p className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-800">
+ <p className={`rounded-md px-3 py-2 text-sm ${ds.successCallout}`}>
  {message}
  </p>
  ) : null}
  {error ? (
- <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+ <p className={`rounded-md px-3 py-2 text-sm ${ds.warnCallout}`}>
  {error}
  </p>
  ) : null}

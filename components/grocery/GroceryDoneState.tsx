@@ -3,9 +3,9 @@ import { CheckCircle2 } from "lucide-react";
 
 export function GroceryDoneState() {
  return (
- <div className="mx-4 mt-4 flex items-center gap-3 rounded-xl border border-green-200 bg-green-50 p-3 dark:border-green-800/50 dark:bg-green-950/30">
+ <div className="mx-4 mt-4 flex items-center gap-3 rounded-xl border border-[var(--semantic-success-border)] bg-[var(--semantic-success-bg)] p-3">
  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--surface-brand-subtle)]">
- <CheckCircle2 className="h-5 w-5 text-[var(--brand-primary)] dark:text-green-300" />
+ <CheckCircle2 className="h-5 w-5 text-[var(--brand-primary)]" />
  </div>
  <div className="min-w-0 flex-1">
  <h2 className="text-sm font-semibold text-[var(--text-secondary)]">All done!</h2>

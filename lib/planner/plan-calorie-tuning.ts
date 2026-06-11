@@ -56,6 +56,29 @@ export function mainMealSlotSpecs(): Array<{
   ];
 }
 
+/** Mains + always-on snack slots; fractions reserve calorie room so snacks are planned, not gap-fillers. */
+export function plannerSlotSpecs(snackCountPerDay: number): Array<{
+  meal_type: PlanCalorieRow["meal_type"];
+  slot_index: number;
+  calFrac: number;
+}> {
+  if (snackCountPerDay >= 2) {
+    return [
+      { meal_type: "breakfast", slot_index: 0, calFrac: 0.22 },
+      { meal_type: "lunch", slot_index: 0, calFrac: 0.28 },
+      { meal_type: "dinner", slot_index: 0, calFrac: 0.3 },
+      { meal_type: "snack", slot_index: 0, calFrac: 0.1 },
+      { meal_type: "snack", slot_index: 1, calFrac: 0.1 },
+    ];
+  }
+  return [
+    { meal_type: "breakfast", slot_index: 0, calFrac: 0.24 },
+    { meal_type: "lunch", slot_index: 0, calFrac: 0.31 },
+    { meal_type: "dinner", slot_index: 0, calFrac: 0.34 },
+    { meal_type: "snack", slot_index: 0, calFrac: 0.11 },
+  ];
+}
+
 export function dayCaloriesFromRows(
   rows: PlanCalorieRow[],
   day: number,
@@ -254,6 +277,87 @@ function addSnackToCloseGap(
     `[tune] day ${day} snack#${slotIndex}: added "${picked.name}" (${Math.round(picked.calories)} kcal)`,
   );
   return true;
+}
+
+/**
+ * Guarantee each day carries the requested snack count even when mains already
+ * fill the calorie band — swaps a main down to make room when needed.
+ */
+export function ensureDailySnackCoverage(opts: {
+  rows: PlanCalorieRow[];
+  days: number[];
+  pool: PlanRecipeMeta[];
+  calById: Map<string, number>;
+  mealPlanId: string;
+  dailyTarget: number;
+  snackCountPerDay: number;
+  allowedRecipeIds: Set<string>;
+  snackMicroPriorities?: MicroPriority[];
+  tuneDay: (day: number) => void;
+}): void {
+  if (opts.snackCountPerDay < 1) return;
+  if (!poolHasSnackRecipes(opts.pool)) return;
+  const band = dailyCalorieBand(opts.dailyTarget);
+
+  for (const day of opts.days) {
+    let madeRoom = false;
+    for (let guard = 0; guard < 4; guard += 1) {
+      if (snackCountOnDay(opts.rows, day) >= opts.snackCountPerDay) break;
+
+      const current = dayCaloriesFromRows(opts.rows, day, opts.calById);
+      const usedOnDay = new Set(
+        opts.rows.filter((r) => r.day_of_week === day && r.recipe_id).map((r) => r.recipe_id),
+      );
+      const idealGap = Math.max(opts.dailyTarget - current, SNACK_MIN_CALORIES);
+      const picked = pickSnackForGap(
+        opts.pool,
+        idealGap,
+        current,
+        band.max,
+        usedOnDay,
+        opts.allowedRecipeIds,
+        opts.snackMicroPriorities,
+      );
+
+      if (picked) {
+        const slotIndex = snackCountOnDay(opts.rows, day);
+        opts.rows.push({
+          meal_plan_id: opts.mealPlanId,
+          recipe_id: picked.id,
+          day_of_week: day,
+          meal_type: "snack",
+          slot_index: slotIndex,
+          quick_add_name: null,
+          quick_add_calories: null,
+        });
+        console.warn(
+          `[snack-coverage] day ${day} snack#${slotIndex}: added "${picked.name}" (${Math.round(picked.calories)} kcal)`,
+        );
+        continue;
+      }
+
+      // No snack fits under band.max — swap a main down to make room, then retry.
+      const roomFloor = Math.max(band.min - SNACK_MAX_CALORIES, 0);
+      const swapped = swapMainMealForCalories(
+        opts.rows,
+        day,
+        opts.pool,
+        opts.calById,
+        "down",
+        roomFloor,
+        band.max,
+        opts.allowedRecipeIds,
+      );
+      if (!swapped) break;
+      madeRoom = true;
+    }
+
+    // Re-tune if the room-making swap left the day under band without a snack filling it.
+    if (madeRoom) {
+      const total = dayCaloriesFromRows(opts.rows, day, opts.calById);
+      if (total < band.min || total > band.max) opts.tuneDay(day);
+    }
+  }
 }
 
 export type TuneDayOptions = {

@@ -300,7 +300,7 @@ export function GenerateAIBasketButton({
 
  const pricingBlock = (
  <>
- {priceMatchNote ? <p className="text-xs leading-relaxed text-amber-800">{priceMatchNote}</p> : null}
+ {priceMatchNote ? <p className="text-xs leading-relaxed text-[var(--semantic-warn-text)]">{priceMatchNote}</p> : null}
  {storeTotals.length > 0 ? (
  <>
  <div className="space-y-1">

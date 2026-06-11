@@ -75,7 +75,7 @@ function NutrientRow({ nutrient }: { nutrient: NutrientResult }) {
  },
  red: {
  bar: ds.trafficRed,
- badge: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300",
+      badge: "bg-[var(--semantic-error-bg)] text-[var(--semantic-error-text)]",
  },
  }[traffic];
 

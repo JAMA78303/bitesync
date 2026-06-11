@@ -7,11 +7,11 @@ export function SavingsSummary({ bestStore, estimatedSavings }: Props) {
  if (!bestStore || estimatedSavings == null) return null;
 
  return (
- <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-900/50 dark:bg-emerald-950/35">
- <p className="text-sm font-medium text-emerald-900">
+ <div className="rounded-xl border border-[var(--semantic-success-border)] bg-[var(--semantic-success-bg)] p-3">
+ <p className="text-sm font-medium text-[var(--semantic-success-text)]">
  Potential savings: ~£{estimatedSavings.toFixed(2)}
  </p>
- <p className="text-xs text-emerald-800 /90">Best current estimate at {bestStore.toUpperCase()}</p>
+ <p className="text-xs text-[var(--semantic-success-text)]/90">Best current estimate at {bestStore.toUpperCase()}</p>
  </div>
  );
 }

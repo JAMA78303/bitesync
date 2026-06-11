@@ -119,7 +119,7 @@ export function GroceryItem({
  onClick={handleDelete}
  disabled={isPending}
  aria-label={`Delete ${name}`}
- className="flex-shrink-0 rounded-md p-1.5 text-[var(--text-muted)] transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30"
+ className="flex-shrink-0 rounded-md p-1.5 text-[var(--text-muted)] transition-colors hover:bg-[var(--semantic-error-bg)] hover:text-[var(--semantic-error-text)]"
  >
  <Trash2 className="h-4 w-4" />
  </button>

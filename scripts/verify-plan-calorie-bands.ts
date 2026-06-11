@@ -12,6 +12,7 @@ import {
 import {
   calorieGoalBiasFromProfile,
   dayCaloriesFromRows,
+  ensureDailySnackCoverage,
   mainMealSlotSpecs,
   tuneDayTowardCalorieBand,
   tuneWeekAvgTowardBand,
@@ -113,6 +114,7 @@ function tuneScenario(scenario: Scenario): {
   dayTotals: number[];
   weekAvg: number;
   outsideDays: number;
+  daysMissingSnack: number;
 } {
   const { rows, calById, days } = buildWeek(scenario);
   const allowed = new Set(scenario.pool.map((r) => r.id));
@@ -148,15 +150,29 @@ function tuneScenario(scenario: Scenario): {
     goalBias,
     tuneDay,
   );
+  ensureDailySnackCoverage({
+    rows,
+    days,
+    pool: scenario.pool,
+    calById,
+    mealPlanId,
+    dailyTarget: scenario.dailyTarget,
+    snackCountPerDay,
+    allowedRecipeIds: allowed,
+    tuneDay,
+  });
 
   const dayTotals = days.map((d) => dayCaloriesFromRows(rows, d, calById));
   const weekAvg = dayTotals.reduce((a, b) => a + b, 0) / dayTotals.length;
   const outsideDays = dayTotals.filter((t) => !isWithinDailyCalorieBand(t, scenario.dailyTarget)).length;
-  return { dayTotals, weekAvg, outsideDays };
+  const daysMissingSnack = days.filter(
+    (d) => !rows.some((r) => r.day_of_week === d && r.meal_type === "snack"),
+  ).length;
+  return { dayTotals, weekAvg, outsideDays, daysMissingSnack };
 }
 
 function assertScenario(scenario: Scenario, maxOutsideDays: number): void {
-  const { dayTotals, weekAvg, outsideDays } = tuneScenario(scenario);
+  const { dayTotals, weekAvg, outsideDays, daysMissingSnack } = tuneScenario(scenario);
   const band = dailyCalorieBand(scenario.dailyTarget);
   const weekBand = weekAvgCalorieBand(scenario.dailyTarget);
   const weekOk = isWithinWeekAvgCalorieBand(weekAvg, scenario.dailyTarget);
@@ -167,6 +183,7 @@ function assertScenario(scenario: Scenario, maxOutsideDays: number): void {
   console.log(`  Day totals: ${dayTotals.map((t) => Math.round(t)).join(", ")}`);
   console.log(`  Week avg: ~${Math.round(weekAvg)} kcal`);
   console.log(`  Days outside band: ${outsideDays}`);
+  console.log(`  Days missing a snack: ${daysMissingSnack}`);
 
   let failed = false;
   if (outsideDays > maxOutsideDays) {
@@ -175,6 +192,10 @@ function assertScenario(scenario: Scenario, maxOutsideDays: number): void {
   }
   if (!weekOk) {
     console.log("  FAIL: week average outside ±5% band");
+    failed = true;
+  }
+  if (daysMissingSnack > 0) {
+    console.log("  FAIL: every day should carry at least one snack");
     failed = true;
   }
   if (!failed) {

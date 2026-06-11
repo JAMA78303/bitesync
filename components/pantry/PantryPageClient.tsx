@@ -153,7 +153,7 @@ export function PantryPageClient({ items }: Props) {
  title="Mark running low"
  className={`rounded-full px-2 py-0.5 text-2xs font-medium ${
  item.running_low
- ?"bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+ ?"bg-[var(--semantic-warn-bg)] text-[var(--semantic-warn-text)]"
  :"bg-[var(--surface-muted)] text-[var(--text-muted)]"
  }`}
  >
@@ -164,7 +164,7 @@ export function PantryPageClient({ items }: Props) {
  onClick={() => handleRemove(item.id)}
  disabled={isPending}
  aria-label={`Remove ${item.name}`}
- className="text-xs text-[var(--text-muted)] hover:text-red-500"
+ className="text-xs text-[var(--text-muted)] hover:text-[var(--semantic-error-text)]"
  >
  Remove
  </button>

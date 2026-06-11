@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { Logo } from "@/components/shared/Logo";
+import { Reveal } from "@/components/landing/Reveal";
 
 const LandingDemoFlow = dynamic(
   () => import("@/components/landing/LandingDemoFlow").then((m) => ({ default: m.LandingDemoFlow })),
@@ -160,6 +161,13 @@ const BLOG_POSTS = [
   },
 ] as const;
 
+const HERO_STATS = [
+  { value: "±5%", label: "week-average calorie accuracy" },
+  { value: "12", label: "micronutrients analysed weekly" },
+  { value: "3", label: "UK supermarkets price-compared" },
+  { value: "1", label: "grocery list for your whole week" },
+] as const;
+
 function FeatureCard({
   Icon,
   title,
@@ -172,9 +180,9 @@ function FeatureCard({
   isPro?: boolean;
 }) {
   return (
-    <article className="rounded-2xl border border-[var(--border-default)] bg-[var(--surface-card)] p-5 shadow-sm transition-shadow hover:shadow-md">
-      <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--surface-brand-subtle)]">
-        <Icon className="h-6 w-6 text-[var(--brand-primary)]" aria-hidden />
+    <article className="group rounded-2xl border border-[var(--border-default)] bg-[var(--surface-card)] p-5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-[var(--brand-action-mid)]/40 hover:shadow-lg">
+      <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--surface-brand-subtle)] transition-colors duration-200 group-hover:bg-[var(--brand-action)]">
+        <Icon className="h-6 w-6 text-[var(--brand-primary)] transition-colors duration-200 group-hover:text-[var(--text-on-brand)]" aria-hidden />
       </span>
       <h3 className="mb-2 font-semibold text-[var(--text-primary)]">
         {title}
@@ -224,7 +232,7 @@ export default function LandingPage() {
       </nav>
 
       <main id="main-content">
-        <header className="relative overflow-hidden bg-[var(--hero-gradient)] px-4 pt-14 pb-10 text-center text-[var(--text-on-brand)] sm:pt-20 sm:pb-28">
+        <header className="relative overflow-hidden bg-[image:var(--hero-gradient)] px-4 pt-14 pb-10 text-center text-[var(--text-on-brand)] sm:pt-20 sm:pb-28">
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0 opacity-[0.04]"
@@ -233,6 +241,15 @@ export default function LandingPage() {
                 "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E\")",
               backgroundSize: "200px 200px",
             }}
+          />
+          <div
+            aria-hidden
+            className="hero-glow pointer-events-none absolute -top-32 -left-24 h-96 w-96 rounded-full bg-[var(--brand-sage-accent)]/25 blur-3xl"
+          />
+          <div
+            aria-hidden
+            className="hero-glow pointer-events-none absolute -right-24 top-1/3 h-80 w-80 rounded-full bg-[var(--header-stat-accent)]/15 blur-3xl"
+            style={{ animationDelay: "-7s" }}
           />
           <div className="relative z-10 mx-auto max-w-3xl">
             <p className="mb-4 inline-flex items-center gap-2 rounded-full bg-[var(--surface-overlay)]/15 px-3 py-1.5 text-xs font-medium backdrop-blur-sm">
@@ -248,7 +265,7 @@ export default function LandingPage() {
             </p>
             <Link
               href="/signup"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--surface-card)] px-6 py-3 text-sm font-semibold text-[var(--text-link)] transition-colors hover:bg-[var(--surface-brand-subtle)] sm:w-auto"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--surface-card)] px-6 py-3 text-sm font-semibold text-[var(--text-link)] shadow-lg transition-all hover:-translate-y-0.5 hover:bg-[var(--surface-brand-subtle)] hover:shadow-xl sm:w-auto"
             >
               Start planning for free
               <ChevronRight className="h-4 w-4" aria-hidden />
@@ -264,24 +281,43 @@ export default function LandingPage() {
           </div>
         </header>
 
+        <section className="border-b border-[var(--border-subtle)] bg-[var(--surface-card)] px-4 pt-12 pb-10 sm:pt-28">
+          <dl className="mx-auto grid max-w-4xl grid-cols-2 gap-x-6 gap-y-8 text-center lg:grid-cols-4">
+            {HERO_STATS.map((stat) => (
+              <div key={stat.label} className="flex flex-col">
+                <dt className="order-last mx-auto mt-1 max-w-[180px] text-xs leading-snug text-[var(--text-muted)]">
+                  {stat.label}
+                </dt>
+                <dd className="text-3xl font-bold tracking-tight text-[var(--brand-primary)]">{stat.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+
         <section id="how-it-works" className="scroll-mt-24 bg-[var(--surface-muted)] py-16 sm:py-20">
-          <LandingDemoFlow />
+          <Reveal>
+            <LandingDemoFlow />
+          </Reveal>
         </section>
 
         <section id="features" className="scroll-mt-24 bg-[var(--surface-card)] py-16 sm:py-20">
           <div className="mx-auto max-w-6xl px-4">
-            <div className="mb-12 text-center">
-              <h2 className="mb-3 text-2xl font-bold text-[var(--text-primary)] sm:text-3xl">
-                Built for people with a nutrition goal
-              </h2>
-              <p className="mx-auto max-w-lg text-sm text-[var(--text-muted)] sm:text-base">
-                Whether you&apos;re building muscle, cutting fat, or eating to maintain — BiteSync
-                handles the food side so you can focus on training and life.
-              </p>
-            </div>
+            <Reveal>
+              <div className="mb-12 text-center">
+                <h2 className="mb-3 text-2xl font-bold text-[var(--text-primary)] sm:text-3xl">
+                  Built for people with a nutrition goal
+                </h2>
+                <p className="mx-auto max-w-lg text-sm text-[var(--text-muted)] sm:text-base">
+                  Whether you&apos;re building muscle, cutting fat, or eating to maintain — BiteSync
+                  handles the food side so you can focus on training and life.
+                </p>
+              </div>
+            </Reveal>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {LEAD_FEATURES.map((feature) => (
-                <FeatureCard key={feature.title} {...feature} />
+              {LEAD_FEATURES.map((feature, i) => (
+                <Reveal key={feature.title} delay={(i % 3) * 90}>
+                  <FeatureCard {...feature} />
+                </Reveal>
               ))}
             </div>
           </div>
@@ -289,17 +325,21 @@ export default function LandingPage() {
 
         <section className="bg-[var(--surface-muted)] py-16 sm:py-20">
           <div className="mx-auto max-w-6xl px-4">
-            <div className="mb-10 text-center">
-              <h2 className="mb-3 text-2xl font-bold text-[var(--text-primary)] sm:text-3xl">
-                And less hassle when you shop
-              </h2>
-              <p className="mx-auto max-w-lg text-sm text-[var(--text-muted)]">
-                Import recipes, respect dietary needs, compare prices, and buy only what you need.
-              </p>
-            </div>
+            <Reveal>
+              <div className="mb-10 text-center">
+                <h2 className="mb-3 text-2xl font-bold text-[var(--text-primary)] sm:text-3xl">
+                  And less hassle when you shop
+                </h2>
+                <p className="mx-auto max-w-lg text-sm text-[var(--text-muted)]">
+                  Import recipes, respect dietary needs, compare prices, and buy only what you need.
+                </p>
+              </div>
+            </Reveal>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {SUPPORTING_FEATURES.map((feature) => (
-                <FeatureCard key={feature.title} {...feature} />
+              {SUPPORTING_FEATURES.map((feature, i) => (
+                <Reveal key={feature.title} delay={(i % 3) * 90}>
+                  <FeatureCard {...feature} />
+                </Reveal>
               ))}
             </div>
           </div>
@@ -307,12 +347,14 @@ export default function LandingPage() {
 
         <section id="pricing" className="scroll-mt-24 bg-[var(--surface-card)] py-16 sm:py-20">
           <div className="mx-auto max-w-6xl px-4">
-            <div className="mb-12 text-center">
-              <h2 className="mb-3 text-2xl font-bold text-[var(--text-primary)] sm:text-3xl">
-                Simple, honest pricing
-              </h2>
-              <p className="text-sm text-[var(--text-muted)]">Start free. Upgrade when you want the full picture.</p>
-            </div>
+            <Reveal>
+              <div className="mb-12 text-center">
+                <h2 className="mb-3 text-2xl font-bold text-[var(--text-primary)] sm:text-3xl">
+                  Simple, honest pricing
+                </h2>
+                <p className="text-sm text-[var(--text-muted)]">Start free. Upgrade when you want the full picture.</p>
+              </div>
+            </Reveal>
             <div className="mx-auto grid max-w-3xl grid-cols-1 gap-6 sm:grid-cols-2">
               <article className="rounded-2xl border border-[var(--border-default)] bg-[var(--surface-card)] p-6">
                 <h3 className="mb-1 font-bold text-[var(--text-primary)]">Free</h3>
@@ -434,20 +476,26 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="bg-[var(--brand-primary)] px-4 py-16 text-center text-[var(--text-on-brand)] sm:py-20">
-          <div className="mx-auto max-w-2xl">
-            <h2 className="mb-4 text-2xl font-bold sm:text-3xl">Hit your macros without the spreadsheet</h2>
-            <p className="mb-8 text-sm text-[var(--text-on-brand-muted)] sm:text-base">
-              Plan your week, shop once, and track every day — free to start, no credit card required.
-            </p>
-            <Link
-              href="/signup"
-              className="inline-flex items-center gap-2 rounded-xl bg-[var(--surface-card)] px-8 py-3 text-sm font-semibold text-[var(--text-link)] transition-colors hover:bg-[var(--surface-brand-subtle)]"
-            >
-              Get started free
-              <ChevronRight className="h-4 w-4" aria-hidden />
-            </Link>
-          </div>
+        <section className="relative overflow-hidden bg-[image:var(--hero-gradient)] px-4 py-16 text-center text-[var(--text-on-brand)] sm:py-20">
+          <div
+            aria-hidden
+            className="hero-glow pointer-events-none absolute -top-24 left-1/4 h-72 w-72 rounded-full bg-[var(--brand-sage-accent)]/20 blur-3xl"
+          />
+          <Reveal>
+            <div className="relative z-10 mx-auto max-w-2xl">
+              <h2 className="mb-4 text-2xl font-bold sm:text-3xl">Hit your macros without the spreadsheet</h2>
+              <p className="mb-8 text-sm text-[var(--text-on-brand-muted)] sm:text-base">
+                Plan your week, shop once, and track every day — free to start, no credit card required.
+              </p>
+              <Link
+                href="/signup"
+                className="inline-flex items-center gap-2 rounded-xl bg-[var(--surface-card)] px-8 py-3 text-sm font-semibold text-[var(--text-link)] shadow-lg transition-all hover:-translate-y-0.5 hover:bg-[var(--surface-brand-subtle)] hover:shadow-xl"
+              >
+                Get started free
+                <ChevronRight className="h-4 w-4" aria-hidden />
+              </Link>
+            </div>
+          </Reveal>
         </section>
       </main>
 

@@ -21,7 +21,7 @@ export function DeleteRecipeButton({ onDelete }: DeleteRecipeButtonProps) {
  type="button"
  onClick={handleClick}
  disabled={isDeleting}
- className="inline-flex h-9 items-center justify-center rounded-md border border-red-300 bg-red-50 px-3 text-sm font-medium text-red-700 hover:bg-red-100 disabled:opacity-70"
+ className="inline-flex h-9 items-center justify-center rounded-md border border-[var(--semantic-error-border)] bg-[var(--semantic-error-bg)] px-3 text-sm font-medium text-[var(--semantic-error-text)] hover:opacity-85 disabled:opacity-70"
  >
  {isDeleting ?"Deleting..." :"Delete recipe"}
  </button>

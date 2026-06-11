@@ -46,6 +46,8 @@ export type GenerateHybridRecipeInput = {
   existing: ExistingLibrarySnapshot;
   acceptedInBatch: HybridRecipeDraft[];
   useLlmMethod?: boolean;
+  /** Snack slots only: bias ingredients toward foods rich in this nutrient key. */
+  microFocusKey?: string;
 };
 
 const MAX_DEDUPE_RETRIES = 4;
@@ -72,6 +74,7 @@ export async function generateHybridRecipeDraft(
       glutenFree: flags.glutenFree,
       variantSeed,
       proteinAxis: flags.proteinAxis,
+      microFocusKey: input.microFocusKey,
     });
 
     let name = buildGoalMatchedRecipeTitle(ingredients, input.slot.mealSlot);

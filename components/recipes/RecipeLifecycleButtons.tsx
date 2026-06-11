@@ -48,7 +48,7 @@ export function RecipeLifecycleButtons({ recipeId }: Props) {
  onClick={() => runAction("archive")}
  disabled={busy}
  aria-label="Archive recipe"
- className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--border-default)] text-lg text-[var(--text-muted)] hover:text-amber-600 disabled:opacity-50"
+ className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--border-default)] text-lg text-[var(--text-muted)] hover:text-[var(--semantic-warn-text)] disabled:opacity-50"
  >
  {busy && action ==="archive" ?"…" :"📦"}
  </button>
@@ -57,7 +57,7 @@ export function RecipeLifecycleButtons({ recipeId }: Props) {
  onClick={() => runAction("delete")}
  disabled={busy}
  aria-label="Delete recipe"
- className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--border-default)] text-lg text-[var(--text-muted)] hover:text-red-500 disabled:opacity-50"
+ className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--border-default)] text-lg text-[var(--text-muted)] hover:text-[var(--semantic-error-text)] disabled:opacity-50"
  >
  {busy && action ==="delete" ?"…" :"🗑️"}
  </button>

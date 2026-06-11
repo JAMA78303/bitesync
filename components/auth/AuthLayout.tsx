@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { BiteSyncLogoMark } from "@/components/auth/BiteSyncLogoMark";
+import { ds } from "@/lib/ui/classes";
 
 type Props = {
  children: ReactNode;
@@ -30,7 +31,7 @@ export function AuthLayout({ children, mode, error, success }: Props) {
  </h2>
 
  {error ? (
- <p className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+ <p className={`mb-4 rounded-2xl px-4 py-3 text-sm ${ds.warnCallout}`}>
  {error}
  </p>
  ) : null}
@@ -39,7 +40,7 @@ export function AuthLayout({ children, mode, error, success }: Props) {
  {children}
 
  <p className="mt-6 text-center text-sm text-[var(--text-muted)]">
- {isLogin ?"Don't have an account?" :"Already have an account?"}
+ {isLogin ?"Don't have an account?" :"Already have an account?"}{" "}
  <Link href={isLogin ?"/signup" :"/login"} className="font-semibold text-[var(--text-link)]">
  {isLogin ?"Sign up free" :"Sign in"}
  </Link>

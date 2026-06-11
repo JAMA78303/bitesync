@@ -171,7 +171,7 @@ export function RecipePickerModal({
  <p className="text-xs text-[var(--text-muted)]">{Math.round(recipe.calories)} kcal</p>
  ) : null}
  {warnings.length > 0 ? (
- <p className="mt-0.5 text-[11px] text-amber-700">{warnings.join(" ·")}</p>
+ <p className="mt-0.5 text-[11px] text-[var(--semantic-warn-text)]">{warnings.join(" ·")}</p>
  ) : null}
  </div>
  <span className="shrink-0 text-xs text-[var(--text-muted)]">

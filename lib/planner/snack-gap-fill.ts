@@ -15,6 +15,10 @@ import { generateHybridRecipeDraft } from "@/lib/recipes/hybridRecipeEngine";
 import { insertGeneratedRecipe } from "@/lib/recipes/saveGeneratedRecipe";
 import { canCreateRecipe, getUserTier } from "@/lib/subscription";
 import { initialDietaryPreferencesFromProfile } from "@/lib/dietary/constraints";
+import {
+  DEFAULT_SNACK_MICRO_PRIORITIES,
+  type MicroPriority,
+} from "@/lib/nutrition/micro-rich-foods";
 import type { ProfileForTargets } from "@/lib/utils/nutrition-targets";
 import { hardConstraintsFromPreferences } from "@/lib/recipes/bulkFillLibrary";
 import { SNACK_MAX_CALORIES, SNACK_MIN_CALORIES } from "@/lib/planner/meal-slot-eligibility";
@@ -28,7 +32,7 @@ export async function createPlannerSnackRecipe(
   dailyCalorieTarget: number,
   profile: ProfileForTargets,
   gapKcal: number,
-  opts?: { attempt?: number; existingNames?: string[] },
+  opts?: { attempt?: number; existingNames?: string[]; microPriorities?: MicroPriority[] },
 ): Promise<PlannerSnackRecipe | null> {
   const tier = await getUserTier();
   if (tier === "free") {
@@ -43,6 +47,12 @@ export async function createPlannerSnackRecipe(
   const hard = hardConstraintsFromPreferences(initialDietaryPreferencesFromProfile(profile));
   const attempt = opts?.attempt ?? 0;
   const variantSeed = (Date.now() ^ gapKcal ^ Math.imul(attempt + 1, 0x9e3779b9)) >>> 0;
+  const priorities = opts?.microPriorities?.length
+    ? opts.microPriorities
+    : DEFAULT_SNACK_MICRO_PRIORITIES;
+  // Rotate through priority nutrients so consecutive snacks cover different gaps.
+  const sorted = [...priorities].sort((a, b) => b.weight - a.weight);
+  const microFocusKey = sorted[attempt % sorted.length]?.key;
 
   const hybrid = await generateHybridRecipeDraft({
     slot: {
@@ -57,6 +67,7 @@ export async function createPlannerSnackRecipe(
     existing: { names: opts?.existingNames ?? [], signatures: [] },
     acceptedInBatch: [],
     useLlmMethod: true,
+    microFocusKey,
   });
 
   let name: string;
@@ -124,6 +135,9 @@ export async function autoFillSnackRecipesForPlan(opts: {
   calById: Map<string, number>;
   allowedRecipeIds: Set<string>;
   tuneDay: (day: number) => void;
+  microPriorities?: MicroPriority[];
+  /** When set, also create snacks so every day can carry this many snack slots. */
+  snackCountPerDay?: number;
 }): Promise<number> {
   if (poolHasSnackRecipes(opts.pool)) return 0;
 
@@ -131,12 +145,14 @@ export async function autoFillSnackRecipesForPlan(opts: {
   const underDays = opts.days.filter(
     (d) => dayCaloriesFromRows(opts.rows, d, opts.calById) < band.min,
   );
-  if (!underDays.length) return 0;
+  const wantsSnacks = (opts.snackCountPerDay ?? 0) >= 1;
+  if (!underDays.length && !wantsSnacks) return 0;
 
-  const minDayCal = Math.min(
-    ...underDays.map((d) => dayCaloriesFromRows(opts.rows, d, opts.calById)),
-  );
-  const gapKcal = band.min - minDayCal;
+  const minDayCal = underDays.length
+    ? Math.min(...underDays.map((d) => dayCaloriesFromRows(opts.rows, d, opts.calById)))
+    : null;
+  // No calorie gap → size the snack as a typical ~12% of the daily target.
+  const gapKcal = minDayCal !== null ? band.min - minDayCal : Math.round(opts.dailyTarget * 0.12);
   let created = 0;
   const createdNames: string[] = [];
 
@@ -147,7 +163,7 @@ export async function autoFillSnackRecipesForPlan(opts: {
       opts.dailyTarget,
       opts.profile,
       gapKcal,
-      { attempt: i, existingNames: createdNames },
+      { attempt: i, existingNames: createdNames, microPriorities: opts.microPriorities },
     );
     if (!snack) break;
     createdNames.push(snack.name);

@@ -130,7 +130,7 @@ export function EditRecipeForm({
  <section className={ds.formCard}>
  <h2 className="text-lg font-semibold text-[var(--text-primary)]">Edit Recipe</h2>
  {formError ? (
- <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">{formError}</p>
+ <p className={`rounded-md px-3 py-2 text-sm ${ds.warnCallout}`}>{formError}</p>
  ) : null}
  <div className="space-y-3">
  <input
@@ -212,7 +212,7 @@ export function EditRecipeForm({
  value={ingredient.quantity}
  onChange={(event) => updateIngredient(ingredient.id,"quantity", event.target.value)}
  className={`h-10 rounded-md border px-3 text-sm ${
- qtyError ?"border-amber-400 bg-amber-50/50" :"border-[var(--border-default)]"
+ qtyError ?"border-[var(--semantic-warn-border)] bg-[var(--semantic-warn-bg)]/50" :"border-[var(--border-default)]"
  }`}
  />
  <select
@@ -235,7 +235,7 @@ export function EditRecipeForm({
  </button>
  </div>
  {weightHint ? <p className="text-xs text-[var(--text-muted)] md:pl-1">{weightHint}</p> : null}
- {qtyError ? <p className="text-xs text-amber-700 md:pl-1">{qtyError}</p> : null}
+ {qtyError ? <p className="text-xs text-[var(--semantic-warn-text)] md:pl-1">{qtyError}</p> : null}
  {(lineMeta?.matchHint || lineMeta?.unknown) && ingredient.name.trim() ? (
  <p className="text-xs text-[var(--text-muted)] md:pl-1">
  {lineMeta.matchHint ? (

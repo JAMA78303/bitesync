@@ -99,9 +99,9 @@ export function DietaryPreferencesPicker({
  })}
  </div>
 
- {error ? <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p> : null}
+ {error ? <p className="mt-3 text-sm text-[var(--semantic-error-text)]">{error}</p> : null}
  {message && !completeOnboarding ? (
- <p className="mt-3 text-sm text-green-700 dark:text-green-400">{message}</p>
+ <p className="mt-3 text-sm text-[var(--semantic-success-text)]">{message}</p>
  ) : null}
 
  <button

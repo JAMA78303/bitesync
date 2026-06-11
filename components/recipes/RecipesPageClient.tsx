@@ -200,7 +200,7 @@ export function RecipesPageClient({
  >
  <Heart
  className={`h-3.5 w-3.5 ${
- activeFilter ==="Favourites" ?"fill-red-500 text-red-500" :"text-[var(--text-on-brand)]"
+ activeFilter ==="Favourites" ?"fill-[var(--traffic-red)] text-[var(--traffic-red)]" :"text-[var(--text-on-brand)]"
  }`}
  strokeWidth={2}
  />
@@ -238,26 +238,26 @@ export function RecipesPageClient({
  Fill my library
  </button>
  {!canFillLibrary && fillLibraryBlockedMessage ? (
- <p className="text-center text-xs text-amber-700 dark:text-amber-300">{fillLibraryBlockedMessage}</p>
+ <p className="text-center text-xs text-[var(--semantic-warn-text)]">{fillLibraryBlockedMessage}</p>
  ) : null}
  </div>
  ) : null}
 
  {showLimitWarning && !showArchived ? (
- <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
+ <div className={`flex items-start gap-3 rounded-2xl p-4 ${ds.warnCallout}`}>
  <span className="flex-shrink-0 text-xl" aria-hidden>
  ⚠️
  </span>
  <div>
- <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">
+ <p className="text-sm font-semibold text-[var(--semantic-warn-text)]">
  {recipeCount}/10 recipes used
  </p>
- <p className="mt-0.5 text-xs text-amber-600 dark:text-amber-400">
+ <p className="mt-0.5 text-xs text-[var(--semantic-warn-text)]/80">
  Upgrade to Pro for unlimited recipes.
  </p>
  <Link
  href="/billing"
- className="mt-1 inline-block text-xs font-bold text-amber-700 underline dark:text-amber-300"
+ className="mt-1 inline-block text-xs font-bold text-[var(--semantic-warn-text)] underline"
  >
  Upgrade now
  </Link>
@@ -266,7 +266,7 @@ export function RecipesPageClient({
  ) : null}
 
  {!hasBreakfastFriendlyRecipe && !showArchived && listRecipes.length > 0 ? (
- <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/20 dark:text-amber-100">
+ <div className={`rounded-2xl p-3 text-xs ${ds.warnCallout}`}>
  Tip: add breakfast-named recipes (oats, eggs, yoghurt) for better AI planning.
  </div>
  ) : null}
@@ -338,7 +338,7 @@ export function RecipesPageClient({
  ) : null}
 
  {deleteError ? (
- <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+ <p className={`rounded-xl px-3 py-2 text-sm ${ds.errorCallout}`}>
  {deleteError}
  </p>
  ) : null}

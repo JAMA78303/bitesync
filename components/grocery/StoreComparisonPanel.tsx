@@ -38,7 +38,7 @@ export function StoreComparisonPanel({ storeTotals, estimates = [] }: Props) {
  <div key={s.store} className="rounded-lg border border-[var(--border-subtle)] px-3 py-2 bg-[var(--surface-elevated)]">
  <p className="text-sm font-medium text-[var(--text-secondary)]">
  {s.store.toUpperCase()} ~£{s.total.toFixed(2)}
- {s.store === best.store ? <span className="ml-2 text-xs text-emerald-700">best</span> : null}
+ {s.store === best.store ? <span className="ml-2 text-xs text-[var(--semantic-success-text)]">best</span> : null}
  </p>
  <div className="mt-1 flex flex-wrap gap-1">
  <FreshnessBadge freshnessDays={s.freshnessDays} />

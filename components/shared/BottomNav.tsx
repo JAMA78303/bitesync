@@ -42,9 +42,10 @@ export function BottomNav() {
  return (
  <Link
  key={href}
- href={href}
- prefetch
- className={`flex min-h-[48px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-[20px] px-1 py-1.5 transition-all duration-200 ${
+              href={href}
+                prefetch
+                aria-current={isActive ? "page" : undefined}
+                className={`flex min-h-[48px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-[20px] px-1 py-1.5 transition-all duration-200 active:scale-95 ${
  isActive ?"bg-[var(--surface-overlay)]/15" :"hover:bg-[var(--surface-overlay)]/8"
  }`}
  >

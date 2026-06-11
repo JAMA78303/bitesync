@@ -219,7 +219,7 @@ export function FillMyLibraryModal({ onClose }: Props) {
  key={row.slotId}
  className={`rounded-xl border p-3 ${
  row.status ==="failed"
- ?"border-red-200 bg-red-50/50 dark:border-red-900 dark:bg-red-950/20"
+ ?"border-[var(--semantic-error-border)] bg-[var(--semantic-error-bg)]/50"
  :"border-[var(--border-default)]"
  }`}
  >
@@ -247,8 +247,8 @@ export function FillMyLibraryModal({ onClose }: Props) {
  </label>
  ) : row.status ==="failed" ? (
  <div>
- <p className="text-sm font-medium text-red-800 dark:text-red-200">{row.slotLabel}</p>
- <p className="text-xs text-red-600">{row.error ??"Skipped"}</p>
+ <p className="text-sm font-medium text-[var(--semantic-error-text)]">{row.slotLabel}</p>
+ <p className="text-xs text-[var(--semantic-error-text)]/80">{row.error ??"Skipped"}</p>
  </div>
  ) : (
  <p className="text-sm text-[var(--text-muted)]">{row.slotLabel} — {row.status}…</p>
@@ -259,19 +259,19 @@ export function FillMyLibraryModal({ onClose }: Props) {
  ) : null}
 
  {globalError ? (
- <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+ <p className={`mt-3 rounded-lg px-3 py-2 text-sm ${ds.errorCallout}`}>
  {globalError}
  </p>
  ) : null}
 
  {saveSummary ? (
- <p className="mt-3 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
+ <p className={`mt-3 rounded-lg px-3 py-2 text-sm ${ds.successCallout}`}>
  {saveSummary}
  </p>
  ) : null}
 
  {phase ==="review" && readyRows.length === 0 ? (
- <p className="text-sm text-amber-700">No recipes generated — try again or adjust your settings.</p>
+ <p className="text-sm text-[var(--semantic-warn-text)]">No recipes generated — try again or adjust your settings.</p>
  ) : null}
  </div>
 

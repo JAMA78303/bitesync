@@ -117,7 +117,7 @@ export function RecipeSlotCard({
  {macroLine}
  {dietWarnings.length > 0 ? (
  <p
- className="mt-1 line-clamp-1 text-2xs font-medium text-amber-700 dark:text-amber-400"
+ className="mt-1 line-clamp-1 text-2xs font-medium text-[var(--semantic-warn-text)]"
  title={dietWarnings.join(" ·")}
  >
  {dietWarnings.join(" ·")}
@@ -157,7 +157,7 @@ export function RecipeSlotCard({
  {macroLine}
  {dietWarnings.length > 0 ? (
  <p
- className="mt-1 line-clamp-1 text-2xs font-medium text-amber-700 dark:text-amber-400"
+ className="mt-1 line-clamp-1 text-2xs font-medium text-[var(--semantic-warn-text)]"
  title={dietWarnings.join(" ·")}
  >
  {dietWarnings.join(" ·")}
@@ -201,7 +201,7 @@ export function RecipeSlotCard({
  }}
  disabled={isPending}
  aria-label={`Remove ${name}`}
- className="absolute right-1.5 top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--surface-overlay)]/90 text-[var(--text-muted)] opacity-80 shadow-sm transition-all hover:bg-[var(--surface-card)] hover:text-red-500 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100"
+ className="absolute right-1.5 top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--surface-overlay)]/90 text-[var(--text-muted)] opacity-80 shadow-sm transition-all hover:bg-[var(--surface-card)] hover:text-[var(--semantic-error-text)] group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100"
  >
  <X className="h-3.5 w-3.5" />
  </button>

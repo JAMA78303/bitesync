@@ -254,12 +254,12 @@ export function RecipeForm({ profileTargets = null }: RecipeFormProps) {
  <section className={ds.formCard}>
  <h2 className="text-lg font-semibold text-[var(--text-primary)]">Create Recipe</h2>
  {formMessage ? (
- <p className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-800 dark:border-green-800 dark:bg-green-950/30">
+ <p className={`rounded-md px-3 py-2 text-sm ${ds.successCallout}`}>
  {formMessage}
  </p>
  ) : null}
  {formError ? (
- <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+ <p className={`rounded-md px-3 py-2 text-sm ${ds.warnCallout}`}>
  {formError}
  </p>
  ) : null}
@@ -416,7 +416,7 @@ export function RecipeForm({ profileTargets = null }: RecipeFormProps) {
  value={ingredient.quantity}
  onChange={(event) => updateIngredient(ingredient.id,"quantity", event.target.value)}
  className={`h-10 rounded-md border px-3 text-sm ${
- qtyError ?"border-amber-400 bg-amber-50/50" :"border-[var(--border-default)]"
+ qtyError ?"border-[var(--semantic-warn-border)] bg-[var(--semantic-warn-bg)]/50" :"border-[var(--border-default)]"
  }`}
  />
  <select
@@ -442,7 +442,7 @@ export function RecipeForm({ profileTargets = null }: RecipeFormProps) {
  </div>
  {weightHint ? <p className="text-xs text-[var(--text-muted)] md:pl-1">{weightHint}</p> : null}
  {qtyError ? (
- <p className="text-xs text-amber-700 md:pl-1">{qtyError}</p>
+ <p className="text-xs text-[var(--semantic-warn-text)] md:pl-1">{qtyError}</p>
  ) : null}
  {(lineMeta?.matchHint || lineMeta?.unknown) && ingredient.name.trim() ? (
  <p className="text-xs text-[var(--text-muted)] md:pl-1">
@@ -470,7 +470,7 @@ export function RecipeForm({ profileTargets = null }: RecipeFormProps) {
  className={`mt-2 flex items-center gap-2 rounded-lg border px-3 py-2 text-xs ${
  fruitAndVegCount >= 2
  ?"border-[var(--brand-primary)] bg-[var(--surface-brand-subtle)] text-[var(--brand-primary)]"
- :"border-amber-200 bg-amber-50 text-amber-700"
+ :"border-[var(--semantic-warn-border)] bg-[var(--semantic-warn-bg)] text-[var(--semantic-warn-text)]"
  }`}
  >
  <span>{fruitAndVegCount} fruit/veg</span>

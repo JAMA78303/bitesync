@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Logo } from "@/components/shared/Logo";
 import { requestPasswordReset } from "@/app/(auth)/reset/actions";
 import { AuthSubmitButton } from "@/components/shared/AuthSubmitButton";
+import { ds } from "@/lib/ui/classes";
 
 export default async function ResetPage({
  searchParams,
@@ -21,12 +22,12 @@ export default async function ResetPage({
  </div>
  </div>
  {success ? (
- <p className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-800">
+ <p className={`rounded-md px-3 py-2 text-sm ${ds.successCallout}`}>
  {success}
  </p>
  ) : null}
  {error ? (
- <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+ <p className={`rounded-md px-3 py-2 text-sm ${ds.warnCallout}`}>
  {error}
  </p>
  ) : null}

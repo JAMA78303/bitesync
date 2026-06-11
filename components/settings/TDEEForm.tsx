@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertTriangle, Calculator, Info, Loader2, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ds } from "@/lib/ui/classes";
 import { useToast } from "@/components/ui/use-toast";
 import { saveTDEEProfile } from "@/lib/supabase/profile";
 import {
@@ -249,7 +250,7 @@ export function TDEEForm({ defaultValues }: Props) {
  </>
  )}
  {form.formState.errors.weightKg ? (
- <p className="mt-1 text-xs text-red-500">{form.formState.errors.weightKg.message}</p>
+ <p className={`mt-1 text-xs ${ds.errorText}`}>{form.formState.errors.weightKg.message}</p>
  ) : null}
  </div>
 
@@ -351,7 +352,7 @@ export function TDEEForm({ defaultValues }: Props) {
  </>
  )}
  {form.formState.errors.heightCm ? (
- <p className="mt-1 text-xs text-red-500">{form.formState.errors.heightCm.message}</p>
+ <p className={`mt-1 text-xs ${ds.errorText}`}>{form.formState.errors.heightCm.message}</p>
  ) : null}
  </div>
  </div>
@@ -384,7 +385,7 @@ export function TDEEForm({ defaultValues }: Props) {
  max="100"
  onKeyDown={(e) => ["e","E","+","-"].includes(e.key) && e.preventDefault()}
  />
- {form.formState.errors.age ? <p className="mt-1 text-xs text-red-500">{form.formState.errors.age.message}</p> : null}
+ {form.formState.errors.age ? <p className={`mt-1 text-xs ${ds.errorText}`}>{form.formState.errors.age.message}</p> : null}
  </div>
  <div>
  <label className="mb-1.5 block text-sm font-medium text-[var(--text-secondary)]">Sex</label>
@@ -397,7 +398,7 @@ export function TDEEForm({ defaultValues }: Props) {
  <option value="male">Male</option>
  <option value="female">Female</option>
  </select>
- {form.formState.errors.sex ? <p className="mt-1 text-xs text-red-500">{form.formState.errors.sex.message}</p> : null}
+ {form.formState.errors.sex ? <p className={`mt-1 text-xs ${ds.errorText}`}>{form.formState.errors.sex.message}</p> : null}
  </div>
  </div>
 
@@ -416,7 +417,7 @@ export function TDEEForm({ defaultValues }: Props) {
  ))}
  </select>
  {form.formState.errors.activityLevel ? (
- <p className="mt-1 text-xs text-red-500">{form.formState.errors.activityLevel.message}</p>
+ <p className={`mt-1 text-xs ${ds.errorText}`}>{form.formState.errors.activityLevel.message}</p>
  ) : null}
  </div>
 
@@ -438,11 +439,11 @@ export function TDEEForm({ defaultValues }: Props) {
  </option>
  ))}
  </select>
- {form.formState.errors.goal ? <p className="mt-1 text-xs text-red-500">{form.formState.errors.goal.message}</p> : null}
+ {form.formState.errors.goal ? <p className={`mt-1 text-xs ${ds.errorText}`}>{form.formState.errors.goal.message}</p> : null}
  </div>
 
  {bmiPreview != null && bmiPreview > 0 && !isSafeToLoseWeight(bmiPreview) ? (
- <div className="flex gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-red-900 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-100">
+ <div className={`flex gap-3 rounded-xl p-4 ${ds.errorCallout}`}>
  <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden />
  <div className="space-y-1 text-sm">
  <p className="font-semibold">Weight loss not recommended</p>
@@ -464,11 +465,11 @@ export function TDEEForm({ defaultValues }: Props) {
  ) : null}
 
  {showLoseSafety && isSafeToLoseWeight(bmiPreview!) ? (
- <div className="flex gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-950 dark:border-emerald-900/50 dark:bg-emerald-950/35 dark:text-emerald-50">
- <Info className="mt-0.5 h-5 w-5 shrink-0 text-emerald-700" aria-hidden />
+ <div className={`flex gap-3 rounded-xl p-4 ${ds.successCallout}`}>
+ <Info className="mt-0.5 h-5 w-5 shrink-0 text-[var(--semantic-success-text)]" aria-hidden />
  <div className="text-sm">
- <p className="font-semibold text-emerald-900">NHS safe weight loss guideline</p>
- <p className="mt-1 text-xs leading-relaxed text-emerald-900/90 /90">
+ <p className="font-semibold text-[var(--semantic-success-text)]">NHS safe weight loss guideline</p>
+ <p className="mt-1 text-xs leading-relaxed text-[var(--semantic-success-text)]/90">
  We follow the NHS recommendation of up to about{""}
  <strong>0.5 kg loss per week</strong>. A <strong>500 kcal</strong> daily deficit is applied to your calorie
  target.
@@ -478,8 +479,8 @@ export function TDEEForm({ defaultValues }: Props) {
  ) : null}
 
  {floorHit && minCal != null ? (
- <div className="flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/35 dark:text-amber-50">
- <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" aria-hidden />
+ <div className={`flex gap-3 rounded-xl p-4 ${ds.warnCallout}`}>
+ <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--semantic-warn-text)]" aria-hidden />
  <p className="text-xs leading-relaxed">
  Your calculated target was below the minimum safe intake of <strong>{minCal} kcal/day</strong> for your sex.
  We&apos;ve set your target to <strong>{minCal} kcal</strong>. Consult your GP before going lower.
@@ -488,7 +489,7 @@ export function TDEEForm({ defaultValues }: Props) {
  ) : null}
 
  {preview ? (
- <div className="space-y-3 rounded-xl border border-[var(--brand-primary)] bg-[var(--surface-brand-subtle)] p-4 dark:border-emerald-900/40 dark:bg-emerald-950/30">
+ <div className="space-y-3 rounded-xl border border-[var(--brand-primary)] bg-[var(--surface-brand-subtle)] p-4">
  <div className="flex items-center gap-2">
  <Calculator className="h-4 w-4 text-[var(--brand-primary)]" />
  <span className="text-sm font-semibold text-[var(--brand-primary)]">Your estimates</span>

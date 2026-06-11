@@ -108,7 +108,7 @@ export function RecipeListCard({
  onClick={handleQuickDelete}
  disabled={quickDeleteDisabled}
  aria-label={`Delete ${recipe.name}`}
- className="flex h-11 w-11 items-center justify-center rounded-full text-[var(--text-muted)] transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-40 dark:hover:bg-red-950/30 dark:hover:text-red-400"
+ className="flex h-11 w-11 items-center justify-center rounded-full text-[var(--text-muted)] transition-colors hover:bg-[var(--semantic-error-bg)] hover:text-[var(--semantic-error-text)] disabled:opacity-40"
  >
  <X className="h-5 w-5" strokeWidth={2.25} />
  </button>
@@ -121,8 +121,8 @@ export function RecipeListCard({
  aria-pressed={isFavourite}
  className={`flex h-11 w-11 items-center justify-center rounded-full transition-colors ${
  isFavourite
- ?"text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
- :"text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-red-400"
+ ?"text-[var(--traffic-red)] hover:bg-[var(--semantic-error-bg)]"
+ :"text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--traffic-red)]"
  }`}
  >
  <Heart className={`h-5 w-5 ${isFavourite ?"fill-current" :""}`} strokeWidth={2} />

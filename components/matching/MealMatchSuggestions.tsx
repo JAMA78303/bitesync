@@ -73,7 +73,7 @@ export function MealMatchSuggestions({ title, emptyHint, onSuggest, sourceLabel 
  </button>
  </div>
 
- {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
+ {error ? <p className={`text-sm ${ds.errorText}`}>{error}</p> : null}
 
  {!result && !error ? (
  <p className="text-xs text-[var(--text-muted)]">{emptyHint}</p>
@@ -81,7 +81,7 @@ export function MealMatchSuggestions({ title, emptyHint, onSuggest, sourceLabel 
 
  {result?.usedFallback ? (
  <div className="space-y-2">
- <p className="text-xs text-amber-700 dark:text-amber-300">
+ <p className="text-xs text-[var(--semantic-warn-text)]">
  No strong overlap with {result.availableCount} ingredient
  {result.availableCount === 1 ?"" :"s"} — here are recipes from your library to try:
  </p>

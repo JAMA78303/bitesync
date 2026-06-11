@@ -39,19 +39,19 @@ export function DeficiencyRecommendations({ deficiencies, excesses }: Props) {
  return (
  <div
  key={nutrient.key}
- className="rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-900/60 dark:bg-red-950/30"
- >
+            className={`${ds.errorCallout} rounded-xl p-4`}
+          >
  <div className="mb-2 flex items-start gap-2">
- <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" />
- <div>
- <p className="text-sm font-semibold text-red-700 dark:text-red-300">Low {nutrient.label}</p>
- <p className="mt-0.5 text-xs text-red-600 dark:text-red-400">
+              <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-semibold">Low {nutrient.label}</p>
+                <p className="mt-0.5 text-xs opacity-80">
  {nutrient.pct_label} — below 70% of daily target
  </p>
  </div>
  </div>
  {richFoods.length > 0 ? (
- <p className="ml-6 text-xs text-red-600 dark:text-red-400">
+              <p className="ml-6 text-xs opacity-80">
  Add more: <span className="font-medium">{richFoods.slice(0, 3).join(",")}</span>
  </p>
  ) : null}

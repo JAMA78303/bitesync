@@ -160,7 +160,7 @@ export default async function SettingsPage() {
  <form action={logout}>
  <button
  type="submit"
- className="w-full rounded-2xl border border-red-100 bg-red-50 py-3.5 text-sm font-semibold text-red-500 dark:border-red-900 dark:bg-red-950/20"
+ className="w-full rounded-2xl border border-[var(--semantic-error-border)] bg-[var(--semantic-error-bg)] py-3.5 text-sm font-semibold text-[var(--semantic-error-text)]"
  >
  Sign out
  </button>

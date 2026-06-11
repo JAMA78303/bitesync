@@ -9,6 +9,8 @@ export type ClaudeRecipeLibraryItem = {
   protein_g: number | null;
   carbs_g: number | null;
   fat_g: number | null;
+  /** Main ingredient names — lets the model reason about micronutrient coverage. */
+  ingredients?: string[];
 };
 
 export type ClaudeMealPlanDay = {
@@ -42,6 +44,8 @@ export type GenerateMealPlanParams = {
   /** Full sentence from buildDietaryConstraints — inserted before meal suggestions. */
   dietaryConstraintsLine?: string;
   allergies: string[];
+  /** Foods rich in the user's under-target micronutrients — prefer recipes containing them. */
+  microPriorityFoods?: string[];
 };
 
 function requireApiKey(): string {
@@ -96,8 +100,9 @@ CRITICAL RULES:
 - Never invent or suggest recipes not in the library
 - Always respect dietary flags and allergies
 - Aim to hit calorie target within ±7% or ±150 kcal per day (whichever is tighter); week average within ±5%
-- Add a snack (100–350 kcal) on days where breakfast+lunch+dinner fall below target; leave snack null when already on target
+- EVERY day must fill EVERY snack slot with a snack-sized recipe (100–350 kcal). Plan mains smaller so snacks fit inside the calorie band — do not return null snacks unless the library has no snack-sized recipes at all
 - Maximise protein where possible
+- Favour recipes whose ingredients cover the listed micronutrient-priority foods; spread them across the week
 - Vary meals across the week
 - Return ONLY valid JSON, no explanation, no markdown
 
@@ -126,6 +131,7 @@ ${JSON.stringify(
     protein_g: r.protein_g,
     carbs_g: r.carbs_g,
     fat_g: r.fat_g,
+    ...(r.ingredients?.length ? { ingredients: r.ingredients } : {}),
   })),
   null,
   2,
@@ -134,6 +140,11 @@ ${JSON.stringify(
 MY DAILY TARGETS:
   Calories: ${params.dailyCalorieTarget} kcal
   Protein: ${params.dailyProteinTarget}g
+${
+  params.microPriorityFoods?.length
+    ? `\nMICRONUTRIENT PRIORITIES:\n  My week is currently low on micronutrients found in: ${params.microPriorityFoods.join(", ")}.\n  Prefer recipes containing these ingredients when calories and protein allow.\n`
+    : ""
+}
 
 DIETARY REQUIREMENTS:
   Vegan: ${params.dietaryFlags.isVegan}

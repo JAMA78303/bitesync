@@ -27,6 +27,7 @@ import {
 import { buildDietaryConstraints, dietaryPreferencesToLegacyFlags, parseDietaryPreferences } from "@/lib/dietary/constraints";
 import {
   DEFAULT_SNACK_MICRO_PRIORITIES,
+  MICRO_RICH_FOODS,
   microPrioritiesFromDeficiencies,
   scoreRecipeMicroBoost,
   type MicroPriority,
@@ -40,7 +41,8 @@ import {
   buildSnackLibraryNotice,
   calorieGoalBiasFromProfile,
   dayCaloriesFromRows,
-  mainMealSlotSpecs,
+  ensureDailySnackCoverage,
+  plannerSlotSpecs,
   tuneDayTowardCalorieBand,
   tuneWeekAvgTowardBand,
   type CalorieGoalBias,
@@ -215,6 +217,20 @@ async function replacePlanDaysWithClaudePlan(
     pool,
     calById,
     allowedRecipeIds,
+    tuneDay,
+    microPriorities: DEFAULT_SNACK_MICRO_PRIORITIES,
+    snackCountPerDay,
+  });
+  ensureDailySnackCoverage({
+    rows: rows as PlanCalorieRow[],
+    days: selectedDays,
+    pool,
+    calById,
+    mealPlanId,
+    dailyTarget: dailyCalorieTarget,
+    snackCountPerDay,
+    allowedRecipeIds,
+    snackMicroPriorities: DEFAULT_SNACK_MICRO_PRIORITIES,
     tuneDay,
   });
 
@@ -435,12 +451,23 @@ function enforceAiMealSlotSeparation(
 }
 
 /** Higher is better: overshooting calories/protein is penalised more on deficit goals. */
+/** Distinct micro-rich foods for the user's priority nutrients — context for the Claude prompt. */
+function microPriorityFoodList(priorities: MicroPriority[]): string[] {
+  const foods = new Set<string>();
+  for (const { key } of priorities) {
+    for (const food of MICRO_RICH_FOODS[key] ?? []) {
+      foods.add(food);
+    }
+  }
+  return [...foods].slice(0, 12);
+}
+
 function scoreRecipeForDaySlot(
   r: RecipeWithNutrition,
   targetSlot: MealPlanInsertRow["meal_type"],
   targetCal: number,
   targetPro: number,
-  snackMicroPriorities?: MicroPriority[],
+  microPriorities?: MicroPriority[],
   goalBias: CalorieGoalBias = "neutral",
 ): number {
   const cal = r.calories;
@@ -460,8 +487,10 @@ function scoreRecipeForDaySlot(
   const types = classifyRecipeMealType(r.name, r.ingredientNames ?? []);
   const mult = getMealTypeMultiplier(types, targetSlot);
   baseScore *= mult;
-  if (targetSlot === "snack" && snackMicroPriorities?.length) {
-    baseScore += scoreRecipeMicroBoost(r.ingredientNames ?? [], snackMicroPriorities);
+  if (microPriorities?.length) {
+    // Snacks lean into micro coverage; mains get half weight so macros stay dominant.
+    const boost = scoreRecipeMicroBoost(r.ingredientNames ?? [], microPriorities);
+    baseScore += targetSlot === "snack" ? boost : boost * 0.5;
   }
   return baseScore;
 }
@@ -951,7 +980,9 @@ async function generateAIWeekPlanInner(input: GenerateAIWeekPlanInput) {
     protein_g: r.protein,
     carbs_g: r.carbs_g,
     fat_g: r.fat_g,
+    ingredients: (r.ingredientNames ?? []).slice(0, 8),
   }));
+  const microPriorityFoods = microPriorityFoodList(snackMicroPriorities);
 
   const allowedIds = new Set(allRecipes.map((r) => r.id));
   const dietContext = dietaryFlagsFromProfile(profile, input.goals);
@@ -973,6 +1004,7 @@ async function generateAIWeekPlanInner(input: GenerateAIWeekPlanInput) {
         dietaryFlags: dietContext.flags,
         dietaryConstraintsLine: dietContext.dietaryConstraintsLine || undefined,
         allergies: input.goals.allergens ?? [],
+        microPriorityFoods,
       });
       if (aiPlan?.plan?.length) {
         const applied = await replacePlanDaysWithClaudePlan(
@@ -1010,7 +1042,7 @@ async function generateAIWeekPlanInner(input: GenerateAIWeekPlanInput) {
     const rows: MealPlanInsertRow[] = [];
     const calById = new Map(pool.map((r) => [r.id, r.calories]));
     const proById = new Map(pool.map((r) => [r.id, r.protein]));
-    const slotPlan = mainMealSlotSpecs();
+    const slotPlan = plannerSlotSpecs(snackCountPerDay);
     const strictAffordableMisses = { count: 0 };
     const bandMax = dailyCalorieBand(dailyCalorieTarget).max;
 
@@ -1125,6 +1157,20 @@ async function generateAIWeekPlanInner(input: GenerateAIWeekPlanInput) {
       pool,
       calById,
       allowedRecipeIds: allowedIds,
+      tuneDay,
+      microPriorities: snackMicroPriorities,
+      snackCountPerDay,
+    });
+    ensureDailySnackCoverage({
+      rows: rows as PlanCalorieRow[],
+      days: selectedDaysFullWeek,
+      pool,
+      calById,
+      mealPlanId: input.mealPlanId,
+      dailyTarget: dailyCalorieTarget,
+      snackCountPerDay,
+      allowedRecipeIds: allowedIds,
+      snackMicroPriorities,
       tuneDay,
     });
 
@@ -1376,6 +1422,7 @@ export async function generateAIBasketForWeek(input: GenerateAIBasketInput) {
     protein_g: r.protein,
     carbs_g: r.carbs_g,
     fat_g: r.fat_g,
+    ingredients: (r.ingredientNames ?? []).slice(0, 8),
   }));
   const allowedIds = new Set(allRecipes.map((r) => r.id));
   const dietContext = dietaryFlagsFromProfile(profile, input.goals);
@@ -1398,6 +1445,7 @@ export async function generateAIBasketForWeek(input: GenerateAIBasketInput) {
         dietaryFlags: dietContext.flags,
         dietaryConstraintsLine: dietContext.dietaryConstraintsLine || undefined,
         allergies: input.goals.allergens ?? [],
+        microPriorityFoods: microPriorityFoodList(DEFAULT_SNACK_MICRO_PRIORITIES),
       });
       if (aiPlan?.plan?.length) {
         const applied = await replacePlanDaysWithClaudePlan(

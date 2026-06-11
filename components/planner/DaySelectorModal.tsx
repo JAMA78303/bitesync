@@ -125,7 +125,7 @@ export function DaySelectorModal({ open, onClose, mealPlanId, weekStart, filledD
  <span className="text-2xs font-semibold uppercase tracking-wide">
  {DAY_NAMES[day].slice(0, 3)}
  </span>
- <span className={`mt-1 text-2xs ${isSelected ?"text-green-200" :"text-[var(--text-muted)]"}`}>
+ <span className={`mt-1 text-2xs ${isSelected ?"text-[var(--header-stat-accent)]" :"text-[var(--text-muted)]"}`}>
  {hasMeals ?"planned" :"empty"}
  </span>
  </button>
@@ -137,7 +137,7 @@ export function DaySelectorModal({ open, onClose, mealPlanId, weekStart, filledD
  Select all
  </button>
  <span aria-hidden>·</span>
- <button type="button" onClick={() => setSelected([])} className="hover:text-red-500 hover:underline">
+ <button type="button" onClick={() => setSelected([])} className="hover:text-[var(--semantic-error-text)] hover:underline">
  Clear
  </button>
  </div>
@@ -179,7 +179,7 @@ export function DaySelectorModal({ open, onClose, mealPlanId, weekStart, filledD
  Select all
  </button>
  <span aria-hidden>·</span>
- <button type="button" onClick={() => setSelectedMeals([])} className="hover:text-red-500 hover:underline">
+ <button type="button" onClick={() => setSelectedMeals([])} className="hover:text-[var(--semantic-error-text)] hover:underline">
  Clear
  </button>
  </div>

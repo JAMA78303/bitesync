@@ -85,8 +85,8 @@ export function DietPreferencesForm({ initialValues }: Props) {
  <span className="mt-0.5 block text-xs text-[var(--text-muted)]">Avoid wheat, barley, rye</span>
  </span>
  </label>
- {error ? <p className="text-sm text-red-600">{error}</p> : null}
- {message ? <p className="text-sm text-green-700">{message}</p> : null}
+ {error ? <p className="text-sm text-[var(--semantic-error-text)]">{error}</p> : null}
+ {message ? <p className="text-sm text-[var(--semantic-success-text)]">{message}</p> : null}
  <button
  type="submit"
  disabled={isPending}

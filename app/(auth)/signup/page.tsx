@@ -11,7 +11,7 @@ export default async function SignupPage({
  const { error, success } = await searchParams;
 
  const successNode = success ? (
- <div className="mb-4 space-y-3 rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900 dark:border-green-800 dark:bg-green-950/30 dark:text-green-100">
+ <div className={`mb-4 space-y-3 rounded-2xl px-4 py-3 text-sm ${ds.successCallout}`}>
  <p>{success}</p>
  <p className="text-xs leading-relaxed">If nothing arrives in a few minutes, check your spam folder.</p>
  <Link href="/login" className="inline-flex text-sm font-semibold text-[var(--brand-primary)] underline">
