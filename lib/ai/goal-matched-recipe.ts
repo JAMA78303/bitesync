@@ -74,6 +74,8 @@ export type GoalMatchedRecipeOptions = {
   proteinAxis?: ProteinAxis;
   /** When set with mealSlot snack, draft ingredients rich in this nutrient key. */
   microFocusKey?: string;
+  /** Snack only: use dish-style templates (yoghurt bowl, PB banana, etc.), not legume+veg piles. */
+  composedSnackOnly?: boolean;
 };
 
 function clampTarget(kcal: number): number {
@@ -217,6 +219,107 @@ function defaultQuantityForRichFood(name: string): { quantity: number; unit: str
   return { quantity: 80, unit: "g" };
 }
 
+/** Dish-style snacks only — avoids chickpeas + carrots + oats style piles. */
+async function buildComposedSnackIngredientsRaw(
+  opts: GoalMatchedRecipeOptions,
+): Promise<RecipeIngredientInput[]> {
+  const target = clampTarget(opts.targetCalories);
+  const seed = opts.variantSeed;
+  const carb = opts.glutenFree
+    ? glutenFreeSnackCarbTune(seed)
+    : { name: "oats" as const, minG: 0, maxG: 40 };
+  const fruits = ["strawberries", "blueberries", "banana", "apple"] as const;
+  const fruit = fruits[pickVariant(seed, fruits.length)]!;
+
+  type Builder = () => Promise<RecipeIngredientInput[]>;
+  let builders: Builder[];
+
+  if (opts.vegan) {
+    builders = [
+      () =>
+        findBestCarbAdjustment(
+          [ing("peanut butter", 18, "g"), ing("banana", 100, "g"), ing("chia seeds", 8, "g")],
+          { name: "oats", minG: 15, maxG: 35 },
+          target,
+        ),
+      () =>
+        findBestCarbAdjustment(
+          [ing("tofu", 80, "g"), ing(fruit, 90, "g"), ing("almonds", 12, "g")],
+          carb,
+          target,
+        ),
+      () =>
+        findBestCarbAdjustment(
+          [ing("peanut butter", 16, "g"), ing(fruit, 85, "g")],
+          { name: "oats", minG: 18, maxG: 42 },
+          target,
+        ),
+    ];
+  } else if (opts.vegetarian) {
+    builders = [
+      () =>
+        findBestCarbAdjustment(
+          [ing("greek yogurt", 120, "g"), ing(fruit, 90, "g"), ing("almonds", 12, "g")],
+          carb,
+          target,
+        ),
+      () =>
+        findBestCarbAdjustment(
+          [ing("cottage cheese", 100, "g"), ing("blueberries", 80, "g"), ing("walnuts", 10, "g")],
+          carb,
+          target,
+        ),
+      () =>
+        findBestCarbAdjustment(
+          [ing("egg", 2, "piece"), ing(fruit, 80, "g")],
+          carb,
+          target,
+        ),
+      () =>
+        findBestCarbAdjustment(
+          [ing("peanut butter", 18, "g"), ing("banana", 95, "g")],
+          { name: "oats", minG: 15, maxG: 38 },
+          target,
+        ),
+    ];
+  } else {
+    builders = [
+      () =>
+        findBestCarbAdjustment(
+          [ing("greek yogurt", 130, "g"), ing(fruit, 90, "g")],
+          carb,
+          target,
+        ),
+      () =>
+        findBestCarbAdjustment(
+          [ing("cottage cheese", 100, "g"), ing("strawberries", 85, "g"), ing("almonds", 12, "g")],
+          carb,
+          target,
+        ),
+      () =>
+        findBestCarbAdjustment(
+          [ing("egg", 2, "piece"), ing(fruit, 75, "g")],
+          carb,
+          target,
+        ),
+      () =>
+        findBestCarbAdjustment(
+          [ing("peanut butter", 18, "g"), ing("banana", 100, "g")],
+          { name: "oats", minG: 12, maxG: 38 },
+          target,
+        ),
+      () =>
+        findBestCarbAdjustment(
+          [ing("greek yogurt", 110, "g"), ing("blueberries", 80, "g"), ing("chia seeds", 8, "g")],
+          carb,
+          target,
+        ),
+    ];
+  }
+
+  return builders[pickVariant(seed, builders.length)]!();
+}
+
 async function buildMicroFocusedSnack(
   opts: GoalMatchedRecipeOptions,
   target: number,
@@ -254,7 +357,11 @@ async function buildGoalMatchedRecipeIngredientsRaw(
   const seed = opts.variantSeed;
   const pv = (modulo: number) => pickMealVariant(seed, modulo, opts.proteinAxis);
 
-  if (opts.mealSlot === "snack" && opts.microFocusKey) {
+  if (opts.mealSlot === "snack" && opts.composedSnackOnly) {
+    return buildComposedSnackIngredientsRaw(opts);
+  }
+
+  if (opts.mealSlot === "snack" && opts.microFocusKey && !opts.composedSnackOnly) {
     const focused = await buildMicroFocusedSnack(opts, target);
     if (focused) return focused;
   }

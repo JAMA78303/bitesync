@@ -42,6 +42,7 @@ import {
   calorieGoalBiasFromProfile,
   dayCaloriesFromRows,
   ensureDailySnackCoverage,
+  enforceDailyCalorieCeiling,
   plannerSlotSpecs,
   tuneDayTowardCalorieBand,
   tuneWeekAvgTowardBand,
@@ -231,6 +232,15 @@ async function replacePlanDaysWithClaudePlan(
     snackCountPerDay,
     allowedRecipeIds,
     snackMicroPriorities: DEFAULT_SNACK_MICRO_PRIORITIES,
+    tuneDay,
+  });
+  enforceDailyCalorieCeiling({
+    rows: rows as PlanCalorieRow[],
+    days: selectedDays,
+    pool,
+    calById,
+    dailyTarget: dailyCalorieTarget,
+    allowedRecipeIds,
     tuneDay,
   });
 
@@ -491,6 +501,14 @@ function scoreRecipeForDaySlot(
     // Snacks lean into micro coverage; mains get half weight so macros stay dominant.
     const boost = scoreRecipeMicroBoost(r.ingredientNames ?? [], microPriorities);
     baseScore += targetSlot === "snack" ? boost : boost * 0.5;
+  }
+  if (cal > 0 && r.carbs_g != null && r.fat_g != null) {
+    const carbKcal = r.carbs_g * 4;
+    const fatKcal = r.fat_g * 9;
+    const carbShare = carbKcal / cal;
+    const fatShare = fatKcal / cal;
+    if (targetSlot === "snack" && carbShare > 0.5) baseScore -= 6;
+    if (fatShare > 0.45 && goalBias !== "surplus") baseScore -= 4;
   }
   return baseScore;
 }
@@ -1171,6 +1189,15 @@ async function generateAIWeekPlanInner(input: GenerateAIWeekPlanInput) {
       snackCountPerDay,
       allowedRecipeIds: allowedIds,
       snackMicroPriorities,
+      tuneDay,
+    });
+    enforceDailyCalorieCeiling({
+      rows: rows as PlanCalorieRow[],
+      days: selectedDaysFullWeek,
+      pool,
+      calById,
+      dailyTarget: dailyCalorieTarget,
+      allowedRecipeIds: allowedIds,
       tuneDay,
     });
 

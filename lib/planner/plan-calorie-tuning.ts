@@ -113,6 +113,7 @@ function pickSnackForGap(
   snackMicroPriorities?: MicroPriority[],
 ): PlanRecipeMeta | null {
   const ideal = Math.min(Math.max(gapToMin, SNACK_MIN_CALORIES), SNACK_MAX_CALORIES);
+  const headroom = Math.max(bandMax - currentDayCal, 0);
   const candidates = pool.filter(
     (r) =>
       allowedRecipeIds.has(r.id) &&
@@ -120,6 +121,7 @@ function pickSnackForGap(
       !excludeFromMainMealSlots(r.name, r.ingredientNames ?? []) &&
       r.calories >= SNACK_MIN_CALORIES &&
       r.calories <= SNACK_MAX_CALORIES &&
+      r.calories <= headroom &&
       isRecipeAISnackAppropriate(r.calories, r.ingredientNames ?? []) &&
       currentDayCal + r.calories <= bandMax,
   );
@@ -128,7 +130,9 @@ function pickSnackForGap(
   const scored = candidates
     .map((r) => {
       const calDist = Math.abs(r.calories - ideal);
-      let score = -calDist;
+      // When headroom is tight, prefer lighter snacks so the day stays inside band.
+      const tightHeadroomBonus = headroom < 280 ? (SNACK_MAX_CALORIES - r.calories) * 0.25 : 0;
+      let score = -calDist + tightHeadroomBonus;
       if (snackMicroPriorities?.length) {
         score += scoreRecipeMicroBoost(r.ingredientNames ?? [], snackMicroPriorities);
       }
@@ -308,7 +312,27 @@ export function ensureDailySnackCoverage(opts: {
       const usedOnDay = new Set(
         opts.rows.filter((r) => r.day_of_week === day && r.recipe_id).map((r) => r.recipe_id),
       );
-      const idealGap = Math.max(opts.dailyTarget - current, SNACK_MIN_CALORIES);
+      const roomUnderMax = band.max - current;
+      if (roomUnderMax < SNACK_MIN_CALORIES) {
+        const swapped = swapMainMealForCalories(
+          opts.rows,
+          day,
+          opts.pool,
+          opts.calById,
+          "down",
+          Math.max(band.min - SNACK_MAX_CALORIES, 0),
+          band.max,
+          opts.allowedRecipeIds,
+        );
+        if (!swapped) break;
+        madeRoom = true;
+        continue;
+      }
+      // Prefer the smallest snack that fits remaining headroom, not a full gap-fill.
+      const idealGap = Math.min(
+        Math.max(band.min - current, SNACK_MIN_CALORIES),
+        roomUnderMax,
+      );
       const picked = pickSnackForGap(
         opts.pool,
         idealGap,
@@ -536,6 +560,35 @@ export function buildPlanCalorieAccuracyWarning(
     avgNote +
     " Add lighter or snack-sized recipes, or adjust portions."
   );
+}
+
+/** Last pass after snack coverage: pull any day still above the daily band max. */
+export function enforceDailyCalorieCeiling(opts: {
+  rows: PlanCalorieRow[];
+  days: number[];
+  pool: PlanRecipeMeta[];
+  calById: Map<string, number>;
+  dailyTarget: number;
+  allowedRecipeIds: Set<string>;
+  tuneDay: (day: number) => void;
+}): void {
+  const band = dailyCalorieBand(opts.dailyTarget);
+  for (const day of opts.days) {
+    for (let pass = 0; pass < 12; pass += 1) {
+      const cal = dayCaloriesFromRows(opts.rows, day, opts.calById);
+      if (cal <= band.max) break;
+      opts.tuneDay(day);
+      if (dayCaloriesFromRows(opts.rows, day, opts.calById) > band.max) {
+        // Remove highest-cal snack if tune could not swap mains down enough.
+        const snackIdx = [...opts.rows]
+          .map((r, i) => ({ r, i }))
+          .filter(({ r }) => r.day_of_week === day && r.meal_type === "snack")
+          .sort((a, b) => (b.r.slot_index ?? 0) - (a.r.slot_index ?? 0))[0]?.i;
+        if (snackIdx === undefined) break;
+        opts.rows.splice(snackIdx, 1);
+      }
+    }
+  }
 }
 
 export function buildSnackLibraryNotice(

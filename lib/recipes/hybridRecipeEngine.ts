@@ -22,6 +22,7 @@ import {
   type HardDietConstraints,
 } from "@/lib/recipes/bulkFillLibrary";
 import { inferDietLabelsFromIngredients } from "@/lib/recipes/inferDietLabels";
+import { isIngredientPileSnack } from "@/lib/recipes/snackRecipeQuality";
 
 export type HybridRecipeDraft = {
   name: string;
@@ -48,6 +49,8 @@ export type GenerateHybridRecipeInput = {
   useLlmMethod?: boolean;
   /** Snack slots only: bias ingredients toward foods rich in this nutrient key. */
   microFocusKey?: string;
+  /** Planner snacks: only persist when the full LLM recipe (title + steps) succeeds. */
+  requireFullLlmRecipe?: boolean;
 };
 
 const MAX_DEDUPE_RETRIES = 4;
@@ -63,6 +66,9 @@ export async function generateHybridRecipeDraft(
   const fraction = fractionForMealSlot(input.slot.mealSlot);
   const targetMealCalories = Math.round(input.targetDailyCalories * fraction);
 
+  const requireFullLlm =
+    input.requireFullLlmRecipe ?? input.slot.mealSlot === "snack";
+
   for (let attempt = 0; attempt < MAX_DEDUPE_RETRIES; attempt++) {
     const variantSeed = (input.slot.variantSeed ^ (attempt * 0x517cc1b7)) >>> 0;
 
@@ -74,7 +80,8 @@ export async function generateHybridRecipeDraft(
       glutenFree: flags.glutenFree,
       variantSeed,
       proteinAxis: flags.proteinAxis,
-      microFocusKey: input.microFocusKey,
+      microFocusKey: input.slot.mealSlot === "snack" ? undefined : input.microFocusKey,
+      composedSnackOnly: input.slot.mealSlot === "snack",
     });
 
     let name = buildGoalMatchedRecipeTitle(ingredients, input.slot.mealSlot);
@@ -90,6 +97,7 @@ export async function generateHybridRecipeDraft(
     let intro = `A balanced ${mealLabel(input.slot.mealSlot).toLowerCase()} built from your nutrition targets and UK-style portions.`;
     let steps = templateSteps;
     let source: HybridRecipeDraft["source"] = "db";
+    let fullLlmRecipe = false;
 
     if (input.useLlmMethod !== false) {
       const dietaryLine = buildDietaryConstraints(input.hard.dietaryPreferences);
@@ -106,7 +114,8 @@ export async function generateHybridRecipeDraft(
         steps = full.steps;
         workingIngredients = full.ingredients;
         source = "db+llm";
-      } else {
+        fullLlmRecipe = true;
+      } else if (!requireFullLlm) {
         const llm = await generateRecipeMethodWithLLM(
           name,
           ingredients,
@@ -119,6 +128,17 @@ export async function generateHybridRecipeDraft(
           source = "db+llm";
         }
       }
+    }
+
+    if (requireFullLlm && !fullLlmRecipe) {
+      continue;
+    }
+
+    if (
+      input.slot.mealSlot === "snack" &&
+      isIngredientPileSnack(name, workingIngredients, steps)
+    ) {
+      continue;
     }
 
     const description = formatDescriptionWithMethod(intro, steps);

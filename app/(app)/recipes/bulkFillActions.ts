@@ -124,6 +124,7 @@ export async function generateFillLibrarySlot(payload: {
     existing,
     acceptedInBatch: payload.acceptedDrafts,
     useLlmMethod: true,
+    requireFullLlmRecipe: payload.slot.mealSlot === "snack",
   });
 
   if (!draft) {

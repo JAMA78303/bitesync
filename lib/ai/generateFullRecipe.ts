@@ -102,6 +102,14 @@ ${JSON.stringify(input.seedIngredients, null, 2)}
 
 Target ~${input.targetCalories} kcal per serving.
 ${input.dietaryConstraintsLine ? `Dietary constraints (MUST obey): ${input.dietaryConstraintsLine}` : ""}
+${
+  input.mealSlot === "snack"
+    ? `
+This is a SNACK — it must be a recognisable dish someone would actually eat (e.g. "Berry yoghurt pot", "Peanut butter banana oats", "Cottage cheese & strawberry cup").
+Do NOT title it as a list of raw ingredients (never "Chickpeas & Carrots with Oats").
+Combine ingredients into one snack with 3–5 clear method steps (mix, layer, toast, etc.).`
+    : ""
+}
 
 Rules:
 - You may make small quantity adjustments and add only basic pantry seasonings (salt, pepper, herbs, a sensible amount of cooking oil).
