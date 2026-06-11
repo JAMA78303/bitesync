@@ -161,13 +161,6 @@ const BLOG_POSTS = [
   },
 ] as const;
 
-const HERO_STATS = [
-  { value: "±5%", label: "week-average calorie accuracy" },
-  { value: "12", label: "micronutrients analysed weekly" },
-  { value: "3", label: "UK supermarkets price-compared" },
-  { value: "1", label: "grocery list for your whole week" },
-] as const;
-
 function FeatureCard({
   Icon,
   title,
@@ -274,25 +267,12 @@ export default function LandingPage() {
               Evidence-based nutrition targets · Private by default · Free to start — no card needed
             </p>
             <div className="mt-10 hidden justify-center sm:flex">
-              <div className="relative z-10 -mb-20 drop-shadow-2xl">
+              <div className="relative z-10 drop-shadow-2xl">
                 <MockPlanner />
               </div>
             </div>
           </div>
         </header>
-
-        <section className="border-b border-[var(--border-subtle)] bg-[var(--surface-card)] px-4 pt-12 pb-10 sm:pt-28">
-          <dl className="mx-auto grid max-w-4xl grid-cols-2 gap-x-6 gap-y-8 text-center lg:grid-cols-4">
-            {HERO_STATS.map((stat) => (
-              <div key={stat.label} className="flex flex-col">
-                <dt className="order-last mx-auto mt-1 max-w-[180px] text-xs leading-snug text-[var(--text-muted)]">
-                  {stat.label}
-                </dt>
-                <dd className="text-3xl font-bold tracking-tight text-[var(--brand-primary)]">{stat.value}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
 
         <section id="how-it-works" className="scroll-mt-24 bg-[var(--surface-muted)] py-16 sm:py-20">
           <Reveal>
