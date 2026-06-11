@@ -5,7 +5,7 @@ function MiniRing() {
  const size = 44;
  const r = 16;
  const c = 2 * Math.PI * r;
- const p = 0.62;
+ const p = 0.92;
  const half = size / 2;
  return (
  <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="shrink-0" aria-hidden>
@@ -26,7 +26,7 @@ function MiniRing() {
  );
 }
 
-function MockToday() {
+export function MockToday() {
  return (
  <PhoneFrame label="BiteSync Today dashboard preview">
  <section className="bg-gradient-to-b from-[var(--header-from)] to-[var(--header-to)] px-3 pt-7 pb-3">
@@ -40,7 +40,7 @@ function MockToday() {
  <div>
  <p className="text-2xs text-[var(--text-muted)]">Calories</p>
  <p className="text-sm font-bold text-[var(--text-primary)]">
- 1,240 <span className="text-2xs font-normal text-[var(--text-muted)]">/ 2,000</span>
+ 1,850 <span className="text-2xs font-normal text-[var(--text-muted)]">/ 2,000</span>
  </p>
  </div>
  </div>
@@ -111,7 +111,7 @@ export function MockPlanner() {
  );
 }
 
-function MockGrocery() {
+export function MockGrocery() {
  const items = [
  { name:"Chicken breast", store:"Tesco", checked: true },
  { name:"Greek yoghurt", store:"Aldi", checked: true },
@@ -161,21 +161,3 @@ function MockGrocery() {
  );
 }
 
-export function LandingPhoneMockups() {
- return (
- <section className="flex items-end justify-center gap-3 px-4 sm:gap-6" aria-label="App screenshots">
- <div className="mb-0 hidden translate-y-6 sm:block">
- <MockToday />
- </div>
- <div className="z-10 -translate-y-4 scale-105 sm:scale-110">
- <MockPlanner />
- </div>
- <div className="mb-0 hidden translate-y-6 sm:block">
- <MockGrocery />
- </div>
- <div className="sm:hidden">
- <MockPlanner />
- </div>
- </section>
- );
-}
