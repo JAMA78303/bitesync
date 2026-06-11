@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangle, TrendingUp } from "lucide-react";
+import { ds } from "@/lib/ui/classes";
 import { GenerateMicroSnackButton } from "@/components/nutrition/GenerateMicroSnackButton";
 import { MICRO_RICH_FOODS } from "@/lib/nutrition/micro-rich-foods";
 import type { NutrientResult } from "@/lib/supabase/nutrition";
@@ -19,7 +20,7 @@ type Props = {
 export function DeficiencyRecommendations({ deficiencies, excesses }: Props) {
  if (!deficiencies.length && !excesses.length) {
  return (
- <div className="flex items-center gap-3 rounded-xl border border-[var(--brand-primary)] bg-[var(--surface-brand-subtle)] p-4 dark:border-green-900 dark:bg-green-950/40">
+ <div className="flex items-center gap-3 rounded-xl border border-[var(--brand-primary)] bg-[var(--surface-brand-subtle)] p-4 dark:border-[var(--semantic-success-border)] dark:bg-[var(--semantic-success-bg)]">
  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--btn-primary-bg)]">
  <TrendingUp className="h-4 w-4 text-[var(--text-on-brand)]" />
  </div>
@@ -64,7 +65,7 @@ export function DeficiencyRecommendations({ deficiencies, excesses }: Props) {
  return (
  <div
  key={nutrient.key}
- className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/60 dark:bg-amber-950/30"
+ className={ds.warnCallout + " p-4"}
  >
  <div className="mb-2 flex items-start gap-2">
  <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />

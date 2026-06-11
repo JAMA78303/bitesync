@@ -66,16 +66,16 @@ function NutrientRow({ nutrient }: { nutrient: NutrientResult }) {
 
  const colours = {
  green: {
- bar:"bg-green-500",
- badge:"bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300",
+ bar: ds.trafficGreen,
+ badge: "bg-[var(--semantic-success-bg)] text-[var(--semantic-success-text)]",
  },
  amber: {
- bar:"bg-amber-400",
- badge:"bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+ bar: ds.trafficAmber,
+ badge: "bg-[var(--semantic-warn-bg)] text-[var(--semantic-warn-text)]",
  },
  red: {
- bar:"bg-red-500",
- badge:"bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300",
+ bar: ds.trafficRed,
+ badge: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300",
  },
  }[traffic];
 
@@ -83,7 +83,7 @@ function NutrientRow({ nutrient }: { nutrient: NutrientResult }) {
  <div className="flex items-center gap-3">
  <div
  className={`h-2.5 w-2.5 flex-shrink-0 rounded-full ${
- traffic ==="green" ?"bg-green-500" : traffic ==="amber" ?"bg-amber-400" :"bg-red-500"
+ traffic === "green" ? ds.trafficGreen : traffic === "amber" ? ds.trafficAmber : ds.trafficRed
  }`}
  />
  <span className="w-28 flex-shrink-0 text-sm text-[var(--text-secondary)]">{label}</span>

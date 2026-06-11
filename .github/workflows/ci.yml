@@ -26,7 +26,15 @@ jobs:
             echo "::error::Hardcoded colour classes found — use theme tokens (var(--surface-*), etc.)"
             exit 1
           fi
+          TRAFFIC_PATTERN='bg-(amber|emerald|green)-[0-9]'
+          if rg -n "$TRAFFIC_PATTERN" components/planner lib/planner --glob '*.{tsx,ts}' 2>/dev/null; then
+            echo "::error::Hardcoded traffic/status colours in planner — use ds.traffic* or --semantic-* tokens"
+            exit 1
+          fi
           echo "Theme token guard passed"
+
+      - name: Plan calorie band verification
+        run: npx tsx scripts/verify-plan-calorie-bands.ts
 
       - name: Nutrition regression tests
         run: npm run test:nutrition

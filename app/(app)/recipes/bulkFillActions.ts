@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { randomInt } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
 import type { RecipeIngredientInput } from "@/lib/nutrition/calculate";
-import { calculateRecipeNutritionWithMeta } from "@/lib/nutrition/asyncTotals";
 import { getDailyCalorieTarget } from "@/lib/utils/nutrition-targets";
 import { getProfile } from "@/lib/supabase/profile";
 import { canCreateRecipe, getRecipeCount, getUserTier } from "@/lib/subscription";
@@ -18,6 +17,7 @@ import {
   type ExistingLibrarySnapshot,
 } from "@/lib/recipes/bulkFillLibrary";
 import { generateHybridRecipeDraft, type HybridRecipeDraft } from "@/lib/recipes/hybridRecipeEngine";
+import { insertGeneratedRecipe } from "@/lib/recipes/saveGeneratedRecipe";
 import type { ActionResult } from "@/types";
 
 function toTitleCase(value: string): string {
@@ -137,6 +137,7 @@ export type BulkSaveRecipeInput = {
   name: string;
   description: string;
   ingredients: RecipeIngredientInput[];
+  steps?: string[];
   fitsVegetarian?: boolean;
   fitsVegan?: boolean;
   fitsGlutenFree?: boolean;
@@ -187,68 +188,23 @@ export async function saveFillLibraryRecipes(
       break;
     }
 
-    const { data: row, error: recipeError } = await supabase
-      .from("recipes")
-      .insert({
-        user_id: user.id,
-        name,
-        description: recipe.description.trim() || null,
-        servings: 1,
-        fits_vegetarian: recipe.fitsVegetarian === true ? true : null,
-        fits_vegan: recipe.fitsVegan === true ? true : null,
-        fits_gluten_free: recipe.fitsGlutenFree === true ? true : null,
-        source_type: "generated",
-      })
-      .select("id")
-      .single();
-
-    if (recipeError || !row) {
-      failed.push({ name, error: recipeError?.message ?? "Insert failed" });
-      continue;
-    }
-
-    const { totals, estimatedFlags, cofidMeta } = await calculateRecipeNutritionWithMeta(ingredients, {
-      aiEnabled: true,
+    const inserted = await insertGeneratedRecipe(supabase, user.id, {
+      name,
+      description: recipe.description.trim() || null,
+      ingredients,
+      steps: recipe.steps,
+      recipeSource: "ai",
+      fitsVegetarian: recipe.fitsVegetarian === true ? true : null,
+      fitsVegan: recipe.fitsVegan === true ? true : null,
+      fitsGlutenFree: recipe.fitsGlutenFree === true ? true : null,
     });
 
-    const ingredientRows = ingredients.map((ingredient, i) => ({
-      recipe_id: row.id,
-      name: toTitleCase(ingredient.name.trim()),
-      quantity: ingredient.quantity,
-      unit: (ingredient.unit ?? "").trim(),
-      nutrition_estimated: estimatedFlags[i] ?? false,
-      cofid_food_name: cofidMeta[i]?.cofid_food_name ?? null,
-      cofid_matched_by: cofidMeta[i]?.cofid_matched_by ?? null,
-    }));
-
-    const { error: ingError } = await supabase.from("recipe_ingredients").insert(ingredientRows);
-    if (ingError) {
-      failed.push({ name, error: ingError.message });
+    if (!inserted) {
+      failed.push({ name, error: "Insert failed" });
       continue;
     }
 
-    const { error: nutritionError } = await supabase.from("recipe_nutrition").upsert(
-      {
-        recipe_id: row.id,
-        calories: totals.calories,
-        protein_g: totals.protein_g,
-        carbs_g: totals.carbs_g,
-        fat_g: totals.fat_g,
-        fibre_g: totals.fibre_g,
-        sugar_g: totals.sugar_g,
-        sodium_mg: totals.sodium_mg,
-        saturated_fat_g: totals.saturated_fat_g,
-        coverage_pct: totals.coverage_pct,
-      },
-      { onConflict: "recipe_id" },
-    );
-
-    if (nutritionError) {
-      failed.push({ name, error: nutritionError.message });
-      continue;
-    }
-
-    saved.push({ id: row.id, name });
+    saved.push({ id: inserted.id, name });
   }
 
   revalidatePath("/recipes");

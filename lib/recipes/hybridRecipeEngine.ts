@@ -5,6 +5,7 @@ import {
   mealLabel,
   type GoalMealSlot,
 } from "@/lib/ai/goal-matched-recipe";
+import { generateFullRecipeFromIngredients } from "@/lib/ai/generateFullRecipe";
 import { generateRecipeMethodWithLLM } from "@/lib/ai/generateRecipeMethod";
 import { buildDietaryConstraints } from "@/lib/dietary/constraints";
 import type { RecipeIngredientInput } from "@/lib/nutrition/calculate";
@@ -73,7 +74,7 @@ export async function generateHybridRecipeDraft(
       proteinAxis: flags.proteinAxis,
     });
 
-    const name = buildGoalMatchedRecipeTitle(ingredients, input.slot.mealSlot);
+    let name = buildGoalMatchedRecipeTitle(ingredients, input.slot.mealSlot);
     const draftCheck = { name, ingredients };
     if (
       isDuplicateDraft(draftCheck, input.existing, input.acceptedInBatch)
@@ -81,6 +82,7 @@ export async function generateHybridRecipeDraft(
       continue;
     }
 
+    let workingIngredients = ingredients;
     const templateSteps = buildMethodStepsFromIngredients(ingredients, input.slot.mealSlot);
     let intro = `A balanced ${mealLabel(input.slot.mealSlot).toLowerCase()} built from your nutrition targets and UK-style portions.`;
     let steps = templateSteps;
@@ -88,28 +90,43 @@ export async function generateHybridRecipeDraft(
 
     if (input.useLlmMethod !== false) {
       const dietaryLine = buildDietaryConstraints(input.hard.dietaryPreferences);
-      const llm = await generateRecipeMethodWithLLM(
-        name,
-        ingredients,
-        input.slot.mealSlot,
-        dietaryLine,
-      );
-      if (llm) {
-        intro = llm.description;
-        steps = llm.steps;
+      const full = await generateFullRecipeFromIngredients({
+        mealSlot: input.slot.mealSlot,
+        seedIngredients: ingredients,
+        targetCalories: targetMealCalories,
+        dietaryConstraintsLine: dietaryLine,
+        bannedIngredientTerms: [],
+      });
+      if (full) {
+        name = full.title;
+        intro = full.description;
+        steps = full.steps;
+        workingIngredients = full.ingredients;
         source = "db+llm";
+      } else {
+        const llm = await generateRecipeMethodWithLLM(
+          name,
+          ingredients,
+          input.slot.mealSlot,
+          dietaryLine,
+        );
+        if (llm) {
+          intro = llm.description;
+          steps = llm.steps;
+          source = "db+llm";
+        }
       }
     }
 
     const description = formatDescriptionWithMethod(intro, steps);
-    const { totals } = await getRecipeNutritionTotals(ingredients, { aiEnabled: true });
-    const inferred = inferDietLabelsFromIngredients(ingredients);
+    const { totals } = await getRecipeNutritionTotals(workingIngredients, { aiEnabled: true });
+    const inferred = inferDietLabelsFromIngredients(workingIngredients);
 
     return {
       name,
       description,
       steps,
-      ingredients,
+      ingredients: workingIngredients,
       mealSlot: input.slot.mealSlot,
       targetMealCalories,
       achievedCalories: Math.round(totals.calories * 10) / 10,

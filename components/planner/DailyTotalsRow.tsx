@@ -1,6 +1,7 @@
 import {
   dailyCalorieBand,
 } from "@/lib/planner/calorie-bands";
+import { ds } from "@/lib/ui/classes";
 import {
   normalizeRecipeNutritionEmbed,
   type RecipeNutritionSummary,
@@ -19,12 +20,12 @@ function getBarColour(actual: number, target: number): string {
  if (actual >= min && actual <= max) return "bg-[var(--btn-primary-bg)]";
  if (actual > max) {
   const pct = (actual / target) * 100;
-  if (pct > 110) return "bg-red-500";
-  return "bg-amber-500";
+  if (pct > 110) return ds.trafficRed;
+  return ds.trafficAmber;
  }
  const pct = (actual / target) * 100;
- if (pct < 70) return "bg-red-400";
- return "bg-amber-400";
+ if (pct < 70) return ds.trafficRed;
+ return ds.trafficAmber;
 }
 
 export function DailyTotalsRow({ grid, dailyCalorieTarget, dailyProteinTarget }: Props) {

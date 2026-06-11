@@ -23,6 +23,10 @@ export type ProfileForTargets = {
   goal?: string | null;
   daily_calorie_target?: number | null;
   daily_protein_target?: number | null;
+  dietary_preferences?: unknown;
+  follows_vegetarian?: boolean | null;
+  follows_vegan?: boolean | null;
+  follows_gluten_free?: boolean | null;
 } | null;
 
 function macroSplitFromKcalProtein(kcal: number, protein: number): Pick<UserNutritionTargets, "carbs" | "fat" | "fibre"> {

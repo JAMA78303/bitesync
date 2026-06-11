@@ -46,6 +46,8 @@ import {
   type CalorieGoalBias,
   type PlanCalorieRow,
 } from "@/lib/planner/plan-calorie-tuning";
+import { autoFillSnackRecipesForPlan } from "@/lib/planner/snack-gap-fill";
+import type { ProfileForTargets } from "@/lib/utils/nutrition-targets";
 import {
   AI_BREAKFAST_BLOCKED,
   SNACK_MAX_CALORIES,
@@ -114,6 +116,8 @@ function plannerDayFromAiIndex(selectedDays: number[], slotDay: number, index: n
 
 async function replacePlanDaysWithClaudePlan(
   supabase: SupabaseClient,
+  userId: string,
+  profile: ProfileForTargets,
   mealPlanId: string,
   selectedDays: number[],
   aiPlan: ClaudeMealPlanResult,
@@ -200,6 +204,19 @@ async function replacePlanDaysWithClaudePlan(
     goalBias,
     tuneDay,
   );
+
+  await autoFillSnackRecipesForPlan({
+    supabase,
+    userId,
+    profile,
+    dailyTarget: dailyCalorieTarget,
+    days: selectedDays,
+    rows: rows as PlanCalorieRow[],
+    pool,
+    calById,
+    allowedRecipeIds,
+    tuneDay,
+  });
 
   const warning = buildPlanCalorieAccuracyWarning(
     selectedDays,
@@ -960,6 +977,8 @@ async function generateAIWeekPlanInner(input: GenerateAIWeekPlanInput) {
       if (aiPlan?.plan?.length) {
         const applied = await replacePlanDaysWithClaudePlan(
           supabase,
+          user.id,
+          profile,
           input.mealPlanId,
           selectedDaysFullWeek,
           aiPlan,
@@ -1095,6 +1114,19 @@ async function generateAIWeekPlanInner(input: GenerateAIWeekPlanInput) {
       goalBias,
       tuneDay,
     );
+
+    await autoFillSnackRecipesForPlan({
+      supabase,
+      userId: user.id,
+      profile,
+      dailyTarget: dailyCalorieTarget,
+      days: selectedDaysFullWeek,
+      rows: rows as PlanCalorieRow[],
+      pool,
+      calById,
+      allowedRecipeIds: allowedIds,
+      tuneDay,
+    });
 
     const mealOrder: Record<string, number> = { breakfast: 0, lunch: 1, dinner: 2, snack: 3 };
     const nameById = new Map(pool.map((r) => [r.id, r.name]));
@@ -1370,6 +1402,8 @@ export async function generateAIBasketForWeek(input: GenerateAIBasketInput) {
       if (aiPlan?.plan?.length) {
         const applied = await replacePlanDaysWithClaudePlan(
           supabase,
+          user.id,
+          profile,
           input.mealPlanId,
           selectedDays,
           aiPlan,

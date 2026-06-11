@@ -1,5 +1,6 @@
 import { Fragment } from "react";
 import { ChevronRight } from "lucide-react";
+import { LandingDemoShot } from "@/components/landing/LandingDemoShot";
 import { MockGrocery, MockPlanner, MockToday } from "@/components/landing/LandingPhoneMockups";
 
 const DEMO_BEATS = [
@@ -8,18 +9,24 @@ const DEMO_BEATS = [
     title: "Plan your week",
     caption: "Drop recipes onto the planner — daily calories and protein update as you build each day.",
     Mock: MockPlanner,
+    imageSrc: "/landing/planner.png",
+    imageAlt: "BiteSync weekly meal planner",
   },
   {
     step: "2",
     title: "Get one grocery list",
     caption: "Generate a merged shopping list from that exact week. Check items off as you shop.",
     Mock: MockGrocery,
+    imageSrc: "/landing/grocery.png",
+    imageAlt: "BiteSync grocery list",
   },
   {
     step: "3",
     title: "Hit your targets",
     caption: "Open Today to see your calorie ring, macro bars, and every meal against your goals.",
     Mock: MockToday,
+    imageSrc: "/landing/today.png",
+    imageAlt: "BiteSync Today dashboard",
   },
 ] as const;
 
@@ -37,7 +44,7 @@ export function LandingDemoFlow() {
       </div>
 
       <div className="flex flex-col items-center gap-8 lg:flex-row lg:items-start lg:justify-center lg:gap-6">
-        {DEMO_BEATS.map(({ step, title, caption, Mock }, index) => (
+        {DEMO_BEATS.map(({ step, title, caption, Mock, imageSrc, imageAlt }, index) => (
           <Fragment key={step}>
             <article className="flex w-full max-w-[260px] flex-col items-center">
               <div className="mb-4 flex items-center gap-2">
@@ -47,7 +54,7 @@ export function LandingDemoFlow() {
                 <h3 className="text-base font-semibold text-[var(--text-primary)]">{title}</h3>
               </div>
               <div className="mb-4 flex justify-center">
-                <Mock />
+                <LandingDemoShot src={imageSrc} alt={imageAlt} fallback={<Mock />} />
               </div>
               <p className="text-center text-sm leading-relaxed text-[var(--text-muted)]">{caption}</p>
             </article>

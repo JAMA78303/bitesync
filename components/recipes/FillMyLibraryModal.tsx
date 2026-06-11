@@ -143,6 +143,7 @@ export function FillMyLibraryModal({ onClose }: Props) {
  name: r.name,
  description: r.description,
  ingredients: r.ingredients,
+ steps: r.steps,
  fitsVegetarian: r.fitsVegetarian,
  fitsVegan: r.fitsVegan,
  fitsGlutenFree: r.fitsGlutenFree,

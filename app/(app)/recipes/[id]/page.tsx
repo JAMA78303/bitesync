@@ -24,7 +24,7 @@ export default async function RecipeDetailPage({ params }: RecipePageProps) {
  supabase
  .from("recipes")
  .select(
-"id,name,description,servings,source_url,source_domain,imported_at,detected_servings,cooking_for",
+"id,name,description,method_steps,servings,source_url,source_domain,imported_at,detected_servings,cooking_for",
  )
  .eq("id", id)
  .eq("user_id", user.id)

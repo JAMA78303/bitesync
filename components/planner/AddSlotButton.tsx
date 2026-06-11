@@ -39,7 +39,7 @@ export function AddSlotButton({ day, mealType, dayLabel, mealPlanId, slotIndex =
  type="button"
  onClick={() => setMode("quickadd")}
  aria-label={`Add ${mealType} for ${dayLabel}`}
- className="flex h-full min-h-[64px] w-full items-center justify-center rounded-lg border-2 border-dashed border-[var(--border-default)] text-[var(--text-on-brand-muted)] transition-all duration-150 hover:border-[var(--brand-primary)] hover:bg-[var(--surface-brand-subtle)] hover:text-[var(--brand-primary)] dark:hover:border-emerald-600 dark:hover:bg-emerald-950/30"
+ className="flex h-full min-h-[64px] w-full items-center justify-center rounded-lg border-2 border-dashed border-[var(--border-default)] text-[var(--text-on-brand-muted)] transition-all duration-150 hover:border-[var(--brand-primary)] hover:bg-[var(--surface-brand-subtle)] hover:text-[var(--brand-primary)] dark:hover:border-[var(--brand-primary)] dark:hover:bg-[var(--surface-brand-subtle)]"
  >
  <Plus className="h-4 w-4" />
  </button>
@@ -48,7 +48,7 @@ export function AddSlotButton({ day, mealType, dayLabel, mealPlanId, slotIndex =
  <button
  type="button"
  onClick={() => setMode("quickadd")}
- className="flex flex-1 items-center gap-2 px-3 text-xs text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-brand-subtle)] hover:text-[var(--brand-primary)] dark:hover:bg-emerald-950/40"
+ className="flex flex-1 items-center gap-2 px-3 text-xs text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-brand-subtle)] hover:text-[var(--brand-primary)] dark:hover:bg-[var(--surface-brand-subtle)]"
  >
  <PenLine className="h-3 w-3 shrink-0" />
  Quick add
@@ -56,7 +56,7 @@ export function AddSlotButton({ day, mealType, dayLabel, mealPlanId, slotIndex =
  <button
  type="button"
  onClick={() => onPickRecipe(day, mealType, slotIndex)}
- className="flex flex-1 items-center gap-2 px-3 text-xs text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-brand-subtle)] hover:text-[var(--brand-primary)] dark:hover:bg-emerald-950/40"
+ className="flex flex-1 items-center gap-2 px-3 text-xs text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-brand-subtle)] hover:text-[var(--brand-primary)] dark:hover:bg-[var(--surface-brand-subtle)]"
  >
  <BookOpen className="h-3 w-3 shrink-0" />
  From recipes

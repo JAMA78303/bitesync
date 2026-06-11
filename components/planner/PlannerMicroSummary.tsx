@@ -46,7 +46,7 @@ export function PlannerMicroSummary({ analysis, weekStartISO }: Props) {
  <div
  key={n.key}
  className={`h-2 w-2 rounded-full ${
- n.traffic ==="green" ?"bg-green-500" : n.traffic ==="amber" ?"bg-amber-400" :"bg-red-500"
+ n.traffic === "green" ? ds.trafficGreen : n.traffic === "amber" ? ds.trafficAmber : ds.trafficRed
  }`}
  />
  ))}

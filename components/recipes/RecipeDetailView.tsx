@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { CookingMode } from "@/components/recipes/CookingMode";
 import { MealThumbnail } from "@/components/ui/MealThumbnail";
+import { parseRecipeSteps } from "@/lib/recipes/parseRecipeSteps";
 import { getDietTag } from "@/lib/ui/dietTags";
 import { getDietTagStyle } from "@/lib/ui/dietTagStyles";
 import { formatIngredientWeightSuffix } from "@/lib/nutrition/convert";
@@ -23,6 +25,7 @@ type Props = {
  id: string;
  name: string;
  description: string | null;
+ method_steps?: string[] | null;
  servings: number | null;
  source_url: string | null;
  source_domain: string | null;
@@ -58,7 +61,14 @@ export function RecipeDetailView({
 }: Props) {
  const baseServings = Math.max(1, Number(recipe.servings ?? 1));
  const [servings, setServings] = useState(baseServings);
+ const [cookingOpen, setCookingOpen] = useState(false);
  const multiplier = servings / baseServings;
+ const methodSteps = useMemo(() => {
+  const fromColumn = Array.isArray(recipe.method_steps)
+   ? recipe.method_steps.map((s) => String(s).trim()).filter(Boolean)
+   : [];
+  return fromColumn.length ? fromColumn : parseRecipeSteps(recipe.description);
+ }, [recipe.method_steps, recipe.description]);
 
  const kcal = nutrition?.calories ?? 0;
  const protein = nutrition?.protein_g ?? 0;
@@ -171,9 +181,7 @@ export function RecipeDetailView({
  </span>
  ) : null}
  {ing.nutrition_estimated ? (
- <span className="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-xs text-amber-600">
- est.
- </span>
+ <span className={`${ds.estBadge} px-1.5 py-0.5`}>est.</span>
  ) : null}
  </div>
  </div>
@@ -182,8 +190,18 @@ export function RecipeDetailView({
  )}
  </div>
 
+ {methodSteps.length ? (
+ <button
+ type="button"
+ onClick={() => setCookingOpen(true)}
+ className={`${ds.primaryBtn} mb-3 w-full py-3.5`}
+ >
+ Cook
+ </button>
+ ) : null}
+
  <div className="flex gap-3">
- <Link href="/planner" className={`${ds.primaryBtn} flex-1 py-3.5 text-center`}>
+ <Link href="/planner" className={`${ds.secondaryBtn} flex-1 py-3.5 text-center`}>
  Add to planner
  </Link>
  <div className="flex gap-2">
@@ -196,6 +214,20 @@ export function RecipeDetailView({
  </div>
  </div>
  </div>
+
+ {cookingOpen ? (
+ <CookingMode
+ recipeName={recipe.name}
+ steps={methodSteps}
+ ingredients={ingredients.map((ing) => ({
+ name: ing.name,
+ quantity: Math.round(ing.quantity * multiplier * 100) / 100,
+ unit: ing.unit,
+ }))}
+ servings={servings}
+ onClose={() => setCookingOpen(false)}
+ />
+ ) : null}
  </div>
  );
 }
