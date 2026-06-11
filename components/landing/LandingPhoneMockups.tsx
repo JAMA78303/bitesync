@@ -118,39 +118,44 @@ export function MockGrocery() {
  { name:"Quinoa", store:"Asda", checked: false },
  { name:"Spinach", store:"Tesco", checked: false },
  ] as const;
- const storeColor: Record<string, string> = { Tesco:"#00539f", Asda:"#68a51c", Aldi:"#00005f" };
+ /** Dark enough for AA on surface-muted at text-xs (avoid white-on-brand at 10px). */
+ const storeBadge: Record<string, string> = {
+ Tesco: "text-[#003d75]",
+ Asda: "text-[#3d6610]",
+ Aldi: "text-[#00005f]",
+ };
 
  return (
  <PhoneFrame label="BiteSync grocery list preview">
  <header className="border-b border-[var(--border-subtle)] bg-[var(--surface-card)] px-3 pt-7 pb-2">
  <p className="text-xs font-bold text-[var(--text-primary)]">Grocery list</p>
- <p className="text-2xs text-[var(--text-muted)]">12 items · Mon–Sun</p>
+ <p className="text-xs text-[var(--text-secondary)]">12 items · Mon–Sun</p>
  </header>
  <ul className="space-y-1 px-2 py-2">
  {items.map((item) => (
  <li
  key={item.name}
  className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 ${
- item.checked ?"border-[var(--border-subtle)] bg-[var(--surface-muted)] opacity-70" :"border-[var(--border-subtle)] bg-[var(--surface-card)]"
+ item.checked ?"border-[var(--border-subtle)] bg-[var(--surface-muted)]" :"border-[var(--border-subtle)] bg-[var(--surface-card)]"
  }`}
  >
  <span
- className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border text-2xs ${
+ className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border text-xs leading-none ${
  item.checked ?"border-[var(--brand-primary)] bg-[var(--brand-primary)] text-[var(--text-on-brand)]" :"border-[var(--border-default)]"
  }`}
+ aria-hidden
  >
  {item.checked ?"✓" :""}
  </span>
  <span
- className={`min-w-0 flex-1 truncate text-2xs font-medium ${
- item.checked ?"text-[var(--text-muted)] line-through" :"text-[var(--text-secondary)]"
+ className={`min-w-0 flex-1 truncate text-xs font-medium ${
+ item.checked ?"text-[var(--text-secondary)] line-through" :"text-[var(--text-primary)]"
  }`}
  >
  {item.name}
  </span>
  <span
- className="rounded px-1 py-0.5 text-2xs font-bold text-[var(--text-on-brand)]"
- style={{ backgroundColor: storeColor[item.store] }}
+ className={`rounded bg-[var(--surface-muted)] px-1.5 py-0.5 text-xs font-semibold ${storeBadge[item.store]}`}
  >
  {item.store}
  </span>
