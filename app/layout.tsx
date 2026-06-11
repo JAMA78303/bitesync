@@ -12,36 +12,47 @@ const inter = Inter({
 
 export const metadata: Metadata = {
  title: {
- default:"BiteSync — Meal Planning & Grocery Sync",
- template:"%s | BiteSync",
+ default: "BiteSync — Plan meals to your macros",
+ template: "%s | BiteSync",
  },
  description:
-"Plan your meals, track your nutrition, and generate your grocery list automatically. BiteSync makes weekly meal planning effortless.",
+  "Plan your week, hit your protein and calorie targets, and get one grocery list — automatically. Free to start.",
  keywords: [
-"meal planner",
-"grocery list",
-"nutrition tracker",
-"macro calculator",
-"TDEE calculator",
-"meal planning app",
-"weekly meal plan",
+  "meal planner",
+  "macro meal plan",
+  "grocery list",
+  "nutrition tracker",
+  "macro calculator",
+  "TDEE calculator",
+  "meal planning app",
+  "weekly meal plan",
+  "protein target",
  ],
- authors: [{ name:"BiteSync" }],
- creator:"BiteSync",
+ authors: [{ name: "BiteSync" }],
+ creator: "BiteSync",
  metadataBase: new URL("https://bitesync.io"),
  openGraph: {
- type:"website",
- locale:"en_GB",
- url:"https://bitesync.io",
- siteName:"BiteSync",
- title:"BiteSync — Meal Planning & Grocery Sync",
- description:"Plan your meals, track your nutrition, and generate your grocery list automatically.",
- images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "BiteSync — meal planning and grocery sync" }],
+ type: "website",
+ locale: "en_GB",
+ url: "https://bitesync.io",
+ siteName: "BiteSync",
+ title: "BiteSync — Plan meals to your macros",
+ description:
+  "Plan your week, hit your protein and calorie targets, and get one grocery list — automatically.",
+ images: [
+  {
+   url: "/opengraph-image",
+   width: 1200,
+   height: 630,
+   alt: "BiteSync — your week of meals, planned to your macros",
+  },
+ ],
  },
  twitter: {
- card:"summary_large_image",
- title:"BiteSync — Meal Planning & Grocery Sync",
- description:"Plan your meals, track your nutrition, and generate your grocery list automatically.",
+ card: "summary_large_image",
+ title: "BiteSync — Plan meals to your macros",
+ description:
+  "Plan your week, hit your protein and calorie targets, and get one grocery list — automatically.",
  },
  /** Static files in `/public` — avoids dynamic icon routes failing on some hosts. */
  icons: {

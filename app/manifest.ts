@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "BiteSync",
     short_name: "BiteSync",
-    description: "Meal planning and grocery sync",
+    description: "Plan your week to your macro targets and generate your grocery list",
     start_url: "/planner",
     display: "standalone",
     background_color: "#ffffff",

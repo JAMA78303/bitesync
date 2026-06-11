@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "BiteSync — meal planning and grocery sync";
+export const alt = "BiteSync — plan meals to your macros";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -66,7 +66,7 @@ export default function OpenGraphImage() {
                   'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
               }}
             >
-              Meal planning & grocery sync
+              Plan meals to your macros
             </span>
           </div>
         </div>
