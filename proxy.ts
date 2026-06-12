@@ -79,6 +79,6 @@ export async function proxy(request: NextRequest) {
 /** Skip auth/session work for static icons so tabs & PWA installs always get assets. */
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon\\.ico|favicon-\\d+\\.png|icon\\.png|apple-touch-icon\\.png|bitesync-[a-z-]+\\.png|maskable-\\d+\\.png|manifest\\.webmanifest|opengraph-image|.*\\.svg$|api/webhooks).*)",
+    "/((?!_next/static|_next/image|favicon\\.ico|icon(?:\\?|$)|apple-icon(?:\\?|$)|favicon-\\d+\\.png|icon\\.png|apple-touch-icon\\.png|bitesync-[a-z-]+\\.png|maskable-\\d+\\.png|manifest\\.webmanifest|opengraph-image|.*\\.svg$|api/webhooks).*)",
   ],
 };
