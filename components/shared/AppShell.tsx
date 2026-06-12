@@ -23,12 +23,16 @@ export function AppShell({ children }: AppShellProps) {
  return (
  <div className="flex min-h-screen overflow-x-hidden bg-[var(--surface-muted)] text-[var(--text-primary)]">
  <Sidebar />
- <div className="flex w-full flex-1 flex-col">
- {!gradientHeader ? (
+ <div className="relative flex w-full flex-1 flex-col">
+ {gradientHeader ? (
+ <div className="pointer-events-none absolute inset-x-0 top-0 z-20 app-mobile-gutter pt-[max(0.75rem,env(safe-area-inset-top))] md:hidden">
+ <Logo size="sm" variant="icon" href="/today" className="pointer-events-auto" />
+ </div>
+ ) : (
  <header className="border-b border-[var(--border-default)] bg-[var(--surface-card)] px-4 py-3 md:hidden">
  <Logo size="sm" href="/today" />
  </header>
- ) : null}
+ )}
  <main
  className={`page-content flex-1 overflow-x-hidden md:p-8 md:pb-8 ${
  gradientHeader ?"p-0 md:p-8" :"app-mobile-gutter py-4 md:p-8"

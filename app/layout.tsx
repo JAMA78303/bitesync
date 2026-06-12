@@ -58,7 +58,11 @@ export const metadata: Metadata = {
  icons: {
  icon: [
  { url:"/favicon.ico", sizes:"16x16", type:"image/x-icon" },
+ { url:"/favicon-16.png", sizes:"16x16", type:"image/png" },
+ { url:"/favicon-32.png", sizes:"32x32", type:"image/png" },
  { url:"/icon.png", type:"image/png", sizes:"48x48" },
+ { url:"/favicon-192.png", sizes:"192x192", type:"image/png" },
+ { url:"/favicon-512.png", sizes:"512x512", type:"image/png" },
  ],
  shortcut:"/favicon.ico",
  apple: [{ url:"/apple-touch-icon.png", sizes:"180x180", type:"image/png" }],
@@ -75,6 +79,8 @@ export default function RootLayout({
  <html lang="en" suppressHydrationWarning className={`${inter.variable} ${inter.className} h-full antialiased`}>
  <head>
  <link rel="icon" href="/favicon.ico" sizes="any" />
+ <link rel="icon" href="/favicon-16.png" type="image/png" sizes="16x16" />
+ <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" />
  <link rel="icon" href="/icon.png" type="image/png" sizes="48x48" />
  <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
  <script

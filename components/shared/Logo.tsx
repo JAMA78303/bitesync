@@ -1,41 +1,62 @@
+import Image from "next/image";
 import Link from "next/link";
-import { Utensils } from "lucide-react";
 
 type Props = {
  size?:"sm" |"md" |"lg";
+ variant?:"full" |"icon";
  href?: string;
  className?: string;
 };
 
-export function Logo({ size ="md", href ="/planner", className }: Props) {
- const sizes = {
- sm: { icon:"h-4 w-4", text:"text-sm", gap:"gap-1.5", box:"h-6 w-6" },
- md: { icon:"h-5 w-5", text:"text-base", gap:"gap-2", box:"h-8 w-8" },
- lg: { icon:"h-7 w-7", text:"text-2xl", gap:"gap-2.5", box:"h-10 w-10" },
- } as const;
+const LOCKUP_WIDTH = 1450;
+const LOCKUP_HEIGHT = 456;
+const ICON_WIDTH = 448;
+const ICON_HEIGHT = 456;
 
- const s = sizes[size];
- const classes = `inline-flex items-center ${s.gap} ${className ??""}`.trim();
+const lockupHeights = {
+ sm: "h-7",
+ md: "h-9",
+ lg: "h-11",
+} as const;
 
- const content = (
- <>
- <span className={`flex flex-shrink-0 items-center justify-center rounded-lg bg-[var(--btn-primary-bg)] ${s.box}`}>
- <Utensils className={`${s.icon} text-[var(--text-on-brand)]`} aria-hidden="true" />
- </span>
- <span className={`font-semibold tracking-tight ${s.text}`}>
- <span className="text-[var(--brand-navy)] dark:text-[var(--text-primary)]">Bite</span>
- <span className="text-[var(--text-link)]">Sync</span>
- </span>
- </>
+const iconSizes = {
+ sm: "h-8 w-8",
+ md: "h-9 w-9",
+ lg: "h-11 w-11",
+} as const;
+
+export function Logo({ size ="md", variant ="full", href ="/planner", className }: Props) {
+ const wrapperClass = `inline-flex shrink-0 items-center ${className ?? ""}`.trim();
+ const image =
+ variant ==="icon" ? (
+ <Image
+ src="/bitesync-icon.png"
+ alt="BiteSync"
+ width={ICON_WIDTH}
+ height={ICON_HEIGHT}
+ className={`object-contain ${iconSizes[size]}`}
+ priority
+ unoptimized
+ />
+ ) : (
+ <Image
+ src="/bitesync-logo-full.png"
+ alt="BiteSync"
+ width={LOCKUP_WIDTH}
+ height={LOCKUP_HEIGHT}
+ className={`w-auto ${lockupHeights[size]}`}
+ priority
+ unoptimized
+ />
  );
 
  if (href) {
  return (
- <Link href={href} className={classes}>
- {content}
+ <Link href={href} className={wrapperClass}>
+ {image}
  </Link>
  );
  }
 
- return <span className={classes}>{content}</span>;
+ return <span className={wrapperClass}>{image}</span>;
 }
