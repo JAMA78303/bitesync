@@ -68,7 +68,7 @@ function rankRecipe(
 
 /**
  * Source-agnostic meal suggestions: rank saved recipes by ingredient overlap.
- * Used by pantry ("cook from what I have") and grocery leftovers (unchecked items).
+ * Used by pantry ("cook from what I have") and grocery leftovers (checked / in-basket items).
  */
 export function suggestMealsFromAvailableIngredients(
   available: AvailableIngredient[],

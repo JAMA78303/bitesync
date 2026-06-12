@@ -155,7 +155,6 @@ export default async function GroceryPage({ searchParams }: Props) {
  </div>
  ) : null}
  <div className={`${ds.mobileGutter} ${ds.overlap} space-y-2`}>
- <LeftoverSuggestionsPanel mealPlanId={mealPlanId} uncheckedCount={uncheckedItems.length} />
  {uncheckedItems.map((item) => (
  <GroceryItem
  key={item.id}
@@ -183,6 +182,7 @@ export default async function GroceryPage({ searchParams }: Props) {
  is_checked={true}
  />
  ))}
+ <LeftoverSuggestionsPanel mealPlanId={mealPlanId} checkedCount={checkedItems.length} />
  </>
  ) : null}
  {mealPlanId ? (

@@ -143,7 +143,7 @@ export async function suggestMealsFromPantry(): Promise<ActionResult<SuggestMeal
   return runMatchForAvailable(available);
 }
 
-/** AGD-002: match unchecked grocery items only (checked = bought/used). */
+/** AGD-002: match checked grocery items (marked as in your basket after shopping). */
 export async function suggestMealsFromLeftovers(
   mealPlanId: string,
 ): Promise<ActionResult<SuggestMealsResult>> {
@@ -167,15 +167,15 @@ export async function suggestMealsFromLeftovers(
     .select("name,is_checked,archived_at")
     .eq("meal_plan_id", mealPlanId)
     .is("archived_at", null)
-    .eq("is_checked", false);
+    .eq("is_checked", true);
 
   if (error) return { error: toUserFacingError(error, "pantry", "addPantryToGrocery") };
 
-  const uncheckedNames = (items ?? []).map((row) => String(row.name ?? "")).filter(Boolean);
-  if (!uncheckedNames.length) {
-    return { error: "No unchecked grocery items — everything is in your basket or the list is empty." };
+  const checkedNames = (items ?? []).map((row) => String(row.name ?? "")).filter(Boolean);
+  if (!checkedNames.length) {
+    return { error: "Check off items you've bought first — suggestions use ingredients in your basket." };
   }
 
-  const available = namesToAvailableIngredients(uncheckedNames);
+  const available = namesToAvailableIngredients(checkedNames);
   return runMatchForAvailable(available);
 }
