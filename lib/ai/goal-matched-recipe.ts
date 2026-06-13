@@ -22,7 +22,7 @@ export function fractionForMealSlot(slot: GoalMealSlot): number {
   }
 }
 
-function ing(name: string, quantity: number, unit: string): RecipeIngredientInput {
+export function ing(name: string, quantity: number, unit: string): RecipeIngredientInput {
   const normalizedUnit = unit === "piece" || unit === "pieces" ? "each" : unit;
   return { name, quantity, unit: normalizedUnit };
 }
@@ -31,7 +31,12 @@ function cloneIngs(ings: RecipeIngredientInput[]): RecipeIngredientInput[] {
   return ings.map((i) => ({ ...i, name: i.name, quantity: i.quantity, unit: i.unit }));
 }
 
-async function findBestCarbAdjustment(
+/**
+ * Scales a single gram-based ingredient across a range to land within ±tolerance
+ * of the calorie target, keeping `base` ingredients fixed. This is the macro
+ * tuning step reused by template-based generation (it adjusts grams, not foods).
+ */
+export async function findBestCarbAdjustment(
   base: RecipeIngredientInput[],
   carb: { name: string; minG: number; maxG: number; step?: number },
   target: number,
@@ -78,11 +83,11 @@ export type GoalMatchedRecipeOptions = {
   composedSnackOnly?: boolean;
 };
 
-function clampTarget(kcal: number): number {
+export function clampTarget(kcal: number): number {
   return Math.min(Math.max(Math.round(kcal), 120), 2000);
 }
 
-function pickVariant(seed: number, modulo: number): number {
+export function pickVariant(seed: number, modulo: number): number {
   if (modulo <= 0) return 0;
   return (seed >>> 0) % modulo;
 }

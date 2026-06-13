@@ -4,6 +4,7 @@ import {
   buildGoalMatchedRecipeIngredients,
   buildGoalMatchedRecipeTitle,
 } from "@/lib/ai/goal-matched-recipe";
+import { composeMealFromTemplate } from "@/lib/recipes/composeMealFromTemplate";
 import type { RecipeIngredientInput } from "@/lib/nutrition/calculate";
 import { recipeMatchesPlannerSlot } from "@/lib/planner/meal-slot-eligibility";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -177,6 +178,12 @@ export async function resolveGoalMatchedDraft(
     }
   }
 
+  const composed = await composeMealFromTemplate(opts);
+  if (composed) {
+    return { ingredients: composed.ingredients, name: composed.name, source: "assembled" };
+  }
+
+  // Last-resort fallback if no template fits the constraints.
   const ingredients = await buildGoalMatchedRecipeIngredients(opts);
   return {
     ingredients,

@@ -1,10 +1,9 @@
 import {
-  buildGoalMatchedRecipeIngredients,
-  buildGoalMatchedRecipeTitle,
   fractionForMealSlot,
   mealLabel,
   type GoalMealSlot,
 } from "@/lib/ai/goal-matched-recipe";
+import { composeMealFromTemplate } from "@/lib/recipes/composeMealFromTemplate";
 import {
   generateFullRecipeForSlot,
   generateFullRecipeFromIngredients,
@@ -85,7 +84,7 @@ export async function generateHybridRecipeDraft(
     const variantSeed =
       (input.slot.variantSeed ^ (attempt * 0x517cc1b7) ^ (attempt << 12) ^ (attempt * 0x85ebca6b)) >>> 0;
 
-    const ingredients = await buildGoalMatchedRecipeIngredients({
+    const composed = await composeMealFromTemplate({
       targetCalories: targetMealCalories,
       mealSlot: input.slot.mealSlot,
       vegan: flags.vegan,
@@ -93,11 +92,13 @@ export async function generateHybridRecipeDraft(
       glutenFree: flags.glutenFree,
       variantSeed,
       proteinAxis: flags.proteinAxis,
-      microFocusKey: input.slot.mealSlot === "snack" ? undefined : input.microFocusKey,
+      microFocusKey: input.microFocusKey,
       composedSnackOnly: input.slot.mealSlot === "snack",
     });
+    if (!composed) continue;
+    const ingredients = composed.ingredients;
 
-    let name = buildGoalMatchedRecipeTitle(ingredients, input.slot.mealSlot);
+    let name = composed.name;
     const draftCheck = { name, ingredients };
     if (
       isDuplicateDraft(

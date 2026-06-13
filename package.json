@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test:nutrition": "tsx lib/nutrition/cofidMatch.test.ts && tsx lib/recipes/parseIngredient.test.ts",
     "verify:plan-bands": "tsx scripts/verify-plan-calorie-bands.ts",
+    "verify:meal-templates": "tsx scripts/verify-meal-templates.ts",
     "capture:landing": "node scripts/capture-landing-screenshots.mjs",
     "icons": "node scripts/write-brand-icons.mjs",
     "import:cofid": "tsx scripts/import-cofid.ts",
