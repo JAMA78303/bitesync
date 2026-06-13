@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { CoFIDOverridesEditor, type CofidOverrideRow } from "@/components/admin/CoFIDOverridesEditor";
 import { createClient } from "@/lib/supabase/server";
 
@@ -27,16 +26,11 @@ export default async function AdminNutritionPage() {
 
  return (
  <div>
- <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
- <div>
+ <div className="mb-6">
  <h1 className="text-2xl font-bold text-[var(--text-primary)]">CoFID ingredient overrides</h1>
  <p className="mt-1 text-sm text-[var(--text-muted)]">
  Pin recipe ingredient names to specific CoFID food codes. Checked before fuzzy matching.
  </p>
- </div>
- <Link href="/admin/prices" className="text-sm text-[var(--brand-primary)] hover:underline">
- ← Price management
- </Link>
  </div>
 
  <CoFIDOverridesEditor overrides={rows} />
