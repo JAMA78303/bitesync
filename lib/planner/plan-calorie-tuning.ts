@@ -89,6 +89,97 @@ export function dayCaloriesFromRows(
     .reduce((s, r) => s + (calById.get(r.recipe_id) ?? 0), 0);
 }
 
+export function dayProteinFromRows(
+  rows: PlanCalorieRow[],
+  day: number,
+  proById: Map<string, number>,
+): number {
+  return rows
+    .filter((r) => r.day_of_week === day && r.recipe_id)
+    .reduce((s, r) => s + (proById.get(r.recipe_id) ?? 0), 0);
+}
+
+/** Upper bound for daily protein (and kcal snack trim): target × this ratio. */
+export const MACRO_CAP_MAX_RATIO = 1.25;
+
+export function isWithinDailyProteinCap(protein: number, dailyTarget: number): boolean {
+  if (dailyTarget <= 0) return true;
+  return protein >= dailyTarget && protein <= dailyTarget * MACRO_CAP_MAX_RATIO;
+}
+
+/** Remove snacks (highest slot_index first) while day calories exceed ratio × daily target. */
+export function trimSnacksWhileDayCaloriesExceedRatio(
+  rows: PlanCalorieRow[],
+  day: number,
+  dailyK: number,
+  calById: Map<string, number>,
+  maxRatio: number,
+): void {
+  const limit = dailyK * maxRatio;
+  for (;;) {
+    const cal = dayCaloriesFromRows(rows, day, calById);
+    if (cal <= limit) break;
+    let idx = -1;
+    let bestSlot = -1;
+    for (let i = 0; i < rows.length; i += 1) {
+      const r = rows[i]!;
+      if (r.day_of_week !== day || r.meal_type !== "snack") continue;
+      const si = r.slot_index ?? 0;
+      if (si >= bestSlot) {
+        bestSlot = si;
+        idx = i;
+      }
+    }
+    if (idx < 0) break;
+    rows.splice(idx, 1);
+  }
+}
+
+/** Drop snack slots (highest slot_index first) while the day exceeds macro caps. */
+export function trimSnacksIfDayOverMacroCaps(
+  rows: PlanCalorieRow[],
+  day: number,
+  dailyK: number,
+  dailyP: number,
+  calById: Map<string, number>,
+  proById: Map<string, number>,
+  maxRatio = MACRO_CAP_MAX_RATIO,
+): void {
+  const calLimit = dailyK * maxRatio;
+  const proLimit = dailyP * maxRatio;
+
+  for (;;) {
+    const cal = dayCaloriesFromRows(rows, day, calById);
+    const pro = dayProteinFromRows(rows, day, proById);
+    if (cal <= calLimit && pro <= proLimit) break;
+
+    let idx = -1;
+    let bestSlot = -1;
+    for (let i = 0; i < rows.length; i += 1) {
+      const r = rows[i]!;
+      if (r.day_of_week !== day || r.meal_type !== "snack") continue;
+      const si = r.slot_index ?? 0;
+      if (si >= bestSlot) {
+        bestSlot = si;
+        idx = i;
+      }
+    }
+    if (idx < 0) break;
+    rows.splice(idx, 1);
+  }
+}
+
+export function sameDayDuplicateRecipeIds(rows: PlanCalorieRow[], day: number): string[] {
+  const seen = new Set<string>();
+  const dupes: string[] = [];
+  for (const row of rows) {
+    if (row.day_of_week !== day || !row.recipe_id) continue;
+    if (seen.has(row.recipe_id)) dupes.push(row.recipe_id);
+    seen.add(row.recipe_id);
+  }
+  return dupes;
+}
+
 export function poolHasSnackRecipes(pool: PlanRecipeMeta[]): boolean {
   return pool.some(
     (r) =>
@@ -279,6 +370,52 @@ function addSnackToCloseGap(
   });
   console.warn(
     `[tune] day ${day} snack#${slotIndex}: added "${picked.name}" (${Math.round(picked.calories)} kcal)`,
+  );
+  return true;
+}
+
+/** Add a snack when the day is below the daily target but already inside the daily band (surplus week-avg tuning). */
+function addSnackWhenBelowTarget(
+  rows: PlanCalorieRow[],
+  day: number,
+  mealPlanId: string,
+  pool: PlanRecipeMeta[],
+  calById: Map<string, number>,
+  dailyTarget: number,
+  snackCountPerDay: number,
+  allowedRecipeIds: Set<string>,
+  snackMicroPriorities?: MicroPriority[],
+): boolean {
+  const band = dailyCalorieBand(dailyTarget);
+  const current = dayCaloriesFromRows(rows, day, calById);
+  if (current >= dailyTarget) return false;
+  if (snackCountOnDay(rows, day) >= snackCountPerDay) return false;
+
+  const gapToTarget = dailyTarget - current;
+  const usedOnDay = new Set(rows.filter((r) => r.day_of_week === day && r.recipe_id).map((r) => r.recipe_id));
+  const picked = pickSnackForGap(
+    pool,
+    gapToTarget,
+    current,
+    band.max,
+    usedOnDay,
+    allowedRecipeIds,
+    snackMicroPriorities,
+  );
+  if (!picked) return false;
+
+  const slotIndex = snackCountOnDay(rows, day);
+  rows.push({
+    meal_plan_id: mealPlanId,
+    recipe_id: picked.id,
+    day_of_week: day,
+    meal_type: "snack",
+    slot_index: slotIndex,
+    quick_add_name: null,
+    quick_add_calories: null,
+  });
+  console.warn(
+    `[tune] day ${day} snack#${slotIndex}: added "${picked.name}" (${Math.round(picked.calories)} kcal) below target`,
   );
   return true;
 }
@@ -491,6 +628,7 @@ export function tuneWeekAvgTowardBand(
   allowedRecipeIds: Set<string>,
   goalBias: CalorieGoalBias,
   tuneDay: (day: number) => void,
+  snackMicroPriorities?: MicroPriority[],
 ): void {
   const weekBand = weekAvgCalorieBand(dailyTarget);
   const avg = () => {
@@ -503,19 +641,57 @@ export function tuneWeekAvgTowardBand(
     if (isWithinWeekAvgCalorieBand(currentAvg, dailyTarget)) break;
 
     if (currentAvg < weekBand.min && goalBias !== "deficit") {
+      const dayBand = dailyCalorieBand(dailyTarget);
       const underDays = days
-        .filter((d) => !isWithinDailyCalorieBand(dayCaloriesFromRows(rows, d, calById), dailyTarget))
+        .filter((d) => {
+          const cal = dayCaloriesFromRows(rows, d, calById);
+          return cal < weekBand.min || !isWithinDailyCalorieBand(cal, dailyTarget);
+        })
         .sort(
           (a, b) =>
             dayCaloriesFromRows(rows, a, calById) - dayCaloriesFromRows(rows, b, calById),
         );
       for (const day of underDays) {
+        if (dayCaloriesFromRows(rows, day, calById) >= dayBand.max) continue;
+        if (
+          goalBias === "surplus" &&
+          dayCaloriesFromRows(rows, day, calById) < dailyTarget
+        ) {
+          if (
+            !addSnackWhenBelowTarget(
+              rows,
+              day,
+              mealPlanId,
+              pool,
+              calById,
+              dailyTarget,
+              snackCountPerDay,
+              allowedRecipeIds,
+              snackMicroPriorities,
+            )
+          ) {
+            swapMainMealForCalories(
+              rows,
+              day,
+              pool,
+              calById,
+              "up",
+              dayBand.min,
+              dayBand.max,
+              allowedRecipeIds,
+            );
+          }
+        }
         tuneDay(day);
         if (isWithinWeekAvgCalorieBand(avg(), dailyTarget)) break;
       }
     } else if (currentAvg > weekBand.max && goalBias !== "surplus") {
+      const dayBand = dailyCalorieBand(dailyTarget);
       const overDays = days
-        .filter((d) => dayCaloriesFromRows(rows, d, calById) > dailyCalorieBand(dailyTarget).max)
+        .filter((d) => {
+          const cal = dayCaloriesFromRows(rows, d, calById);
+          return cal > weekBand.max || cal > dayBand.max;
+        })
         .sort(
           (a, b) =>
             dayCaloriesFromRows(rows, b, calById) - dayCaloriesFromRows(rows, a, calById),

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { logout } from "@/app/(app)/settings/actions";
+import { DeleteAccountSection } from "@/components/settings/DeleteAccountSection";
 import { SettingsThemeRow } from "@/components/settings/SettingsThemeRow";
 import { isProSubscriptionStatus } from "@/lib/subscription";
 import { reconcileBillingSubscriptionFromStripe } from "@/lib/stripe/reconcile-billing-subscription";
@@ -160,11 +161,13 @@ export default async function SettingsPage() {
  <form action={logout}>
  <button
  type="submit"
- className="w-full rounded-2xl border border-[var(--semantic-error-border)] bg-[var(--semantic-error-bg)] py-3.5 text-sm font-semibold text-[var(--semantic-error-text)]"
+ className="w-full rounded-2xl border border-[var(--border-default)] bg-[var(--surface-elevated)] py-3.5 text-sm font-semibold text-[var(--text-secondary)]"
  >
  Sign out
  </button>
  </form>
+
+ <DeleteAccountSection email={email} />
  </div>
  </div>
  );
