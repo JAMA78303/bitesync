@@ -413,7 +413,7 @@ export default function LandingPage() {
             <div className="mb-10 text-center">
               <h2 className="text-2xl font-bold text-[var(--text-primary)] sm:text-3xl">From the BiteSync blog</h2>
               <p className="mt-2 text-sm text-[var(--text-muted)]">
-                Nutrition science and practical planning — also shared on our social channels.
+                Nutrition science and practical planning tips from the BiteSync team.
               </p>
             </div>
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
@@ -482,32 +482,6 @@ export default function LandingPage() {
                 Sign in
               </Link>
             </nav>
-            <div className="flex items-center gap-3">
-              <a
-                href="https://x.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[var(--text-muted)] transition-colors hover:text-[var(--text-secondary)]"
-                aria-label="BiteSync on X"
-              >
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                </svg>
-              </a>
-              <a
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[var(--text-muted)] transition-colors hover:text-[var(--text-secondary)]"
-                aria-label="BiteSync on Instagram"
-              >
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                  <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
-                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                  <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
-                </svg>
-              </a>
-            </div>
           </div>
           <p className="text-center text-xs text-[var(--text-muted)]">
             © {new Date().getFullYear()} BiteSync · GDPR compliant ·{" "}
