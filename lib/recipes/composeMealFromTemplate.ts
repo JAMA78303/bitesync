@@ -1,18 +1,21 @@
 /**
- * Part 3 — Template-fill generation.
+ * Part 3 — Template-fill generation (target-aware).
  *
- * Flow: pick a template valid for the meal type + diet → fill each role with a
- * role-compatible ingredient (respecting diet, variety, and any micro focus) →
- * scale the one gram-based slot to hit the kcal target (reusing the existing
- * macro tuning) → name the dish from the template + key ingredients.
+ * Flow: rank diet-valid templates by how well they reach the per-meal calorie
+ * target (light templates for low goals, reaching templates for build-muscle) →
+ * fill each role with a role-compatible ingredient (diet, variety, micro focus) →
+ * scale to hit the kcal band, scaling the primary gram slot first and, when the
+ * meal's calorie floor/ceiling gets in the way, dropping optional roles or
+ * nudging secondary gram portions within realistic bounds → name the dish.
  *
- * Coherence is structural: incoherent piles are impossible because every
- * ingredient is placed into a named role inside a real dish archetype.
+ * Coherence is structural; macro-hitting is handled here per goal. When no
+ * template can sensibly hit a target we return the closest honest attempt and
+ * flag it (targetMet=false) rather than padding with filler.
  */
 
 import {
+  GOAL_MEAL_KCAL_TOLERANCE,
   clampTarget,
-  findBestCarbAdjustment,
   ing,
   pickVariant,
   type GoalMatchedRecipeOptions,
@@ -20,6 +23,7 @@ import {
 } from "@/lib/ai/goal-matched-recipe";
 import type { RecipeIngredientInput } from "@/lib/nutrition/calculate";
 import { MICRO_RICH_FOODS } from "@/lib/nutrition/micro-rich-foods";
+import { getRecipeNutritionTotals } from "@/lib/nutrition/recipeNutritionTotals";
 import {
   dietAllows,
   ingredientsForRole,
@@ -28,6 +32,7 @@ import {
 } from "@/lib/recipes/ingredientRoles";
 import {
   MEAL_TEMPLATES,
+  rankTemplatesForTarget,
   templatesFor,
   type MealTemplate,
   type TemplateSlot,
@@ -37,7 +42,25 @@ export type ComposedMeal = {
   ingredients: RecipeIngredientInput[];
   name: string;
   templateId: string;
+  /** Estimated calories of the returned portions (target-tuning estimate). */
+  estimatedCalories: number;
+  /** False when the closest achievable meal still misses the band — surface, don't pad. */
+  targetMet: boolean;
 };
+
+/** Pluggable nutrition evaluator so verification can run on the local DB offline. */
+export type NutritionEval = (
+  ings: RecipeIngredientInput[],
+) => Promise<{ calories: number; protein_g: number }>;
+
+const defaultNutritionEval: NutritionEval = async (ings) => {
+  const { totals } = await getRecipeNutritionTotals(ings, { aiEnabled: true });
+  return { calories: totals.calories, protein_g: totals.protein_g };
+};
+
+const SECONDARY_DOWN_STEPS = [0.8, 0.65, 0.55];
+const SECONDARY_UP_STEPS = [1.2, 1.4, 1.6];
+const MAX_TEMPLATE_ATTEMPTS = 3;
 
 function hashRole(role: IngredientRole): number {
   let h = 0;
@@ -45,21 +68,16 @@ function hashRole(role: IngredientRole): number {
   return h;
 }
 
-/** True for meal types where we steer protein choice toward the requested axis. */
 function axisApplies(mealSlot: GoalMealSlot): boolean {
   return mealSlot === "lunch" || mealSlot === "dinner";
 }
 
-function applyProteinAxis(
-  candidates: IngredientDef[],
-  opts: GoalMatchedRecipeOptions,
-): IngredientDef[] {
+function applyProteinAxis(candidates: IngredientDef[], opts: GoalMatchedRecipeOptions): IngredientDef[] {
   if (!opts.proteinAxis || !axisApplies(opts.mealSlot)) return candidates;
   const matched = candidates.filter((d) => d.proteinAxis === opts.proteinAxis);
   return matched.length ? matched : candidates;
 }
 
-/** Snack micro focus: prefer fills that are rich sources of the focus nutrient. */
 function applyMicroFocus(
   candidates: IngredientDef[],
   role: IngredientRole,
@@ -111,56 +129,57 @@ function pickFromList(
   return list[idx];
 }
 
-/** A template can actually be built under these constraints (all required slots fillable). */
 function templateIsFillable(template: MealTemplate, opts: GoalMatchedRecipeOptions): boolean {
   const used = new Set<string>();
   for (const slot of template.slots) {
     if (!slot.required) continue;
     const list = candidatesForSlot(slot, opts, used);
     if (!list.length) return false;
-    // Reserve one name so a later required slot of the same role still has options.
     used.add(list[0]!.name.toLowerCase());
   }
   return true;
 }
 
+/** A picked ingredient with where it came from, used by scaling. */
+type Picked = {
+  def: IngredientDef;
+  role: IngredientRole;
+  optional: boolean;
+  scaleBand?: { min: number; max: number; step?: number };
+};
+
 export type MealComposition = {
   template: MealTemplate;
-  /** Fixed (non-scaled) ingredients at their default portions. */
-  base: RecipeIngredientInput[];
-  /** The single gram slot the macro tuning scales to hit the target (if any). */
-  scaled: { def: IngredientDef; band: { min: number; max: number; step?: number } } | null;
+  picks: Picked[];
   name: string;
 };
 
-/**
- * Step 1 + 2 + 4 (offline): pick a template, fill its roles, and name the dish.
- * No nutrition lookup — coherence is fully determined here, so this is what the
- * verification harness exercises.
- */
+/** Step 1 + 2 + 4: rank + pick a template, fill its roles, and name the dish (no nutrition). */
 export function selectMealComposition(opts: GoalMatchedRecipeOptions): MealComposition | null {
+  const list = orderedFillableTemplates(opts);
+  if (!list.length) return null;
+  return fillTemplate(list[0]!, opts);
+}
+
+function orderedFillableTemplates(opts: GoalMatchedRecipeOptions): MealTemplate[] {
   const eligible = templatesFor(opts.mealSlot, {
     vegan: opts.vegan,
     vegetarian: opts.vegetarian,
     glutenFree: opts.glutenFree,
   }).filter((t) => templateIsFillable(t, opts));
+  return rankTemplatesForTarget(eligible, clampTarget(opts.targetCalories), opts.variantSeed);
+}
 
-  if (!eligible.length) return null;
-
-  const template = eligible[pickVariant(opts.variantSeed, eligible.length)]!;
-
+function fillTemplate(template: MealTemplate, opts: GoalMatchedRecipeOptions): MealComposition {
   const usedNames = new Set<string>();
   const chosenByRole = new Map<IngredientRole, IngredientDef>();
-  const base: RecipeIngredientInput[] = [];
-  let scaled: { def: IngredientDef; band: { min: number; max: number; step?: number } } | null = null;
+  const picks: Picked[] = [];
   let salt = 0;
 
   for (let s = 0; s < template.slots.length; s++) {
     const slot = template.slots[s]!;
 
-    // Optional, non-scaled slots are included for only some seeds, so toppings
-    // and sides genuinely vary instead of appearing on every meal. The macro-
-    // scaled slot is always kept so portions can still hit the target.
+    // Optional, non-scaled slots only appear for some seeds → toppings/sides vary.
     if (!slot.required && !slot.scale) {
       const gate = pickVariant((opts.variantSeed ^ hashRole(slot.role) ^ (s * 0x27d4eb2f)) >>> 0, 100);
       if (gate >= 60) continue;
@@ -168,57 +187,181 @@ export function selectMealComposition(opts: GoalMatchedRecipeOptions): MealCompo
 
     const count = Math.max(1, slot.count ?? 1);
     for (let c = 0; c < count; c++) {
-      const list = candidatesForSlot(slot, opts, usedNames);
-      const def = pickFromList(list, opts.variantSeed, salt++, slot.role);
+      const candidates = candidatesForSlot(slot, opts, usedNames);
+      const def = pickFromList(candidates, opts.variantSeed, salt++, slot.role);
       if (!def) break;
       usedNames.add(def.name.toLowerCase());
       if (!chosenByRole.has(slot.role)) chosenByRole.set(slot.role, def);
+      picks.push({ def, role: slot.role, optional: !slot.required, scaleBand: slot.scale });
+    }
+  }
 
-      if (slot.scale && !scaled) {
-        scaled = { def, band: slot.scale };
-      } else {
-        base.push(ing(def.name, def.portion.quantity, def.portion.unit));
+  const name = template.name((role) => chosenByRole.get(role)).trim() || template.archetype;
+  return { template, picks, name };
+}
+
+function round5(g: number): number {
+  return Math.max(0, Math.round(g / 5) * 5);
+}
+
+/**
+ * Scale a composition to the target, returning the best achievable portions.
+ * Strategy: sweep the primary gram slot; if the floor still overshoots a low
+ * target, drop optional roles then nudge secondary grams down; if maxing the
+ * primary still undershoots a high target, nudge secondary grams up.
+ */
+async function scaleComposition(
+  comp: MealComposition,
+  target: number,
+  evalFn: NutritionEval,
+): Promise<{ ingredients: RecipeIngredientInput[]; calories: number; targetMet: boolean }> {
+  const tol = GOAL_MEAL_KCAL_TOLERANCE;
+  const primary = comp.picks.find((p) => p.scaleBand);
+  // Secondary gram items we may nudge (not the primary, not non-gram like eggs/oil).
+  const secondaries = comp.picks.filter(
+    (p) => !p.scaleBand && p.def.portion.unit === "g" && p.role !== "cooking_fat",
+  );
+
+  const booster = comp.template.booster;
+  const boosterAlreadyPicked =
+    booster != null &&
+    comp.picks.some((p) => p.def.name.toLowerCase() === booster.name.toLowerCase());
+
+  const buildIngredients = (opts: {
+    primaryG?: number;
+    secondaryMult: number;
+    dropOptional: boolean;
+    boosterG?: number;
+  }): RecipeIngredientInput[] => {
+    const rows: RecipeIngredientInput[] = [];
+    for (const p of comp.picks) {
+      if (p === primary) continue;
+      if (opts.dropOptional && p.optional && p.role !== "vegetable") continue;
+      const isSecondary = secondaries.includes(p);
+      const qty = isSecondary
+        ? round5(p.def.portion.quantity * opts.secondaryMult)
+        : p.def.portion.quantity;
+      if (qty <= 0) continue;
+      rows.push(ing(p.def.name, qty, p.def.portion.unit));
+    }
+    if (primary && opts.primaryG != null) {
+      rows.push(ing(primary.def.name, opts.primaryG, "g"));
+    }
+    // High-target booster: a coherent calorie-dense add for the archetype.
+    if (booster && !boosterAlreadyPicked && opts.boosterG && opts.boosterG > 0) {
+      rows.push(ing(booster.name, opts.boosterG, booster.unit));
+    }
+    return rows;
+  };
+
+  type Attempt = { ingredients: RecipeIngredientInput[]; calories: number };
+  let best: Attempt | null = null;
+  const consider = (a: Attempt) => {
+    if (!best || Math.abs(a.calories - target) < Math.abs(best.calories - target)) best = a;
+  };
+
+  const sweepPrimary = async (
+    secondaryMult: number,
+    dropOptional: boolean,
+    boosterG = 0,
+  ): Promise<Attempt> => {
+    if (!primary) {
+      const ings = buildIngredients({ secondaryMult, dropOptional, boosterG });
+      const { calories } = await evalFn(ings);
+      const a = { ingredients: ings, calories };
+      consider(a);
+      return a;
+    }
+    const { min, max, step = 5 } = primary.scaleBand!;
+    // Pick the portion landing CLOSEST to target (centred in band), not the
+    // highest within-band portion — otherwise meals systematically run high.
+    let local: Attempt | null = null;
+    for (let g = min; g <= max; g += step) {
+      const ings = buildIngredients({ primaryG: g, secondaryMult, dropOptional, boosterG });
+      const { calories } = await evalFn(ings);
+      const a = { ingredients: ings, calories };
+      consider(a);
+      if (!local || Math.abs(calories - target) < Math.abs(local.calories - target)) local = a;
+    }
+    return local!;
+  };
+
+  // Phase 1: primary sweep at default secondary portions.
+  let result = await sweepPrimary(1, false);
+  if (Math.abs(result.calories - target) <= tol) {
+    return { ingredients: result.ingredients, calories: result.calories, targetMet: true };
+  }
+
+  if (result.calories > target + tol) {
+    // Overshoot (low target): drop optional roles, then trim secondary grams.
+    result = await sweepPrimary(1, true);
+    for (const mult of SECONDARY_DOWN_STEPS) {
+      if (Math.abs(result.calories - target) <= tol) break;
+      result = await sweepPrimary(mult, true);
+    }
+  } else {
+    // Undershoot (high target): push secondary grams up, then add a calorie-dense
+    // booster in growing portions so build-muscle targets are reached, not missed.
+    for (const mult of SECONDARY_UP_STEPS) {
+      if (Math.abs(result.calories - target) <= tol) break;
+      result = await sweepPrimary(mult, false);
+    }
+    if (comp.template.booster && result.calories < target - tol) {
+      const topMult = SECONDARY_UP_STEPS[SECONDARY_UP_STEPS.length - 1]!;
+      for (const boosterG of comp.template.booster.steps) {
+        if (result.calories >= target - tol) break;
+        result = await sweepPrimary(topMult, false, boosterG);
       }
     }
   }
 
-  if (!base.length && !scaled) return null;
-
-  const name = template.name((role) => chosenByRole.get(role)).trim() || template.archetype;
-  return { template, base, scaled, name };
+  const bestFinal = best!;
+  return {
+    ingredients: bestFinal.ingredients,
+    calories: bestFinal.calories,
+    targetMet: Math.abs(bestFinal.calories - target) <= tol,
+  };
 }
 
 /**
- * Full generation: select a coherent composition, then scale its gram slot to hit
- * the calorie target (step 3 — reuses the existing macro tuning).
+ * Full generation: rank templates for the target, then fill + scale each in turn,
+ * accepting the first that lands in band. If none do, return the closest honest
+ * attempt (targetMet=false) so callers can surface the miss instead of padding.
  */
 export async function composeMealFromTemplate(
   opts: GoalMatchedRecipeOptions,
+  evalFn: NutritionEval = defaultNutritionEval,
 ): Promise<ComposedMeal | null> {
-  const selection = selectMealComposition(opts);
-  if (!selection) return null;
-
   const target = clampTarget(opts.targetCalories);
-  const { template, base, scaled, name } = selection;
+  const ranked = orderedFillableTemplates(opts);
+  if (!ranked.length) return null;
 
-  let ingredients: RecipeIngredientInput[];
-  if (scaled) {
-    ingredients = await findBestCarbAdjustment(
-      base,
-      { name: scaled.def.name, minG: scaled.band.min, maxG: scaled.band.max, step: scaled.band.step },
-      target,
-    );
-  } else {
-    ingredients = base;
+  let best: ComposedMeal | null = null;
+
+  for (const template of ranked.slice(0, MAX_TEMPLATE_ATTEMPTS)) {
+    const comp = fillTemplate(template, opts);
+    const scaled = await scaleComposition(comp, target, evalFn);
+    const candidate: ComposedMeal = {
+      ingredients: scaled.ingredients,
+      name: comp.name,
+      templateId: template.id,
+      estimatedCalories: Math.round(scaled.calories),
+      targetMet: scaled.targetMet,
+    };
+    if (scaled.targetMet) return candidate;
+    if (
+      !best ||
+      Math.abs(scaled.calories - target) < Math.abs(best.estimatedCalories - target)
+    ) {
+      best = candidate;
+    }
   }
 
-  return { ingredients, name, templateId: template.id };
+  return best;
 }
 
-/** Names of all known template ids (for diagnostics/verification scripts). */
 export function allTemplateIds(): string[] {
   return MEAL_TEMPLATES.map((t) => t.id);
 }
 
-/** Re-export for callers that only need to know diet compatibility of a def. */
 export { dietAllows };

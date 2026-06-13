@@ -37,6 +37,18 @@ export type MealTemplate = {
   diets: { omnivore: boolean; vegetarian: boolean; vegan: boolean };
   /** True when the template can be filled with only gluten-free ingredients. */
   glutenFreeCapable: boolean;
+  /**
+   * Rough per-meal calorie range this template can reach (default fills, scale
+   * slot swept min→max). Used to pick weight-appropriate templates per goal:
+   * light templates for low targets, reaching templates for build-muscle.
+   */
+  kcalRange: [number, number];
+  /**
+   * Calorie-dense ingredient added (in growing portions) to reach high targets
+   * when the primary slot maxes out — a coherent topping/fat for the archetype
+   * (peanut butter on oats, avocado on a bowl, olive oil on a stir-fry).
+   */
+  booster?: { name: string; unit: string; steps: number[] };
   slots: TemplateSlot[];
   name: (pick: TemplateFillLookup) => string;
 };
@@ -87,8 +99,10 @@ export const MEAL_TEMPLATES: MealTemplate[] = [
     mealTypes: ["breakfast"],
     diets: { omnivore: true, vegetarian: true, vegan: true },
     glutenFreeCapable: true,
+    kcalRange: [260, 720],
+    booster: { name: "peanut butter", unit: "g", steps: [12, 22, 32] },
     slots: [
-      { role: "breakfast_base", required: true, scale: { min: 30, max: 90 }, not: ["wholemeal bread", "rice cake"] },
+      { role: "breakfast_base", required: true, scale: { min: 30, max: 120 }, not: ["wholemeal bread", "rice cake"] },
       { role: "dairy", required: true, only: LIQUID_DAIRY },
       { role: "fruit", required: true },
       { role: "fat_topping", required: false, only: SWEET_TOPPINGS },
@@ -101,8 +115,10 @@ export const MEAL_TEMPLATES: MealTemplate[] = [
     mealTypes: ["breakfast", "snack"],
     diets: { omnivore: true, vegetarian: true, vegan: true },
     glutenFreeCapable: false,
+    kcalRange: [250, 680],
+    booster: { name: "peanut butter", unit: "g", steps: [12, 22, 32] },
     slots: [
-      { role: "breakfast_base", required: true, scale: { min: 30, max: 70 }, only: ["oats"] },
+      { role: "breakfast_base", required: true, scale: { min: 30, max: 100 }, only: ["oats"] },
       { role: "dairy", required: true, only: LIQUID_DAIRY },
       { role: "fruit", required: true },
       { role: "fat_topping", required: false, only: SWEET_TOPPINGS },
@@ -120,8 +136,10 @@ export const MEAL_TEMPLATES: MealTemplate[] = [
     mealTypes: ["breakfast"],
     diets: { omnivore: true, vegetarian: true, vegan: false },
     glutenFreeCapable: true,
+    kcalRange: [200, 640],
+    booster: { name: "almonds", unit: "g", steps: [12, 20, 30] },
     slots: [
-      { role: "protein", required: true, scale: { min: 120, max: 260 }, only: ["greek yogurt"] },
+      { role: "protein", required: true, scale: { min: 120, max: 320 }, only: ["greek yogurt"] },
       { role: "fruit", required: true },
       { role: "fat_topping", required: false, only: SWEET_TOPPINGS },
     ],
@@ -133,9 +151,11 @@ export const MEAL_TEMPLATES: MealTemplate[] = [
     mealTypes: ["breakfast"],
     diets: { omnivore: true, vegetarian: true, vegan: false },
     glutenFreeCapable: false,
+    kcalRange: [250, 720],
+    booster: { name: "avocado", unit: "g", steps: [40, 70, 100] },
     slots: [
       { role: "protein", required: true, only: ["egg"] },
-      { role: "base_carb", required: true, scale: { min: 40, max: 110 }, only: ["wholemeal bread"] },
+      { role: "base_carb", required: true, scale: { min: 40, max: 150 }, only: ["wholemeal bread"] },
       { role: "vegetable", required: false, only: ["spinach", "tomato", "mushroom"] },
     ],
     name: (pick) => {
@@ -149,10 +169,12 @@ export const MEAL_TEMPLATES: MealTemplate[] = [
     mealTypes: ["breakfast"],
     diets: { omnivore: true, vegetarian: true, vegan: true },
     glutenFreeCapable: true,
+    kcalRange: [240, 720],
+    booster: { name: "avocado", unit: "g", steps: [40, 70, 100] },
     slots: [
       { role: "protein", required: true, only: ["tofu"] },
       { role: "vegetable", required: true, count: 2, only: ["spinach", "tomato", "mushroom", "red pepper"] },
-      { role: "base_carb", required: false, scale: { min: 40, max: 110 }, only: ["wholemeal bread", "potato"] },
+      { role: "base_carb", required: false, scale: { min: 40, max: 160 }, only: ["wholemeal bread", "potato"] },
     ],
     name: (pick) => `Tofu Scramble with ${display(pick("vegetable")?.name, "Veg")}`,
   },
@@ -162,8 +184,10 @@ export const MEAL_TEMPLATES: MealTemplate[] = [
     mealTypes: ["breakfast"],
     diets: { omnivore: true, vegetarian: true, vegan: true },
     glutenFreeCapable: false,
+    kcalRange: [320, 820],
+    booster: { name: "avocado", unit: "g", steps: [40, 70, 100] },
     slots: [
-      { role: "base_carb", required: true, scale: { min: 50, max: 110 }, only: ["wholemeal bread"] },
+      { role: "base_carb", required: true, scale: { min: 50, max: 170 }, only: ["wholemeal bread"] },
       { role: "fat_topping", required: true, only: ["peanut butter"] },
       { role: "fruit", required: true, only: ["banana", "strawberries", "blueberries"] },
     ],
@@ -177,8 +201,10 @@ export const MEAL_TEMPLATES: MealTemplate[] = [
     mealTypes: ["lunch", "dinner"],
     diets: { omnivore: true, vegetarian: true, vegan: true },
     glutenFreeCapable: true,
+    kcalRange: [400, 1150],
+    booster: { name: "avocado", unit: "g", steps: [50, 90, 130] },
     slots: [
-      { role: "base_carb", required: true, scale: { min: 50, max: 300 }, not: ["pasta", "wholemeal bread"] },
+      { role: "base_carb", required: true, scale: { min: 50, max: 380 }, not: ["pasta", "wholemeal bread"] },
       { role: "protein", required: true, not: SOFT_PROTEINS },
       { role: "vegetable", required: true, count: 2 },
       { role: "fat_topping", required: false, only: ["avocado"] },
@@ -192,10 +218,12 @@ export const MEAL_TEMPLATES: MealTemplate[] = [
     mealTypes: ["lunch", "dinner"],
     diets: { omnivore: true, vegetarian: true, vegan: true },
     glutenFreeCapable: true,
+    kcalRange: [380, 1080],
+    booster: { name: "olive oil", unit: "ml", steps: [6, 12, 18] },
     slots: [
       { role: "protein", required: true, not: SOFT_PROTEINS },
       { role: "vegetable", required: true, count: 2 },
-      { role: "base_carb", required: true, scale: { min: 50, max: 280 }, only: ["rice", "brown rice", "quinoa"] },
+      { role: "base_carb", required: true, scale: { min: 50, max: 360 }, only: ["rice", "brown rice", "quinoa"] },
       { role: "cooking_fat", required: true },
     ],
     name: (pick) => `${display(pick("protein")?.name)} & ${display(pick("vegetable")?.name)} Stir-fry`,
@@ -206,9 +234,11 @@ export const MEAL_TEMPLATES: MealTemplate[] = [
     mealTypes: ["dinner"],
     diets: { omnivore: true, vegetarian: true, vegan: true },
     glutenFreeCapable: true,
+    kcalRange: [420, 1120],
+    booster: { name: "olive oil", unit: "ml", steps: [6, 12, 18] },
     slots: [
       { role: "protein", required: true, not: [...SOFT_PROTEINS, "egg"] },
-      { role: "base_carb", required: true, scale: { min: 120, max: 320 }, only: ["potato", "sweet potato"] },
+      { role: "base_carb", required: true, scale: { min: 120, max: 460 }, only: ["potato", "sweet potato"] },
       { role: "vegetable", required: true, count: 2 },
       { role: "cooking_fat", required: true },
     ],
@@ -221,10 +251,12 @@ export const MEAL_TEMPLATES: MealTemplate[] = [
     mealTypes: ["lunch", "dinner"],
     diets: { omnivore: true, vegetarian: true, vegan: true },
     glutenFreeCapable: true,
+    kcalRange: [280, 900],
+    booster: { name: "avocado", unit: "g", steps: [50, 90, 130] },
     slots: [
       { role: "protein", required: true, not: SOFT_PROTEINS },
       { role: "vegetable", required: true, count: 2, only: ["cucumber", "tomato", "red pepper", "spinach", "carrot"] },
-      { role: "base_carb", required: false, scale: { min: 40, max: 140 }, only: ["quinoa"] },
+      { role: "base_carb", required: false, scale: { min: 40, max: 180 }, only: ["quinoa"] },
       { role: "cooking_fat", required: true },
       { role: "fat_topping", required: false, only: ["avocado"] },
       { role: "dairy", required: false, only: ["feta cheese"] },
@@ -237,10 +269,12 @@ export const MEAL_TEMPLATES: MealTemplate[] = [
     mealTypes: ["lunch", "dinner"],
     diets: { omnivore: true, vegetarian: true, vegan: true },
     glutenFreeCapable: true,
+    kcalRange: [360, 1050],
+    booster: { name: "olive oil", unit: "ml", steps: [6, 12, 18] },
     slots: [
       { role: "protein", required: true, only: ["lentils", "chickpeas", "chicken breast"] },
       { role: "vegetable", required: true, count: 2, only: ["spinach", "tomato", "onion", "red pepper"] },
-      { role: "base_carb", required: true, scale: { min: 50, max: 260 }, only: ["rice", "brown rice"] },
+      { role: "base_carb", required: true, scale: { min: 50, max: 380 }, only: ["rice", "brown rice"] },
     ],
     name: (pick) => `${display(pick("protein")?.name)} Curry with Rice`,
   },
@@ -252,8 +286,10 @@ export const MEAL_TEMPLATES: MealTemplate[] = [
     mealTypes: ["snack"],
     diets: { omnivore: true, vegetarian: true, vegan: false },
     glutenFreeCapable: true,
+    kcalRange: [140, 470],
+    booster: { name: "almonds", unit: "g", steps: [12, 22, 32] },
     slots: [
-      { role: "protein", required: true, scale: { min: 100, max: 220 }, only: ["greek yogurt"] },
+      { role: "protein", required: true, scale: { min: 100, max: 260 }, only: ["greek yogurt"] },
       { role: "fruit", required: true },
       { role: "fat_topping", required: false, only: SWEET_TOPPINGS },
     ],
@@ -265,8 +301,10 @@ export const MEAL_TEMPLATES: MealTemplate[] = [
     mealTypes: ["snack"],
     diets: { omnivore: true, vegetarian: true, vegan: false },
     glutenFreeCapable: true,
+    kcalRange: [140, 450],
+    booster: { name: "almonds", unit: "g", steps: [12, 22, 32] },
     slots: [
-      { role: "protein", required: true, scale: { min: 90, max: 200 }, only: ["cottage cheese"] },
+      { role: "protein", required: true, scale: { min: 90, max: 240 }, only: ["cottage cheese"] },
       { role: "fruit", required: true },
       { role: "fat_topping", required: false, only: SWEET_TOPPINGS },
     ],
@@ -278,9 +316,11 @@ export const MEAL_TEMPLATES: MealTemplate[] = [
     mealTypes: ["snack"],
     diets: { omnivore: true, vegetarian: true, vegan: true },
     glutenFreeCapable: true,
+    kcalRange: [150, 420],
+    booster: { name: "almonds", unit: "g", steps: [10, 18, 26] },
     slots: [
       { role: "fruit", required: true, only: ["banana", "apple"] },
-      { role: "fat_topping", required: true, scale: { min: 12, max: 34 }, only: ["peanut butter"] },
+      { role: "fat_topping", required: true, scale: { min: 12, max: 40 }, only: ["peanut butter"] },
     ],
     name: (pick) => `${display(pick("fruit")?.name)} with Peanut Butter`,
   },
@@ -290,9 +330,11 @@ export const MEAL_TEMPLATES: MealTemplate[] = [
     mealTypes: ["snack"],
     diets: { omnivore: true, vegetarian: true, vegan: false },
     glutenFreeCapable: true,
+    kcalRange: [200, 440],
+    booster: { name: "almonds", unit: "g", steps: [12, 22, 32] },
     slots: [
       { role: "protein", required: true, only: ["egg"] },
-      { role: "fruit", required: true, scale: { min: 80, max: 200 } },
+      { role: "fruit", required: true, scale: { min: 80, max: 240 } },
     ],
     name: (pick) => `Boiled Eggs & ${display(pick("fruit")?.name)}`,
   },
@@ -310,4 +352,42 @@ export function templatesFor(
     if (filter.vegetarian) return t.diets.vegetarian;
     return t.diets.omnivore;
   });
+}
+
+/** How far a per-meal target sits outside a template's reachable range (0 = inside). */
+export function targetDistance(template: MealTemplate, target: number): number {
+  const [lo, hi] = template.kcalRange;
+  if (target < lo) return lo - target;
+  if (target > hi) return target - hi;
+  return 0;
+}
+
+/**
+ * Weight-class aware ordering: templates that can actually reach the target come
+ * first (lighter ones for low targets, reaching ones for high targets), each tier
+ * seed-rotated for variety. Ties broken by how snugly the target sits in-range.
+ */
+export function rankTemplatesForTarget(
+  templates: MealTemplate[],
+  target: number,
+  seed: number,
+): MealTemplate[] {
+  const scored = templates.map((t, i) => {
+    const dist = targetDistance(t, target);
+    const [lo, hi] = t.kcalRange;
+    // Prefer ranges centred near the target so we scale toward the middle, not an edge.
+    const centre = (lo + hi) / 2;
+    return { t, i, dist, centreGap: Math.abs(target - centre) };
+  });
+  const rotate = ((seed >>> 0) % Math.max(1, scored.length)) || 0;
+  return scored
+    .sort((a, b) => {
+      if (a.dist !== b.dist) return a.dist - b.dist;
+      // Within the same reachability tier, rotate by seed for variety.
+      const ra = (a.i + rotate) % scored.length;
+      const rb = (b.i + rotate) % scored.length;
+      if (ra !== rb) return ra - rb;
+      return a.centreGap - b.centreGap;
+    })
+    .map((s) => s.t);
 }
