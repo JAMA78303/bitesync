@@ -2,7 +2,7 @@
 
 One place to track every build spec, merge order, and **verified-in-code** status.
 
-Last updated: 2026-06-13
+Last updated: 2026-06-13 (template generator + all-goals macro verification shipped)
 
 ---
 
@@ -40,6 +40,8 @@ Status key: ✅ verified in code · 🟡 partial / needs run or phone QA · ❌ 
 | + | Fill My Library | Bulk recipe generator | ✅ shipped (`df5a9ea`) |
 | + | `LANDING_UI_IMPROVEMENTS.md` | Landing hero, mockups, pricing, footer | ✅ verified in code |
 | + | `BITESYNC_NEXT_LOGO_VERIFY.md` | Phase 1 verify + logo wiring tracker | 🟡 Step 1 ✅; 2.1/2.2 + logo device QA pending |
+| + | `BITESYNC_MEAL_TEMPLATES.md` | Template-based meal generation (roles → templates → fill → scale) | ✅ shipped (`fe45b03`/`b0c42a9`/`ed19c3d`); coherence 48/48 via `npm run verify:meal-templates` |
+| + | `BITESYNC_TEMPLATES_ALL_GOALS.md` | Target-aware template selection + macro-hitting per calorie goal | ✅ shipped (`85335b9`/`936808f`); lose/maintain/build all pass `npm run verify:meal-template-goals` (real DB) |
 
 ---
 
@@ -105,6 +107,23 @@ Bottom bar: **Home · Plan · Recipes · Grocery · Nutrition · More**
 **Settings tap path (390px):** bottom nav **More** → **Settings**
 
 Pantry and Goals also live under **More**.
+
+---
+
+## Template meal generator (shipped)
+
+Replaces macro-assembly selection with coherent dish archetypes:
+
+- `lib/recipes/ingredientRoles.ts` — shared ingredient→role taxonomy (catalog of 56 foods).
+- `lib/recipes/mealTemplates.ts` — 17 dish templates per meal type + diet, with kcal ranges and high-target boosters.
+- `lib/recipes/composeMealFromTemplate.ts` — rank by target → fill roles → scale to band → name dish; honest miss flag when unreachable.
+
+```bash
+npm run verify:meal-templates        # coherence: 48 meals × 4 diets, 0 piles
+npm run verify:meal-template-goals   # macro-hitting: lose/maintain/build, real UK DB (offline)
+```
+
+Latest goal grids: lose 1691 kcal/day (+5.7%), maintain 2208 (+0.4%), build 2782 (-4.1%); 28/28 meals in band each, no fallback to old assembler.
 
 ---
 
