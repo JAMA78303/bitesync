@@ -2,7 +2,7 @@
 
 One place to track every build spec, merge order, and **verified-in-code** status.
 
-Last updated: 2026-06-02
+Last updated: 2026-06-13
 
 ---
 
@@ -39,6 +39,7 @@ Status key: ✅ verified in code · 🟡 partial / needs run or phone QA · ❌ 
 | + | `BITESYNC_RECIPES_CONTRAST.md` | My Recipes header pill/search contrast | ✅ shipped |
 | + | Fill My Library | Bulk recipe generator | ✅ shipped (`df5a9ea`) |
 | + | `LANDING_UI_IMPROVEMENTS.md` | Landing hero, mockups, pricing, footer | ✅ verified in code |
+| + | `BITESYNC_NEXT_LOGO_VERIFY.md` | Phase 1 verify + logo wiring tracker | 🟡 Step 1 ✅; 2.1/2.2 + logo device QA pending |
 
 ---
 
@@ -109,11 +110,12 @@ Pantry and Goals also live under **More**.
 
 ## Next actions
 
-1. **Spec 4 verify** — `npm run verify:recompute` with `.env.local` (stored breakfast kcal)
-2. **Phone QA** — Settings reachable via More; dark mode on all main screens
-3. **Stale grocery** — `npm run regenerate:grocery -- --dry-run` then `--apply` if needed
-4. **Fill library with snacks** — bulk fill or generate Snack goal-matched recipes
-5. **Build: micronutrient DB coverage** — biggest remaining accuracy win for micro analysis
+1. **`BITESYNC_NEXT_LOGO_VERIFY.md`** — throwaway account delete E2E; live planner kcal grid; logo screenshots (light/dark)
+2. **Spec 4 verify** — `npm run verify:recompute` with `.env.local` (stored breakfast kcal)
+3. **Phone QA** — Settings reachable via More; dark mode on all main screens
+4. **Stale grocery** — `npm run regenerate:grocery -- --dry-run` then `--apply` if needed
+5. **Fill library with snacks** — bulk fill or generate Snack goal-matched recipes
+6. **Build: micronutrient DB coverage** — biggest remaining accuracy win for micro analysis
 
 ---
 
