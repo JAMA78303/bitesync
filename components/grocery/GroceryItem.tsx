@@ -5,7 +5,6 @@ import { Check, Trash2 } from "lucide-react";
 import { formatGroceryItem } from "@/lib/grocery/storeUnits";
 import { deleteGroceryItem, toggleGroceryItem } from "@/lib/supabase/grocery";
 import { useToast } from "@/components/ui/use-toast";
-import { STORE_COLORS } from "@/lib/ui/dietTagStyles";
 
 type Props = {
  id: string;
@@ -13,8 +12,6 @@ type Props = {
  quantity: number;
  unit: string;
  is_checked: boolean;
- cheapestStore?: string | null;
- price?: string | null;
 };
 
 export function GroceryItem({
@@ -23,8 +20,6 @@ export function GroceryItem({
  quantity,
  unit,
  is_checked,
- cheapestStore,
- price,
 }: Props) {
  const [checked, setChecked] = useState(is_checked);
  const [isPending, startTransition] = useTransition();
@@ -64,9 +59,7 @@ export function GroceryItem({
  });
  }
 
- const storeColor = cheapestStore ? STORE_COLORS[cheapestStore] : undefined;
-
- return (
+  return (
  <div
  className={`flex items-center gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3.5 shadow-sm transition-opacity ${
  checked ?"opacity-40" :""
@@ -98,21 +91,7 @@ export function GroceryItem({
  >
  {formatGroceryItem(name, quantity, unit)}
  </p>
- </button>
-
- {cheapestStore ? (
- <div className="flex flex-shrink-0 items-center gap-1.5">
- <span
- className="rounded-lg px-2 py-0.5 text-2xs font-bold text-[var(--text-on-brand)]"
- style={{ backgroundColor: storeColor ?? "var(--brand-primary)" }}
- >
- {cheapestStore}
- </span>
- {price ? (
- <span className="text-xs font-semibold text-[var(--text-muted)]">{price}</span>
- ) : null}
- </div>
- ) : null}
+      </button>
 
  <button
  type="button"

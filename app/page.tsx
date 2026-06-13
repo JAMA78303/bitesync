@@ -8,7 +8,6 @@ import {
   ChevronRight,
   Flame,
   Leaf,
-  PiggyBank,
   Refrigerator,
   Shield,
   Target,
@@ -89,12 +88,6 @@ const LEAD_FEATURES: { Icon: LucideIcon; title: string; desc: string; isPro?: bo
 /** Supporting benefits — after the lead story */
 const SUPPORTING_FEATURES: { Icon: LucideIcon; title: string; desc: string; isPro?: boolean }[] = [
   {
-    Icon: PiggyBank,
-    title: "Store price estimates",
-    desc: "Compare basket estimates across supermarkets before you shop — and it saves you money at the till.",
-    isPro: true,
-  },
-  {
     Icon: Refrigerator,
     title: "Pantry-aware grocery lists",
     desc: "Skip what you already have at home so you buy less and waste less.",
@@ -132,7 +125,6 @@ const PRO_FEATURES = [
   "Full nutrition (macros + micros)",
   "TDEE calculator + targets",
   "AI weekly meal plans",
-  "Store price estimates",
   "Unlimited history",
   "Priority support",
 ] as const;
@@ -151,13 +143,6 @@ const BLOG_POSTS = [
     title: "How meal planning cuts food waste",
     desc: "Shop once with a list built from your plan — fewer impulse buys and less in the bin.",
     readTime: "5 min read",
-  },
-  {
-    slug: "tesco-asda-aldi-grocery-comparison",
-    category: "UK supermarkets",
-    title: "Tesco vs Asda vs Aldi for your weekly shop",
-    desc: "What to expect when BiteSync estimates your basket across UK stores.",
-    readTime: "6 min read",
   },
 ] as const;
 
@@ -311,7 +296,7 @@ export default function LandingPage() {
                   And less hassle when you shop
                 </h2>
                 <p className="mx-auto max-w-lg text-sm text-[var(--text-muted)]">
-                  Import recipes, respect dietary needs, compare prices, and buy only what you need.
+                  Import recipes, respect dietary needs, and buy only what you need.
                 </p>
               </div>
             </Reveal>
@@ -406,7 +391,7 @@ export default function LandingPage() {
               </span>
               <h3 className="mb-1 text-sm font-semibold text-[var(--text-primary)]">Built in the UK</h3>
               <p className="text-xs leading-relaxed text-[var(--text-muted)]">
-                GBP pricing, UK supermarkets, and nutrition data for British shoppers.
+                GBP pricing and nutrition data tuned for British shoppers.
               </p>
             </article>
             <article className="text-center">

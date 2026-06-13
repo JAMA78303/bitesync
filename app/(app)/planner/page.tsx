@@ -10,7 +10,7 @@ import { getUserTier } from "@/lib/subscription";
 import { PlannerGrid } from "@/components/planner/PlannerGrid";
 import { WeekNav } from "@/components/planner/WeekNav";
 import { GenerateListButton } from "@/components/planner/GenerateListButton";
-import { GenerateAIBasketButton } from "@/components/planner/GenerateAIBasketButton";
+import { GenerateAIWeekPlanButton } from "@/components/planner/GenerateAIWeekPlanButton";
 import { PlannerMicroSummary } from "@/components/planner/PlannerMicroSummary";
 import { getWeeklyMicroAnalysis } from "@/lib/supabase/nutrition";
 import { ds } from "@/lib/ui/classes";
@@ -148,18 +148,17 @@ export default async function PlannerPage({ searchParams }: Props) {
  </div>
 
  <div className={`${ds.mobileGutter} ${ds.overlap} space-y-4 ${ds.pageContent}`}>
- <GenerateAIBasketButton
- isPro={userTier ==="pro"}
- mealPlanId={mealPlan.id}
- weekStartDate={weekStartISO}
- goals={{
- calorieTarget: dailyCalorieTarget,
- proteinTarget: dailyProteinTarget,
- followsVegetarian: Boolean(profile?.follows_vegetarian),
- followsVegan: Boolean(profile?.follows_vegan),
- followsGlutenFree: Boolean(profile?.follows_gluten_free),
- }}
- />
+          <GenerateAIWeekPlanButton
+            isPro={userTier ==="pro"}
+            mealPlanId={mealPlan.id}
+            goals={{
+              calorieTarget: dailyCalorieTarget,
+              proteinTarget: dailyProteinTarget,
+              followsVegetarian: Boolean(profile?.follows_vegetarian),
+              followsVegan: Boolean(profile?.follows_vegan),
+              followsGlutenFree: Boolean(profile?.follows_gluten_free),
+            }}
+          />
 
  <PlannerGrid
  grid={grid}

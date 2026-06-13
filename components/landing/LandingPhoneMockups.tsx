@@ -113,17 +113,11 @@ export function MockPlanner() {
 
 export function MockGrocery() {
  const items = [
- { name:"Chicken breast", store:"Tesco", checked: true },
- { name:"Greek yoghurt", store:"Aldi", checked: true },
- { name:"Quinoa", store:"Asda", checked: false },
- { name:"Spinach", store:"Tesco", checked: false },
+ { name:"Chicken breast", qty:"500g", checked: true },
+ { name:"Greek yoghurt", qty:"500g", checked: true },
+ { name:"Quinoa", qty:"250g", checked: false },
+ { name:"Spinach", qty:"200g", checked: false },
  ] as const;
- /** Dark enough for AA on surface-muted at text-xs (avoid white-on-brand at 10px). */
- const storeBadge: Record<string, string> = {
- Tesco: "text-[#003d75]",
- Asda: "text-[#3d6610]",
- Aldi: "text-[#00005f]",
- };
 
  return (
  <PhoneFrame label="BiteSync grocery list preview">
@@ -154,11 +148,7 @@ export function MockGrocery() {
  >
  {item.name}
  </span>
- <span
- className={`rounded bg-[var(--surface-muted)] px-1.5 py-0.5 text-xs font-semibold ${storeBadge[item.store]}`}
- >
- {item.store}
- </span>
+ <span className="shrink-0 text-2xs font-medium text-[var(--text-muted)]">{item.qty}</span>
  </li>
  ))}
  </ul>

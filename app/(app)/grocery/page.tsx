@@ -2,9 +2,6 @@ import { createClient } from "@/lib/supabase/server";
 import { getMonday, toLocalISO, formatWeekLabel } from "@/lib/utils/dates";
 import { formatGrocerySubtitle } from "@/lib/utils/grocery-display";
 import { getMealPlanIdForWeek, getGroceryItems } from "@/lib/supabase/grocery";
-import {
- getLiveStorePricingForMealPlan,
-} from "@/app/(app)/planner/ai-actions";
 import { LeftoverSuggestionsPanel } from "@/components/grocery/LeftoverSuggestionsPanel";
 import { GroceryHeader } from "@/components/grocery/GroceryHeader";
 import { GroceryItem } from "@/components/grocery/GroceryItem";
@@ -12,8 +9,6 @@ import { GroceryEmptyState } from "@/components/grocery/GroceryEmptyState";
 import { GroceryDoneState } from "@/components/grocery/GroceryDoneState";
 import { ManualGroceryAdd } from "@/components/grocery/ManualGroceryAdd";
 import { GroceryListActions } from "@/components/grocery/GroceryListActions";
-import { GroceryBasketSnapshotSection } from "@/components/grocery/GroceryBasketSnapshotSection";
-import type { StoreItemEstimate, StoreTotal } from "@/lib/pricing/types";
 import { MEAL_TYPES } from "@/types";
 import { ds } from "@/lib/ui/classes";
 
@@ -52,50 +47,7 @@ export default async function GroceryPage({ searchParams }: Props) {
  }
  }
 
- const subtitle = formatGrocerySubtitle(weekStart, scopeDays);
-
- let basketSnap: {
- recommended_store: string | null;
- estimated_total_gbp: number | null;
- created_at: string;
- } | null = null;
- let liveStoreTotals: StoreTotal[] = [];
- let liveEstimates: StoreItemEstimate[] = [];
-
- if (mealPlanId) {
- const [{ data: snap }, livePricing] = await Promise.all([
- supabase
- .from("basket_snapshots")
- .select("recommended_store, estimated_total_gbp, created_at")
- .eq("user_id", user.id)
- .eq("week_start_date", weekStartISO)
- .order("created_at", { ascending: false })
- .limit(1)
- .maybeSingle(),
- getLiveStorePricingForMealPlan({
- mealPlanId,
- selectedDays: scopeDays?.length ? scopeDays : undefined,
- }),
- ]);
- basketSnap = snap ?? null;
- if ("success" in livePricing && livePricing.success) {
- liveStoreTotals = livePricing.storeTotals;
- liveEstimates = livePricing.estimates;
- }
- }
-
- const snapshotCreatedLabel = basketSnap?.created_at
- ? new Date(basketSnap.created_at).toLocaleString("en-GB", { dateStyle:"medium", timeStyle:"short" })
- :"";
- const lastSnapshot =
- basketSnap?.created_at && snapshotCreatedLabel
- ? {
- recommendedStore: basketSnap.recommended_store,
- estimatedTotalGbp:
- basketSnap.estimated_total_gbp != null ? Number(basketSnap.estimated_total_gbp) : null,
- createdLabel: snapshotCreatedLabel,
- }
- : null;
+  const subtitle = formatGrocerySubtitle(weekStart, scopeDays);
 
  if (!mealPlanId) {
  const fallbackSubtitle = formatWeekLabel(weekStart);
@@ -182,22 +134,13 @@ export default async function GroceryPage({ searchParams }: Props) {
  is_checked={true}
  />
  ))}
- <LeftoverSuggestionsPanel mealPlanId={mealPlanId} checkedCount={checkedItems.length} />
+            <LeftoverSuggestionsPanel mealPlanId={mealPlanId} checkedCount={checkedItems.length} />
  </>
  ) : null}
  {mealPlanId ? (
  <div className="pt-4">
  <ManualGroceryAdd mealPlanId={mealPlanId} />
  </div>
- ) : null}
- {total > 0 && liveStoreTotals.length > 0 ? (
- <>
- <GroceryBasketSnapshotSection
- liveStoreTotals={liveStoreTotals}
- liveEstimates={liveEstimates}
- lastSnapshot={lastSnapshot}
- />
- </>
  ) : null}
  </div>
  </div>

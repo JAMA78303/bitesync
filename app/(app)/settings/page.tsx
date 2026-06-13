@@ -148,10 +148,10 @@ export default async function SettingsPage() {
  <p className="mt-0.5 text-xs text-[var(--text-muted)]">Internal tools</p>
  </div>
  <Link
- href="/admin/prices"
+ href="/admin/nutrition"
  className="text-xs font-medium text-[var(--brand-primary)] hover:underline"
  >
- Price manager →
+ Admin tools →
  </Link>
  </div>
  </div>

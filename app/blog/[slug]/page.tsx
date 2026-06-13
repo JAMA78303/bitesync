@@ -24,15 +24,6 @@ const POSTS: Record<
 "Checking items off in the supermarket keeps you focused, and archiving recipes lets you rotate favourites without clutter.",
  ],
  },
-"tesco-asda-aldi-grocery-comparison": {
- title:"Tesco vs Asda vs Aldi for your weekly shop",
- category:"UK supermarkets",
- body: [
-"BiteSync Pro estimates basket totals across Tesco, Asda, and Aldi using manually verified price snapshots.",
-"Prices are indicative — always check shelf labels — but comparing stores helps you spot where your usual basket is cheapest.",
-"Store badges on your grocery list remind you which items you priced at which chain when you planned the week.",
- ],
- },
 };
 
 type Props = { params: Promise<{ slug: string }> };

@@ -5,7 +5,6 @@ const BASE = "https://bitesync.io";
 const BLOG_SLUGS = [
   "thermic-effect-of-protein",
   "meal-planning-reduce-food-waste",
-  "tesco-asda-aldi-grocery-comparison",
 ] as const;
 
 export default function sitemap(): MetadataRoute.Sitemap {

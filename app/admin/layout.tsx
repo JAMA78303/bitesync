@@ -29,9 +29,6 @@ export default async function AdminLayout({
  <span className="rounded-full bg-[var(--surface-overlay)]/20 px-2 py-0.5 text-xs">Internal only</span>
  </div>
  <div className="flex items-center gap-4 text-xs">
- <Link href="/admin/prices" className="text-[var(--text-on-brand-muted)] hover:text-[var(--text-on-brand)]">
- Prices
- </Link>
  <Link href="/admin/nutrition" className="text-[var(--text-on-brand-muted)] hover:text-[var(--text-on-brand)]">
  Nutrition
  </Link>

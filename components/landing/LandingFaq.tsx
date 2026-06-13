@@ -16,10 +16,6 @@ const FAQ_ITEMS = [
  a:"Yes. Your recipes, meal plans, and nutrition data are private to your account. Payments are handled securely by Stripe.",
  },
  {
- q:"What supermarkets do you compare?",
- a:"Currently Tesco, Asda, and Aldi. Prices are manually verified and shown as estimates.",
- },
- {
  q:"Can I cancel my Pro subscription?",
  a:"Yes. Cancel anytime from settings and keep access until the current billing period ends.",
  },
