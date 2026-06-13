@@ -162,7 +162,7 @@ export function PlannerGrid({
  ) : null}
  </div>
  ) : entry ? (
- <RecipeSlotCard entry={entry} dietPrefs={dietPrefs} dietaryPreferences={dietaryPreferences} variant="grid" />
+ <RecipeSlotCard key={entry.id} entry={entry} dietPrefs={dietPrefs} dietaryPreferences={dietaryPreferences} variant="grid" />
  ) : (
  <AddSlotButton
  day={day}
@@ -324,7 +324,7 @@ function PlannerGridMobileInline({
  ) : null}
  </div>
  ) : entry ? (
- <RecipeSlotCard entry={entry} dietPrefs={dietPrefs} dietaryPreferences={dietaryPreferences} />
+ <RecipeSlotCard key={entry.id} entry={entry} dietPrefs={dietPrefs} dietaryPreferences={dietaryPreferences} />
  ) : (
  <AddSlotButton
  day={activeDay}
