@@ -54,8 +54,8 @@ export const metadata: Metadata = {
  description:
   "Plan your week, hit your protein and calorie targets, and get one grocery list — automatically.",
  },
- /** File-based icons in `app/` (favicon.ico, icon.png, apple-icon.png) — avoid duplicate metadata entries. */
- manifest:"/manifest.webmanifest",
+ /** File-based icons in `app/` (favicon.ico, icon.png, apple-icon.png). Extra PNG sizes in `public/`. */
+ manifest: "/manifest.webmanifest",
 };
 
 export default function RootLayout({

@@ -13,28 +13,40 @@ const LOCKUP_HEIGHT = 456;
 const ICON_WIDTH = 448;
 const ICON_HEIGHT = 456;
 
-const lockupHeights = {
- sm: "h-7",
- md: "h-9",
- lg: "h-11",
+const LOCKUP_ASPECT = LOCKUP_WIDTH / LOCKUP_HEIGHT;
+
+const lockupDisplay = {
+  sm: { height: 28, width: Math.round(28 * LOCKUP_ASPECT) },
+  md: { height: 36, width: Math.round(36 * LOCKUP_ASPECT) },
+  lg: { height: 44, width: Math.round(44 * LOCKUP_ASPECT) },
 } as const;
 
-const iconSizes = {
- sm: "h-8 w-8",
- md: "h-9 w-9",
- lg: "h-11 w-11",
+const iconDisplay = {
+  sm: 32,
+  md: 36,
+  lg: 44,
 } as const;
 
 export function Logo({ size ="md", variant ="full", href ="/planner", className }: Props) {
- const wrapperClass = `inline-flex shrink-0 items-center ${className ?? ""}`.trim();
+ const wrapperClass = [
+  "inline-flex shrink-0 items-center",
+  variant === "full" ? "rounded-lg dark:bg-white dark:px-2 dark:py-0.5" : "",
+  className ?? "",
+ ]
+  .filter(Boolean)
+  .join(" ")
+  .trim();
+ const lockup = lockupDisplay[size];
+ const iconPx = iconDisplay[size];
  const image =
  variant ==="icon" ? (
  <Image
  src="/bitesync-icon.png"
  alt="BiteSync"
- width={ICON_WIDTH}
- height={ICON_HEIGHT}
- className={`object-contain ${iconSizes[size]}`}
+ width={iconPx}
+ height={iconPx}
+ className="object-contain"
+ style={{ width: iconPx, height: iconPx }}
  priority
  unoptimized
  />
@@ -42,9 +54,10 @@ export function Logo({ size ="md", variant ="full", href ="/planner", className 
  <Image
  src="/bitesync-logo-full.png"
  alt="BiteSync"
- width={LOCKUP_WIDTH}
- height={LOCKUP_HEIGHT}
- className={`w-auto ${lockupHeights[size]}`}
+ width={lockup.width}
+ height={lockup.height}
+ className="max-w-full object-contain object-left"
+ style={{ width: lockup.width, height: lockup.height, maxWidth: "min(100%, 11rem)" }}
  priority
  unoptimized
  />

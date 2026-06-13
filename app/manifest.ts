@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Plan your week to your macro targets and generate your grocery list",
     start_url: "/planner",
     display: "standalone",
-    background_color: "#1A4731",
-    theme_color: "#1A4731",
+    background_color: "#3a5a40",
+    theme_color: "#3a5a40",
     icons: [
       {
         src: "/favicon-192.png",
