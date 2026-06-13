@@ -68,10 +68,7 @@ async function main() {
           continue;
         }
 
-        const allNames = [
-          ...sel.base.map((i) => i.name),
-          ...(sel.scaled ? [sel.scaled.def.name] : []),
-        ];
+        const allNames = sel.picks.map((p) => p.def.name);
         const label = `${dietName}/${slot}: ${sel.name}`;
         console.log(`  [${slot}] ${sel.name}  [${sel.template.id}]`);
         console.log(`          ${allNames.join(", ")}`);
