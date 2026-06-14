@@ -14,6 +14,7 @@
     "verify:micro-coverage": "tsx scripts/verify-micro-coverage.ts",
     "verify:saturated-fat": "tsx scripts/verify-saturated-fat.ts",
     "verify:raw-grain-class": "tsx scripts/verify-raw-grain-class.ts",
+    "verify:snack-generation": "tsx scripts/verify-snack-generation.ts",
     "capture:landing": "node scripts/capture-landing-screenshots.mjs",
     "icons": "node scripts/write-brand-icons.mjs",
     "import:cofid": "tsx scripts/import-cofid.ts",

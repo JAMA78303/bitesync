@@ -53,23 +53,11 @@ export async function createPlannerSnackRecipe(
     existing: { names: opts?.existingNames ?? [], signatures: [] },
     acceptedInBatch: [],
     useLlmMethod: true,
-    requireFullLlmRecipe: true,
   });
 
-  let name: string;
-  let description: string;
-  let steps: string[];
-  let ingredients;
+  if (!hybrid) return null;
 
-  if (hybrid) {
-    name = hybrid.name;
-    description = hybrid.description;
-    steps = hybrid.steps;
-    ingredients = hybrid.ingredients;
-  } else {
-    // No LLM recipe — skip creating a raw-ingredient pile in the library.
-    return null;
-  }
+  const { name, description, steps, ingredients } = hybrid;
 
   const inserted = await insertGeneratedRecipe(supabase, userId, {
     name,

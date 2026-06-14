@@ -43,6 +43,21 @@ function buildNoCookBowlSteps(ingredients: RecipeIngredientInput[], mealSlot: Go
     (pb || yoghurt || cottage || chia) &&
     !hasIngredient(ingredients, /\begg|chicken|salmon|tuna|beef|turkey|shrimp\b/);
 
+  const isFruitNutSnack =
+    pb &&
+    (banana || ingredients.some((i) => /strawberr|blueberr|raspberr|apple|pear|grape/i.test(i.name))) &&
+    !hasIngredient(ingredients, /\begg|chicken|salmon|tuna|beef|turkey|shrimp\b/);
+
+  if (isFruitNutSnack) {
+    const fruit = banana ?? ingredients.find((i) => /strawberr|blueberr|raspberr|apple|pear|grape/i.test(i.name));
+    const steps: string[] = [];
+    if (fruit) {
+      steps.push(`Slice the ${titleCase(fruit.name)} and arrange on a plate or in a bowl.`);
+    }
+    steps.push(`Spread or drizzle ${formatQty(pb!)} ${titleCase(pb!.name)} over the fruit and serve.`);
+    return steps.length >= 2 ? steps : null;
+  }
+
   if (!isBowl) return null;
 
   const steps: string[] = [];

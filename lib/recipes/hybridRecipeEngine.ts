@@ -26,6 +26,10 @@ import {
   type HardDietConstraints,
 } from "@/lib/recipes/bulkFillLibrary";
 import { inferDietLabelsFromIngredients } from "@/lib/recipes/inferDietLabels";
+import {
+  SNACK_MAX_CALORIES,
+  SNACK_MIN_CALORIES,
+} from "@/lib/planner/meal-slot-eligibility";
 import { isIngredientPileSnack } from "@/lib/recipes/snackRecipeQuality";
 import { stepsMentionUnlistedIngredients } from "@/lib/recipes/stepIngredientAlignment";
 
@@ -69,10 +73,13 @@ export async function generateHybridRecipeDraft(
 ): Promise<HybridRecipeDraft | null> {
   const flags = dietFlagsForSlot(input.slot, input.hard);
   const fraction = fractionForMealSlot(input.slot.mealSlot);
-  const targetMealCalories = Math.round(input.targetDailyCalories * fraction);
+  const rawTarget = Math.round(input.targetDailyCalories * fraction);
+  const targetMealCalories =
+    input.slot.mealSlot === "snack"
+      ? Math.min(SNACK_MAX_CALORIES, Math.max(SNACK_MIN_CALORIES, rawTarget))
+      : rawTarget;
 
-  const requireFullLlm =
-    input.requireFullLlmRecipe ?? input.slot.mealSlot === "snack";
+  const requireFullLlm = input.requireFullLlmRecipe ?? false;
 
   const dietaryLine = buildDietaryConstraints(input.hard.dietaryPreferences);
   const bannedTitles = [

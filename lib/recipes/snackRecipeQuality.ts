@@ -9,7 +9,8 @@ export function isIngredientPileSnack(
   ingredients: RecipeIngredientInput[],
   steps: string[],
 ): boolean {
-  if (steps.length < 2) return true;
+  // Template snacks (yogurt pot, nut butter + fruit) are valid with a short method.
+  if (steps.length < 1) return true;
 
   const title = name.toLowerCase().trim();
   const ampersandCount = (name.match(/ & /g) ?? []).length;
