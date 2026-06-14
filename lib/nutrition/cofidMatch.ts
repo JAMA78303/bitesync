@@ -229,6 +229,10 @@ const DENSE_PREP_PATTERN =
 /** Staple grains/pulses where raw/dry is ~2–3× denser than the cooked form users mean. */
 const STAPLE_GRAIN_PULSE_PATTERN =
   /\b(rice|pasta|quinoa|couscous|bulgur|oats?|porridge|lentils?|chickpeas?|chick\s*peas?|barley|farro|freekeh|semolina|noodles?|spaghetti|macaroni|penne|fusilli)\b/i;
+const PASTA_SHAPE_PATTERN =
+  /\b(spaghetti|tagliatelle|penne|fusilli|macaroni|linguine|fettuccine|pasta)\b/i;
+const MINCE_QUERY_PATTERN = /\b(mince|minced)\b/i;
+const BREADCRUMB_QUERY_PATTERN = /\bbreadcrumbs?\b/i;
 const STAPLE_PULSE_PATTERN =
   /\b(kidney\s*beans?|black\s*beans?|baked\s*beans?|cannellini|red\s*kidney|chickpeas?|lentils?)\b/i;
 
@@ -298,6 +302,55 @@ function sameFoodPrepAdjustment(query: string, normalisedFood: string): number {
   if (isCookedStapleForm(normalisedFood)) adj += 60;
   adj += stapleGrainPulseAdjustment(query, normalisedFood);
   return adj;
+}
+
+/** Bare "chicken mince" must not resolve to casseroled chicken with skin. */
+function minceQueryAdjustment(query: string, normalisedFood: string): number {
+  if (!MINCE_QUERY_PATTERN.test(query)) return 0;
+  if (/\bmince\b/.test(normalisedFood)) return 150;
+  if (/\b(casseroled|skin|roast|fried|nugget|kiev|goujon)\b/.test(normalisedFood)) return -950;
+  return -750;
+}
+
+/** "Spaghetti" is pasta, not spaghetti squash, unless the user said squash. */
+function pastaQueryAdjustment(query: string, foodName: string): number {
+  const q = normalizeCofidQuery(query);
+  if (!PASTA_SHAPE_PATTERN.test(q)) return 0;
+  if (/\bsquash\b/.test(q)) return 0;
+  const f = normalizeForMatch(foodName);
+  const primary = normalizeForMatch(primaryFoodName(foodName));
+  if (/\bsquash\b/.test(primary)) return -1000;
+  if (/\b(pasta|spaghetti|tagliatelle|macaroni|penne|fusilli)\b/.test(f)) return 180;
+  return 0;
+}
+
+/** "Breadcrumbs" is not "plaice in breadcrumbs". */
+function breadcrumbQueryAdjustment(query: string, foodName: string): number {
+  if (!BREADCRUMB_QUERY_PATTERN.test(normalizeCofidQuery(query))) return 0;
+  const f = normalizeForMatch(foodName);
+  if (
+    /\b(in|with|coated in|coated with)\s+breadcrumbs?\b/.test(f) &&
+    /\b(plaice|cod|fish|scampi|salmon|lamb|kofta|beef|chicken|pork)\b/.test(f)
+  ) {
+    return -950;
+  }
+  return 0;
+}
+
+export function isSpaghettiSquashMismatch(query: string, foodName: string): boolean {
+  const q = normalizeCofidQuery(query);
+  if (!PASTA_SHAPE_PATTERN.test(q) || /\bsquash\b/.test(q)) return false;
+  return /\bsquash\b/.test(normalizeForMatch(primaryFoodName(foodName)));
+}
+
+export function isMinceMismatch(query: string, foodName: string): boolean {
+  if (!MINCE_QUERY_PATTERN.test(normalizeCofidQuery(query))) return false;
+  return !/\bmince\b/.test(normalizeForMatch(foodName));
+}
+
+export function isBreadcrumbCompositeMismatch(query: string, foodName: string): boolean {
+  if (!BREADCRUMB_QUERY_PATTERN.test(normalizeCofidQuery(query))) return false;
+  return /\b(in|with|coated in|coated with)\s+breadcrumbs?\b/.test(normalizeForMatch(foodName));
 }
 
 /** Score how well a CoFID row matches the user's ingredient name (higher = better). */
@@ -390,6 +443,9 @@ export function scoreCofidMatch(
   }
 
   score += stapleGrainPulseAdjustment(q, f);
+  score += minceQueryAdjustment(q, f);
+  score += pastaQueryAdjustment(q, foodName);
+  score += breadcrumbQueryAdjustment(q, foodName);
 
   return score;
 }
@@ -441,6 +497,27 @@ export function pickBestCofidCandidate(
       }
     }
     if (bestCooked) return bestCooked;
+  }
+
+  // Spaghetti squash trap: bare pasta names must not resolve to the vegetable.
+  if (best && isSpaghettiSquashMismatch(query, best.food_name)) {
+    let bestPasta: CofidCandidate | null = null;
+    let bestPastaScore = -Infinity;
+    for (const candidate of candidates) {
+      if (isSpaghettiSquashMismatch(query, candidate.food_name)) continue;
+      if (!/\b(pasta|spaghetti)\b/i.test(candidate.food_name)) continue;
+      const score = scoreCofidMatch(
+        query,
+        candidate.food_name,
+        candidate.matchKind,
+        candidate.food_group,
+      );
+      if (score > bestPastaScore) {
+        bestPastaScore = score;
+        bestPasta = candidate;
+      }
+    }
+    if (bestPasta) return bestPasta;
   }
 
   return best;

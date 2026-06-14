@@ -2,14 +2,11 @@ import {
   dailyCalorieBand,
 } from "@/lib/planner/calorie-bands";
 import { ds } from "@/lib/ui/classes";
-import {
-  normalizeRecipeNutritionEmbed,
-  type RecipeNutritionSummary,
-} from "@/lib/utils/recipe-nutrition";
-import type { PlannerGrid } from "@/types";
+import { sumDayNutritionFromEntries } from "@/lib/planner/weekly-macros";
+import type { MealPlanEntry } from "@/types";
 
 type Props = {
- grid: PlannerGrid;
+ entries: MealPlanEntry[];
  dailyCalorieTarget?: number | null;
  dailyProteinTarget?: number | null;
 };
@@ -28,7 +25,7 @@ function getBarColour(actual: number, target: number): string {
  return ds.trafficAmber;
 }
 
-export function DailyTotalsRow({ grid, dailyCalorieTarget, dailyProteinTarget }: Props) {
+export function DailyTotalsRow({ entries, dailyCalorieTarget, dailyProteinTarget }: Props) {
  const hasTargets = !!dailyCalorieTarget && !!dailyProteinTarget;
  return (
  <>
@@ -36,20 +33,9 @@ export function DailyTotalsRow({ grid, dailyCalorieTarget, dailyProteinTarget }:
  <span className="text-2xs font-medium uppercase tracking-wide text-[var(--text-muted)]">Totals</span>
  </div>
  {Array.from({ length: 7 }, (_, day) => {
- const slots = Object.values(grid[day]).filter(Boolean);
- const calories = slots.reduce((s, e) => {
- const n = normalizeRecipeNutritionEmbed(
- e!.recipe?.recipe_nutrition as RecipeNutritionSummary | RecipeNutritionSummary[] | null | undefined,
- );
- return s + (n?.calories ?? 0);
- }, 0);
- const protein = slots.reduce((s, e) => {
- const n = normalizeRecipeNutritionEmbed(
- e!.recipe?.recipe_nutrition as RecipeNutritionSummary | RecipeNutritionSummary[] | null | undefined,
- );
- return s + (n?.protein_g ?? 0);
- }, 0);
- const isEmpty = slots.length === 0;
+ const dayEntries = entries.filter((e) => e.day_of_week === day);
+ const { kcal: calories, protein } = sumDayNutritionFromEntries(day, entries);
+ const isEmpty = dayEntries.length === 0;
  const calRatio = dailyCalorieTarget ? calories / dailyCalorieTarget : 0;
  const proRatio = dailyProteinTarget ? protein / dailyProteinTarget : 0;
  const calPct = dailyCalorieTarget ? Math.min(calRatio * 100, 100) : 0;

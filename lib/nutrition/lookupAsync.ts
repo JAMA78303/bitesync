@@ -9,6 +9,9 @@ import {
 import {
   isRawDryStapleForm,
   isStapleGrainPulseQuery,
+  isBreadcrumbCompositeMismatch,
+  isMinceMismatch,
+  isSpaghettiSquashMismatch,
   queryRequestsRawDry,
 } from "@/lib/nutrition/cofidMatch";
 import { lookupNutrition } from "@/lib/nutrition/lookup";
@@ -106,6 +109,33 @@ function shouldPreferLocalCookedStaple(
   return cofidCarbs > localCarbs * 1.5 || cofidKcal > localKcal * 1.5;
 }
 
+function localNameMatchesQuery(localName: string, query: string): boolean {
+  const q = query.toLowerCase().trim();
+  const n = localName.toLowerCase().trim();
+  return n === q || q.includes(n) || n.includes(q);
+}
+
+/** Fall back to local DB when CoFID matched the wrong food class entirely. */
+function shouldPreferLocalOverCofidMismatch(
+  cofid: CoFIDNutrition,
+  query: string,
+  localEntry: NutritionLookupEntry | null,
+): boolean {
+  if (!localEntry || isIncomplete(localEntry)) return false;
+  const name = cofid.food_name;
+
+  if (isMinceMismatch(query, name) && localNameMatchesQuery(localEntry.name, query)) {
+    return true;
+  }
+  if (isSpaghettiSquashMismatch(query, name) && /\b(spaghetti|pasta|penne|macaroni)\b/.test(localEntry.name)) {
+    return true;
+  }
+  if (isBreadcrumbCompositeMismatch(query, name) && localEntry.name === "bread") {
+    return true;
+  }
+  return false;
+}
+
 /**
  * Full nutrition lookup chain: CoFID → local DB → optional AI.
  * Used by recipe save, API preview, and async totals.
@@ -141,6 +171,9 @@ export async function lookupNutritionAsync(
         resolved.saturated_fat_g = round1(entry.per_100g.saturated_fat_g * (grams / 100));
       }
       if (shouldPreferLocalCookedStaple(cofid, trimmed, entry)) {
+        return fromLocal(entry!, grams);
+      }
+      if (shouldPreferLocalOverCofidMismatch(cofid, trimmed, entry)) {
         return fromLocal(entry!, grams);
       }
       return resolved;

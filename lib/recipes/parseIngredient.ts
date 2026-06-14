@@ -252,6 +252,20 @@ function parseDescriptiveAmount(rawText: string): ParsedIngredient | null {
     };
   }
 
+  if (/\bstock pot\b/i.test(rawText)) {
+    const { quantity } = parseLeadingQuantity(rawText);
+    const qty = quantity ?? 1;
+    const name = cleanIngredientName(rawText.replace(/\bstock pot\b/i, "stock"));
+    return {
+      quantity: qty,
+      unit: "pot",
+      name: name || "chicken stock",
+      grams: Math.round(qty * 28 * 10) / 10,
+      gramsSource: "estimated",
+      rawText,
+    };
+  }
+
   if (/\b(optional|plus extra to serve)\b/i.test(lower) && !/\d/.test(rawText)) {
     return null;
   }
@@ -355,7 +369,7 @@ export function parseIngredientLine(raw: string): ParsedIngredient {
 
 /** Convert parsed import line to stored recipe ingredient (never defaults to `piece`). */
 export function parsedIngredientToInput(parsed: ParsedIngredient): RecipeIngredientInput {
-  if (parsed.grams != null && parsed.gramsSource === "explicit") {
+  if (parsed.grams != null && parsed.grams > 0) {
     return {
       name: parsed.name,
       quantity: parsed.grams,

@@ -23,6 +23,14 @@ const INGREDIENT_LOOKUP_ALIASES: Record<string, string> = {
   "lime juiced": "lime",
   bulgur: "bulgur wheat",
   "bulgur wheat": "bulgur wheat",
+  breadcrumbs: "bread",
+  breadcrumb: "bread",
+  "spaghetti or tagliatelle": "spaghetti",
+  tagliatelle: "spaghetti",
+  "chicken stock pot": "stock cube chicken",
+  "stock pot": "stock cube chicken",
+  "chopped tomatoes": "tomato",
+  "tin chopped tomatoes": "tomato",
 };
 
 function resolveLookupName(name: string): string {

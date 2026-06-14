@@ -202,6 +202,7 @@ function pickSnackForGap(
   usedOnDay: Set<string>,
   allowedRecipeIds: Set<string>,
   snackMicroPriorities?: MicroPriority[],
+  opts?: { proById?: Map<string, number>; proteinGap?: number },
 ): PlanRecipeMeta | null {
   const ideal = Math.min(Math.max(gapToMin, SNACK_MIN_CALORIES), SNACK_MAX_CALORIES);
   const headroom = Math.max(bandMax - currentDayCal, 0);
@@ -226,6 +227,10 @@ function pickSnackForGap(
       let score = -calDist + tightHeadroomBonus;
       if (snackMicroPriorities?.length) {
         score += scoreRecipeMicroBoost(r.ingredientNames ?? [], snackMicroPriorities);
+      }
+      const proteinGap = opts?.proteinGap ?? 0;
+      if (proteinGap > 5 && opts?.proById) {
+        score += (opts.proById.get(r.id) ?? 0) * 1.5;
       }
       return { r, score };
     })
@@ -520,8 +525,10 @@ export function ensureDailySnackCoverage(opts: {
   days: number[];
   pool: PlanRecipeMeta[];
   calById: Map<string, number>;
+  proById?: Map<string, number>;
   mealPlanId: string;
   dailyTarget: number;
+  dailyProteinTarget?: number;
   snackCountPerDay: number;
   allowedRecipeIds: Set<string>;
   snackMicroPriorities?: MicroPriority[];
@@ -561,6 +568,10 @@ export function ensureDailySnackCoverage(opts: {
         Math.max(band.min - current, SNACK_MIN_CALORIES),
         roomUnderMax,
       );
+      const proteinGap =
+        opts.dailyProteinTarget != null && opts.dailyProteinTarget > 0 && opts.proById
+          ? Math.max(0, opts.dailyProteinTarget * 0.95 - dayProteinFromRows(opts.rows, day, opts.proById))
+          : 0;
       const picked = pickSnackForGap(
         opts.pool,
         idealGap,
@@ -569,6 +580,7 @@ export function ensureDailySnackCoverage(opts: {
         usedOnDay,
         opts.allowedRecipeIds,
         opts.snackMicroPriorities,
+        { proById: opts.proById, proteinGap },
       );
 
       if (picked) {
@@ -608,6 +620,98 @@ export function ensureDailySnackCoverage(opts: {
     if (madeRoom) {
       const total = dayCaloriesFromRows(opts.rows, day, opts.calById);
       if (total < band.min || total > band.max) opts.tuneDay(day);
+    }
+  }
+}
+
+/** Final pass: swap meals and add snacks when days remain materially below the protein target. */
+export function ensureDailyProteinCoverage(opts: {
+  rows: PlanCalorieRow[];
+  days: number[];
+  pool: PlanRecipeMeta[];
+  calById: Map<string, number>;
+  proById: Map<string, number>;
+  mealPlanId: string;
+  dailyTarget: number;
+  dailyProteinTarget: number;
+  snackCountPerDay: number;
+  allowedRecipeIds: Set<string>;
+  snackMicroPriorities?: MicroPriority[];
+}): void {
+  if (opts.dailyProteinTarget <= 0) return;
+  const band = dailyCalorieBand(opts.dailyTarget);
+  const proteinFloor = opts.dailyProteinTarget * 0.95;
+
+  for (const day of opts.days) {
+    for (let guard = 0; guard < 16; guard += 1) {
+      const pro = dayProteinFromRows(opts.rows, day, opts.proById);
+      if (pro >= proteinFloor) break;
+
+      if (
+        swapMainMealForProtein(
+          opts.rows,
+          day,
+          opts.pool,
+          opts.calById,
+          opts.proById,
+          band.min,
+          band.max,
+          opts.allowedRecipeIds,
+        )
+      ) {
+        continue;
+      }
+      if (
+        swapSnackForProtein(
+          opts.rows,
+          day,
+          opts.pool,
+          opts.calById,
+          opts.proById,
+          band.min,
+          band.max,
+          opts.allowedRecipeIds,
+        )
+      ) {
+        continue;
+      }
+
+      if (snackCountOnDay(opts.rows, day) >= opts.snackCountPerDay || !poolHasSnackRecipes(opts.pool)) {
+        break;
+      }
+
+      const current = dayCaloriesFromRows(opts.rows, day, opts.calById);
+      if (current + SNACK_MIN_CALORIES > band.max) break;
+
+      const usedOnDay = new Set(
+        opts.rows.filter((r) => r.day_of_week === day && r.recipe_id).map((r) => r.recipe_id),
+      );
+      const proteinGap = proteinFloor - pro;
+      const picked = pickSnackForGap(
+        opts.pool,
+        Math.min(Math.max(band.min - current, SNACK_MIN_CALORIES), band.max - current),
+        current,
+        band.max,
+        usedOnDay,
+        opts.allowedRecipeIds,
+        opts.snackMicroPriorities,
+        { proById: opts.proById, proteinGap },
+      );
+      if (!picked) break;
+
+      const slotIndex = snackCountOnDay(opts.rows, day);
+      opts.rows.push({
+        meal_plan_id: opts.mealPlanId,
+        recipe_id: picked.id,
+        day_of_week: day,
+        meal_type: "snack",
+        slot_index: slotIndex,
+        quick_add_name: null,
+        quick_add_calories: null,
+      });
+      console.warn(
+        `[protein-coverage] day ${day} snack#${slotIndex}: added "${picked.name}" (${Math.round(picked.protein * 10) / 10}g P, ${Math.round(picked.calories)} kcal)`,
+      );
     }
   }
 }
@@ -710,7 +814,7 @@ export function tuneDayTowardCalorieBand(opts: TuneDayOptions): void {
   }
 
   if (opts.dailyProteinTarget > 0) {
-    const proteinFloor = opts.dailyProteinTarget * 0.9;
+    const proteinFloor = opts.dailyProteinTarget * 0.95;
     for (let i = 0; i < 16; i += 1) {
       const pro = dayProteinFromRows(opts.rows, opts.day, opts.proById);
       if (pro >= proteinFloor) break;

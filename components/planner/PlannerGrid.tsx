@@ -9,11 +9,8 @@ import { AddSlotButton } from "@/components/planner/AddSlotButton";
 import { DailyTotalsRow } from "@/components/planner/DailyTotalsRow";
 import { RecipePickerModal } from "@/components/planner/RecipePickerModal";
 import type { ProfileDietPrefs } from "@/lib/utils/diet";
-import {
- normalizeRecipeNutritionEmbed,
- type RecipeNutritionSummary,
-} from "@/lib/utils/recipe-nutrition";
-import { DAY_LABELS, MEAL_LABELS, MEAL_TYPES, getEntryCalories } from "@/types";
+import { sumDayNutritionFromEntries } from "@/lib/planner/weekly-macros";
+import { DAY_LABELS, MEAL_LABELS, MEAL_TYPES } from "@/types";
 import type { PlannerGrid as PlannerGridType, MealPlanEntry, MealType } from "@/types";
 
 type Recipe = {
@@ -184,7 +181,7 @@ export function PlannerGrid({
  ))}
 
  <DailyTotalsRow
- grid={grid}
+ entries={entries}
  dailyCalorieTarget={dailyCalorieTarget}
  dailyProteinTarget={dailyProteinTarget}
  />
@@ -340,29 +337,12 @@ function PlannerGridMobileInline({
 
  <div className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] p-3">
  {(() => {
- const slots = Object.values(grid[activeDay]).filter(Boolean);
- const cal = slots.reduce((s, e) => s + (getEntryCalories(e!) ?? 0), 0);
- const pro = slots.reduce((s, e) => {
- const n = normalizeRecipeNutritionEmbed(e!.recipe?.recipe_nutrition as RecipeNutritionSummary | RecipeNutritionSummary[] | null | undefined);
- return s + (n?.protein_g ?? 0);
- }, 0);
- const carbs = slots.reduce((s, e) => {
- const n = normalizeRecipeNutritionEmbed(e!.recipe?.recipe_nutrition as RecipeNutritionSummary | RecipeNutritionSummary[] | null | undefined);
- return s + (n?.carbs_g ?? 0);
- }, 0);
- const fat = slots.reduce((s, e) => {
- const n = normalizeRecipeNutritionEmbed(e!.recipe?.recipe_nutrition as RecipeNutritionSummary | RecipeNutritionSummary[] | null | undefined);
- return s + (n?.fat_g ?? 0);
- }, 0);
- const fibre = slots.reduce((s, e) => {
- const n = normalizeRecipeNutritionEmbed(e!.recipe?.recipe_nutrition as RecipeNutritionSummary | RecipeNutritionSummary[] | null | undefined);
- return s + (n?.fibre_g ?? 0);
- }, 0);
- const sugar = slots.reduce((s, e) => {
- const n = normalizeRecipeNutritionEmbed(e!.recipe?.recipe_nutrition as RecipeNutritionSummary | RecipeNutritionSummary[] | null | undefined);
- return s + (n?.sugar_g ?? 0);
- }, 0);
- if (slots.length === 0) return <p className="text-sm text-[var(--text-muted)]">No meals planned</p>;
+ const dayEntries = entries.filter((e) => e.day_of_week === activeDay);
+ const { kcal: cal, protein: pro, carbs, fat, fibre, sugar } = sumDayNutritionFromEntries(
+ activeDay,
+ entries,
+ );
+ if (dayEntries.length === 0) return <p className="text-sm text-[var(--text-muted)]">No meals planned</p>;
  return (
  <div className="grid grid-cols-2 gap-3 text-sm">
  <div>

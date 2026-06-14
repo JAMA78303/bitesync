@@ -88,6 +88,17 @@ function assertNoPieceUnit(value: unknown): void {
   const drizzle = parseIngredientLine("drizzle olive oil");
   if (drizzle.unit !== "tbsp") throw new Error(`drizzle unit: ${drizzle.unit}`);
   if (!drizzle.name.includes("olive oil")) throw new Error(`drizzle name: ${drizzle.name}`);
+  const drizzleInput = parsedIngredientToInput(drizzle);
+  if (drizzleInput.quantity !== drizzle.grams || drizzleInput.unit !== "g") {
+    throw new Error(`drizzle input should use estimated grams: ${JSON.stringify(drizzleInput)}`);
+  }
+
+  const stock = parseIngredientLine("½ chicken stock pot");
+  if (stock.grams !== 14) throw new Error(`stock grams: ${stock.grams}`);
+  const stockInput = parsedIngredientToInput(stock);
+  if (stockInput.quantity !== 14 || stockInput.unit !== "g") {
+    throw new Error(`stock input should use estimated grams: ${JSON.stringify(stockInput)}`);
+  }
 
   const taste = parseIngredientLine("salt and freshly ground black pepper, to taste");
   if (taste.unit !== "pinch") throw new Error(`to taste unit: ${taste.unit}`);
