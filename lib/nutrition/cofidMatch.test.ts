@@ -131,6 +131,54 @@ const pastaCandidates: CofidCandidate[] = [
 ];
 assertMatch("pasta", pastaCandidates, "boiled", ["dried"]);
 
+// quinoa → penalise raw when cooked variant exists; only-raw falls through to local DB
+const quinoaCandidates: CofidCandidate[] = [
+  { food_code: "14-843", food_name: "Quinoa, raw", food_group: "GA", matchKind: "partial" },
+];
+assertMatch("quinoa", quinoaCandidates, "quinoa", ["bread"]);
+
+// couscous → cooked, NOT raw (class rule)
+const couscousCandidates: CofidCandidate[] = [
+  { food_code: "11-901", food_name: "Couscous, plain, raw", food_group: "AT", matchKind: "partial" },
+  { food_code: "11-902", food_name: "Couscous, plain, cooked", food_group: "AT", matchKind: "partial" },
+];
+assertMatch("couscous", couscousCandidates, "cooked", ["raw"]);
+
+// lentils → boiled, NOT dried raw
+const lentilCandidates: CofidCandidate[] = [
+  { food_code: "13-089", food_name: "Lentils, green and brown, whole, dried, raw", food_group: "DB", matchKind: "partial" },
+  { food_code: "13-661", food_name: "Lentils, green and brown, whole, dried, boiled in unsalted water", food_group: "DB", matchKind: "partial" },
+];
+assertMatch("lentils", lentilCandidates, "boiled", ["dried, raw"]);
+
+// kidney beans → boiled/canned, NOT dried raw
+const kidneyBeanCandidates: CofidCandidate[] = [
+  { food_code: "13-109", food_name: "Beans, red kidney, dried, raw", food_group: "DB", matchKind: "partial" },
+  { food_code: "13-659", food_name: "Beans, red kidney, dried, boiled in unsalted water", food_group: "DB", matchKind: "partial" },
+  { food_code: "13-660", food_name: "Beans, red kidney, canned in water, re-heated, drained", food_group: "DB", matchKind: "partial" },
+];
+assertMatch("kidney beans", kidneyBeanCandidates, "boiled", ["dried, raw"]);
+
+// chickpeas → boiled, NOT dried raw
+const chickpeaCandidates: CofidCandidate[] = [
+  { food_code: "13-074", food_name: "Beans, chick peas, Kabuli, whole, dried, raw", food_group: "DB", matchKind: "partial" },
+  { food_code: "13-662", food_name: "Beans, chick peas, Kabuli, whole, dried, boiled in unsalted water", food_group: "DB", matchKind: "partial" },
+];
+assertMatch("chickpeas", chickpeaCandidates, "boiled", ["dried, raw"]);
+
+// bulgur → when only raw in CoFID, matcher picks raw (local DB override handles cooked values)
+const bulgurCandidates: CofidCandidate[] = [
+  { food_code: "11-904", food_name: "Wheat, bulgur, raw", food_group: "AA", matchKind: "partial" },
+];
+assertMatch("bulgur", bulgurCandidates, "bulgur", []);
+
+// explicit "raw rice" should still prefer raw when user asked
+const rawRiceCandidates: CofidCandidate[] = [
+  { food_code: "11-865", food_name: "Rice, white, pudding, raw", food_group: "AC", matchKind: "partial" },
+  { food_code: "11-862", food_name: "Rice, white, long grain, boiled in unsalted water", food_group: "AC", matchKind: "partial" },
+];
+assertMatch("raw rice", rawRiceCandidates, "raw", []);
+
 // exact beats partial
 const exact = scoreCofidMatch("chicken breast", "Chicken breast", "exact");
 const partial = scoreCofidMatch("chicken breast", "Chicken, breast, roasted", "partial");
