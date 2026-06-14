@@ -40,6 +40,8 @@ function totalsFromLines(
 
   const totals = { ...EMPTY_TOTALS };
   let matched = 0;
+  let satKnownItems = 0;
+  let satTotalItems = 0;
 
   let idx = 0;
   for (const ing of ingredients) {
@@ -55,10 +57,16 @@ function totalsFromLines(
     totals.fibre_g += line.fibre;
     totals.sugar_g += line.sugar_g;
     totals.sodium_mg += line.sodium_mg;
-    totals.saturated_fat_g += line.saturated_fat_g;
+    satTotalItems += 1;
+    if (line.saturated_fat_g != null) {
+      satKnownItems += 1;
+      totals.saturated_fat_g += line.saturated_fat_g;
+    }
   }
 
   totals.coverage_pct = Math.round((matched / valid.length) * 100);
+  totals.saturated_fat_known_items = satKnownItems;
+  totals.saturated_fat_total_items = satTotalItems;
   return totals;
 }
 

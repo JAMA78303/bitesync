@@ -47,6 +47,12 @@ export function MicronutrientPanel({ analysis }: Props) {
  <NutrientRow key={nutrient.key} nutrient={nutrient} />
  ))}
  </div>
+ {analysis.covered_items < analysis.total_items ? (
+ <p className="mt-3 text-xs text-[var(--text-muted)]">
+ Partial estimate: {analysis.total_items - analysis.covered_items} of {analysis.total_items}{" "}
+ ingredients this week have no nutrient data, so totals are a floor and may read higher.
+ </p>
+ ) : null}
  </div>
 
  <div className="space-y-3 px-5 pb-4">

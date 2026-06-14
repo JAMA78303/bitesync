@@ -48,6 +48,8 @@ export async function resolveIngredientLineAsync(
   contribution: ReturnType<typeof emptyLine>;
   estimated: boolean;
   cofid?: IngredientCofidMeta;
+  /** Whether this line contributed a known saturated-fat value (vs unknown). */
+  saturatedFatKnown: boolean;
 }> {
   const base = emptyLine();
   const resolved = await lookupNutritionAsync(ing.name, ing.quantity, ing.unit, {
@@ -55,7 +57,7 @@ export async function resolveIngredientLineAsync(
   });
 
   if (!resolved) {
-    return { contribution: base, estimated: false };
+    return { contribution: base, estimated: false, saturatedFatKnown: false };
   }
 
   sumPartial(base, {
@@ -66,7 +68,8 @@ export async function resolveIngredientLineAsync(
     fibre_g: resolved.fibre,
     sugar_g: resolved.sugar_g,
     sodium_mg: resolved.sodium_mg,
-    saturated_fat_g: resolved.saturated_fat_g,
+    // Unknown sat fat contributes 0 to the floor; tracked separately below.
+    saturated_fat_g: resolved.saturated_fat_g ?? 0,
   });
 
   const cofid: IngredientCofidMeta | undefined =
@@ -81,6 +84,7 @@ export async function resolveIngredientLineAsync(
     contribution: base,
     estimated: resolved.estimated,
     cofid,
+    saturatedFatKnown: resolved.saturated_fat_g != null,
   };
 }
 
@@ -120,6 +124,8 @@ export async function calculateRecipeNutritionWithMeta(
   const rows = await Promise.all(valid.map((ing) => resolveIngredientLineAsync(ing, aiEnabled)));
 
   let matched = 0;
+  let satKnownItems = 0;
+  let satTotalItems = 0;
   const totals = emptyLine();
   const estimatedFlags = rows.map((row) => row.estimated);
   const cofidMeta = rows.map((row) => row.cofid ?? {});
@@ -129,7 +135,11 @@ export async function calculateRecipeNutritionWithMeta(
       row.contribution.protein_g > 0 ||
       row.contribution.carbs_g > 0 ||
       row.contribution.fat_g > 0;
-    if (hasData) matched += 1;
+    if (hasData) {
+      matched += 1;
+      satTotalItems += 1;
+      if (row.saturatedFatKnown) satKnownItems += 1;
+    }
     sumPartial(totals, row.contribution);
   }
 
@@ -161,6 +171,8 @@ export async function calculateRecipeNutritionWithMeta(
     totals: {
       ...totals,
       coverage_pct: Math.round((matched / valid.length) * 100),
+      saturated_fat_known_items: satKnownItems,
+      saturated_fat_total_items: satTotalItems,
     },
     estimatedFlags: fullEstimatedFlags,
     cofidMeta: fullCofidMeta,

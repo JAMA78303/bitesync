@@ -14,6 +14,7 @@ export interface CoFIDNutrition {
   kcal: number | null;
   protein_g: number | null;
   fat_g: number | null;
+  saturated_fat_g: number | null;
   carbs_g: number | null;
   sugars_g: number | null;
   fibre_g: number | null;
@@ -50,6 +51,7 @@ type CofidDbRow = {
   kcal: number | null;
   protein_g: number | null;
   fat_g: number | null;
+  saturated_fat_g: number | null;
   carbs_g: number | null;
   sugars_g: number | null;
   fibre_g: number | null;
@@ -133,7 +135,7 @@ export function invalidateCofidOverrideCache(): void {
 }
 
 const COFID_SELECT =
-  "food_code,food_name,food_group,kcal,protein_g,fat_g,carbs_g,sugars_g,fibre_g,sodium_mg,salt_g,vitamin_a_ug,vitamin_d_ug,vitamin_e_mg,vitamin_k_ug,vitamin_c_mg,thiamin_mg,riboflavin_mg,niacin_mg,vitamin_b6_mg,vitamin_b12_ug,folate_ug,calcium_mg,iron_mg,zinc_mg,magnesium_mg,potassium_mg,phosphorus_mg,selenium_ug,iodine_ug";
+  "food_code,food_name,food_group,kcal,protein_g,fat_g,saturated_fat_g,carbs_g,sugars_g,fibre_g,sodium_mg,salt_g,vitamin_a_ug,vitamin_d_ug,vitamin_e_mg,vitamin_k_ug,vitamin_c_mg,thiamin_mg,riboflavin_mg,niacin_mg,vitamin_b6_mg,vitamin_b12_ug,folate_ug,calcium_mg,iron_mg,zinc_mg,magnesium_mg,potassium_mg,phosphorus_mg,selenium_ug,iodine_ug";
 
 function addCandidates(
   target: CofidCandidate[],
@@ -300,6 +302,7 @@ export function scaleNutrition(nutrition: CoFIDNutrition, grams: number): CoFIDN
     kcal: scale(nutrition.kcal),
     protein_g: scale(nutrition.protein_g),
     fat_g: scale(nutrition.fat_g),
+    saturated_fat_g: scale(nutrition.saturated_fat_g),
     carbs_g: scale(nutrition.carbs_g),
     sugars_g: scale(nutrition.sugars_g),
     fibre_g: scale(nutrition.fibre_g),
@@ -335,7 +338,8 @@ export type CoFIDMacroContribution = {
   fibre_g: number;
   sugar_g: number;
   sodium_mg: number;
-  saturated_fat_g: number;
+  /** null = CoFID has no saturated-fat value for this food (unknown), never a fake 0. */
+  saturated_fat_g: number | null;
 };
 
 /** Map scaled CoFID values into recipe macro totals. */
@@ -348,6 +352,6 @@ export function cofidMacrosFromScaled(scaled: CoFIDNutrition): CoFIDMacroContrib
     fibre_g: num(scaled.fibre_g),
     sugar_g: num(scaled.sugars_g),
     sodium_mg: num(scaled.sodium_mg),
-    saturated_fat_g: 0,
+    saturated_fat_g: scaled.saturated_fat_g,
   };
 }

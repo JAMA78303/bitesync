@@ -12,6 +12,7 @@
     "verify:meal-templates": "tsx scripts/verify-meal-templates.ts",
     "verify:meal-template-goals": "tsx scripts/verify-meal-template-goals.ts",
     "verify:micro-coverage": "tsx scripts/verify-micro-coverage.ts",
+    "verify:saturated-fat": "tsx scripts/verify-saturated-fat.ts",
     "capture:landing": "node scripts/capture-landing-screenshots.mjs",
     "icons": "node scripts/write-brand-icons.mjs",
     "import:cofid": "tsx scripts/import-cofid.ts",

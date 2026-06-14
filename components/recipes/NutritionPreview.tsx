@@ -22,6 +22,18 @@ export function NutritionPreview({ totals }: NutritionPreviewProps) {
  return approxPrefix + formatValue(value);
  }
 
+ const satKnown = totals.saturated_fat_known_items ?? 0;
+ const satTotal = totals.saturated_fat_total_items ?? 0;
+ const satPartial = satTotal > 0 && satKnown < satTotal;
+ const satUnknown = satTotal > 0 && satKnown === 0;
+
+ function displaySaturatedFat(): string {
+ if (isEmpty || satTotal === 0) return"—";
+ if (satUnknown) return"unknown";
+ const prefix = satPartial ?"≥ " : approxPrefix;
+ return prefix + formatValue(totals.saturated_fat_g);
+ }
+
  return (
  <aside className={`${ds.formCard} p-4`}>
  <div className="mb-3 flex items-center justify-between">
@@ -61,9 +73,20 @@ export function NutritionPreview({ totals }: NutritionPreviewProps) {
  </p>
  <p className="rounded-md bg-[var(--surface-muted)] p-2 bg-[var(--surface-elevated)]">
  <span className="block text-[var(--text-muted)]">Saturated Fat (g)</span>
- <span className="font-medium text-[var(--text-primary)]">{display(totals.saturated_fat_g)}</span>
+ <span className="font-medium text-[var(--text-primary)]">{displaySaturatedFat()}</span>
  </p>
  </div>
+ {satPartial && !satUnknown ? (
+ <p className="mt-3 text-xs text-[var(--text-muted)]">
+ Saturated fat is a partial estimate — {satTotal - satKnown} of {satTotal} ingredients are missing
+ saturated-fat data, so the real total is higher.
+ </p>
+ ) : null}
+ {satUnknown ? (
+ <p className="mt-3 text-xs text-[var(--text-muted)]">
+ No saturated-fat data is available for these ingredients yet.
+ </p>
+ ) : null}
  </aside>
  );
 }

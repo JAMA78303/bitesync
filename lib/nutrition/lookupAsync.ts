@@ -19,7 +19,8 @@ export type ResolvedNutrition = {
   fibre: number;
   sugar_g: number;
   sodium_mg: number;
-  saturated_fat_g: number;
+  /** null = no saturated-fat data for this food (unknown). Never a fabricated 0. */
+  saturated_fat_g: number | null;
   source: NutritionLookupSource;
   estimated: boolean;
   cofid_food_name?: string;
@@ -65,7 +66,7 @@ function fromCofid(
     fibre: round1(macros.fibre_g),
     sugar_g: round1(macros.sugar_g),
     sodium_mg: round1(macros.sodium_mg),
-    saturated_fat_g: round1(macros.saturated_fat_g),
+    saturated_fat_g: macros.saturated_fat_g == null ? null : round1(macros.saturated_fat_g),
     source: "cofid",
     estimated: false,
     cofid_food_name: scaled.food_name,
@@ -100,7 +101,14 @@ export async function lookupNutritionAsync(
       macros.carbs_g > 0 ||
       macros.fat_g > 0
     ) {
-      return fromCofid(scaled, cofid.matched_by);
+      const resolved = fromCofid(scaled, cofid.matched_by);
+      // CoFID may lack a saturated-fat figure (older import / sparse row). Stay within
+      // the CoFID-coherent pipeline by borrowing the value from our own local DB before
+      // giving up — only report null (unknown) when neither source has it.
+      if (resolved.saturated_fat_g == null && entry && entry.per_100g.saturated_fat_g != null) {
+        resolved.saturated_fat_g = round1(entry.per_100g.saturated_fat_g * (grams / 100));
+      }
+      return resolved;
     }
   }
 
@@ -119,7 +127,7 @@ export async function lookupNutritionAsync(
         fibre: round1(ai.fibre),
         sugar_g: entry ? round1(entry.per_100g.sugar_g * (grams / 100)) : 0,
         sodium_mg: entry ? round1(entry.per_100g.sodium_mg * (grams / 100)) : 0,
-        saturated_fat_g: entry ? round1(entry.per_100g.saturated_fat_g * (grams / 100)) : 0,
+        saturated_fat_g: entry ? round1(entry.per_100g.saturated_fat_g * (grams / 100)) : null,
         source: "ai_estimated",
         estimated: true,
       };

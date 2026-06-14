@@ -24,6 +24,7 @@ export type CofidRow = {
   kcal: number | null;
   protein_g: number | null;
   fat_g: number | null;
+  saturated_fat_g: number | null;
   carbs_g: number | null;
   sugars_g: number | null;
   fibre_g: number | null;
@@ -89,6 +90,13 @@ function mapProximates(row: Record<string, unknown>): Partial<CofidRow> {
     kcal: parseNumeric(row["Energy (kcal) (kcal)"] ?? row["Energy (kcal)"]),
     protein_g: parseNumeric(row["Protein (g)"]),
     fat_g: parseNumeric(row["Fat (g)"]),
+    saturated_fat_g: parseNumeric(
+      row["Satd FA /100g fd (g)"] ??
+        row["Satd FA /100g food (g)"] ??
+        row["Satd FA /100g (g)"] ??
+        row["Saturated fatty acids (g)"] ??
+        row["Satd FA (g)"],
+    ),
     carbs_g: parseNumeric(row["Carbohydrate (g)"]),
     sugars_g: parseNumeric(row["Total sugars (g)"]),
     fibre_g: fibreFromRow(row),

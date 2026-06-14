@@ -9,7 +9,8 @@ export interface ClientNutritionResult {
   fibre: number;
   sugar_g: number;
   sodium_mg: number;
-  saturated_fat_g: number;
+  /** null = no saturated-fat data for this food (unknown). */
+  saturated_fat_g: number | null;
   source: NutritionLookupSource;
   estimated: boolean;
   cofid_food_name?: string;
