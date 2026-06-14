@@ -35,13 +35,13 @@ export function extractIngredientsFromCaption(text: string): ParsedIngredient[] 
 
     if (looksLikeIngredient && !METHOD_HEADER.test(line)) {
       const parsed = parseIngredientLine(line.replace(/^[-•*]\s*/, ""));
-      if (parsed.name.length > 1) ingredients.push(parsed);
+      if (parsed && parsed.name.length > 1) ingredients.push(parsed);
       continue;
     }
 
     if (!inIngredients && INGREDIENT_LINE.test(line)) {
       const parsed = parseIngredientLine(line.replace(/^[-•*]\s*/, ""));
-      if (parsed.name.length > 1) ingredients.push(parsed);
+      if (parsed && parsed.name.length > 1) ingredients.push(parsed);
     }
   }
 

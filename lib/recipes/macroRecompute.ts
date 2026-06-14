@@ -159,6 +159,7 @@ export function repairStoredIngredient(row: StoredIngredientRow): IngredientRepa
   const candidates = [reconstructRawText(row), row.name.trim()].filter(Boolean);
   for (const raw of candidates) {
     const parsed = parseIngredientLine(raw);
+    if (!parsed) continue;
     const after = parsedIngredientToInput(parsed);
     if (after.name.trim() && after.quantity > 0) {
       return { before, after, repaired: !inputsEqual(before, after) };

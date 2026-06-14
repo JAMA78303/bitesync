@@ -101,13 +101,15 @@ function assertNoPieceUnit(value: unknown): void {
   }
 
   const taste = parseIngredientLine("salt and freshly ground black pepper, to taste");
-  if (taste.unit !== "pinch") throw new Error(`to taste unit: ${taste.unit}`);
-  if (taste.quantity !== 1) throw new Error(`to taste qty: ${taste.quantity}`);
+  if (taste !== null) throw new Error(`to taste should be excluded: ${JSON.stringify(taste)}`);
 }
 
 // Halving scaled import (2 servings → 1 person)
 {
-  const scaled = scaleParsedIngredients([parseIngredientLine("250g/9oz chicken mince")], 0.5);
+  const scaled = scaleParsedIngredients(
+    [parseIngredientLine("250g/9oz chicken mince")].filter((x): x is NonNullable<typeof x> => x != null),
+    0.5,
+  );
   if (scaled[0]?.grams !== 125) throw new Error(`scaled grams: ${scaled[0]?.grams}`);
 }
 

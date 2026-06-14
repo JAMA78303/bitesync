@@ -230,14 +230,7 @@ function parseDescriptiveAmount(rawText: string): ParsedIngredient | null {
   const lower = rawText.toLowerCase();
 
   if (/\bto taste\b/i.test(rawText)) {
-    return {
-      quantity: 1,
-      unit: "pinch",
-      name: cleanIngredientName(rawText),
-      grams: 1,
-      gramsSource: "estimated",
-      rawText,
-    };
+    return null;
   }
 
   if (/\bdrizzle\b/i.test(rawText)) {
@@ -274,8 +267,12 @@ function parseDescriptiveAmount(rawText: string): ParsedIngredient | null {
 }
 
 /** Parse a single ingredient line into a structured, nutrition-ready shape. */
-export function parseIngredientLine(raw: string): ParsedIngredient {
+export function parseIngredientLine(raw: string): ParsedIngredient | null {
   const rawText = normalizeSpaces(raw.replace(/^[•\-*]\s*/, ""));
+
+  if (/\bto taste\b/i.test(rawText)) {
+    return null;
+  }
 
   const descriptive = parseDescriptiveAmount(rawText);
   if (descriptive) return descriptive;
@@ -390,7 +387,9 @@ export function scaleParsedIngredients(
   scale: number,
 ): ParsedIngredient[] {
   if (scale === 1) return ingredients;
-  return ingredients.map((ing) => ({
+  return ingredients
+    .filter((ing): ing is ParsedIngredient => ing != null)
+    .map((ing) => ({
     ...ing,
     quantity:
       ing.quantity != null && ing.quantity > 0
@@ -407,6 +406,6 @@ export function scaleParsedIngredients(
 
 export function parsedIngredientsToInputs(ingredients: ParsedIngredient[]): RecipeIngredientInput[] {
   return ingredients
-    .filter((ing) => ing.name.trim().length > 0)
+    .filter((ing): ing is ParsedIngredient => ing != null && ing.name.trim().length > 0)
     .map(parsedIngredientToInput);
 }

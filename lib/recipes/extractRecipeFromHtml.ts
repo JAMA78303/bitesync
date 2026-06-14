@@ -119,7 +119,7 @@ export function extractRecipeFromHtml(html: string, fallbackName = "Imported Rec
 
   const ingredients = rawIngredients
     .map(parseIngredientLine)
-    .filter((i) => i.name.length > 0)
+    .filter((i): i is ParsedIngredient => i != null && i.name.length > 0)
     .filter((i) => !/^(ingredients?|method|instructions?)$/i.test(i.name));
 
   return { name, ingredients, steps, detectedServings };

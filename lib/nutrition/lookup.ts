@@ -91,6 +91,9 @@ export function lookupNutrition(name: string): NutritionLookupEntry | null {
   // Fallback matching for user-entered variations (e.g. "alfredo sauce", "grated parmesan")
   const partial = NUTRITION_DB.find((item) => {
     const dbName = normalizeName(item.name);
+    if (dbName.length <= 4 && normalized.includes(" and ") && !normalized.startsWith(`${dbName} `)) {
+      return false;
+    }
     return normalized.includes(dbName) || dbName.includes(normalized);
   });
   const entry = partial;

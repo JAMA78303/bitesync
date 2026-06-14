@@ -33,6 +33,7 @@ export function parseBulkIngredientInput(raw: string): AvailableIngredient[] {
 
   for (const part of parts) {
     const parsed = parseIngredientLine(part);
+    if (!parsed) continue;
     const name = parsed.name.trim();
     if (!name) continue;
     const key = name.toLowerCase();
