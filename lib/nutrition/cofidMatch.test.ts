@@ -235,4 +235,18 @@ const pastaFormCandidates: CofidCandidate[] = [
 ];
 assertMatch("spaghetti or tagliatelle", pastaFormCandidates, "spaghetti", ["fresh"]);
 
+// mushrooms → white raw, not oyster
+const mushroomCandidates: CofidCandidate[] = [
+  { food_code: "M1", food_name: "Mushrooms, oyster, raw", food_group: "DG", matchKind: "partial" },
+  { food_code: "M2", food_name: "Mushrooms, white, raw", food_group: "DG", matchKind: "partial" },
+];
+assertMatch("closed cup mushrooms", mushroomCandidates, "white", ["oyster"]);
+
+// rapeseed oil → pure oil, not asparagus roasted in rapeseed oil
+const oilCandidates: CofidCandidate[] = [
+  { food_code: "O1", food_name: "Asparagus, roasted in rapeseed oil", food_group: "DG", matchKind: "partial" },
+  { food_code: "O2", food_name: "Oil, rapeseed", food_group: "OC", matchKind: "partial" },
+];
+assertMatch("rapeseed oil", oilCandidates, "rapeseed", ["asparagus"]);
+
 console.log("OK: CoFID matcher regression tests passed");

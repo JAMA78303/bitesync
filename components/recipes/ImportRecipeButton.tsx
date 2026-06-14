@@ -28,6 +28,7 @@ function buildImportPayload(result: ImportResult) {
  importedAt: new Date().toISOString(),
  detectedServings: detected,
  cookingFor,
+ publisherNutritionPerServing: result.publisherNutritionPerServing,
  };
 }
 

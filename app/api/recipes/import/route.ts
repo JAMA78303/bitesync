@@ -11,6 +11,7 @@ import {
   extractStepsFromCaption,
 } from "@/lib/recipes/extractCaptionRecipe";
 import { extractRecipeFromHtml } from "@/lib/recipes/extractRecipeFromHtml";
+import type { PublisherNutritionPerServing } from "@/lib/nutrition/publisherNutrition";
 import type { ParsedIngredient } from "@/lib/recipes/parseIngredient";
 
 export type ImportApiResponse = {
@@ -21,6 +22,7 @@ export type ImportApiResponse = {
   sourceDomain: string;
   sourceType: RecipeSourceType;
   detectedServings: number;
+  publisherNutritionPerServing?: PublisherNutritionPerServing;
   importNotice?: string;
 };
 
@@ -180,6 +182,7 @@ export async function POST(request: NextRequest) {
           sourceUrl,
           sourceType,
           detectedServings: extracted.detectedServings,
+          publisherNutritionPerServing: extracted.publisherNutritionPerServing,
         }),
       );
     }

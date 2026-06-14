@@ -203,6 +203,7 @@ function cleanIngredientName(name: string): string {
     .replace(/\([^)]*\)/g, " ")
     .replace(/\s*\([^)]*$/g, " ")
     .replace(SIZE_PREFIXES, "")
+    .replace(/^pack\s+/i, "")
     .replace(/^[/\s]+/, "")
     .replace(/^[½¼¾⅓⅔⅛\d./\s]+/i, "")
     .replace(/^\d+(?:\.\d+)?\s*oz\.?\s+/i, "")

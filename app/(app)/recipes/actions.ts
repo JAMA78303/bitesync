@@ -8,6 +8,10 @@ import {
   calculateRecipeNutritionWithMeta,
   type IngredientCofidMeta,
 } from "@/lib/nutrition/asyncTotals";
+import {
+  publisherNutritionToTotals,
+  type PublisherNutritionPerServing,
+} from "@/lib/nutrition/publisherNutrition";
 import { getRecipeNutritionTotals } from "@/lib/nutrition/recipeNutritionTotals";
 import {
   fractionForMealSlot,
@@ -51,6 +55,8 @@ export type CreateImportedRecipePayload = CreateRecipePayload & {
   detectedServings: number;
   /** People quantities were scaled for at import. */
   cookingFor: number;
+  /** Site-published per-serving macros from schema.org when available. */
+  publisherNutritionPerServing?: PublisherNutritionPerServing;
 };
 
 const GOAL_MEAL_SLOTS: GoalMealSlot[] = ["breakfast", "lunch", "dinner", "snack"];
@@ -383,10 +389,13 @@ export async function createImportedRecipe(
     };
   }
 
-  const { totals: nutrition, estimatedFlags, cofidMeta } = await calculateRecipeNutritionWithMeta(
+  const { totals: calculated, estimatedFlags, cofidMeta } = await calculateRecipeNutritionWithMeta(
     ingredients,
     { aiEnabled: true },
   );
+  const nutrition = payload.publisherNutritionPerServing
+    ? publisherNutritionToTotals(payload.publisherNutritionPerServing, calculated.coverage_pct)
+    : calculated;
 
   const { data: recipe, error: recipeError } = await supabase
     .from("recipes")

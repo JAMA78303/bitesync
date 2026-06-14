@@ -1,4 +1,5 @@
 import * as cheerio from "cheerio";
+import { parsePublisherNutritionFromRecipeNode, type PublisherNutritionPerServing } from "@/lib/nutrition/publisherNutrition";
 import { parseIngredientLine, type ParsedIngredient } from "@/lib/recipes/parseIngredient";
 
 function parseRecipeYield(node: Record<string, unknown>): number {
@@ -46,6 +47,8 @@ export type ExtractedRecipe = {
   ingredients: ParsedIngredient[];
   steps: string[];
   detectedServings: number;
+  /** Per-serving macros from schema.org NutritionInformation when published on the page. */
+  publisherNutritionPerServing?: PublisherNutritionPerServing;
 };
 
 export function extractRecipeFromHtml(html: string, fallbackName = "Imported Recipe"): ExtractedRecipe {
@@ -55,6 +58,7 @@ export function extractRecipeFromHtml(html: string, fallbackName = "Imported Rec
   let rawIngredients: string[] = [];
   let steps: string[] = [];
   let detectedServings = 1;
+  let publisherNutritionPerServing: PublisherNutritionPerServing | undefined;
 
   const scripts = $('script[type="application/ld+json"]').toArray();
   for (const el of scripts) {
@@ -80,6 +84,8 @@ export function extractRecipeFromHtml(html: string, fallbackName = "Imported Rec
           rawIngredients = (recipeNode.recipeIngredient ?? []).map((v) => String(v).trim()).filter(Boolean);
           steps = parseInstructions(recipeNode.recipeInstructions);
           detectedServings = parseRecipeYield(recipeNode as Record<string, unknown>);
+          publisherNutritionPerServing =
+            parsePublisherNutritionFromRecipeNode(recipeNode as Record<string, unknown>) ?? undefined;
           break;
         }
       }
@@ -122,5 +128,5 @@ export function extractRecipeFromHtml(html: string, fallbackName = "Imported Rec
     .filter((i): i is ParsedIngredient => i != null && i.name.length > 0)
     .filter((i) => !/^(ingredients?|method|instructions?)$/i.test(i.name));
 
-  return { name, ingredients, steps, detectedServings };
+  return { name, ingredients, steps, detectedServings, publisherNutritionPerServing };
 }

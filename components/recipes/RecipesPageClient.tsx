@@ -329,6 +329,7 @@ export function RecipesPageClient({
  importedAt: new Date().toISOString(),
  detectedServings: detected,
  cookingFor,
+ publisherNutritionPerServing: result.publisherNutritionPerServing,
  });
  if ("error" in created) throw new Error(created.error);
  setShowImport(false);

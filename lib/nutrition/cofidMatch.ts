@@ -233,6 +233,8 @@ const PASTA_SHAPE_PATTERN =
   /\b(spaghetti|tagliatelle|penne|fusilli|macaroni|linguine|fettuccine|pasta)\b/i;
 const MINCE_QUERY_PATTERN = /\b(mince|minced)\b/i;
 const BREADCRUMB_QUERY_PATTERN = /\bbreadcrumbs?\b/i;
+const MUSHROOM_QUERY_PATTERN = /\bmushrooms?\b/i;
+const PLAIN_OIL_QUERY_PATTERN = /\b(rapeseed|canola|vegetable|sunflower|olive|groundnut|peanut)\s+oil\b/i;
 const STAPLE_PULSE_PATTERN =
   /\b(kidney\s*beans?|black\s*beans?|baked\s*beans?|cannellini|red\s*kidney|chickpeas?|lentils?)\b/i;
 
@@ -341,6 +343,31 @@ function breadcrumbQueryAdjustment(query: string, foodName: string): number {
   ) {
     return -950;
   }
+  return 0;
+}
+
+/** Bare "mushrooms" → white/button, not oyster unless the query says oyster. */
+function mushroomQueryAdjustment(query: string, foodName: string): number {
+  if (!MUSHROOM_QUERY_PATTERN.test(normalizeCofidQuery(query))) return 0;
+  const q = normalizeForMatch(query);
+  const f = normalizeForMatch(foodName);
+  if (/\boyster\b/.test(f) && !/\boyster\b/.test(q)) return -900;
+  if (/\b(fried in|roasted in|stewed in|with)\b/.test(f)) return -450;
+  if (/\bwhite\b/.test(f) && /\braw\b/.test(f)) return 180;
+  return 0;
+}
+
+/** Bare "rapeseed oil" → pure oil, not asparagus fried in rapeseed oil. */
+function plainOilQueryAdjustment(query: string, foodName: string): number {
+  const q = normalizeCofidQuery(query);
+  if (!/\boil\b/.test(q) && !PLAIN_OIL_QUERY_PATTERN.test(q)) return 0;
+  const f = normalizeForMatch(foodName);
+  if (/\b(fried in|roasted in|stewed in|baked in|with)\b/.test(f) && /\boil\b/.test(f)) return -950;
+  if (/\b(fried|roasted|stewed|baked|burger|bread|asparagus|aubergine)\b/.test(f) && !/^oil,\s*/.test(f)) {
+    return -350;
+  }
+  if (/^oil,\s*(rapeseed|olive|sunflower|vegetable|corn|groundnut)/.test(f)) return 250;
+  if (PLAIN_OIL_QUERY_PATTERN.test(q) && /\brapeseed\b/.test(f) && /\boil\b/.test(f)) return 200;
   return 0;
 }
 
@@ -469,6 +496,8 @@ export function scoreCofidMatch(
   score += minceQueryAdjustment(q, f);
   score += pastaQueryAdjustment(q, foodName);
   score += breadcrumbQueryAdjustment(q, foodName);
+  score += mushroomQueryAdjustment(q, foodName);
+  score += plainOilQueryAdjustment(q, foodName);
 
   return score;
 }

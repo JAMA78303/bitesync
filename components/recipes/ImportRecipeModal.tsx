@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { ExternalLink, Link as LinkIcon, Loader2, Plus, Trash2, X } from "lucide-react";
 import { ModalPortal } from "@/components/ui/ModalPortal";
+import type { PublisherNutritionPerServing } from "@/lib/nutrition/publisherNutrition";
 import type { RecipeSourceType } from "@/lib/recipes/detectSourceType";
 import type { ParsedIngredient } from "@/lib/recipes/parseIngredient";
 
@@ -19,6 +20,8 @@ export type ImportResult = {
  detectedServings: number;
  /** How many people to scale quantities for (set on servings step). */
  cookingFor: number;
+ /** Site-published per-serving macros when the source page provides them. */
+ publisherNutritionPerServing?: PublisherNutritionPerServing;
  importNotice?: string;
 };
 
@@ -75,6 +78,7 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
  sourceDomain: data.sourceDomain || new URL(url.trim()).hostname.replace(/^www\./,""),
  sourceType: data.sourceType ||"unknown",
  detectedServings,
+ publisherNutritionPerServing: data.publisherNutritionPerServing,
  importNotice: data.importNotice,
  });
  setCookingFor(1);
