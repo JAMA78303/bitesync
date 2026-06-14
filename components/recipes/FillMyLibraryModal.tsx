@@ -194,7 +194,7 @@ export function FillMyLibraryModal({ onClose }: Props) {
  onChange={(e) => setCount(Number(e.target.value))}
  className="mt-1 block w-full rounded-lg border border-[var(--border-default)] bg-[var(--surface-card)] px-3 py-2 text-sm"
  >
- {[8, 10, 12].map((n) => (
+ {[8, 10, 12, 14, 16].map((n) => (
  <option key={n} value={n}>
  {n} recipes (mixed meals)
  </option>
@@ -202,8 +202,8 @@ export function FillMyLibraryModal({ onClose }: Props) {
  </select>
  </label>
  <p className="text-xs text-[var(--text-muted)]">
- Your dietary settings are hard limits. Omnivores still get a mix of meat, fish, and plant-based
- options in each batch.
+ Your dietary settings are hard limits. Each batch rotates meal types and templates so you
+ get different dishes — run fill again for another mix. Omnivores get meat, fish, and plant-based mains.
  </p>
  </div>
  ) : null}

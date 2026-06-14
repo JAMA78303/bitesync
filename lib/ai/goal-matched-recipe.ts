@@ -81,6 +81,8 @@ export type GoalMatchedRecipeOptions = {
   microFocusKey?: string;
   /** Snack only: use dish-style templates (yoghurt bowl, PB banana, etc.), not legume+veg piles. */
   composedSnackOnly?: boolean;
+  /** Skip templates already used in this batch (bulk fill variety). */
+  excludeTemplateIds?: string[];
 };
 
 export function clampTarget(kcal: number): number {

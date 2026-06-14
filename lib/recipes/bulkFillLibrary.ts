@@ -62,12 +62,16 @@ function proteinAxisForSlot(
 ): BulkProteinAxis {
   if (hard.vegan) return "vegan";
   if (hard.vegetarian) return index % 2 === 0 ? "vegetarian" : "plant";
-  // Breakfast/snack templates are eggs, dairy, and composed bowls — not meat mains.
   if (mealSlot === "breakfast" || mealSlot === "snack") {
-    const soft: BulkProteinAxis[] = ["plant", "vegetarian", "plant"];
+    const soft: BulkProteinAxis[] = ["plant", "vegetarian", "plant", "vegetarian"];
     return soft[index % soft.length];
   }
   return OMNIVORE_AXIS_ROTATION[index % OMNIVORE_AXIS_ROTATION.length];
+}
+
+function mealSlotForIndex(index: number, baseSeed: number): GoalMealSlot {
+  const offset = (baseSeed >>> 0) % MEAL_DISTRIBUTION.length;
+  return MEAL_DISTRIBUTION[(index + offset) % MEAL_DISTRIBUTION.length];
 }
 
 function axisLabel(axis: BulkProteinAxis): string {
@@ -97,9 +101,9 @@ export function planBulkFillBatch(
   const slots: BulkFillSlotPlan[] = [];
 
   for (let i = 0; i < n; i++) {
-    const mealSlot = MEAL_DISTRIBUTION[i % MEAL_DISTRIBUTION.length];
+    const mealSlot = mealSlotForIndex(i, baseSeed);
     const proteinAxis = proteinAxisForSlot(i, hard, mealSlot);
-    const variantSeed = (baseSeed ^ (i * 0x9e3779b9) ^ (mealSlot.length << 12)) >>> 0;
+    const variantSeed = (baseSeed ^ (i * 0x9e3779b9) ^ (mealSlot.length << 12) ^ (i << 18)) >>> 0;
     slots.push({
       slotId: `slot-${i}`,
       mealSlot,

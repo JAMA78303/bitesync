@@ -47,6 +47,7 @@ export type HybridRecipeDraft = {
   fitsGlutenFree: boolean;
   source: "db" | "db+llm";
   slotLabel: string;
+  templateId?: string;
 };
 
 export type GenerateHybridRecipeInput = {
@@ -86,6 +87,9 @@ export async function generateHybridRecipeDraft(
     ...input.existing.names,
     ...input.acceptedInBatch.map((d) => d.name),
   ];
+  const excludeTemplateIds = input.acceptedInBatch
+    .map((d) => d.templateId)
+    .filter((id): id is string => Boolean(id));
 
   for (let attempt = 0; attempt < MAX_DEDUPE_RETRIES; attempt++) {
     const variantSeed =
@@ -101,6 +105,7 @@ export async function generateHybridRecipeDraft(
       proteinAxis: flags.proteinAxis,
       microFocusKey: input.microFocusKey,
       composedSnackOnly: input.slot.mealSlot === "snack",
+      excludeTemplateIds,
     });
     if (!composed) continue;
     const ingredients = composed.ingredients;
@@ -203,6 +208,7 @@ export async function generateHybridRecipeDraft(
       fitsGlutenFree: inferred.fitsGlutenFree,
       source,
       slotLabel: input.slot.label,
+      templateId: composed.templateId,
     };
   }
 

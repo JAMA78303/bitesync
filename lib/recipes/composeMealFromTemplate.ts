@@ -60,7 +60,7 @@ const defaultNutritionEval: NutritionEval = async (ings) => {
 
 const SECONDARY_DOWN_STEPS = [0.8, 0.65, 0.55];
 const SECONDARY_UP_STEPS = [1.2, 1.4, 1.6];
-const MAX_TEMPLATE_ATTEMPTS = 3;
+const MAX_TEMPLATE_ATTEMPTS = 6;
 
 function hashRole(role: IngredientRole): number {
   let h = 0;
@@ -162,11 +162,14 @@ export function selectMealComposition(opts: GoalMatchedRecipeOptions): MealCompo
 }
 
 function orderedFillableTemplates(opts: GoalMatchedRecipeOptions): MealTemplate[] {
+  const excluded = new Set((opts.excludeTemplateIds ?? []).map((id) => id.toLowerCase()));
   const eligible = templatesFor(opts.mealSlot, {
     vegan: opts.vegan,
     vegetarian: opts.vegetarian,
     glutenFree: opts.glutenFree,
-  }).filter((t) => templateIsFillable(t, opts));
+  })
+    .filter((t) => templateIsFillable(t, opts))
+    .filter((t) => !excluded.has(t.id.toLowerCase()));
   return rankTemplatesForTarget(eligible, clampTarget(opts.targetCalories), opts.variantSeed);
 }
 
