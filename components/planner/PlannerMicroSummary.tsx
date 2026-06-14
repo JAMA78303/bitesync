@@ -10,11 +10,13 @@ type Props = {
 };
 
 export function PlannerMicroSummary({ analysis, weekStartISO }: Props) {
- const deficiencies = analysis.must_hit.filter((n) => n.traffic ==="red" || n.traffic ==="amber");
- const excesses = analysis.must_limit.filter((n) => n.traffic ==="red");
+ const deficiencies = analysis.must_hit.filter(
+   (n) => n.under_target && (n.traffic === "red" || n.traffic === "amber"),
+ );
+ const excesses = analysis.must_limit.filter((n) => n.traffic === "red");
  const reds = [
- ...analysis.must_hit.filter((n) => n.traffic ==="red"),
- ...analysis.must_limit.filter((n) => n.traffic ==="red"),
+   ...analysis.must_hit.filter((n) => n.under_target && n.traffic === "red"),
+   ...analysis.must_limit.filter((n) => n.traffic === "red"),
  ];
 
  return (

@@ -26,10 +26,13 @@ export const DEFAULT_SNACK_MICRO_PRIORITIES: MicroPriority[] = [
 ];
 
 export function microPrioritiesFromDeficiencies(
-  nutrients: { key: string; traffic: "green" | "amber" | "red" }[],
+  nutrients: { key: string; traffic: "green" | "amber" | "red"; under_target?: boolean }[],
 ): MicroPriority[] {
   const priorities = nutrients
-    .filter((n) => n.traffic === "red" || n.traffic === "amber")
+    .filter(
+      (n) =>
+        (n.under_target ?? true) && (n.traffic === "red" || n.traffic === "amber"),
+    )
     .map((n) => ({
       key: n.key,
       weight: n.traffic === "red" ? 2 : 1,

@@ -868,7 +868,9 @@ async function generateAIWeekPlanInner(input: GenerateAIWeekPlanInput) {
     const microAnalysis = await getWeeklyMicroAnalysis(input.mealPlanId, plan.week_start_date, sex);
     if (microAnalysis) {
       snackMicroPriorities = microPrioritiesFromDeficiencies(microAnalysis.must_hit);
-      const lowKeys = microAnalysis.must_hit.filter((n) => n.traffic === "red" || n.traffic === "amber").map((n) => n.key);
+      const lowKeys = microAnalysis.must_hit
+        .filter((n) => n.under_target && (n.traffic === "red" || n.traffic === "amber"))
+        .map((n) => n.key);
       if (lowKeys.length) {
         console.warn("[heuristic] snack micro priorities from current plan:", lowKeys.join(", "));
       }

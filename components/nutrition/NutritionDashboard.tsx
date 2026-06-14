@@ -54,8 +54,11 @@ export function NutritionDashboard({
  ];
 
  const microDeficiencies = useMemo(
- () => microAnalysis?.must_hit.filter((n) => n.traffic ==="red" || n.traffic ==="amber") ?? [],
- [microAnalysis],
+   () =>
+     microAnalysis?.must_hit.filter(
+       (n) => n.under_target && (n.traffic === "red" || n.traffic === "amber"),
+     ) ?? [],
+   [microAnalysis],
  );
  const microExcesses = useMemo(
  () => microAnalysis?.must_limit.filter((n) => n.traffic ==="red") ?? [],

@@ -1,4 +1,13 @@
-import { NUTRIENT_LABELS, UK_DRVS, getTrafficLight, getTrafficLightLabel, type Sex, type TrafficLight } from "@/lib/nutrition/drv";
+import {
+  NUTRIENT_LABELS,
+  UK_DRVS,
+  getTrafficLight,
+  getTrafficLightLabel,
+  isAboveUpperLimit,
+  isUnderTarget,
+  type Sex,
+  type TrafficLight,
+} from "@/lib/nutrition/drv";
 import { aggregateWeeklyMicrosFromPlan } from "@/lib/nutrition/weeklyMicroTotals";
 import { createClient } from "@/lib/supabase/server";
 
@@ -12,6 +21,10 @@ export type NutrientResult = {
   type: "hit" | "limit" | "both";
   traffic: TrafficLight;
   pct_label: string;
+  /** Daily average is below the RNI (deficiency direction). */
+  under_target: boolean;
+  /** Daily average exceeds the safe upper limit, when one exists. */
+  above_upper: boolean;
   /** True when some ingredients lacked data, so this is a known floor, not a complete total. */
   partial: boolean;
 };
@@ -86,6 +99,8 @@ export async function getWeeklyMicroAnalysis(
       type: drv.type,
       traffic,
       pct_label: partial ? `${baseLabel} · partial data` : baseLabel,
+      under_target: isUnderTarget(key, weeklyValue, sex),
+      above_upper: isAboveUpperLimit(key, weeklyValue, sex),
       partial,
     };
   });

@@ -90,10 +90,26 @@ export const NUTRIENT_LABELS: Record<string, string> = {
 
 export type TrafficLight = "green" | "amber" | "red";
 
+export function dailyAverageFromWeekly(weeklyTotal: number): number {
+  return weeklyTotal / 7;
+}
+
+export function isUnderTarget(nutrientKey: string, weeklyTotal: number, sex: Sex): boolean {
+  const drv = UK_DRVS[nutrientKey]?.[sex];
+  if (!drv || drv.type === "limit" || drv.rni <= 0) return false;
+  return dailyAverageFromWeekly(weeklyTotal) < drv.rni;
+}
+
+export function isAboveUpperLimit(nutrientKey: string, weeklyTotal: number, sex: Sex): boolean {
+  const drv = UK_DRVS[nutrientKey]?.[sex];
+  if (!drv?.upper || drv.upper <= 0) return false;
+  return dailyAverageFromWeekly(weeklyTotal) > drv.upper;
+}
+
 export function getTrafficLight(nutrientKey: string, weeklyTotal: number, sex: Sex): TrafficLight {
   const drv = UK_DRVS[nutrientKey]?.[sex];
   if (!drv) return "green";
-  const dailyAvg = weeklyTotal / 7;
+  const dailyAvg = dailyAverageFromWeekly(weeklyTotal);
 
   if (drv.type === "limit") {
     const pct = dailyAvg / (drv.upper ?? 1);
@@ -102,17 +118,19 @@ export function getTrafficLight(nutrientKey: string, weeklyTotal: number, sex: S
     return "green";
   }
 
-  const pct = dailyAvg / drv.rni;
-  if (drv.upper && dailyAvg > drv.upper) return "red";
-  if (pct >= 0.9) return "green";
-  if (pct >= 0.7) return "amber";
-  return "red";
+  const pctRni = dailyAvg / drv.rni;
+  if (pctRni < 0.7) return "red";
+  if (pctRni < 1.0) return "amber";
+
+  // Target met — excess above a safe upper limit is a distinct amber, not deficiency red.
+  if (isAboveUpperLimit(nutrientKey, weeklyTotal, sex)) return "amber";
+  return "green";
 }
 
 export function getTrafficLightLabel(nutrientKey: string, weeklyTotal: number, sex: Sex): string {
   const drv = UK_DRVS[nutrientKey]?.[sex];
   if (!drv) return "";
-  const dailyAvg = weeklyTotal / 7;
+  const dailyAvg = dailyAverageFromWeekly(weeklyTotal);
 
   if (drv.type === "limit") {
     const pct = Math.round((dailyAvg / (drv.upper ?? 1)) * 100);
@@ -120,5 +138,9 @@ export function getTrafficLightLabel(nutrientKey: string, weeklyTotal: number, s
   }
 
   const pct = Math.round((dailyAvg / drv.rni) * 100);
-  return `${pct}% of daily target`;
+  const base = `${pct}% of daily target`;
+  if (isAboveUpperLimit(nutrientKey, weeklyTotal, sex)) {
+    return `${base} · above upper limit`;
+  }
+  return base;
 }
