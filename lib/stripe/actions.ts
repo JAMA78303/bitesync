@@ -1,6 +1,7 @@
 "use server";
 
 import { toUserFacingError } from "@/lib/errors/userFacing";
+import { isEmailConfirmed, VERIFY_EMAIL_PATH } from "@/lib/auth/emailVerification";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getStripeServer } from "@/lib/stripe/server";
@@ -17,6 +18,7 @@ export async function createCheckoutSession(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+  if (!isEmailConfirmed(user)) redirect(VERIFY_EMAIL_PATH);
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -70,6 +72,7 @@ export async function createCustomerPortalSession() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+  if (!isEmailConfirmed(user)) redirect(VERIFY_EMAIL_PATH);
 
   const { data: profile } = await supabase
     .from("profiles")

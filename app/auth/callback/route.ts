@@ -1,4 +1,8 @@
 import { NextResponse } from "next/server";
+import {
+  friendlyConfirmationError,
+  isEmailConfirmed,
+} from "@/lib/auth/emailVerification";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
@@ -19,6 +23,16 @@ export async function GET(request: Request) {
       return NextResponse.redirect(new URL("/login", base));
     }
 
+    if (!isEmailConfirmed(user)) {
+      const verifyUrl = new URL("/verify-email", base);
+      if (user.email) verifyUrl.searchParams.set("email", user.email);
+      verifyUrl.searchParams.set(
+        "error",
+        "Your email is not confirmed yet. Request a new confirmation link below.",
+      );
+      return NextResponse.redirect(verifyUrl);
+    }
+
     const { data: profile } = await supabase
       .from("profiles")
       .select("has_completed_onboarding")
@@ -26,24 +40,32 @@ export async function GET(request: Request) {
       .maybeSingle();
 
     if (!profile?.has_completed_onboarding) {
-      return NextResponse.redirect(new URL("/onboarding", base));
+      const onboardingUrl = new URL("/onboarding", base);
+      onboardingUrl.searchParams.set("confirmed", "1");
+      return NextResponse.redirect(onboardingUrl);
     }
 
     const destination = next.startsWith("/") ? next : "/today";
-    return NextResponse.redirect(new URL(destination, base));
+    const url = new URL(destination, base);
+    url.searchParams.set("confirmed", "1");
+    return NextResponse.redirect(url);
+  }
+
+  function redirectVerifyEmailError(message: string, email?: string | null) {
+    const url = new URL("/verify-email", base);
+    url.searchParams.set("error", friendlyConfirmationError(message));
+    if (email) url.searchParams.set("email", email);
+    return NextResponse.redirect(url);
   }
 
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
-      return NextResponse.redirect(
-        new URL(`/login?error=${encodeURIComponent(error.message)}`, base),
-      );
+      return redirectVerifyEmailError(error.message);
     }
     return postAuthRedirect();
   }
 
-  // Some email confirmation links provide token_hash + type instead of code.
   if (tokenHash && type) {
     const { error } = await supabase.auth.verifyOtp({
       token_hash: tokenHash,
@@ -55,12 +77,10 @@ export async function GET(request: Request) {
         | "invite",
     });
     if (error) {
-      return NextResponse.redirect(
-        new URL(`/login?error=${encodeURIComponent(error.message)}`, base),
-      );
+      return redirectVerifyEmailError(error.message);
     }
     return postAuthRedirect();
   }
 
-  return NextResponse.redirect(new URL("/login?error=Invalid%20confirmation%20link", base));
+  return redirectVerifyEmailError("Invalid confirmation link");
 }

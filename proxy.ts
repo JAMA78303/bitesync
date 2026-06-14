@@ -1,9 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import {
+  isAllowedWithoutEmailConfirmation,
+  isEmailConfirmed,
+  VERIFY_EMAIL_PATH,
+} from "@/lib/auth/emailVerification";
 import { updateSession } from "@/lib/supabase/middleware";
 
 const PROTECTED_ROUTES = ["/today", "/planner", "/recipes", "/grocery", "/pantry", "/nutrition", "/goals", "/settings", "/billing"];
-const AUTH_ROUTES = ["/login", "/signup"];
+const AUTH_ROUTES = ["/login", "/signup", VERIFY_EMAIL_PATH];
 const ONBOARDING_ROUTE = "/onboarding";
 const ADMIN_USER_IDS = (process.env.ADMIN_USER_ID ?? "")
   .split(",")
@@ -50,17 +55,34 @@ export async function proxy(request: NextRequest) {
   }
 
   if (user) {
-    const onboardingDone = await hasCompletedOnboarding(request, response, user.id);
+    const emailConfirmed = isEmailConfirmed(user);
 
-    if (!onboardingDone && PROTECTED_ROUTES.some((route) => path.startsWith(route))) {
-      return NextResponse.redirect(new URL(ONBOARDING_ROUTE, request.url));
-    }
-
-    if (onboardingDone && path.startsWith(ONBOARDING_ROUTE)) {
+    if (!emailConfirmed) {
+      if (path.startsWith("/login") || path.startsWith("/signup")) {
+        const verifyUrl = new URL(VERIFY_EMAIL_PATH, request.url);
+        if (user.email) verifyUrl.searchParams.set("email", user.email);
+        return NextResponse.redirect(verifyUrl);
+      }
+      if (!isAllowedWithoutEmailConfirmation(path)) {
+        const verifyUrl = new URL(VERIFY_EMAIL_PATH, request.url);
+        if (user.email) verifyUrl.searchParams.set("email", user.email);
+        return NextResponse.redirect(verifyUrl);
+      }
+    } else if (path.startsWith(VERIFY_EMAIL_PATH)) {
       return NextResponse.redirect(new URL("/today", request.url));
     }
 
-    if (AUTH_ROUTES.some((route) => path.startsWith(route))) {
+    const onboardingDone = await hasCompletedOnboarding(request, response, user.id);
+
+    if (emailConfirmed && !onboardingDone && PROTECTED_ROUTES.some((route) => path.startsWith(route))) {
+      return NextResponse.redirect(new URL(ONBOARDING_ROUTE, request.url));
+    }
+
+    if (emailConfirmed && onboardingDone && path.startsWith(ONBOARDING_ROUTE)) {
+      return NextResponse.redirect(new URL("/today", request.url));
+    }
+
+    if (emailConfirmed && AUTH_ROUTES.some((route) => path.startsWith(route))) {
       return NextResponse.redirect(
         new URL(onboardingDone ? "/today" : ONBOARDING_ROUTE, request.url),
       );

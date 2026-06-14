@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { isEmailConfirmed, isEmailNotConfirmedAuthError } from "@/lib/auth/emailVerification";
 import { ds } from "@/lib/ui/classes";
 
 type Props = {
@@ -30,14 +31,23 @@ export function LoginForm({ redirectTo }: Props) {
  setPending(true);
  try {
  const supabase = createClient();
- const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+ const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
 
  if (authError) {
+ if (isEmailNotConfirmedAuthError(authError.message)) {
+ router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+ return;
+ }
  setError(
  authError.message.includes("Invalid login credentials") || authError.status === 400
  ?"Incorrect email or password"
  : authError.message,
  );
+ return;
+ }
+
+ if (data.user && !isEmailConfirmed(data.user)) {
+ router.push(`/verify-email?email=${encodeURIComponent(email)}`);
  return;
  }
 

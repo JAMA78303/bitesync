@@ -1,5 +1,10 @@
 "use server";
 
+import {
+  confirmationCallbackUrl,
+  isEmailConfirmed,
+  VERIFY_EMAIL_PATH,
+} from "@/lib/auth/emailVerification";
 import { toUserFacingError } from "@/lib/errors/userFacing";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -13,16 +18,15 @@ export async function signUp(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
   // Confirmation emails: Supabase → Authentication → Providers → Email → enable "Confirm email".
   // Add Redirect URLs: `${NEXT_PUBLIC_APP_URL}` and `${NEXT_PUBLIC_APP_URL}/auth/callback`.
-  // For production deliverability, configure SMTP (Authentication → SMTP Settings) or use a custom domain.
+  // For production deliverability, configure SMTP (Authentication → SMTP Settings).
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      emailRedirectTo: `${appUrl}/auth/callback?next=/planner`,
+      emailRedirectTo: confirmationCallbackUrl(),
     },
   });
 
@@ -30,9 +34,9 @@ export async function signUp(formData: FormData) {
     redirect(`/signup?error=${encodeURIComponent(toUserFacingError(error, "auth", "signup"))}`);
   }
 
-  if (data.session) {
-    redirect("/planner");
+  if (data.user && isEmailConfirmed(data.user)) {
+    redirect("/onboarding");
   }
 
-  redirect("/signup?success=Check%20your%20email%20for%20a%20confirmation%20link");
+  redirect(`${VERIFY_EMAIL_PATH}?email=${encodeURIComponent(email)}`);
 }
