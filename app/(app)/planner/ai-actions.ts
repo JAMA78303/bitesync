@@ -144,8 +144,10 @@ async function replacePlanDaysWithClaudePlan(
       day,
       pool,
       calById,
+      proById,
       mealPlanId,
       dailyTarget: dailyCalorieTarget,
+      dailyProteinTarget,
       snackCountPerDay,
       allowedRecipeIds,
       goalBias,
@@ -458,11 +460,11 @@ function scoreRecipeForDaySlot(
   const proUnder = Math.max(0, targetPro - pro);
   let baseScore: number;
   if (goalBias === "surplus") {
-    baseScore = -(calOver * 2 + calUnder * 4 + proOver * 2 + proUnder);
+    baseScore = -(calOver * 2 + calUnder * 4 + proOver * 2 + proUnder * 2);
   } else if (goalBias === "deficit") {
-    baseScore = -(calOver * 5 + calUnder + proOver * 3 + proUnder);
+    baseScore = -(calOver * 5 + calUnder + proOver * 3 + proUnder * 2.5);
   } else {
-    baseScore = -(calOver * 3 + calUnder * 3 + proOver * 3 + proUnder);
+    baseScore = -(calOver * 3 + calUnder * 3 + proOver * 3 + proUnder * 2);
   }
   const types = classifyRecipeMealType(r.name, r.ingredientNames ?? []);
   const mult = getMealTypeMultiplier(types, targetSlot);
@@ -999,8 +1001,10 @@ async function generateAIWeekPlanInner(input: GenerateAIWeekPlanInput) {
         day,
         pool,
         calById,
+        proById,
         mealPlanId: input.mealPlanId,
         dailyTarget: dailyCalorieTarget,
+        dailyProteinTarget,
         snackCountPerDay,
         allowedRecipeIds: allowedIds,
         snackMicroPriorities,

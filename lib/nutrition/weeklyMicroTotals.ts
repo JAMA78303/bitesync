@@ -1,4 +1,5 @@
 import { ingredientGrams } from "@/lib/nutrition/convert";
+import { sugarGramsTowardFreeSugarLimit } from "@/lib/nutrition/freeSugars";
 import { lookupNutrition } from "@/lib/nutrition/lookup";
 import { lookupMicros, scaleMicros, sumMicros, type MicroEntry } from "@/lib/nutrition/micros";
 
@@ -57,7 +58,9 @@ export function aggregateWeeklyMicrosFromPlan(
     if (!micros) continue;
 
     coveredItems += times;
-    microEntries.push(scaleMicros(micros, grams * times));
+    const scaled = scaleMicros(micros, grams * times);
+    scaled.sugar_g = sugarGramsTowardFreeSugarLimit(name, scaled.sugar_g);
+    microEntries.push(scaled);
   }
 
   if (!microEntries.length) return null;

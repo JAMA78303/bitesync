@@ -234,6 +234,97 @@ function pickSnackForGap(
   return scored[0]?.r ?? null;
 }
 
+function swapMainMealForProtein(
+  rows: PlanCalorieRow[],
+  day: number,
+  pool: PlanRecipeMeta[],
+  calById: Map<string, number>,
+  proById: Map<string, number>,
+  bandMin: number,
+  bandMax: number,
+  allowedRecipeIds: Set<string>,
+): boolean {
+  const mealOrder: PlanCalorieRow["meal_type"][] = ["dinner", "lunch", "breakfast"];
+  const usedOnDay = new Set(rows.filter((r) => r.day_of_week === day && r.recipe_id).map((r) => r.recipe_id));
+  const currentTotal = dayCaloriesFromRows(rows, day, calById);
+
+  for (const mealType of mealOrder) {
+    const idx = rows.findIndex((r) => r.day_of_week === day && r.meal_type === mealType);
+    if (idx < 0) continue;
+    const currentId = rows[idx]!.recipe_id;
+    const currentCal = calById.get(currentId) ?? 0;
+    const currentPro = proById.get(currentId) ?? 0;
+
+    const candidates = pool.filter((r) => {
+      if (!allowedRecipeIds.has(r.id)) return false;
+      if (r.id === currentId || usedOnDay.has(r.id)) return false;
+      if (!recipeMatchesPlannerSlot(r.name, r.ingredientNames ?? [], mealType, r.calories)) return false;
+      if (r.protein <= currentPro) return false;
+      const newTotal = currentTotal - currentCal + r.calories;
+      return newTotal >= bandMin && newTotal <= bandMax;
+    });
+    if (!candidates.length) continue;
+
+    candidates.sort((a, b) => b.protein - a.protein || b.calories - a.calories);
+    const pick = candidates[0]!;
+    rows[idx] = { ...rows[idx]!, recipe_id: pick.id };
+    console.warn(
+      `[tune] day ${day} ${mealType}: protein swap to "${pick.name}" (${Math.round(pick.protein * 10) / 10}g P, ${Math.round(pick.calories)} kcal)`,
+    );
+    return true;
+  }
+  return false;
+}
+
+function swapSnackForProtein(
+  rows: PlanCalorieRow[],
+  day: number,
+  pool: PlanRecipeMeta[],
+  calById: Map<string, number>,
+  proById: Map<string, number>,
+  bandMin: number,
+  bandMax: number,
+  allowedRecipeIds: Set<string>,
+): boolean {
+  const currentTotal = dayCaloriesFromRows(rows, day, calById);
+  const snackRows = rows
+    .map((r, idx) => ({ r, idx }))
+    .filter(({ r }) => r.day_of_week === day && r.meal_type === "snack" && r.recipe_id);
+  if (!snackRows.length) return false;
+
+  const usedOnDay = new Set(rows.filter((r) => r.day_of_week === day && r.recipe_id).map((r) => r.recipe_id));
+
+  for (const { r, idx } of snackRows) {
+    const currentId = r.recipe_id;
+    const currentCal = calById.get(currentId) ?? 0;
+    const currentPro = proById.get(currentId) ?? 0;
+
+    const candidates = pool.filter((candidate) => {
+      if (!allowedRecipeIds.has(candidate.id)) return false;
+      if (candidate.id === currentId || usedOnDay.has(candidate.id)) return false;
+      if (
+        !isRecipeAISnackAppropriate(candidate.calories, candidate.ingredientNames ?? []) ||
+        excludeFromMainMealSlots(candidate.name, candidate.ingredientNames ?? [])
+      ) {
+        return false;
+      }
+      if (candidate.protein <= currentPro) return false;
+      const newTotal = currentTotal - currentCal + candidate.calories;
+      return newTotal >= bandMin && newTotal <= bandMax;
+    });
+    if (!candidates.length) continue;
+
+    candidates.sort((a, b) => b.protein - a.protein || b.calories - a.calories);
+    const pick = candidates[0]!;
+    rows[idx] = { ...rows[idx]!, recipe_id: pick.id };
+    console.warn(
+      `[tune] day ${day} snack#${r.slot_index}: protein swap to "${pick.name}" (${Math.round(pick.protein * 10) / 10}g P)`,
+    );
+    return true;
+  }
+  return false;
+}
+
 function swapMainMealForCalories(
   rows: PlanCalorieRow[],
   day: number,
@@ -526,8 +617,10 @@ export type TuneDayOptions = {
   day: number;
   pool: PlanRecipeMeta[];
   calById: Map<string, number>;
+  proById: Map<string, number>;
   mealPlanId: string;
   dailyTarget: number;
+  dailyProteinTarget: number;
   snackCountPerDay: number;
   allowedRecipeIds: Set<string>;
   snackMicroPriorities?: MicroPriority[];
@@ -614,6 +707,43 @@ export function tuneDayTowardCalorieBand(opts: TuneDayOptions): void {
     }
 
     break;
+  }
+
+  if (opts.dailyProteinTarget > 0) {
+    const proteinFloor = opts.dailyProteinTarget * 0.9;
+    for (let i = 0; i < 16; i += 1) {
+      const pro = dayProteinFromRows(opts.rows, opts.day, opts.proById);
+      if (pro >= proteinFloor) break;
+      if (
+        swapMainMealForProtein(
+          opts.rows,
+          opts.day,
+          opts.pool,
+          opts.calById,
+          opts.proById,
+          band.min,
+          band.max,
+          opts.allowedRecipeIds,
+        )
+      ) {
+        continue;
+      }
+      if (
+        swapSnackForProtein(
+          opts.rows,
+          opts.day,
+          opts.pool,
+          opts.calById,
+          opts.proById,
+          band.min,
+          band.max,
+          opts.allowedRecipeIds,
+        )
+      ) {
+        continue;
+      }
+      break;
+    }
   }
 }
 

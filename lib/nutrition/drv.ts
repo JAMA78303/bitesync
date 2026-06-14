@@ -85,7 +85,7 @@ export const NUTRIENT_LABELS: Record<string, string> = {
   iodine_mcg: "Iodine",
   saturated_fat_g: "Saturated fat",
   salt_g: "Salt",
-  sugar_g: "Sugar",
+  sugar_g: "Free sugars",
 };
 
 export type TrafficLight = "green" | "amber" | "red";
