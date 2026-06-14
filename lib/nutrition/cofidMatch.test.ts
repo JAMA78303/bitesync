@@ -108,6 +108,29 @@ const riceCandidates: CofidCandidate[] = [
 ];
 assertMatch("rice", riceCandidates, "rice, white, long grain", ["pudding"]);
 
+// potato → boiled, NOT chips/roast (same-primary prep tie-break; manual-meal inflation bug)
+const potatoCandidates: CofidCandidate[] = [
+  { food_code: "13-700", food_name: "Potatoes, chips, retail, fried in vegetable oil", food_group: "DR", matchKind: "partial" },
+  { food_code: "13-701", food_name: "Potatoes, old, roast in vegetable oil", food_group: "DR", matchKind: "partial" },
+  { food_code: "13-702", food_name: "Potatoes, old, boiled in unsalted water", food_group: "DR", matchKind: "partial" },
+  { food_code: "13-703", food_name: "Potatoes, old, raw, flesh only", food_group: "DR", matchKind: "partial" },
+];
+assertMatch("potato", potatoCandidates, "boiled", ["chips", "roast", "fried"]);
+
+// sweet potato → boiled, NOT roasted
+const sweetPotatoCandidates: CofidCandidate[] = [
+  { food_code: "13-710", food_name: "Sweet potato, roasted, flesh only", food_group: "DR", matchKind: "partial" },
+  { food_code: "13-711", food_name: "Sweet potato, boiled in unsalted water, flesh only", food_group: "DR", matchKind: "partial" },
+];
+assertMatch("sweet potato", sweetPotatoCandidates, "boiled", ["roast"]);
+
+// pasta → boiled, NOT dried/raw (raw-grain trap: dried pasta is ~3x denser)
+const pastaCandidates: CofidCandidate[] = [
+  { food_code: "11-900", food_name: "Pasta, white, dried, raw", food_group: "AC", matchKind: "partial" },
+  { food_code: "11-901", food_name: "Pasta, white, fresh, boiled in unsalted water", food_group: "AC", matchKind: "partial" },
+];
+assertMatch("pasta", pastaCandidates, "boiled", ["dried"]);
+
 // exact beats partial
 const exact = scoreCofidMatch("chicken breast", "Chicken breast", "exact");
 const partial = scoreCofidMatch("chicken breast", "Chicken, breast, roasted", "partial");

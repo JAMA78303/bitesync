@@ -222,6 +222,35 @@ function matchKindBonus(matchKind: CoFIDMatchKind): number {
   return 120;
 }
 
+/** Energy-dense / processed preparations a bare ingredient name does NOT imply. */
+const DENSE_PREP_PATTERN =
+  /\b(roast|roasted|fried|deep[- ]?fried|chips|crisps|saut[eé]ed|saut[eé]|batter|battered|breaded|in crumbs|in oil|crisped|crispy)\b/;
+/** Plain cooked forms that best represent a bare ingredient (avoids the raw-grain trap). */
+const PLAIN_COOKED_PATTERN = /\b(boiled|steamed|poached)\b/;
+
+/**
+ * Differentiates CoFID rows that share the same primary food name (e.g. all the
+ * "Potatoes, ..." variants) so the bare ingredient resolves deterministically to
+ * the plain cooked form rather than a fried/roast variant. Bounded to ±~300 so a
+ * primary-name match always outranks weaker partial matches.
+ */
+function sameFoodPrepAdjustment(query: string, normalisedFood: string): number {
+  let adj = 0;
+  // Energy-dense prep the bare name doesn't imply (chips/roast/fried) — the main
+  // inflation source when "potato" resolves to "chips, fried in oil".
+  if (DENSE_PREP_PATTERN.test(normalisedFood) && !DENSE_PREP_PATTERN.test(query)) {
+    adj -= 250;
+  }
+  for (const modifier of PROCESSED_MODIFIERS) {
+    if (normalisedFood.includes(modifier) && !query.includes(modifier)) adj -= 40;
+  }
+  // Prefer the plain cooked form when one exists. This also guards the raw-grain
+  // trap: bare "rice"/"pasta" pick the boiled row (~130 kcal) over raw/dried
+  // (~350 kcal), while bare fruit (no boiled variant) still resolves to "raw".
+  if (PLAIN_COOKED_PATTERN.test(normalisedFood)) adj += 60;
+  return adj;
+}
+
 /** Score how well a CoFID row matches the user's ingredient name (higher = better). */
 export function scoreCofidMatch(
   query: string,
@@ -236,7 +265,14 @@ export function scoreCofidMatch(
   if (q === f) return 10_000;
 
   const primary = normalizeForMatch(primaryFoodName(foodName));
-  if (primary === q || tokensEquivalent(primary, q)) return 9000;
+  if (primary === q || tokensEquivalent(primary, q)) {
+    // The bare ingredient name matches the CoFID primary descriptor (e.g. "potato"
+    // -> "Potatoes, ..."). Many rows share this primary but differ by preparation;
+    // without differentiation they all tie and the winner is just DB return order,
+    // which lets "potato" resolve to "chips, fried" or "roast" and inflate macros.
+    // Keep a strong base, then nudge toward the plain cooked form the user means.
+    return 9000 + sameFoodPrepAdjustment(q, f);
+  }
 
   let score = matchKindBonus(matchKind);
 
