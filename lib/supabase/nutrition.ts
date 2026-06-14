@@ -1,7 +1,5 @@
-import { ingredientGrams } from "@/lib/nutrition/convert";
-import { lookupNutrition } from "@/lib/nutrition/lookup";
 import { NUTRIENT_LABELS, UK_DRVS, getTrafficLight, getTrafficLightLabel, type Sex, type TrafficLight } from "@/lib/nutrition/drv";
-import { lookupMicros, scaleMicros, sumMicros } from "@/lib/nutrition/micros";
+import { aggregateWeeklyMicrosFromPlan } from "@/lib/nutrition/weeklyMicroTotals";
 import { createClient } from "@/lib/supabase/server";
 
 export type NutrientResult = {
@@ -42,41 +40,29 @@ export async function getWeeklyMicroAnalysis(
 
   if (!entries?.length) return null;
 
-  const recipeIds = entries
-    .map((e) => e.recipe_id)
-    .filter(Boolean)
-    .map(String);
+  const recipeIds = [...new Set(entries.map((e) => e.recipe_id).filter(Boolean).map(String))];
   if (!recipeIds.length) return null;
 
   const { data: ingredients } = await supabase
     .from("recipe_ingredients")
-    .select("name, quantity, unit")
+    .select("recipe_id, name, quantity, unit")
     .in("recipe_id", recipeIds);
 
   if (!ingredients?.length) return null;
 
-  let totalItems = 0;
-  let coveredItems = 0;
-  const microEntries: ReturnType<typeof scaleMicros>[] = [];
-  for (const ing of ingredients) {
-    const name = String(ing.name ?? "");
-    const grams = ingredientGrams(
-      Number(ing.quantity ?? 0),
-      String(ing.unit ?? ""),
-      lookupNutrition(name),
-      name,
-    );
-    if (!grams) continue;
-    totalItems += 1;
-    const micros = lookupMicros(name);
-    if (!micros) continue;
-    coveredItems += 1;
-    microEntries.push(scaleMicros(micros, grams));
-  }
+  const aggregated = aggregateWeeklyMicrosFromPlan(
+    entries.map((e) => ({ recipe_id: String(e.recipe_id) })),
+    ingredients.map((ing) => ({
+      recipe_id: String(ing.recipe_id),
+      name: String(ing.name ?? ""),
+      quantity: Number(ing.quantity ?? 0),
+      unit: String(ing.unit ?? ""),
+    })),
+  );
 
-  if (!microEntries.length) return null;
+  if (!aggregated) return null;
 
-  const weeklyTotals = sumMicros(microEntries);
+  const { weeklyTotals, totalItems, coveredItems } = aggregated;
   // Some ingredients had no nutrient data, so summed intakes are a known floor, not a
   // complete total. For "must not exceed" limits, under-reporting is the dangerous
   // direction, so a green that could really be over the limit is shown as amber.
