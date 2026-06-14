@@ -11,6 +11,7 @@
     "verify:plan-bands": "tsx scripts/verify-plan-calorie-bands.ts",
     "verify:meal-templates": "tsx scripts/verify-meal-templates.ts",
     "verify:meal-template-goals": "tsx scripts/verify-meal-template-goals.ts",
+    "verify:micro-coverage": "tsx scripts/verify-micro-coverage.ts",
     "capture:landing": "node scripts/capture-landing-screenshots.mjs",
     "icons": "node scripts/write-brand-icons.mjs",
     "import:cofid": "tsx scripts/import-cofid.ts",
