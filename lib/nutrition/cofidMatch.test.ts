@@ -186,12 +186,18 @@ if (exact <= partial) {
   throw new Error("exact match should outscore partial composite");
 }
 
-// chicken mince → mince/turkey mince, not casseroled chicken with skin
+// chicken mince → raw average chicken or mince, not casseroled chicken with skin
 const chickenMinceCandidates: CofidCandidate[] = [
   { food_code: "X1", food_name: "Chicken, skin, casseroled", food_group: "MC", matchKind: "partial" },
   { food_code: "X2", food_name: "Turkey, mince, stewed", food_group: "MC", matchKind: "partial" },
+  {
+    food_code: "X3",
+    food_name: "Chicken, meat, average, raw",
+    food_group: "MC",
+    matchKind: "partial",
+  },
 ];
-assertMatch("chicken mince", chickenMinceCandidates, "mince", ["casseroled", "skin"]);
+assertMatch("chicken mince", chickenMinceCandidates, "average", ["casseroled", "skin"]);
 
 // breadcrumbs → not fish in breadcrumbs
 const breadcrumbCandidates: CofidCandidate[] = [
@@ -211,5 +217,22 @@ const spaghettiCandidates: CofidCandidate[] = [
   },
 ];
 assertMatch("spaghetti or tagliatelle", spaghettiCandidates, "spaghetti", ["squash"]);
+
+// fresh tagliatelle → dried spaghetti boiled for generic pasta queries
+const pastaFormCandidates: CofidCandidate[] = [
+  {
+    food_code: "P1",
+    food_name: "Pasta, egg, white, tagliatelle, fresh, boiled",
+    food_group: "AC",
+    matchKind: "partial",
+  },
+  {
+    food_code: "P2",
+    food_name: "Pasta, white, spaghetti, dried, boiled in unsalted water",
+    food_group: "AC",
+    matchKind: "partial",
+  },
+];
+assertMatch("spaghetti or tagliatelle", pastaFormCandidates, "spaghetti", ["fresh"]);
 
 console.log("OK: CoFID matcher regression tests passed");

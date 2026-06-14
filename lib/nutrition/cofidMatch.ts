@@ -307,7 +307,11 @@ function sameFoodPrepAdjustment(query: string, normalisedFood: string): number {
 /** Bare "chicken mince" must not resolve to casseroled chicken with skin. */
 function minceQueryAdjustment(query: string, normalisedFood: string): number {
   if (!MINCE_QUERY_PATTERN.test(query)) return 0;
-  if (/\bmince\b/.test(normalisedFood)) return 150;
+  if (/\bmince\b/.test(normalisedFood)) {
+    if (/\bchicken\b/.test(query) && /\bturkey\b/.test(normalisedFood)) return -400;
+    return 150;
+  }
+  if (/\bchicken\b/.test(query) && isAcceptableChickenMinceProxy(normalisedFood)) return 200;
   if (/\b(casseroled|skin|roast|fried|nugget|kiev|goujon)\b/.test(normalisedFood)) return -950;
   return -750;
 }
@@ -320,8 +324,11 @@ function pastaQueryAdjustment(query: string, foodName: string): number {
   const f = normalizeForMatch(foodName);
   const primary = normalizeForMatch(primaryFoodName(foodName));
   if (/\bsquash\b/.test(primary)) return -1000;
-  if (/\b(pasta|spaghetti|tagliatelle|macaroni|penne|fusilli)\b/.test(f)) return 180;
-  return 0;
+  let adj = 0;
+  if (/\bfresh\b/.test(f)) adj -= 220;
+  if (/\bdried,\s*boiled\b/.test(f) || /\bspaghetti,\s*dried,\s*boiled\b/.test(f)) adj += 120;
+  if (/\b(pasta|spaghetti|tagliatelle|macaroni|penne|fusilli)\b/.test(f)) adj += 180;
+  return adj;
 }
 
 /** "Breadcrumbs" is not "plaice in breadcrumbs". */
@@ -345,7 +352,23 @@ export function isSpaghettiSquashMismatch(query: string, foodName: string): bool
 
 export function isMinceMismatch(query: string, foodName: string): boolean {
   if (!MINCE_QUERY_PATTERN.test(normalizeCofidQuery(query))) return false;
-  return !/\bmince\b/.test(normalizeForMatch(foodName));
+  const f = normalizeForMatch(foodName);
+  if (/\bmince\b/.test(f)) return false;
+  // CoFID has no "chicken mince" row — raw average chicken meat is the standard proxy.
+  if (/\bchicken\b/.test(normalizeCofidQuery(query)) && isAcceptableChickenMinceProxy(foodName)) {
+    return false;
+  }
+  return true;
+}
+
+/** Raw skinless chicken forms that stand in for "chicken mince" in CoFID. */
+export function isAcceptableChickenMinceProxy(foodName: string): boolean {
+  const f = normalizeForMatch(foodName);
+  return (
+    /\bchicken\b/.test(f) &&
+    /\braw\b/.test(f) &&
+    !/\b(skin only|skin, raw|casseroled|fried|nugget|goujon|kiev|wing quarter|whole,)\b/.test(f)
+  );
 }
 
 export function isBreadcrumbCompositeMismatch(query: string, foodName: string): boolean {
