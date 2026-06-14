@@ -1,9 +1,10 @@
 import {
   parseIngredientLine,
   parsedIngredientToInput,
+  type ParsedIngredient,
 } from "@/lib/recipes/parseIngredient";
 
-const cases: { raw: string; check: (r: ReturnType<typeof parseIngredientLine>) => void }[] = [
+const cases: { raw: string; check: (r: ParsedIngredient) => void }[] = [
   {
     raw: "½ Tbsp Olive Oil Plus An Extra Drizzle",
     check: (r) => {
@@ -48,6 +49,7 @@ const cases: { raw: string; check: (r: ReturnType<typeof parseIngredientLine>) =
 
 for (const { raw, check } of cases) {
   const parsed = parseIngredientLine(raw);
+  if (!parsed) throw new Error(`expected parse result for: ${raw}`);
   const input = parsedIngredientToInput(parsed);
   console.log(JSON.stringify({ raw, parsed, input }));
   check(parsed);
