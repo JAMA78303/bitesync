@@ -21,6 +21,8 @@ const INGREDIENT_LOOKUP_ALIASES: Record<string, string> = {
   chili: "chilli flakes",
   "mixed salad": "lettuce",
   "lime juiced": "lime",
+  bulgur: "bulgur wheat",
+  "bulgur wheat": "bulgur wheat",
 };
 
 function resolveLookupName(name: string): string {

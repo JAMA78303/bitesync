@@ -4,7 +4,13 @@ import {
   lookupCoFID,
   scaleNutrition,
   type CoFIDMatchKind,
+  type CoFIDNutrition,
 } from "@/lib/nutrition/cofidLookup";
+import {
+  isRawDryStapleForm,
+  isStapleGrainPulseQuery,
+  queryRequestsRawDry,
+} from "@/lib/nutrition/cofidMatch";
 import { lookupNutrition } from "@/lib/nutrition/lookup";
 import type { NutritionLookupEntry } from "@/types";
 import { estimateNutritionWithAI } from "@/lib/nutrition/estimateWithAI";
@@ -75,6 +81,32 @@ function fromCofid(
 }
 
 /**
+ * CoFID matched a raw/dry staple but our local DB has a much less dense cooked
+ * equivalent (e.g. CoFID only has "Quinoa, raw"; local has cooked quinoa).
+ * Prefer local so bare "quinoa" / "bulgur" don't inherit dry weights.
+ */
+function shouldPreferLocalCookedStaple(
+  cofid: CoFIDNutrition,
+  query: string,
+  localEntry: NutritionLookupEntry | null,
+): boolean {
+  if (!localEntry || isIncomplete(localEntry)) return false;
+  if (queryRequestsRawDry(query)) return false;
+  if (!isStapleGrainPulseQuery(query)) return false;
+  if (!isRawDryStapleForm(cofid.food_name)) return false;
+
+  const localCarbs = localEntry.per_100g.carbs_g;
+  const cofidCarbs = cofid.carbs_g ?? 0;
+  const localKcal = localEntry.per_100g.calories;
+  const cofidKcal = cofid.kcal ?? 0;
+
+  if (localCarbs <= 0 || cofidCarbs <= 0) {
+    return localKcal > 0 && cofidKcal > localKcal * 1.5;
+  }
+  return cofidCarbs > localCarbs * 1.5 || cofidKcal > localKcal * 1.5;
+}
+
+/**
  * Full nutrition lookup chain: CoFID → local DB → optional AI.
  * Used by recipe save, API preview, and async totals.
  */
@@ -107,6 +139,9 @@ export async function lookupNutritionAsync(
       // giving up — only report null (unknown) when neither source has it.
       if (resolved.saturated_fat_g == null && entry && entry.per_100g.saturated_fat_g != null) {
         resolved.saturated_fat_g = round1(entry.per_100g.saturated_fat_g * (grams / 100));
+      }
+      if (shouldPreferLocalCookedStaple(cofid, trimmed, entry)) {
+        return fromLocal(entry!, grams);
       }
       return resolved;
     }
