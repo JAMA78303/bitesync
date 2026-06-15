@@ -29,14 +29,53 @@ export type ProfileForTargets = {
   follows_gluten_free?: boolean | null;
 } | null;
 
+/** Carbs:fat kcal split of the budget left after protein (5:3 → 100% of remainder). */
+const CARB_KCAL_SHARE = 0.5 / (0.5 + 0.3);
+const FAT_KCAL_SHARE = 0.3 / (0.5 + 0.3);
+
+function macroKcalSum(protein: number, carbs: number, fat: number): number {
+  return protein * 4 + carbs * 4 + fat * 9;
+}
+
+function reconcileCarbFatRounding(kcal: number, protein: number, carbs: number, fat: number): { carbs: number; fat: number } {
+  let c = carbs;
+  let f = fat;
+  let drift = kcal - macroKcalSum(protein, c, f);
+
+  for (let delta = -3; delta <= 3; delta++) {
+    const tryCarbs = Math.max(0, c + delta);
+    const tryDrift = kcal - macroKcalSum(protein, tryCarbs, f);
+    if (Math.abs(tryDrift) < Math.abs(drift)) {
+      c = tryCarbs;
+      drift = tryDrift;
+    }
+  }
+  for (let delta = -2; delta <= 2; delta++) {
+    const tryFat = Math.max(0, f + delta);
+    const tryDrift = kcal - macroKcalSum(protein, c, tryFat);
+    if (Math.abs(tryDrift) < Math.abs(drift)) {
+      f = tryFat;
+      drift = tryDrift;
+    }
+  }
+
+  return { carbs: c, fat: f };
+}
+
 function macroSplitFromKcalProtein(kcal: number, protein: number): Pick<UserNutritionTargets, "carbs" | "fat" | "fibre"> {
-  const proteinKcal = protein * 4;
-  const remaining = Math.max(0, kcal - proteinKcal);
-  return {
-    carbs: Math.round((remaining * 0.5) / 4),
-    fat: Math.round((remaining * 0.3) / 9),
-    fibre: 30,
-  };
+  const remaining = Math.max(0, kcal - protein * 4);
+  const rounded = reconcileCarbFatRounding(
+    kcal,
+    protein,
+    Math.round((remaining * CARB_KCAL_SHARE) / 4),
+    Math.round((remaining * FAT_KCAL_SHARE) / 9),
+  );
+  return { ...rounded, fibre: 30 };
+}
+
+/** kcal from protein/carbs/fat gram targets — used in tests and sanity checks. */
+export function macroTargetsKcalSum(targets: Pick<UserNutritionTargets, "protein" | "carbs" | "fat">): number {
+  return macroKcalSum(targets.protein, targets.carbs, targets.fat);
 }
 
 /** Profile has all inputs required to run the TDEE calculator. */
