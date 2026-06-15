@@ -45,8 +45,8 @@ function buildStatus(kind: GoalStatusKind): GoalStatus {
       : kind === "under"
         ? "↑ Below target"
         : kind === "over-moderate"
-          ? "↓ Over target"
-          : "↓ Well over target";
+          ? "↑ Over target"
+          : "↑ Well over target";
   return {
     kind,
     label,

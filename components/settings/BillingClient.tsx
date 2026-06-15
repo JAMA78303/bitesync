@@ -124,8 +124,8 @@ export function BillingClient({
  </span>
  </div>
  <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
- On Pro, use the planner to generate an AI weekly meal draft and smarter grocery baskets
- (store comparisons and substitutions where enabled). We&apos;re still tightening quality and availability.
+ On Pro, use the planner to generate an AI weekly meal draft and smarter grocery baskets.
+ We&apos;re still tightening quality and availability.
  </p>
  </div>
  </div>
