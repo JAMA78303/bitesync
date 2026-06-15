@@ -63,7 +63,7 @@ export function GenerateAIWeekPlanButton({ isPro, mealPlanId, goals }: Props) {
       className="h-11 w-full border-[var(--brand-primary)] text-[var(--brand-primary)] hover:bg-[var(--surface-brand-subtle)] md:h-9 md:w-auto md:text-sm"
     >
       <Sparkles className="mr-1.5 h-4 w-4 shrink-0 md:mr-2" />
-      <span className="text-center text-[11px] font-medium leading-snug sm:text-xs md:text-sm md:truncate">
+      <span className="text-center text-2xs font-medium leading-snug sm:text-xs md:text-sm md:truncate">
         {isPending ? "Planning…" : "AI weekly plan"}
       </span>
     </Button>

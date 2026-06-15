@@ -70,10 +70,10 @@ export const ds = {
   input:
     "w-full rounded-2xl border border-[var(--border-default)] bg-[var(--surface-input)] px-4 py-3.5 text-sm text-[var(--text-primary)] outline-none transition-all focus:border-[var(--brand-action)] focus:ring-2 focus:ring-[var(--brand-action)]/10",
   formCard:
-    "space-y-4 rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] p-5 shadow-sm",
+    "space-y-4 rounded-2xl border border-[var(--border-default)] bg-[var(--surface-card)] p-5 shadow-sm",
   /** Muted info / guidelines callout (Create Recipe, etc.) */
   infoCallout:
-    "rounded-md border border-[var(--border-default)] bg-[var(--surface-info)] px-3 py-2 text-xs text-[var(--text-secondary)]",
+    "rounded-lg border border-[var(--border-default)] bg-[var(--surface-info)] px-3 py-2 text-xs text-[var(--text-secondary)]",
   /** Colour-only warn/success/error/info tokens — call sites add shape, padding, text size */
   warnCallout:
     "border border-[var(--semantic-warn-border)] bg-[var(--semantic-warn-bg)] text-[var(--semantic-warn-text)]",
@@ -96,10 +96,10 @@ export const ds = {
   formSectionText: "text-sm text-[var(--text-secondary)]",
   /** Goal-matched draft panel on Create Recipe */
   goalDraftPanel:
-    "space-y-3 rounded-lg border border-emerald-100 bg-emerald-50/60 p-3 dark:border-emerald-900/45 dark:bg-emerald-950/35",
-  goalDraftLabel: "flex flex-col gap-1 text-xs text-emerald-900 dark:text-emerald-100",
+    "space-y-3 rounded-lg border border-[var(--semantic-success-border)] bg-[var(--semantic-success-bg)] p-3",
+  goalDraftLabel: "flex flex-col gap-1 text-xs text-[var(--semantic-success-text)]",
   goalDraftSelect:
-    "theme-aware-select h-9 min-w-[140px] rounded-md border border-emerald-200 px-2 text-sm dark:border-emerald-800",
+    "theme-aware-select h-9 min-w-[140px] rounded-lg border border-[var(--semantic-success-border)] px-2 text-sm",
   /** Header search on gradient backgrounds */
   headerSearchWrap:
     "flex items-center gap-2 rounded-2xl border border-[var(--surface-overlay)]/55 bg-[var(--surface-overlay)]/35 px-4 py-3 backdrop-blur-sm",
@@ -107,7 +107,7 @@ export const ds = {
   sectionGap: "mb-6",
   cardGap: "gap-3",
   thumbnail:
-    "flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl",
+    "flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg",
   /** @deprecated use mobilePage */
   page: "min-h-screen w-full max-w-full overflow-x-hidden bg-[var(--surface-page)]",
 } as const;

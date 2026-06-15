@@ -29,7 +29,7 @@ const BREAKFAST_EMPTY_TIP =
 function BreakfastEmptyTip({ className ="" }: { className?: string }) {
  return (
  <p
- className={`text-[11px] font-normal normal-case leading-snug text-[var(--text-muted)] ${className}`.trim()}
+ className={`text-2xs font-normal normal-case leading-snug text-[var(--text-muted)] ${className}`.trim()}
  >
  {BREAKFAST_EMPTY_TIP}
  </p>

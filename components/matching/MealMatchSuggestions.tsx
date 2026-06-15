@@ -26,7 +26,7 @@ function MatchList({ matches }: { matches: RankedRecipeMatch[] }) {
  <p className={`${ds.cardTitle} mb-1`}>{match.recipeName}</p>
  <p className="text-xs font-medium text-[var(--brand-primary)]">{match.overlapLabel}</p>
  {match.missingIngredients.length > 0 ? (
- <p className="mt-1 text-[11px] text-[var(--text-muted)]">
+ <p className="mt-1 text-2xs text-[var(--text-muted)]">
  Still need: {match.missingIngredients.slice(0, 3).join(",")}
  {match.missingIngredients.length > 3 ?"…" :""}
  </p>

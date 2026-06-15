@@ -33,7 +33,7 @@ export function BottomNav() {
  {!moreOpen ? (
  <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:hidden">
  <nav
- className="pointer-events-auto grid w-full max-w-md grid-cols-6 gap-0.5 rounded-[28px] bg-[var(--nav-bar-bg)] px-1.5 py-1.5 shadow-2xl shadow-black/25"
+ className="pointer-events-auto grid w-full max-w-md grid-cols-6 gap-0.5 rounded-2xl bg-[var(--nav-bar-bg)] px-1.5 py-1.5 shadow-2xl shadow-black/25"
  aria-label="Main navigation"
  >
  {PRIMARY_ITEMS.map(({ href, label, Icon }) => {
@@ -45,7 +45,7 @@ export function BottomNav() {
               href={href}
                 prefetch
                 aria-current={isActive ? "page" : undefined}
-                className={`flex min-h-[48px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-[20px] px-1 py-1.5 transition-all duration-200 active:scale-95 ${
+                className={`flex min-h-[48px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1.5 transition-all duration-200 active:scale-95 ${
  isActive ?"bg-[var(--surface-overlay)]/15" :"hover:bg-[var(--surface-overlay)]/8"
  }`}
  >
@@ -67,7 +67,7 @@ export function BottomNav() {
  <button
  type="button"
  onClick={() => setMoreOpen(true)}
- className={`flex min-h-[48px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-[20px] px-1 py-1.5 transition-all duration-200 ${
+ className={`flex min-h-[48px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1.5 transition-all duration-200 ${
  moreActive ?"bg-[var(--surface-overlay)]/15" :"hover:bg-[var(--surface-overlay)]/8"
  }`}
  aria-expanded={moreOpen}

@@ -25,17 +25,17 @@ const ON_TRACK_MAX = 1.05;
 const OVER_MODERATE_MAX = 1.15;
 
 export const GOAL_STATUS_COLORS = {
-  "on-track": "#3a5a40",
-  under: "#f59e0b",
-  "over-moderate": "#f97316",
-  "over-high": "#ef4444",
+  "on-track": "var(--brand-primary)",
+  under: "var(--traffic-amber)",
+  "over-moderate": "var(--traffic-amber)",
+  "over-high": "var(--traffic-red)",
 } as const;
 
 export const GOAL_STATUS_TEXT_CLASS: Record<GoalStatusKind, string> = {
-  "on-track": "text-[#3a5a40] dark:text-[#86efac]",
-  under: "text-amber-600 dark:text-amber-400",
-  "over-moderate": "text-orange-600 dark:text-orange-400",
-  "over-high": "text-red-600 dark:text-red-400",
+  "on-track": "text-[var(--brand-primary)] dark:text-[var(--traffic-green)]",
+  under: "text-[var(--traffic-amber)]",
+  "over-moderate": "text-[var(--traffic-amber)]",
+  "over-high": "text-[var(--traffic-red)]",
 };
 
 function buildStatus(kind: GoalStatusKind): GoalStatus {

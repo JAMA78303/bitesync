@@ -198,7 +198,7 @@ export function TDEEForm({ defaultValues }: Props) {
  }}
  onKeyDown={(e) => ["e","E","+","-"].includes(e.key) && e.preventDefault()}
  />
- <p className="text-[11px] text-[var(--text-muted)]">1 lb ≈ 0.454 kg</p>
+ <p className="text-2xs text-[var(--text-muted)]">1 lb ≈ 0.454 kg</p>
  </>
  ) : (
  <>
@@ -246,7 +246,7 @@ export function TDEEForm({ defaultValues }: Props) {
  />
  </div>
  </div>
- <p className="text-[11px] text-[var(--text-muted)]">14 lb = 1 stone</p>
+ <p className="text-2xs text-[var(--text-muted)]">14 lb = 1 stone</p>
  </>
  )}
  {form.formState.errors.weightKg ? (
@@ -300,7 +300,7 @@ export function TDEEForm({ defaultValues }: Props) {
  }}
  onKeyDown={(e) => ["e","E","+","-"].includes(e.key) && e.preventDefault()}
  />
- <p className="text-[11px] text-[var(--text-muted)]">1 m = 100 cm</p>
+ <p className="text-2xs text-[var(--text-muted)]">1 m = 100 cm</p>
  </>
  ) : (
  <>
@@ -348,7 +348,7 @@ export function TDEEForm({ defaultValues }: Props) {
  />
  </div>
  </div>
- <p className="text-[11px] text-[var(--text-muted)]">12 inches = 1 foot</p>
+ <p className="text-2xs text-[var(--text-muted)]">12 inches = 1 foot</p>
  </>
  )}
  {form.formState.errors.heightCm ? (
@@ -367,7 +367,7 @@ export function TDEEForm({ defaultValues }: Props) {
  <ShieldCheck className="h-6 w-6 shrink-0 opacity-80" aria-hidden />
  </div>
  <p className="mt-2 text-sm font-medium">{getBMILabel(bmiCategory)}</p>
- <p className="mt-0.5 text-[11px] opacity-80">WHO classification</p>
+ <p className="mt-0.5 text-2xs opacity-80">WHO classification</p>
  <p className="mt-2 text-xs leading-relaxed opacity-90">
  BMI is a rough guide and doesn&apos;t account for muscle mass or body composition.
  </p>
