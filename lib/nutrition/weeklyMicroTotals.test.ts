@@ -41,7 +41,7 @@ const mixed = aggregateWeeklyMicrosFromPlan(
 if (!mixed) throw new Error("expected mixed-plan aggregate");
 assertNear(mixed.weeklyTotals.iron_mg, once.weeklyTotals.iron_mg, "unreferenced plan entry does not add micros");
 
-// Multi-recipe plan: aggregate must match per-recipe × entry-count arithmetic.
+// Hand-check: 2× recipe A + 1× recipe B iron = per-serving × entry count (no double-count).
 const RECIPE_A = "recipe-a";
 const RECIPE_B = "recipe-b";
 const multiIngredients: WeeklyMicroRecipeIngredient[] = [
@@ -60,5 +60,10 @@ if (!multi || !singleA || !singleB) throw new Error("expected multi-recipe aggre
 const expectedIron =
   singleA.weeklyTotals.iron_mg * 2 + singleB.weeklyTotals.iron_mg;
 assertNear(multi.weeklyTotals.iron_mg, expectedIron, "multi-recipe iron = sum(per-serving × count)");
+assertNear(
+  multi.weeklyTotals.iron_mg / 7,
+  expectedIron / 7,
+  "daily avg iron matches hand-check arithmetic",
+);
 
 console.log("weeklyMicroTotals.test.ts: all assertions passed");

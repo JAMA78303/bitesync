@@ -35,6 +35,12 @@ assertEqual(isUnderTarget("vitamin_a_mcg", vitAWeekly, "male"), false, "vitamin 
 const folateWeekly = 1080 * 7;
 assertEqual(getTrafficLight("folate_mcg", folateWeekly, "male"), "amber", "folate above upper");
 
+// met target, no upper concern — green (not deficiency red)
+assertEqual(getTrafficLight("folate_mcg", 300 * 7, "male"), "green", "folate 150% below upper");
+assertEqual(getTrafficLight("iron_mg", 12 * 7, "male"), "green", "iron 138% below upper");
+assertEqual(getTrafficLight("vitamin_a_mcg", 840 * 7, "male"), "green", "vitamin A 120% below upper");
+assertEqual(isUnderTarget("folate_mcg", 300 * 7, "male"), false, "folate 150% not under");
+
 // vitamin C 120% — no upper limit concern
 assertEqual(getTrafficLight("vitamin_c_mg", 48 * 7, "male"), "green", "vitamin C met target");
 assertEqual(getTrafficLightLabel("vitamin_c_mg", 48 * 7, "male"), "120% of daily target", "vit C label");
