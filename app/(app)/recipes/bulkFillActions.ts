@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { randomInt } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
 import type { RecipeIngredientInput } from "@/lib/nutrition/calculate";
-import { getDailyCalorieTarget } from "@/lib/utils/nutrition-targets";
+import { getDailyCalorieTarget, getDailyProteinTarget } from "@/lib/utils/nutrition-targets";
 import { getProfile } from "@/lib/supabase/profile";
 import { canCreateRecipe, getRecipeCount, getUserTier } from "@/lib/subscription";
 import { initialDietaryPreferencesFromProfile } from "@/lib/dietary/constraints";
@@ -70,6 +70,7 @@ export async function planFillMyLibrary(
     slots: BulkFillSlotPlan[];
     hardConstraints: ReturnType<typeof hardConstraintsFromPreferences>;
     dailyCalorieTarget: number;
+    dailyProteinTarget: number;
     defaultCount: number;
   }>
 > {
@@ -87,6 +88,13 @@ export async function planFillMyLibrary(
     };
   }
 
+  const dailyProtein = getDailyProteinTarget(profile);
+  if (dailyProtein == null || !Number.isFinite(Number(dailyProtein)) || dailyProtein < 40) {
+    return {
+      error: "Set a daily protein target in Settings first — we size each meal to hit your protein floor.",
+    };
+  }
+
   const prefs = initialDietaryPreferencesFromProfile(profile);
   const hard = hardConstraintsFromPreferences(prefs);
   const baseSeed = randomInt(0, 0x7fff_fffe) >>> 0;
@@ -98,6 +106,7 @@ export async function planFillMyLibrary(
       slots,
       hardConstraints: hard,
       dailyCalorieTarget: Number(daily),
+      dailyProteinTarget: Number(dailyProtein),
       defaultCount: defaultBulkRecipeCount(),
     },
   };
@@ -107,6 +116,7 @@ export async function generateFillLibrarySlot(payload: {
   slot: BulkFillSlotPlan;
   hardConstraints: ReturnType<typeof hardConstraintsFromPreferences>;
   dailyCalorieTarget: number;
+  dailyProteinTarget: number;
   acceptedDrafts: HybridRecipeDraft[];
 }): Promise<ActionResult<HybridRecipeDraft>> {
   const supabase = await createClient();
@@ -121,13 +131,16 @@ export async function generateFillLibrarySlot(payload: {
     slot: payload.slot,
     hard: payload.hardConstraints,
     targetDailyCalories: payload.dailyCalorieTarget,
+    targetDailyProtein: payload.dailyProteinTarget,
     existing,
     acceptedInBatch: payload.acceptedDrafts,
     useLlmMethod: true,
   });
 
   if (!draft) {
-    return { error: `Could not generate a unique recipe for ${payload.slot.label}. Skipped.` };
+    return {
+      error: `Could not fill ${payload.slot.label} — try again or add this meal type manually.`,
+    };
   }
 
   return { success: true, data: draft };

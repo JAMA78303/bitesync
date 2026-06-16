@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { archiveRecipe, deleteRecipe } from "@/app/(app)/recipes/actions";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/use-toast";
 
 type Props = {
@@ -12,12 +13,18 @@ type Props = {
 export function RecipeLifecycleButtons({ recipeId }: Props) {
  const router = useRouter();
  const { toast } = useToast();
+ const { confirm } = useConfirm();
  const [isPending, startTransition] = useTransition();
  const [action, setAction] = useState<"archive" |"delete" | null>(null);
 
- function runAction(kind:"archive" |"delete") {
+ async function runAction(kind:"archive" |"delete") {
  if (kind ==="delete") {
- const ok = window.confirm("Delete this recipe? This cannot be undone.");
+ const ok = await confirm({
+ title: "Delete recipe?",
+ description: "This cannot be undone.",
+ confirmLabel: "Delete",
+ destructive: true,
+ });
  if (!ok) return;
  }
 
@@ -45,7 +52,7 @@ export function RecipeLifecycleButtons({ recipeId }: Props) {
  <div className="flex gap-2">
  <button
  type="button"
- onClick={() => runAction("archive")}
+ onClick={() => void runAction("archive")}
  disabled={busy}
  aria-label="Archive recipe"
  className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--border-default)] text-lg text-[var(--text-muted)] hover:text-[var(--semantic-warn-text)] disabled:opacity-50"
@@ -54,7 +61,7 @@ export function RecipeLifecycleButtons({ recipeId }: Props) {
  </button>
  <button
  type="button"
- onClick={() => runAction("delete")}
+ onClick={() => void runAction("delete")}
  disabled={busy}
  aria-label="Delete recipe"
  className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--border-default)] text-lg text-[var(--text-muted)] hover:text-[var(--semantic-error-text)] disabled:opacity-50"

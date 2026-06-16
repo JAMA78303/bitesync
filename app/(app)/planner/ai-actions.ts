@@ -19,6 +19,10 @@ import {
 import type { Sex } from "@/lib/nutrition/drv";
 import { getWeeklyMicroAnalysis } from "@/lib/supabase/nutrition";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  filterPoolByUsageTier,
+  recipeAvailabilityTiers,
+} from "@/lib/planner/recipe-pool-availability";
 import { dailyCalorieBand } from "@/lib/planner/calorie-bands";
 import {
   buildPlanCalorieAccuracyWarning,
@@ -519,13 +523,26 @@ function pickRecipeWithBudgetAndUsage(
   const effectiveCal = Math.min(slotCalTarget, Math.max(remainingCal, 0));
   const effectivePro = Math.min(slotProTarget, Math.max(remainingPro, 0));
 
-  const available = pool.filter((r) => (usedCount.get(r.id) ?? 0) < 2 && !usedOnDay.has(r.id));
-  const poolUse = available.length ? available : [];
+  let poolUse: RecipeWithNutrition[] = [];
+  let usageTier: ReturnType<typeof recipeAvailabilityTiers>[number] = "strict";
+  for (const tier of recipeAvailabilityTiers()) {
+    const tiered = filterPoolByUsageTier(pool, usedCount, usedOnDay, tier);
+    if (tiered.length > 0) {
+      poolUse = tiered;
+      usageTier = tier;
+      break;
+    }
+  }
   if (poolUse.length === 0) {
     console.warn(
-      `[heuristic] day ${logCtx.day} ${logCtx.meal_type}#${logCtx.slot_index}: no recipe available (weekly cap or same-day duplicate rule)`,
+      `[heuristic] day ${logCtx.day} ${logCtx.meal_type}#${logCtx.slot_index}: no recipe in library — slot left empty`,
     );
     return null;
+  }
+  if (usageTier !== "strict") {
+    console.warn(
+      `[heuristic] day ${logCtx.day} ${logCtx.meal_type}#${logCtx.slot_index}: relaxed usage tier to "${usageTier}"`,
+    );
   }
   const poolMainMeals = poolUse.filter((r) => !excludeFromMainMealSlots(r.name, r.ingredientNames ?? []));
 
@@ -563,18 +580,38 @@ function pickRecipeWithBudgetAndUsage(
       );
     }
   } else if (logCtx.meal_type === "snack") {
-    consideredPool = poolUse.filter(
+    const strictSnacks = poolUse.filter(
       (r) =>
         !excludeFromMainMealSlots(r.name, r.ingredientNames ?? []) &&
         (r.calories ?? 999) <= SNACK_MAX_CALORIES &&
         (r.calories ?? 0) >= SNACK_MIN_CALORIES &&
         isRecipeAISnackAppropriate(r.calories, r.ingredientNames ?? []),
     );
+    const relaxedSnacks = poolUse.filter(
+      (r) =>
+        !excludeFromMainMealSlots(r.name, r.ingredientNames ?? []) &&
+        (r.calories ?? 999) <= SNACK_MAX_CALORIES + 80,
+    );
+    if (strictSnacks.length) {
+      consideredPool = strictSnacks;
+    } else if (relaxedSnacks.length) {
+      consideredPool = relaxedSnacks;
+      console.warn(
+        `[heuristic] day ${logCtx.day} snack#${logCtx.slot_index}: relaxed snack matcher (${relaxedSnacks.length} in pool)`,
+      );
+    } else {
+      consideredPool = poolUse.filter((r) => !excludeFromMainMealSlots(r.name, r.ingredientNames ?? []));
+      if (consideredPool.length) {
+        console.warn(
+          `[heuristic] day ${logCtx.day} snack#${logCtx.slot_index}: main-meal snack fallback (${consideredPool.length} in pool)`,
+        );
+      }
+    }
     if (consideredPool.length === 0) {
       console.warn(
-        `[heuristic] day ${logCtx.day} snack#${logCtx.slot_index}: no appropriate recipes found, leaving slot empty`,
+        `[heuristic] day ${logCtx.day} snack#${logCtx.slot_index}: no snack candidates — using any available recipe`,
       );
-      return null;
+      consideredPool = poolUse;
     }
   } else {
     consideredPool = poolMainMeals.length ? poolMainMeals : poolUse;

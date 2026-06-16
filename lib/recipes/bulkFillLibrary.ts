@@ -209,8 +209,21 @@ export function isDuplicateDraft(
 
 /** Loosen dedupe as generation retries exhaust finite template variety. */
 export function duplicateDraftOptsForAttempt(attempt: number): DuplicateDraftOptions {
+  if (attempt >= 12) return { nameOnly: true, batchOverlap: 1, libraryOverlap: 1 };
   if (attempt >= 10) return { nameOnly: true };
   if (attempt >= 6) return { batchOverlap: 0.95, libraryOverlap: 0.97 };
   if (attempt >= 3) return { batchOverlap: 0.9, libraryOverlap: 0.93 };
   return {};
+}
+
+/** Skip dedupe entirely — last resort so a slot still fills. */
+export function skipDuplicateChecks(): DuplicateDraftOptions {
+  return { nameOnly: true, batchOverlap: 1, libraryOverlap: 1 };
+}
+
+/** How many templates to exclude from reuse as attempts progress. */
+export function excludeTemplateCountForAttempt(attempt: number, totalExcluded: number): number {
+  if (attempt >= 10) return 0;
+  if (attempt >= 6) return Math.floor(totalExcluded / 2);
+  return totalExcluded;
 }

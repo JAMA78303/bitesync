@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 
 type DeleteRecipeButtonProps = {
  onDelete: () => Promise<void>;
@@ -8,9 +9,15 @@ type DeleteRecipeButtonProps = {
 
 export function DeleteRecipeButton({ onDelete }: DeleteRecipeButtonProps) {
  const [isDeleting, setIsDeleting] = useState(false);
+ const { confirm } = useConfirm();
 
  async function handleClick() {
- const ok = window.confirm("Delete this recipe? This cannot be undone.");
+ const ok = await confirm({
+ title: "Delete recipe?",
+ description: "This cannot be undone.",
+ confirmLabel: "Delete",
+ destructive: true,
+ });
  if (!ok) return;
  setIsDeleting(true);
  await onDelete();

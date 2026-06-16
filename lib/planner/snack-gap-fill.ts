@@ -13,6 +13,7 @@ import { canCreateRecipe, getUserTier } from "@/lib/subscription";
 import { initialDietaryPreferencesFromProfile } from "@/lib/dietary/constraints";
 import type { MicroPriority } from "@/lib/nutrition/micro-rich-foods";
 import type { ProfileForTargets } from "@/lib/utils/nutrition-targets";
+import { getDailyProteinTarget } from "@/lib/utils/nutrition-targets";
 import { hardConstraintsFromPreferences } from "@/lib/recipes/bulkFillLibrary";
 import { SNACK_MAX_CALORIES, SNACK_MIN_CALORIES } from "@/lib/planner/meal-slot-eligibility";
 
@@ -50,6 +51,7 @@ export async function createPlannerSnackRecipe(
     },
     hard,
     targetDailyCalories: Math.round(targetSnack / fractionForMealSlot("snack")),
+    targetDailyProtein: getDailyProteinTarget(profile) ?? undefined,
     existing: { names: opts?.existingNames ?? [], signatures: [] },
     acceptedInBatch: [],
     useLlmMethod: true,

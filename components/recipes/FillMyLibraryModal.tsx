@@ -86,6 +86,7 @@ export function FillMyLibraryModal({ onClose }: Props) {
  slot,
  hardConstraints: plan.data.hardConstraints,
  dailyCalorieTarget: plan.data.dailyCalorieTarget,
+ dailyProteinTarget: plan.data.dailyProteinTarget,
  acceptedDrafts: accepted,
  });
 
@@ -236,6 +237,8 @@ export function FillMyLibraryModal({ onClose }: Props) {
  <p className="text-xs text-[var(--text-muted)]">{row.slotLabel}</p>
  <p className="mt-1 text-xs text-[var(--text-muted)]">
  ~{Math.round(row.achievedCalories)} kcal · {row.achievedProteinG}g protein
+ {row.targetMiss ?" · below target" :""}
+ {row.varietyRelaxed ?" · variety relaxed" :""}
  {row.fitsVegan ?" · Vegan" : row.fitsVegetarian ?" · Vegetarian" :""}
  {row.fitsGlutenFree ?" · GF" :""}
  </p>
