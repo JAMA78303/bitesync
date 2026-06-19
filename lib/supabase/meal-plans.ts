@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { fetchRecipeNutritionMap } from "@/lib/supabase/recipe-nutrition-query";
+import { buildGridFromEntries } from "@/lib/planner/build-grid";
 import type { MealType, PlannerGrid, MealPlanEntry } from "@/types";
 
 async function enrichEntriesWithNutrition(
@@ -164,17 +165,7 @@ export async function getMealPlanEntries(mealPlanId: string) {
 }
 
 export async function buildGrid(entries: MealPlanEntry[]): Promise<PlannerGrid> {
-  const grid: PlannerGrid = {};
-  for (let d = 0; d <= 6; d++) {
-    grid[d] = { breakfast: null, lunch: null, dinner: null, snack: null };
-  }
-  const sorted = [...entries].sort((a, b) => (a.slot_index ?? 0) - (b.slot_index ?? 0));
-  for (const entry of sorted) {
-    const slot = entry.slot_index ?? 0;
-    if (slot !== 0) continue;
-    grid[entry.day_of_week][entry.meal_type] = entry;
-  }
-  return grid;
+  return buildGridFromEntries(entries);
 }
 export async function assignRecipeToSlot(
   meal_plan_id: string,
@@ -305,11 +296,28 @@ export async function quickAddMeal(
 }
 
 export async function removeSlotEntry(entry_id: string) {
-  const supabase = await createClient();
-  const { error } = await supabase.from("meal_plan_entries").delete().eq("id", entry_id);
-  if (error) return { error: toUserFacingError(error, "week-plan", "removeMealPlanEntry") };
-  revalidatePath("/planner");
-  return { success: true };
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.from("meal_plan_entries").delete().eq("id", entry_id);
+    if (error) {
+      console.error("[removeMealPlanEntry] failed", {
+        entryId: entry_id,
+        error: error.message,
+        code: error.code,
+        details: error.details,
+      });
+      return { error: toUserFacingError(error, "week-plan", "removeMealPlanEntry") };
+    }
+    revalidatePath("/planner");
+    return { success: true as const };
+  } catch (err) {
+    console.error("[removeMealPlanEntry] failed", {
+      entryId: entry_id,
+      error: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+    });
+    return { error: toUserFacingError(err, "week-plan", "removeMealPlanEntry") };
+  }
 }
 
 export async function groceryListExists(meal_plan_id: string): Promise<boolean> {

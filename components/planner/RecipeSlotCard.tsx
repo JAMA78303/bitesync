@@ -2,6 +2,7 @@
 
 import { X, Flame, Leaf, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { removeSlotEntry } from "@/lib/supabase/meal-plans";
 import { useToast } from "@/components/ui/use-toast";
@@ -32,6 +33,7 @@ export function RecipeSlotCard({
  dietaryPreferences = [],
  variant ="default",
 }: Props) {
+ const router = useRouter();
  const [isPending, startTransition] = useTransition();
  const [removed, setRemoved] = useState(false);
  const { toast } = useToast();
@@ -66,10 +68,39 @@ export function RecipeSlotCard({
  function handleRemove() {
  setRemoved(true);
  startTransition(async () => {
+ try {
  const result = await removeSlotEntry(entry.id);
  if (result?.error) {
  setRemoved(false);
- toast({ title:"Failed to remove", variant:"destructive" });
+ console.error("[handleRemove] failed", {
+ entryId: entry.id,
+ day: entry.day_of_week,
+ mealType: entry.meal_type,
+ error: result.error,
+ });
+ toast({
+ title: "Failed to remove",
+ description: result.error,
+ variant: "destructive",
+ });
+ return;
+ }
+ router.refresh();
+ } catch (err) {
+ setRemoved(false);
+ const message = err instanceof Error ? err.message : "Could not remove meal";
+ console.error("[handleRemove] failed", {
+ entryId: entry.id,
+ day: entry.day_of_week,
+ mealType: entry.meal_type,
+ error: message,
+ stack: err instanceof Error ? err.stack : undefined,
+ });
+ toast({
+ title: "Failed to remove",
+ description: message,
+ variant: "destructive",
+ });
  }
  });
  }
