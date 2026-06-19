@@ -2,6 +2,9 @@
 
 import {
   confirmationCallbackUrl,
+  EXISTING_ACCOUNT_MESSAGE,
+  isAuthUserAlreadyRegisteredError,
+  isDuplicateSignUpResponse,
   isEmailConfirmed,
   VERIFY_EMAIL_PATH,
 } from "@/lib/auth/emailVerification";
@@ -31,10 +34,17 @@ export async function signUp(formData: FormData) {
   });
 
   if (error) {
+    if (isAuthUserAlreadyRegisteredError(error)) {
+      redirect(`/login?error=${encodeURIComponent(EXISTING_ACCOUNT_MESSAGE)}`);
+    }
     redirect(`/signup?error=${encodeURIComponent(toUserFacingError(error, "auth", "signup"))}`);
   }
 
-  if (data.user && isEmailConfirmed(data.user)) {
+  if (isDuplicateSignUpResponse(data)) {
+    redirect(`/login?error=${encodeURIComponent(EXISTING_ACCOUNT_MESSAGE)}`);
+  }
+
+  if (data.session && data.user && isEmailConfirmed(data.user)) {
     redirect("/onboarding");
   }
 

@@ -3,6 +3,36 @@ export function isEmailConfirmed(user: { email_confirmed_at?: string | null } | 
   return Boolean(user?.email_confirmed_at);
 }
 
+/** User-safe copy when signup is attempted for an existing account. */
+export const EXISTING_ACCOUNT_MESSAGE =
+  "An account with this email already exists. Log in instead, or reset your password if you forgot it.";
+
+type SignUpLikeUser = {
+  identities?: { id: string }[] | null;
+};
+
+type SignUpLikeResponse = {
+  user?: SignUpLikeUser | null;
+  session?: unknown | null;
+};
+
+/** Supabase auth errors that mean the email is already registered. */
+export function isAuthUserAlreadyRegisteredError(error: { message?: string } | null | undefined): boolean {
+  const msg = (error?.message ?? "").toLowerCase();
+  return /already registered|already exists|user already|email address is already/i.test(msg);
+}
+
+/**
+ * With confirm-email enabled, Supabase returns success (no error) for existing
+ * emails but omits identities — anti-enumeration behaviour we must handle.
+ */
+export function isDuplicateSignUpResponse(data: SignUpLikeResponse | null | undefined): boolean {
+  const user = data?.user;
+  if (!user) return false;
+  if (Array.isArray(user.identities) && user.identities.length === 0) return true;
+  return false;
+}
+
 export function confirmationCallbackUrl(next = "/planner"): string {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   return `${appUrl}/auth/callback?next=${encodeURIComponent(next)}`;

@@ -1,5 +1,8 @@
 import {
+  EXISTING_ACCOUNT_MESSAGE,
   friendlyConfirmationError,
+  isAuthUserAlreadyRegisteredError,
+  isDuplicateSignUpResponse,
   isEmailConfirmed,
   isEmailNotConfirmedAuthError,
   isAllowedWithoutEmailConfirmation,
@@ -18,5 +21,16 @@ assert(
 );
 assert(isAllowedWithoutEmailConfirmation("/verify-email"), "verify path allowed");
 assert(!isAllowedWithoutEmailConfirmation("/planner"), "planner blocked");
+assert(
+  isDuplicateSignUpResponse({ user: { identities: [] }, session: null }),
+  "empty identities means existing account",
+);
+assert(
+  !isDuplicateSignUpResponse({ user: { identities: [{ id: "x" }] }, session: null }),
+  "new signup has identities",
+);
+assert(isAuthUserAlreadyRegisteredError({ message: "User already registered" }), "already registered error");
+assert(!isAuthUserAlreadyRegisteredError({ message: "Invalid login credentials" }), "login error is not duplicate");
+assert(EXISTING_ACCOUNT_MESSAGE.includes("Log in"), "existing account message points to login");
 
 console.log("emailVerification.test.ts: all assertions passed");
