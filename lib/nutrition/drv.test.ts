@@ -1,6 +1,7 @@
 import {
   getTrafficLight,
   getTrafficLightLabel,
+  getUnderTargetBandLabel,
   isAboveUpperLimit,
   isUnderTarget,
 } from "@/lib/nutrition/drv";
@@ -47,5 +48,17 @@ assertEqual(getTrafficLightLabel("vitamin_c_mg", 48 * 7, "male"), "120% of daily
 
 // limit nutrients unchanged
 assertEqual(getTrafficLight("salt_g", 7 * 7, "male"), "red", "salt over limit");
+
+// band labels match traffic thresholds (no hardcoded mismatch)
+assertEqual(getUnderTargetBandLabel("red"), "below 70% of daily target", "red band label");
+assertEqual(getUnderTargetBandLabel("amber"), "below daily target", "amber band label");
+// 88% of RNI → amber, not "below 70%"
+assertEqual(getTrafficLight("vitamin_b12_mcg", 1.5 * 0.88 * 7, "male"), "amber", "B12 88% amber");
+assertEqual(isUnderTarget("vitamin_b12_mcg", 1.5 * 0.88 * 7, "male"), true, "B12 88% under target");
+assertEqual(
+  getTrafficLightLabel("vitamin_b12_mcg", 1.5 * 0.88 * 7, "male"),
+  "88% of daily target",
+  "B12 88% label",
+);
 
 console.log("drv.test.ts: all assertions passed");

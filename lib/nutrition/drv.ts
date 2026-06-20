@@ -90,6 +90,15 @@ export const NUTRIENT_LABELS: Record<string, string> = {
 
 export type TrafficLight = "green" | "amber" | "red";
 
+/** Below this fraction of RNI → red traffic / severe deficiency band. */
+export const MICRO_HIT_RED_THRESHOLD = 0.7;
+
+/** Below 100% of RNI → amber traffic / under target (but not severe). */
+export const MICRO_HIT_AMBER_THRESHOLD = 1.0;
+
+/** Limit nutrients: at or above this fraction of upper → amber. */
+export const MICRO_LIMIT_AMBER_THRESHOLD = 0.8;
+
 export function dailyAverageFromWeekly(weeklyTotal: number): number {
   return weeklyTotal / 7;
 }
@@ -114,13 +123,13 @@ export function getTrafficLight(nutrientKey: string, weeklyTotal: number, sex: S
   if (drv.type === "limit") {
     const pct = dailyAvg / (drv.upper ?? 1);
     if (pct >= 1.0) return "red";
-    if (pct >= 0.8) return "amber";
+    if (pct >= MICRO_LIMIT_AMBER_THRESHOLD) return "amber";
     return "green";
   }
 
   const pctRni = dailyAvg / drv.rni;
-  if (pctRni < 0.7) return "red";
-  if (pctRni < 1.0) return "amber";
+  if (pctRni < MICRO_HIT_RED_THRESHOLD) return "red";
+  if (pctRni < MICRO_HIT_AMBER_THRESHOLD) return "amber";
 
   // Target met — excess above a safe upper limit is a distinct amber, not deficiency red.
   if (isAboveUpperLimit(nutrientKey, weeklyTotal, sex)) return "amber";
@@ -143,4 +152,24 @@ export function getTrafficLightLabel(nutrientKey: string, weeklyTotal: number, s
     return `${base} · above upper limit`;
   }
   return base;
+}
+
+/** Short band label for deficiency callouts — must match getTrafficLight cutoffs. */
+export function getUnderTargetBandLabel(traffic: TrafficLight): string {
+  if (traffic === "red") {
+    return `below ${Math.round(MICRO_HIT_RED_THRESHOLD * 100)}% of daily target`;
+  }
+  if (traffic === "amber") {
+    return "below daily target";
+  }
+  return "";
+}
+
+/** Short band label for limit-nutrient excess callouts. */
+export function getOverLimitBandLabel(traffic: TrafficLight): string {
+  if (traffic === "red") return "exceeding daily limit";
+  if (traffic === "amber") {
+    return `above ${Math.round(MICRO_LIMIT_AMBER_THRESHOLD * 100)}% of daily limit`;
+  }
+  return "";
 }

@@ -3,6 +3,7 @@
 import { AlertTriangle, TrendingUp } from "lucide-react";
 import { ds } from "@/lib/ui/classes";
 import { GenerateMicroSnackButton } from "@/components/nutrition/GenerateMicroSnackButton";
+import { getOverLimitBandLabel, getUnderTargetBandLabel } from "@/lib/nutrition/drv";
 import { MICRO_RICH_FOODS } from "@/lib/nutrition/micro-rich-foods";
 import type { NutrientResult } from "@/lib/supabase/nutrition";
 
@@ -46,8 +47,8 @@ export function DeficiencyRecommendations({ deficiencies, excesses }: Props) {
               <div>
                 <p className="text-sm font-semibold">Low {nutrient.label}</p>
                 <p className="mt-0.5 text-xs opacity-80">
- {nutrient.pct_label} — below 70% of daily target
- </p>
+                  {nutrient.pct_label} — {getUnderTargetBandLabel(nutrient.traffic)}
+                </p>
  </div>
  </div>
  {richFoods.length > 0 ? (
@@ -71,9 +72,9 @@ export function DeficiencyRecommendations({ deficiencies, excesses }: Props) {
  <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--semantic-warn-text)]" />
  <div>
  <p className="text-sm font-semibold">High {nutrient.label}</p>
- <p className="mt-0.5 text-xs opacity-80">
- {nutrient.pct_label} — exceeding daily limit
- </p>
+                <p className="mt-0.5 text-xs opacity-80">
+                  {nutrient.pct_label} — {getOverLimitBandLabel(nutrient.traffic)}
+                </p>
  </div>
  </div>
  {tip ? <p className="ml-6 text-xs opacity-80">{tip}</p> : null}

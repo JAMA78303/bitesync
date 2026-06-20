@@ -26,6 +26,7 @@ import {
 import { dailyCalorieBand } from "@/lib/planner/calorie-bands";
 import {
   buildPlanCalorieAccuracyWarning,
+  buildPlanProteinAccuracyWarning,
   buildSnackLibraryNotice,
   calorieGoalBiasFromProfile,
   dayCaloriesFromRows,
@@ -34,6 +35,7 @@ import {
   ensureDailyProteinCoverage,
   enforceDailyCalorieCeiling,
   plannerSlotSpecs,
+  proteinFloorForTarget,
   trimSnacksIfDayOverMacroCaps,
   trimSnacksWhileDayCaloriesExceedRatio,
   tuneDayTowardCalorieBand,
@@ -157,7 +159,17 @@ async function replacePlanDaysWithClaudePlan(
       allowedRecipeIds,
       goalBias,
       trimSnacksWhileOver: (r, d, maxRatio) =>
-        trimSnacksWhileDayCaloriesExceedRatio(r as MealPlanInsertRow[], d, dailyCalorieTarget, calById, maxRatio),
+        trimSnacksWhileDayCaloriesExceedRatio(
+          r as MealPlanInsertRow[],
+          d,
+          dailyCalorieTarget,
+          calById,
+          maxRatio,
+          {
+            proById,
+            proteinFloor: proteinFloorForTarget(dailyProteinTarget),
+          },
+        ),
       trimSnacksIfOverMacroCaps: (r, d) =>
         trimSnacksIfDayOverMacroCaps(
           r as MealPlanInsertRow[],
@@ -213,6 +225,29 @@ async function replacePlanDaysWithClaudePlan(
     snackMicroPriorities: DEFAULT_SNACK_MICRO_PRIORITIES,
     tuneDay,
   });
+  tuneWeekAvgTowardBand(
+    rows as PlanCalorieRow[],
+    selectedDays,
+    pool,
+    calById,
+    mealPlanId,
+    dailyCalorieTarget,
+    snackCountPerDay,
+    allowedRecipeIds,
+    goalBias,
+    tuneDay,
+  );
+  enforceDailyCalorieCeiling({
+    rows: rows as PlanCalorieRow[],
+    days: selectedDays,
+    pool,
+    calById,
+    proById,
+    dailyTarget: dailyCalorieTarget,
+    dailyProteinTarget,
+    allowedRecipeIds,
+    tuneDay,
+  });
   ensureDailyProteinCoverage({
     rows: rows as PlanCalorieRow[],
     days: selectedDays,
@@ -226,22 +261,20 @@ async function replacePlanDaysWithClaudePlan(
     allowedRecipeIds,
     snackMicroPriorities: DEFAULT_SNACK_MICRO_PRIORITIES,
   });
-  enforceDailyCalorieCeiling({
-    rows: rows as PlanCalorieRow[],
-    days: selectedDays,
-    pool,
-    calById,
-    dailyTarget: dailyCalorieTarget,
-    allowedRecipeIds,
-    tuneDay,
-  });
 
-  const warning = buildPlanCalorieAccuracyWarning(
+  const calorieWarning = buildPlanCalorieAccuracyWarning(
     selectedDays,
     rows as PlanCalorieRow[],
     calById,
     dailyCalorieTarget,
   );
+  const proteinWarning = buildPlanProteinAccuracyWarning(
+    selectedDays,
+    rows as PlanCalorieRow[],
+    proById,
+    dailyProteinTarget,
+  );
+  const warning = [calorieWarning, proteinWarning].filter(Boolean).join(" ") || undefined;
   const snackLibraryNotice = buildSnackLibraryNotice(
     pool,
     selectedDays,
@@ -1065,7 +1098,17 @@ async function generateAIWeekPlanInner(input: GenerateAIWeekPlanInput) {
         snackMicroPriorities,
         goalBias,
         trimSnacksWhileOver: (r, d, maxRatio) =>
-          trimSnacksWhileDayCaloriesExceedRatio(r as MealPlanInsertRow[], d, dailyCalorieTarget, calById, maxRatio),
+          trimSnacksWhileDayCaloriesExceedRatio(
+            r as MealPlanInsertRow[],
+            d,
+            dailyCalorieTarget,
+            calById,
+            maxRatio,
+            {
+              proById,
+              proteinFloor: proteinFloorForTarget(dailyProteinTarget),
+            },
+          ),
         trimSnacksIfOverMacroCaps: (r, d) =>
           trimSnacksIfDayOverMacroCaps(
             r as MealPlanInsertRow[],
@@ -1121,19 +1164,6 @@ async function generateAIWeekPlanInner(input: GenerateAIWeekPlanInput) {
       snackMicroPriorities,
       tuneDay,
     });
-    ensureDailyProteinCoverage({
-      rows: rows as PlanCalorieRow[],
-      days: selectedDaysFullWeek,
-      pool,
-      calById,
-      proById,
-      mealPlanId: input.mealPlanId,
-      dailyTarget: dailyCalorieTarget,
-      dailyProteinTarget,
-      snackCountPerDay,
-      allowedRecipeIds: allowedIds,
-      snackMicroPriorities,
-    });
     tuneWeekAvgTowardBand(
       rows as PlanCalorieRow[],
       selectedDaysFullWeek,
@@ -1152,9 +1182,24 @@ async function generateAIWeekPlanInner(input: GenerateAIWeekPlanInput) {
       days: selectedDaysFullWeek,
       pool,
       calById,
+      proById,
       dailyTarget: dailyCalorieTarget,
+      dailyProteinTarget,
       allowedRecipeIds: allowedIds,
       tuneDay,
+    });
+    ensureDailyProteinCoverage({
+      rows: rows as PlanCalorieRow[],
+      days: selectedDaysFullWeek,
+      pool,
+      calById,
+      proById,
+      mealPlanId: input.mealPlanId,
+      dailyTarget: dailyCalorieTarget,
+      dailyProteinTarget,
+      snackCountPerDay,
+      allowedRecipeIds: allowedIds,
+      snackMicroPriorities,
     });
 
     const mealOrder: Record<string, number> = { breakfast: 0, lunch: 1, dinner: 2, snack: 3 };
@@ -1188,12 +1233,19 @@ async function generateAIWeekPlanInner(input: GenerateAIWeekPlanInput) {
     }
 
     const minPoolCal = Math.min(...pool.map((r) => r.calories ?? 0));
-    heuristicWarning = buildPlanCalorieAccuracyWarning(
+    const calorieWarning = buildPlanCalorieAccuracyWarning(
       selectedDaysFullWeek,
       rows as PlanCalorieRow[],
       calById,
       dailyCalorieTarget,
     );
+    const proteinWarning = buildPlanProteinAccuracyWarning(
+      selectedDaysFullWeek,
+      rows as PlanCalorieRow[],
+      proById,
+      dailyProteinTarget,
+    );
+    heuristicWarning = [calorieWarning, proteinWarning].filter(Boolean).join(" ") || undefined;
     snackLibraryNotice = buildSnackLibraryNotice(
       pool,
       selectedDaysFullWeek,

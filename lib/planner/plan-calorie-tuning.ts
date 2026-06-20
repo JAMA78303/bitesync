@@ -102,40 +102,59 @@ export function dayProteinFromRows(
 /** Upper bound for daily protein (and kcal snack trim): target × this ratio. */
 export const MACRO_CAP_MAX_RATIO = 1.25;
 
+/** Minimum acceptable daily protein when tuning (95% of target). */
+export const PROTEIN_FLOOR_RATIO = 0.95;
+
+export function proteinFloorForTarget(dailyProteinTarget: number): number {
+  return dailyProteinTarget * PROTEIN_FLOOR_RATIO;
+}
+
 export function isWithinDailyProteinCap(protein: number, dailyTarget: number): boolean {
   if (dailyTarget <= 0) return true;
   return protein >= dailyTarget && protein <= dailyTarget * MACRO_CAP_MAX_RATIO;
 }
 
-/** Remove snacks (highest slot_index first) while day calories exceed ratio × daily target. */
+/** Remove snacks (lowest protein first, highest slot_index as tiebreak) while day calories exceed ratio × daily target. */
 export function trimSnacksWhileDayCaloriesExceedRatio(
   rows: PlanCalorieRow[],
   day: number,
   dailyK: number,
   calById: Map<string, number>,
   maxRatio: number,
+  opts?: { proById?: Map<string, number>; proteinFloor?: number },
 ): void {
   const limit = dailyK * maxRatio;
+  const proById = opts?.proById;
+  const proteinFloor = opts?.proteinFloor ?? 0;
+
   for (;;) {
     const cal = dayCaloriesFromRows(rows, day, calById);
     if (cal <= limit) break;
-    let idx = -1;
-    let bestSlot = -1;
-    for (let i = 0; i < rows.length; i += 1) {
-      const r = rows[i]!;
-      if (r.day_of_week !== day || r.meal_type !== "snack") continue;
-      const si = r.slot_index ?? 0;
-      if (si >= bestSlot) {
-        bestSlot = si;
-        idx = i;
-      }
-    }
-    if (idx < 0) break;
-    rows.splice(idx, 1);
+
+    const snackEntries = rows
+      .map((r, i) => ({ r, i }))
+      .filter(({ r }) => r.day_of_week === day && r.meal_type === "snack" && r.recipe_id);
+
+    if (!snackEntries.length) break;
+
+    const currentPro = proById ? dayProteinFromRows(rows, day, proById) : Infinity;
+
+    const removable = snackEntries
+      .map(({ r, i }) => {
+        const snackPro = proById?.get(r.recipe_id) ?? 0;
+        const proAfter = currentPro - snackPro;
+        return { i, slot: r.slot_index ?? 0, snackPro, proAfter };
+      })
+      .filter(({ proAfter }) => !proById || proAfter >= proteinFloor)
+      .sort((a, b) => a.snackPro - b.snackPro || b.slot - a.slot);
+
+    const pick = removable[0];
+    if (!pick) break;
+    rows.splice(pick.i, 1);
   }
 }
 
-/** Drop snack slots (highest slot_index first) while the day exceeds macro caps. */
+/** Drop snack slots (lowest protein first) while the day exceeds macro caps — never below protein floor. */
 export function trimSnacksIfDayOverMacroCaps(
   rows: PlanCalorieRow[],
   day: number,
@@ -147,25 +166,30 @@ export function trimSnacksIfDayOverMacroCaps(
 ): void {
   const calLimit = dailyK * maxRatio;
   const proLimit = dailyP * maxRatio;
+  const proteinFloor = proteinFloorForTarget(dailyP);
 
   for (;;) {
     const cal = dayCaloriesFromRows(rows, day, calById);
     const pro = dayProteinFromRows(rows, day, proById);
     if (cal <= calLimit && pro <= proLimit) break;
 
-    let idx = -1;
-    let bestSlot = -1;
-    for (let i = 0; i < rows.length; i += 1) {
-      const r = rows[i]!;
-      if (r.day_of_week !== day || r.meal_type !== "snack") continue;
-      const si = r.slot_index ?? 0;
-      if (si >= bestSlot) {
-        bestSlot = si;
-        idx = i;
-      }
-    }
-    if (idx < 0) break;
-    rows.splice(idx, 1);
+    const snackEntries = rows
+      .map((r, i) => ({ r, i }))
+      .filter(({ r }) => r.day_of_week === day && r.meal_type === "snack" && r.recipe_id);
+
+    if (!snackEntries.length) break;
+
+    const removable = snackEntries
+      .map(({ r, i }) => {
+        const snackPro = proById.get(r.recipe_id) ?? 0;
+        return { i, slot: r.slot_index ?? 0, snackPro, proAfter: pro - snackPro };
+      })
+      .filter(({ proAfter }) => proAfter >= proteinFloor)
+      .sort((a, b) => a.snackPro - b.snackPro || b.slot - a.slot);
+
+    const pick = removable[0];
+    if (!pick) break;
+    rows.splice(pick.i, 1);
   }
 }
 
@@ -339,16 +363,23 @@ function swapMainMealForCalories(
   bandMin: number,
   bandMax: number,
   allowedRecipeIds: Set<string>,
+  opts?: { proById?: Map<string, number>; proteinFloor?: number },
 ): boolean {
   const mealOrder: PlanCalorieRow["meal_type"][] = ["dinner", "lunch", "breakfast"];
   const usedOnDay = new Set(rows.filter((r) => r.day_of_week === day && r.recipe_id).map((r) => r.recipe_id));
   const currentTotal = dayCaloriesFromRows(rows, day, calById);
+  const currentPro =
+    direction === "down" && opts?.proById
+      ? dayProteinFromRows(rows, day, opts.proById)
+      : 0;
+  const proteinFloor = opts?.proteinFloor ?? 0;
 
   for (const mealType of mealOrder) {
     const idx = rows.findIndex((r) => r.day_of_week === day && r.meal_type === mealType);
     if (idx < 0) continue;
     const currentId = rows[idx]!.recipe_id;
     const currentCal = calById.get(currentId) ?? 0;
+    const currentMealPro = opts?.proById?.get(currentId) ?? 0;
 
     const candidates = pool.filter((r) => {
       if (!allowedRecipeIds.has(r.id)) return false;
@@ -361,12 +392,22 @@ function swapMainMealForCalories(
       } else {
         if (r.calories >= currentCal) return false;
         if (newTotal < bandMin) return false;
+        if (opts?.proById && currentPro - currentMealPro + r.protein < proteinFloor) return false;
       }
       return true;
     });
     if (!candidates.length) continue;
 
-    candidates.sort((a, b) => (direction === "up" ? b.calories - a.calories : a.calories - b.calories));
+    if (direction === "up") {
+      candidates.sort((a, b) => b.calories - a.calories);
+    } else {
+      candidates.sort(
+        (a, b) =>
+          a.calories - b.calories ||
+          b.protein - a.protein ||
+          (opts?.proById?.get(b.id) ?? 0) - (opts?.proById?.get(a.id) ?? 0),
+      );
+    }
     const pick = candidates[0]!;
     rows[idx] = { ...rows[idx]!, recipe_id: pick.id };
     console.warn(
@@ -549,6 +590,10 @@ export function ensureDailySnackCoverage(opts: {
       );
       const roomUnderMax = band.max - current;
       if (roomUnderMax < SNACK_MIN_CALORIES) {
+        const proteinFloor =
+          opts.dailyProteinTarget != null && opts.dailyProteinTarget > 0
+            ? proteinFloorForTarget(opts.dailyProteinTarget)
+            : 0;
         const swapped = swapMainMealForCalories(
           opts.rows,
           day,
@@ -558,6 +603,7 @@ export function ensureDailySnackCoverage(opts: {
           Math.max(band.min - SNACK_MAX_CALORIES, 0),
           band.max,
           opts.allowedRecipeIds,
+          opts.proById && proteinFloor > 0 ? { proById: opts.proById, proteinFloor } : undefined,
         );
         if (!swapped) break;
         madeRoom = true;
@@ -570,7 +616,7 @@ export function ensureDailySnackCoverage(opts: {
       );
       const proteinGap =
         opts.dailyProteinTarget != null && opts.dailyProteinTarget > 0 && opts.proById
-          ? Math.max(0, opts.dailyProteinTarget * 0.95 - dayProteinFromRows(opts.rows, day, opts.proById))
+          ? Math.max(0, proteinFloorForTarget(opts.dailyProteinTarget) - dayProteinFromRows(opts.rows, day, opts.proById))
           : 0;
       const picked = pickSnackForGap(
         opts.pool,
@@ -602,6 +648,10 @@ export function ensureDailySnackCoverage(opts: {
 
       // No snack fits under band.max — swap a main down to make room, then retry.
       const roomFloor = Math.max(band.min - SNACK_MAX_CALORIES, 0);
+      const proteinFloor =
+        opts.dailyProteinTarget != null && opts.dailyProteinTarget > 0
+          ? proteinFloorForTarget(opts.dailyProteinTarget)
+          : 0;
       const swapped = swapMainMealForCalories(
         opts.rows,
         day,
@@ -611,6 +661,7 @@ export function ensureDailySnackCoverage(opts: {
         roomFloor,
         band.max,
         opts.allowedRecipeIds,
+        opts.proById && proteinFloor > 0 ? { proById: opts.proById, proteinFloor } : undefined,
       );
       if (!swapped) break;
       madeRoom = true;
@@ -640,7 +691,7 @@ export function ensureDailyProteinCoverage(opts: {
 }): void {
   if (opts.dailyProteinTarget <= 0) return;
   const band = dailyCalorieBand(opts.dailyTarget);
-  const proteinFloor = opts.dailyProteinTarget * 0.95;
+  const proteinFloor = proteinFloorForTarget(opts.dailyProteinTarget);
 
   for (const day of opts.days) {
     for (let guard = 0; guard < 16; guard += 1) {
@@ -737,6 +788,10 @@ export type TuneDayOptions = {
 export function tuneDayTowardCalorieBand(opts: TuneDayOptions): void {
   const band = dailyCalorieBand(opts.dailyTarget);
   const maxIterations = 24;
+  const proteinFloor =
+    opts.dailyProteinTarget > 0 ? proteinFloorForTarget(opts.dailyProteinTarget) : 0;
+  const calorieDownOpts =
+    proteinFloor > 0 ? { proById: opts.proById, proteinFloor } : undefined;
 
   for (let i = 0; i < maxIterations; i += 1) {
     const current = dayCaloriesFromRows(opts.rows, opts.day, opts.calById);
@@ -754,6 +809,7 @@ export function tuneDayTowardCalorieBand(opts: TuneDayOptions): void {
             band.min,
             band.max,
             opts.allowedRecipeIds,
+            calorieDownOpts,
           )
         ) {
           continue;
@@ -814,7 +870,7 @@ export function tuneDayTowardCalorieBand(opts: TuneDayOptions): void {
   }
 
   if (opts.dailyProteinTarget > 0) {
-    const proteinFloor = opts.dailyProteinTarget * 0.95;
+    const proteinFloor = proteinFloorForTarget(opts.dailyProteinTarget);
     for (let i = 0; i < 16; i += 1) {
       const pro = dayProteinFromRows(opts.rows, opts.day, opts.proById);
       if (pro >= proteinFloor) break;
@@ -972,30 +1028,70 @@ export function buildPlanCalorieAccuracyWarning(
   );
 }
 
+export function buildPlanProteinAccuracyWarning(
+  days: number[],
+  rows: PlanCalorieRow[],
+  proById: Map<string, number>,
+  dailyProteinTarget: number,
+): string | undefined {
+  if (dailyProteinTarget <= 0) return undefined;
+  const floor = proteinFloorForTarget(dailyProteinTarget);
+  const lowDays = days
+    .map((day) => ({ day, pro: dayProteinFromRows(rows, day, proById) }))
+    .filter(({ pro }) => pro < floor);
+  if (!lowDays.length) return undefined;
+
+  const dayBits = lowDays
+    .slice(0, 4)
+    .map(({ day, pro }) => `day ${day + 1}: ~${Math.round(pro * 10) / 10}g`)
+    .join("; ");
+  return (
+    `Some days fall below your protein target (aim ≥${Math.round(floor)}g): ${dayBits}.` +
+    " Your library may need higher-protein options for lighter days — try Greek yogurt, cottage cheese, or lean meat snacks."
+  );
+}
+
 /** Last pass after snack coverage: pull any day still above the daily band max. */
 export function enforceDailyCalorieCeiling(opts: {
   rows: PlanCalorieRow[];
   days: number[];
   pool: PlanRecipeMeta[];
   calById: Map<string, number>;
+  proById?: Map<string, number>;
   dailyTarget: number;
+  dailyProteinTarget?: number;
   allowedRecipeIds: Set<string>;
   tuneDay: (day: number) => void;
 }): void {
   const band = dailyCalorieBand(opts.dailyTarget);
+  const proteinFloor =
+    opts.dailyProteinTarget != null && opts.dailyProteinTarget > 0
+      ? proteinFloorForTarget(opts.dailyProteinTarget)
+      : 0;
+
   for (const day of opts.days) {
     for (let pass = 0; pass < 12; pass += 1) {
       const cal = dayCaloriesFromRows(opts.rows, day, opts.calById);
       if (cal <= band.max) break;
       opts.tuneDay(day);
       if (dayCaloriesFromRows(opts.rows, day, opts.calById) > band.max) {
-        // Remove highest-cal snack if tune could not swap mains down enough.
-        const snackIdx = [...opts.rows]
+        const snackEntries = opts.rows
           .map((r, i) => ({ r, i }))
-          .filter(({ r }) => r.day_of_week === day && r.meal_type === "snack")
-          .sort((a, b) => (b.r.slot_index ?? 0) - (a.r.slot_index ?? 0))[0]?.i;
-        if (snackIdx === undefined) break;
-        opts.rows.splice(snackIdx, 1);
+          .filter(({ r }) => r.day_of_week === day && r.meal_type === "snack" && r.recipe_id);
+        if (!snackEntries.length) break;
+
+        const currentPro = opts.proById ? dayProteinFromRows(opts.rows, day, opts.proById) : Infinity;
+        const removable = snackEntries
+          .map(({ r, i }) => {
+            const snackPro = opts.proById?.get(r.recipe_id) ?? 0;
+            return { i, slot: r.slot_index ?? 0, snackPro, proAfter: currentPro - snackPro };
+          })
+          .filter(({ proAfter }) => !opts.proById || proAfter >= proteinFloor)
+          .sort((a, b) => a.snackPro - b.snackPro || b.slot - a.slot);
+
+        const pick = removable[0];
+        if (pick === undefined) break;
+        opts.rows.splice(pick.i, 1);
       }
     }
   }
