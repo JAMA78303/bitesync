@@ -267,7 +267,6 @@ async function replacePlanDaysWithClaudePlan(
     rows as PlanCalorieRow[],
     calById,
     dailyCalorieTarget,
-    snackCountPerDay,
   );
   const proteinWarning = buildPlanProteinAccuracyWarning(
     selectedDays,
@@ -282,6 +281,7 @@ async function replacePlanDaysWithClaudePlan(
     rows as PlanCalorieRow[],
     calById,
     dailyCalorieTarget,
+    snackCountPerDay,
   );
 
   const persisted = await persistWeeklyMealPlanRows(supabase, mealPlanId, rows, selectedDays);
@@ -1220,7 +1220,6 @@ async function generateAIWeekPlanInner(input: GenerateAIWeekPlanInput) {
       rows as PlanCalorieRow[],
       calById,
       dailyCalorieTarget,
-      snackCountPerDay,
     );
     const proteinWarning = buildPlanProteinAccuracyWarning(
       selectedDaysFullWeek,
@@ -1235,6 +1234,7 @@ async function generateAIWeekPlanInner(input: GenerateAIWeekPlanInput) {
       rows as PlanCalorieRow[],
       calById,
       dailyCalorieTarget,
+      snackCountPerDay,
     );
     if (
       strictAffordableMisses.count >= 5 ||
