@@ -427,3 +427,31 @@ export function recipeMatchesPlannerSlot(
   }
   return true;
 }
+
+export type HeuristicSnackCandidatePool<T> = {
+  candidates: T[];
+  mode: "strict" | "relaxed" | "none";
+};
+
+export function heuristicSnackCandidatePool<
+  T extends { name: string; calories: number | null; ingredientNames?: string[] },
+>(pool: T[]): HeuristicSnackCandidatePool<T> {
+  const strict = pool.filter((r) =>
+    recipeMatchesPlannerSlot(r.name, r.ingredientNames ?? [], "snack", r.calories),
+  );
+  if (strict.length) return { candidates: strict, mode: "strict" };
+
+  const relaxed = pool.filter((r) => {
+    const calories = r.calories ?? 0;
+    const ingredientNames = r.ingredientNames ?? [];
+    return (
+      !recipeNameImpliesBreakfastSlot(r.name) &&
+      !excludeFromMainMealSlots(r.name, ingredientNames) &&
+      calories >= SNACK_MIN_CALORIES &&
+      calories <= SNACK_MAX_CALORIES
+    );
+  });
+
+  if (relaxed.length) return { candidates: relaxed, mode: "relaxed" };
+  return { candidates: [], mode: "none" };
+}

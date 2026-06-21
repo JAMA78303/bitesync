@@ -1036,19 +1036,34 @@ export function buildPlanProteinAccuracyWarning(
 ): string | undefined {
   if (dailyProteinTarget <= 0) return undefined;
   const floor = proteinFloorForTarget(dailyProteinTarget);
-  const lowDays = days
-    .map((day) => ({ day, pro: dayProteinFromRows(rows, day, proById) }))
-    .filter(({ pro }) => pro < floor);
-  if (!lowDays.length) return undefined;
+  const ceiling = dailyProteinTarget * MACRO_CAP_MAX_RATIO;
+  const dayTotals = days.map((day) => ({ day, pro: dayProteinFromRows(rows, day, proById) }));
+  const lowDays = dayTotals.filter(({ pro }) => pro < floor);
+  const highDays = dayTotals.filter(({ pro }) => pro > ceiling);
+  if (!lowDays.length && !highDays.length) return undefined;
 
-  const dayBits = lowDays
-    .slice(0, 4)
-    .map(({ day, pro }) => `day ${day + 1}: ~${Math.round(pro * 10) / 10}g`)
-    .join("; ");
-  return (
-    `Some days fall below your protein target (aim ≥${Math.round(floor)}g): ${dayBits}.` +
-    " Your library may need higher-protein options for lighter days — try Greek yogurt, cottage cheese, or lean meat snacks."
-  );
+  const warnings: string[] = [];
+  if (lowDays.length) {
+    const dayBits = lowDays
+      .slice(0, 4)
+      .map(({ day, pro }) => `day ${day + 1}: ~${Math.round(pro * 10) / 10}g`)
+      .join("; ");
+    warnings.push(
+      `Some days fall below your protein target (aim >=${Math.round(floor)}g): ${dayBits}. ` +
+        "Your library may need higher-protein options for lighter days.",
+    );
+  }
+  if (highDays.length) {
+    const dayBits = highDays
+      .slice(0, 4)
+      .map(({ day, pro }) => `day ${day + 1}: ~${Math.round(pro * 10) / 10}g`)
+      .join("; ");
+    warnings.push(
+      `Some days exceed your protein ceiling (aim <=${Math.round(ceiling)}g): ${dayBits}. ` +
+        "Use smaller or lower-protein snack recipes to keep the plan balanced.",
+    );
+  }
+  return warnings.join(" ");
 }
 
 /** Last pass after snack coverage: pull any day still above the daily band max. */
@@ -1103,7 +1118,21 @@ export function buildSnackLibraryNotice(
   rows: PlanCalorieRow[],
   calById: Map<string, number>,
   dailyTarget: number,
+  expectedSnackCountPerDay = 0,
 ): string | undefined {
+  if (expectedSnackCountPerDay > 0) {
+    const missingSnackDays = days.filter((d) => snackCountOnDay(rows, d) < expectedSnackCountPerDay);
+    if (missingSnackDays.length) {
+      const dayBits = missingSnackDays
+        .slice(0, 4)
+        .map((d) => `day ${d + 1}`)
+        .join(", ");
+      return (
+        `Some snack slots were left empty because no snack-sized recipes fit (${dayBits}). ` +
+        "Add 80-300 kcal snack recipes to fill them without blowing past your targets."
+      );
+    }
+  }
   if (poolHasSnackRecipes(pool)) return undefined;
   const band = dailyCalorieBand(dailyTarget);
   const needsSnack = days.some((d) => dayCaloriesFromRows(rows, d, calById) < band.min);

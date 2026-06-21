@@ -52,7 +52,7 @@ import {
   classifyRecipeMealType,
   excludeFromMainMealSlots,
   getMealTypeMultiplier,
-  isRecipeAISnackAppropriate,
+  heuristicSnackCandidatePool,
   matchByIncludes,
   recipeMatchesPlannerSlot,
   shouldOccupyBreakfastSlot,
@@ -267,6 +267,7 @@ async function replacePlanDaysWithClaudePlan(
     rows as PlanCalorieRow[],
     calById,
     dailyCalorieTarget,
+    snackCountPerDay,
   );
   const proteinWarning = buildPlanProteinAccuracyWarning(
     selectedDays,
@@ -613,42 +614,23 @@ function pickRecipeWithBudgetAndUsage(
       );
     }
   } else if (logCtx.meal_type === "snack") {
-    const strictSnacks = poolUse.filter(
-      (r) =>
-        !excludeFromMainMealSlots(r.name, r.ingredientNames ?? []) &&
-        (r.calories ?? 999) <= SNACK_MAX_CALORIES &&
-        (r.calories ?? 0) >= SNACK_MIN_CALORIES &&
-        isRecipeAISnackAppropriate(r.calories, r.ingredientNames ?? []),
-    );
-    const relaxedSnacks = poolUse.filter(
-      (r) =>
-        !excludeFromMainMealSlots(r.name, r.ingredientNames ?? []) &&
-        (r.calories ?? 999) <= SNACK_MAX_CALORIES + 80,
-    );
-    if (strictSnacks.length) {
-      consideredPool = strictSnacks;
-    } else if (relaxedSnacks.length) {
-      consideredPool = relaxedSnacks;
+    const snackCandidates = heuristicSnackCandidatePool(poolUse);
+    consideredPool = snackCandidates.candidates;
+    if (snackCandidates.mode === "relaxed") {
       console.warn(
-        `[heuristic] day ${logCtx.day} snack#${logCtx.slot_index}: relaxed snack matcher (${relaxedSnacks.length} in pool)`,
+        `[heuristic] day ${logCtx.day} snack#${logCtx.slot_index}: relaxed snack matcher (${consideredPool.length} in pool)`,
       );
-    } else {
-      consideredPool = poolUse.filter((r) => !excludeFromMainMealSlots(r.name, r.ingredientNames ?? []));
-      if (consideredPool.length) {
-        console.warn(
-          `[heuristic] day ${logCtx.day} snack#${logCtx.slot_index}: main-meal snack fallback (${consideredPool.length} in pool)`,
-        );
-      }
-    }
-    if (consideredPool.length === 0) {
+    } else if (snackCandidates.mode === "none") {
       console.warn(
-        `[heuristic] day ${logCtx.day} snack#${logCtx.slot_index}: no snack candidates — using any available recipe`,
+        `[heuristic] day ${logCtx.day} snack#${logCtx.slot_index}: no snack-sized candidates (${SNACK_MIN_CALORIES}-${SNACK_MAX_CALORIES} kcal) — slot left empty`,
       );
-      consideredPool = poolUse;
     }
   } else {
     consideredPool = poolMainMeals.length ? poolMainMeals : poolUse;
   }
+
+  if (consideredPool.length === 0) return null;
+
   const affordable = consideredPool.filter((r) => (r.calories ?? 0) <= Math.max(remainingCal - headroomKcal, 0));
   let pickPool: RecipeWithNutrition[];
   if (affordable.length > 0) {
@@ -1238,6 +1220,7 @@ async function generateAIWeekPlanInner(input: GenerateAIWeekPlanInput) {
       rows as PlanCalorieRow[],
       calById,
       dailyCalorieTarget,
+      snackCountPerDay,
     );
     const proteinWarning = buildPlanProteinAccuracyWarning(
       selectedDaysFullWeek,
