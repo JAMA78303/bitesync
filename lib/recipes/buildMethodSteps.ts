@@ -1,6 +1,7 @@
 import type { RecipeIngredientInput } from "@/lib/nutrition/calculate";
 import type { GoalMealSlot } from "@/lib/ai/goal-matched-recipe";
 import { mealLabel } from "@/lib/ai/goal-matched-recipe";
+import { orphanIngredients } from "@/lib/recipes/recipeCoherence";
 
 function titleCase(name: string): string {
   return name
@@ -29,6 +30,57 @@ function formatQty(ing: RecipeIngredientInput): string {
     : `${ing.quantity} ${ing.unit}`;
 }
 
+/** Bread + toppings — must toast the bread, not a fruit bowl. */
+function buildToastSteps(ingredients: RecipeIngredientInput[]): string[] | null {
+  const bread = findIngredient(ingredients, /bread|toast|bagel|muffin|crumpet/);
+  if (!bread) return null;
+
+  const pb = findIngredient(ingredients, /peanut butter|almond butter|nut butter/);
+  const eggs = findIngredient(ingredients, /\begg/);
+  const fruit =
+    findIngredient(ingredients, /banana/) ??
+    ingredients.find((i) => /strawberr|blueberr|raspberr|apple|pear|grape/i.test(i.name));
+
+  const steps: string[] = [
+    `Toast the ${titleCase(bread.name)} (${formatQty(bread)}) until golden and crisp.`,
+  ];
+
+  if (eggs) {
+    steps.push(`Scramble or fry the ${titleCase(eggs.name)} in a non-stick pan until set.`);
+  }
+  if (pb) {
+    steps.push(`Spread ${formatQty(pb)} ${titleCase(pb.name)} evenly over the toast.`);
+  }
+  if (fruit) {
+    steps.push(`Top with sliced ${titleCase(fruit.name)} and serve immediately.`);
+  } else if (eggs) {
+    steps.push(`Pile the eggs on the toast, season lightly, and serve.`);
+  } else {
+    steps.push(`Serve the toast straight away while warm.`);
+  }
+
+  return steps.length >= 2 ? steps : null;
+}
+
+function appendStepsForOrphanIngredients(
+  steps: string[],
+  ingredients: RecipeIngredientInput[],
+): string[] {
+  const orphans = orphanIngredients(steps, ingredients);
+  if (!orphans.length) return steps;
+
+  const out = [...steps];
+  const insertAt = Math.max(out.length - 1, 0);
+  for (const ing of orphans) {
+    out.splice(
+      insertAt,
+      0,
+      `Prepare ${formatQty(ing)} ${titleCase(ing.name)} and add to the dish before serving.`,
+    );
+  }
+  return out;
+}
+
 /** Oats / yoghurt / nut-butter bowls — no frying eggs or chicken. */
 function buildNoCookBowlSteps(ingredients: RecipeIngredientInput[], mealSlot: GoalMealSlot): string[] | null {
   const oats = findIngredient(ingredients, /\boats?\b/);
@@ -46,7 +98,8 @@ function buildNoCookBowlSteps(ingredients: RecipeIngredientInput[], mealSlot: Go
   const isFruitNutSnack =
     pb &&
     (banana || ingredients.some((i) => /strawberr|blueberr|raspberr|apple|pear|grape/i.test(i.name))) &&
-    !hasIngredient(ingredients, /\begg|chicken|salmon|tuna|beef|turkey|shrimp\b/);
+    !hasIngredient(ingredients, /\begg|chicken|salmon|tuna|beef|turkey|shrimp\b/) &&
+    !hasIngredient(ingredients, /bread|toast|bagel|muffin|crumpet/);
 
   if (isFruitNutSnack) {
     const fruit = banana ?? ingredients.find((i) => /strawberr|blueberr|raspberr|apple|pear|grape/i.test(i.name));
@@ -125,8 +178,15 @@ export function buildMethodStepsFromIngredients(
   ingredients: RecipeIngredientInput[],
   mealSlot: GoalMealSlot,
 ): string[] {
+  const toastSteps = buildToastSteps(ingredients);
+  if (toastSteps) {
+    return appendStepsForOrphanIngredients(toastSteps, ingredients);
+  }
+
   const bowlSteps = buildNoCookBowlSteps(ingredients, mealSlot);
-  if (bowlSteps) return bowlSteps;
+  if (bowlSteps) {
+    return appendStepsForOrphanIngredients(bowlSteps, ingredients);
+  }
 
   const slot = mealLabel(mealSlot);
   const protein = mainProtein(ingredients);
@@ -167,7 +227,7 @@ export function buildMethodStepsFromIngredients(
   }
 
   steps.push("Combine everything on a plate or bowl, adjust seasoning, and serve.");
-  return steps;
+  return appendStepsForOrphanIngredients(steps, ingredients);
 }
 
 export function formatDescriptionWithMethod(intro: string, steps: string[]): string {

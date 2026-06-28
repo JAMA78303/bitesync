@@ -34,6 +34,7 @@ import {
 } from "@/lib/planner/meal-slot-eligibility";
 import { isIngredientPileSnack } from "@/lib/recipes/snackRecipeQuality";
 import { stepsMentionUnlistedIngredients } from "@/lib/recipes/stepIngredientAlignment";
+import { validateRecipeCoherence } from "@/lib/recipes/recipeCoherence";
 
 export type HybridRecipeDraft = {
   name: string;
@@ -95,6 +96,14 @@ async function finalizeDraft(
   source: HybridRecipeDraft["source"],
   templateId?: string,
 ): Promise<HybridRecipeDraft | null> {
+  const coherence = validateRecipeCoherence({ name, steps, ingredients });
+  if (!coherence.ok) {
+    console.warn(
+      `[hybridRecipeEngine] coherence failed for "${name}": orphans=${coherence.orphanIngredients.join(",")} ${coherence.nameMismatch ?? ""}`,
+    );
+    return null;
+  }
+
   if (
     ctx.slot.mealSlot === "snack" &&
     isIngredientPileSnack(name, ingredients, steps)
@@ -148,6 +157,11 @@ async function buildDraftFromIngredients(
   let workingIngredients = ingredients;
   let fullLlmRecipe = false;
 
+  function isCoherent(recipeName: string, recipeSteps: string[], ings: RecipeIngredientInput[]): boolean {
+    if (stepsMentionUnlistedIngredients(recipeSteps, ings)) return false;
+    return validateRecipeCoherence({ name: recipeName, steps: recipeSteps, ingredients: ings }).ok;
+  }
+
   if (ctx.useLlmMethod) {
     const full = await generateFullRecipeFromIngredients({
       mealSlot: ctx.slot.mealSlot,
@@ -156,14 +170,14 @@ async function buildDraftFromIngredients(
       dietaryConstraintsLine: ctx.dietaryLine,
       bannedIngredientTerms: [],
     });
-    if (full && !stepsMentionUnlistedIngredients(full.steps, full.ingredients)) {
+    if (full && isCoherent(full.title, full.steps, full.ingredients)) {
       name = full.title;
       intro = full.description;
       steps = full.steps;
       workingIngredients = full.ingredients;
       source = "db+llm";
       fullLlmRecipe = true;
-    } else if (full && !stepsMentionUnlistedIngredients(templateSteps, ingredients)) {
+    } else if (full && isCoherent(full.title, templateSteps, full.ingredients)) {
       name = full.title;
       intro = full.description;
       steps = templateSteps;
@@ -177,12 +191,23 @@ async function buildDraftFromIngredients(
         ctx.slot.mealSlot,
         ctx.dietaryLine,
       );
-      if (llm) {
+      if (llm && isCoherent(name, llm.steps, ingredients)) {
         intro = llm.description;
         steps = llm.steps;
         source = "db+llm";
       }
     }
+  }
+
+  if (!isCoherent(name, steps, workingIngredients) && isCoherent(composedName, templateSteps, ingredients)) {
+    name = composedName;
+    steps = templateSteps;
+    workingIngredients = ingredients;
+    source = "db";
+  }
+
+  if (!isCoherent(name, steps, workingIngredients)) {
+    return null;
   }
 
   if (ctx.requireFullLlm && !fullLlmRecipe) {

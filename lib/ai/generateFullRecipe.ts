@@ -3,6 +3,7 @@ import type { RecipeIngredientInput } from "@/lib/nutrition/calculate";
 import type { GoalMealSlot } from "@/lib/ai/goal-matched-recipe";
 import { CLAUDE_MEAL_PLAN_MODEL } from "@/lib/ai/client";
 import { stepsMentionUnlistedIngredients } from "@/lib/recipes/stepIngredientAlignment";
+import { validateRecipeCoherence } from "@/lib/recipes/recipeCoherence";
 
 export type GeneratedFullRecipe = {
   title: string;
@@ -58,6 +59,7 @@ export function validateGeneratedFullRecipe(
     .filter((x): x is RecipeIngredientInput => x != null);
   if (!title || steps.length < 1 || ingredients.length < 1) return null;
   if (stepsMentionUnlistedIngredients(steps, ingredients)) return null;
+  if (!validateRecipeCoherence({ name: title, steps, ingredients }).ok) return null;
 
   const blob = `${title} ${description} ${ingredients.map((i) => i.name).join(" ")}`.toLowerCase();
   for (const term of bannedTerms) {
@@ -117,6 +119,8 @@ Rules:
 - You may make small quantity adjustments and add only basic pantry seasonings (salt, pepper, herbs, a sensible amount of cooking oil).
 - Do NOT add new major ingredients beyond the list + basic seasonings/oil.
 - Every method step must ONLY reference ingredients in your returned ingredients list (if there are no eggs, do not mention eggs).
+- EVERY ingredient in your list must appear in at least one method step — no orphan ingredients.
+- The title must match what the method actually makes (if it says Toast, the method must toast bread).
 - Method must be real steps a home cook can follow.
 - Return ONLY this JSON:
 {"title":"...","description":"one line","servings":1,"total_time_mins":25,"ingredients":[{"name":"...","quantity":130,"unit":"g"}],"steps":["step 1","step 2"]}`,
@@ -185,6 +189,7 @@ Do NOT reuse or closely paraphrase these existing recipe titles:
 ${avoid.length ? avoid.map((t) => `- ${t}`).join("\n") : "(none yet)"}
 
 Use UK ingredient names that appear in home cooking (CoFID-style: chicken breast, greek yogurt, oats, brown rice, broccoli, etc.).
+Every ingredient must appear in the method; the title must match the dish the steps describe.
 Return ONLY this JSON:
 {"title":"...","description":"one line","servings":1,"total_time_mins":25,"ingredients":[{"name":"...","quantity":130,"unit":"g"}],"steps":["step 1","step 2"]}`,
         },

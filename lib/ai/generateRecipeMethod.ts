@@ -2,6 +2,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { RecipeIngredientInput } from "@/lib/nutrition/calculate";
 import type { GoalMealSlot } from "@/lib/ai/goal-matched-recipe";
 import { CLAUDE_MEAL_PLAN_MODEL } from "@/lib/ai/client";
+import { validateRecipeCoherence } from "@/lib/recipes/recipeCoherence";
+import { stepsMentionUnlistedIngredients } from "@/lib/recipes/stepIngredientAlignment";
 
 function requireApiKey(): string {
   const key = process.env.ANTHROPIC_API_KEY;
@@ -58,6 +60,11 @@ Ingredients:
 ${ingredients.map((i) => `- ${i.quantity} ${i.unit} ${i.name}`).join("\n")}
 ${dietaryLine ? `\nDietary: ${dietaryLine}\n` : ""}
 
+Rules:
+- EVERY ingredient above must appear in at least one step (with quantity where sensible).
+- Do not mention ingredients that are not in the list.
+- Steps must match the recipe name (if the name says Toast, toast the bread).
+
 Return ONLY:
 {"description":"...","steps":["step1","step2",...]}`,
         },
@@ -68,9 +75,12 @@ Return ONLY:
     if (!text) return null;
     const parsed = parseJsonFromAssistant(text) as MethodResult;
     if (!parsed?.steps?.length || typeof parsed.description !== "string") return null;
+    const steps = parsed.steps.map((s) => String(s).trim()).filter(Boolean);
+    if (stepsMentionUnlistedIngredients(steps, ingredients)) return null;
+    if (!validateRecipeCoherence({ name, steps, ingredients }).ok) return null;
     return {
       description: parsed.description.trim(),
-      steps: parsed.steps.map((s) => String(s).trim()).filter(Boolean),
+      steps,
     };
   } catch {
     return null;
