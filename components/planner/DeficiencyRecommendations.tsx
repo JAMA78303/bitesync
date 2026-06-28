@@ -3,7 +3,7 @@
 import { AlertTriangle, TrendingUp } from "lucide-react";
 import { ds } from "@/lib/ui/classes";
 import { GenerateMicroSnackButton } from "@/components/nutrition/GenerateMicroSnackButton";
-import { getOverLimitBandLabel, getUnderTargetBandLabel } from "@/lib/nutrition/drv";
+import { getDeficiencyHeadline, getOverLimitBandLabel, getUnderTargetBandLabel } from "@/lib/nutrition/drv";
 import { MICRO_RICH_FOODS } from "@/lib/nutrition/micro-rich-foods";
 import type { NutrientResult } from "@/lib/supabase/nutrition";
 
@@ -37,26 +37,37 @@ export function DeficiencyRecommendations({ deficiencies, excesses }: Props) {
  <div className="space-y-3">
  {deficiencies.map((nutrient) => {
  const richFoods = MICRO_RICH_FOODS[nutrient.key] ?? [];
+ const isRed = nutrient.traffic === "red";
+ const callout = isRed ? ds.errorCallout : ds.warnCallout;
  return (
  <div
  key={nutrient.key}
-            className={`${ds.errorCallout} rounded-xl p-4`}
+            className={`${callout} rounded-xl p-4`}
           >
  <div className="mb-2 flex items-start gap-2">
-              <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+              <AlertTriangle
+                className={`mt-0.5 h-4 w-4 flex-shrink-0 ${isRed ? "" : "text-[var(--semantic-warn-text)]"}`}
+              />
               <div>
-                <p className="text-sm font-semibold">Low {nutrient.label}</p>
+                <p className="text-sm font-semibold">
+                  {getDeficiencyHeadline(nutrient.traffic, nutrient.label)}
+                </p>
                 <p className="mt-0.5 text-xs opacity-80">
-                  {nutrient.pct_label} — {getUnderTargetBandLabel(nutrient.traffic)}
+                  {nutrient.pct_label}
+                  {getUnderTargetBandLabel(nutrient.traffic)
+                    ? ` — ${getUnderTargetBandLabel(nutrient.traffic)}`
+                    : ""}
                 </p>
  </div>
  </div>
- {richFoods.length > 0 ? (
+ {isRed && richFoods.length > 0 ? (
               <p className="ml-6 text-xs opacity-80">
  Add more: <span className="font-medium">{richFoods.slice(0, 3).join(",")}</span>
  </p>
  ) : null}
- <GenerateMicroSnackButton nutrientKey={nutrient.key} nutrientLabel={nutrient.label} />
+ {isRed ? (
+   <GenerateMicroSnackButton nutrientKey={nutrient.key} nutrientLabel={nutrient.label} />
+ ) : null}
  </div>
  );
  })}

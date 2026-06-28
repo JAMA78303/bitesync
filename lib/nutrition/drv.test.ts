@@ -1,4 +1,5 @@
 import {
+  getDeficiencyHeadline,
   getTrafficLight,
   getTrafficLightLabel,
   getUnderTargetBandLabel,
@@ -65,8 +66,17 @@ assertEqual(getTrafficLight("salt_g", 7 * 7, "male"), "red", "salt over limit");
 
 // band labels match traffic thresholds (no hardcoded mismatch)
 assertEqual(getUnderTargetBandLabel("red"), "below 70% of daily target", "red band label");
-assertEqual(getUnderTargetBandLabel("amber"), "below daily target", "amber band label");
-// 88% of RNI → amber, not "below 70%"
+assertEqual(getUnderTargetBandLabel("amber"), "almost there", "amber band label");
+assertEqual(getDeficiencyHeadline("red", "Vitamin D"), "Low Vitamin D", "red headline");
+assertEqual(getDeficiencyHeadline("amber", "Iodine"), "Almost there — Iodine", "amber headline");
+
+// graded bands: near-target green, moderate amber, severe red
+assertEqual(getTrafficLight("vitamin_d_mcg", 10 * 0.97 * 7, "male"), "green", "vitamin D 97% green");
+assertEqual(getTrafficLight("iodine_mcg", 140 * 0.86 * 7, "male"), "amber", "iodine 86% amber");
+assertEqual(getTrafficLight("vitamin_d_mcg", 10 * 0.06 * 7, "male"), "red", "vitamin D 6% red");
+assertEqual(isUnderTarget("vitamin_d_mcg", 10 * 0.97 * 7, "male"), true, "97% still under 100% RNI");
+
+// 88% of RNI → amber, not red
 assertEqual(getTrafficLight("vitamin_b12_mcg", 1.5 * 0.88 * 7, "male"), "amber", "B12 88% amber");
 assertEqual(isUnderTarget("vitamin_b12_mcg", 1.5 * 0.88 * 7, "male"), true, "B12 88% under target");
 assertEqual(

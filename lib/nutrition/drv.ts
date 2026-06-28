@@ -93,8 +93,11 @@ export type TrafficLight = "green" | "amber" | "red";
 /** Below this fraction of RNI → red traffic / severe deficiency band. */
 export const MICRO_HIT_RED_THRESHOLD = 0.7;
 
-/** Below 100% of RNI → amber traffic / under target (but not severe). */
-export const MICRO_HIT_AMBER_THRESHOLD = 1.0;
+/** At/above this fraction of RNI → green traffic (no deficiency alarm). Between red and green → amber. */
+export const MICRO_HIT_GREEN_THRESHOLD = 0.9;
+
+/** @deprecated Use MICRO_HIT_GREEN_THRESHOLD — kept for callers comparing against 100% RNI. */
+export const MICRO_HIT_AMBER_THRESHOLD = MICRO_HIT_GREEN_THRESHOLD;
 
 /** Limit nutrients: at or above this fraction of upper → amber. */
 export const MICRO_LIMIT_AMBER_THRESHOLD = 0.8;
@@ -148,7 +151,7 @@ export function getTrafficLight(
 
   const pctRni = dailyAvg / drv.rni;
   if (pctRni < MICRO_HIT_RED_THRESHOLD) return "red";
-  if (pctRni < MICRO_HIT_AMBER_THRESHOLD) return "amber";
+  if (pctRni < MICRO_HIT_GREEN_THRESHOLD) return "amber";
 
   // Target met — excess above a safe upper limit is a distinct amber, not deficiency red.
   if (isAboveUpperLimit(nutrientKey, weeklyTotal, sex, context)) return "amber";
@@ -187,9 +190,16 @@ export function getUnderTargetBandLabel(traffic: TrafficLight): string {
     return `below ${Math.round(MICRO_HIT_RED_THRESHOLD * 100)}% of daily target`;
   }
   if (traffic === "amber") {
-    return "below daily target";
+    return "almost there";
   }
   return "";
+}
+
+/** Headline for deficiency cards — "Low" only in the red band. */
+export function getDeficiencyHeadline(traffic: TrafficLight, label: string): string {
+  if (traffic === "red") return `Low ${label}`;
+  if (traffic === "amber") return `Almost there — ${label}`;
+  return label;
 }
 
 /** Short band label for limit-nutrient excess callouts. */
