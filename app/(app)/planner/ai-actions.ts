@@ -23,6 +23,7 @@ import {
   filterPoolByUsageTier,
   recipeAvailabilityTiers,
 } from "@/lib/planner/recipe-pool-availability";
+import { pickLeastUsedByScore } from "@/lib/planner/recipe-variety-pick";
 import { dailyCalorieBand } from "@/lib/planner/calorie-bands";
 import {
   buildPlanCalorieAccuracyWarning,
@@ -643,22 +644,21 @@ function pickRecipeWithBudgetAndUsage(
     if (pickPool.length === 0) pickPool = [...consideredPool];
   }
 
-  const scored = pickPool
-    .map((r) => ({
+  const scored = pickPool.map((r) =>
+    scoreRecipeForDaySlot(
       r,
-      s: scoreRecipeForDaySlot(
-        r,
-        logCtx.meal_type,
-        Math.max(effectiveCal, 1),
-        Math.max(effectivePro, 0.5),
-        snackMicroPriorities,
-        goalBias,
-      ),
-    }))
-    .sort((a, b) => b.s - a.s);
-
-  const top = scored.slice(0, 3).map((x) => x.r);
-  const picked = top[Math.floor(Math.random() * Math.max(top.length, 1))] ?? scored[0]?.r;
+      logCtx.meal_type,
+      Math.max(effectiveCal, 1),
+      Math.max(effectivePro, 0.5),
+      snackMicroPriorities,
+      goalBias,
+    ),
+  );
+  const tieSeed = logCtx.day * 10 + logCtx.slot_index;
+  const picked = pickLeastUsedByScore(pickPool, usedCount, (r) => {
+    const idx = pickPool.indexOf(r);
+    return scored[idx] ?? 0;
+  }, tieSeed);
   if (!picked) return null;
   usedCount.set(picked.id, (usedCount.get(picked.id) ?? 0) + 1);
 

@@ -7,6 +7,7 @@ import {
  planFillMyLibrary,
  saveFillLibraryRecipes,
 } from "@/app/(app)/recipes/bulkFillActions";
+import { bulkFillBatchSummary, defaultBulkRecipeCount } from "@/lib/recipes/bulkFillLibrary";
 import { ds } from "@/lib/ui/classes";
 import { ModalPortal } from "@/components/ui/ModalPortal";
 import type { HybridRecipeDraft } from "@/lib/recipes/hybridRecipeEngine";
@@ -26,13 +27,21 @@ export function FillMyLibraryModal({ onClose }: Props) {
  const router = useRouter();
  const [isPending, startTransition] = useTransition();
  const [phase, setPhase] = useState<"setup" |"generating" |"review" |"done">("setup");
- const [count, setCount] = useState(10);
+ const [count, setCount] = useState(defaultBulkRecipeCount());
  const [rows, setRows] = useState<DraftRow[]>([]);
  const [progress, setProgress] = useState("");
  const [globalError, setGlobalError] = useState<string | null>(null);
  const [saveSummary, setSaveSummary] = useState<string | null>(null);
 
  const readyRows = rows.filter((r) => r.status ==="ready");
+ const readyByType = readyRows.reduce(
+ (acc, row) => {
+ const key = row.mealSlot ?? "other";
+ acc[key] = (acc[key] ?? 0) + 1;
+ return acc;
+ },
+ {} as Record<string, number>,
+ );
  const selectedCount = rows.filter((r) => r.selected && r.status ==="ready").length;
 
  const runGeneration = useCallback(async () => {
@@ -195,16 +204,17 @@ export function FillMyLibraryModal({ onClose }: Props) {
  onChange={(e) => setCount(Number(e.target.value))}
  className="mt-1 block w-full rounded-lg border border-[var(--border-default)] bg-[var(--surface-card)] px-3 py-2 text-sm"
  >
- {[8, 10, 12, 14, 16].map((n) => (
+ {[20, 28, 32, 36, 40].map((n) => (
  <option key={n} value={n}>
- {n} recipes (mixed meals)
+ {n} recipes ({bulkFillBatchSummary(n)})
  </option>
  ))}
  </select>
  </label>
  <p className="text-xs text-[var(--text-muted)]">
- Your dietary settings are hard limits. Each batch rotates meal types and templates so you
- get different dishes — run fill again for another mix. Omnivores get meat, fish, and plant-based mains.
+ Your dietary settings are hard limits. Each batch builds equal depth per meal type so a
+ generated week can rotate without repeats — run fill again for another mix. Omnivores get
+ meat, fish, and plant-based mains.
  </p>
  </div>
  ) : null}
@@ -214,6 +224,15 @@ export function FillMyLibraryModal({ onClose }: Props) {
  ) : null}
 
  {(phase ==="review" || phase ==="done") && rows.length > 0 ? (
+ <>
+ {readyRows.length > 0 ? (
+ <p className="mb-3 text-xs text-[var(--text-muted)]">
+ Ready:{" "}
+ {["breakfast", "lunch", "dinner", "snack"]
+ .map((t) => `${readyByType[t] ?? 0} ${t}`)
+ .join(" · ")}
+ </p>
+ ) : null}
  <ul className="space-y-3">
  {rows.map((row) => (
  <li
@@ -259,6 +278,7 @@ export function FillMyLibraryModal({ onClose }: Props) {
  </li>
  ))}
  </ul>
+ </>
  ) : null}
 
  {globalError ? (

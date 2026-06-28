@@ -24,25 +24,51 @@ export type ExistingLibrarySnapshot = {
   signatures: string[];
 };
 
-const DEFAULT_COUNT = 10;
+const DEFAULT_PER_TYPE = 7;
+const DEFAULT_COUNT = DEFAULT_PER_TYPE * 4;
+const MIN_PER_TYPE = 2;
+const MAX_PER_TYPE = 10;
+const MIN_TOTAL = MIN_PER_TYPE * 4;
+const MAX_TOTAL = MAX_PER_TYPE * 4;
 
-const MEAL_DISTRIBUTION: GoalMealSlot[] = [
-  "breakfast",
-  "breakfast",
-  "breakfast",
-  "lunch",
-  "lunch",
-  "dinner",
-  "dinner",
-  "dinner",
-  "snack",
-  "snack",
+const MEAL_TYPES: GoalMealSlot[] = ["breakfast", "lunch", "dinner", "snack"];
+
+const OMNIVORE_AXIS_ROTATION: BulkProteinAxis[] = [
+  "meat",
+  "fish",
+  "vegetarian",
+  "vegan",
+  "meat",
+  "fish",
+  "plant",
+  "meat",
+  "fish",
+  "vegetarian",
 ];
-
-const OMNIVORE_AXIS_ROTATION: BulkProteinAxis[] = ["meat", "fish", "vegetarian", "vegan", "meat", "fish", "plant", "meat", "fish", "vegetarian"];
 
 export function defaultBulkRecipeCount(): number {
   return DEFAULT_COUNT;
+}
+
+/** Recipes generated per meal type for a total batch count (even split across 4 types). */
+export function recipesPerMealType(totalCount: number): number {
+  const n = Math.min(Math.max(Math.round(totalCount), MIN_TOTAL), MAX_TOTAL);
+  return Math.min(MAX_PER_TYPE, Math.max(MIN_PER_TYPE, Math.round(n / MEAL_TYPES.length)));
+}
+
+export function bulkFillMealTypeCounts(totalCount: number): Record<GoalMealSlot, number> {
+  const perType = recipesPerMealType(totalCount);
+  return {
+    breakfast: perType,
+    lunch: perType,
+    dinner: perType,
+    snack: perType,
+  };
+}
+
+export function bulkFillBatchSummary(totalCount: number): string {
+  const counts = bulkFillMealTypeCounts(totalCount);
+  return MEAL_TYPES.map((t) => `${counts[t]} ${t}`).join(", ");
 }
 
 export function hardConstraintsFromPreferences(prefs: string[]): HardDietConstraints {
@@ -69,11 +95,6 @@ function proteinAxisForSlot(
   return OMNIVORE_AXIS_ROTATION[index % OMNIVORE_AXIS_ROTATION.length];
 }
 
-function mealSlotForIndex(index: number, baseSeed: number): GoalMealSlot {
-  const offset = (baseSeed >>> 0) % MEAL_DISTRIBUTION.length;
-  return MEAL_DISTRIBUTION[(index + offset) % MEAL_DISTRIBUTION.length];
-}
-
 function axisLabel(axis: BulkProteinAxis): string {
   switch (axis) {
     case "meat":
@@ -91,26 +112,31 @@ function axisLabel(axis: BulkProteinAxis): string {
   }
 }
 
-/** Build generation slots spread across meal types with soft protein variety. */
+/** Build generation slots — equal depth per meal type, interleaved for varied progress. */
 export function planBulkFillBatch(
   count: number,
   hard: HardDietConstraints,
   baseSeed: number,
 ): BulkFillSlotPlan[] {
-  const n = Math.min(Math.max(Math.round(count), 4), 16);
+  const perType = recipesPerMealType(count);
   const slots: BulkFillSlotPlan[] = [];
+  let slotIndex = 0;
 
-  for (let i = 0; i < n; i++) {
-    const mealSlot = mealSlotForIndex(i, baseSeed);
-    const proteinAxis = proteinAxisForSlot(i, hard, mealSlot);
-    const variantSeed = (baseSeed ^ (i * 0x9e3779b9) ^ (mealSlot.length << 12) ^ (i << 18)) >>> 0;
-    slots.push({
-      slotId: `slot-${i}`,
-      mealSlot,
-      proteinAxis,
-      variantSeed,
-      label: `${mealSlot.charAt(0).toUpperCase() + mealSlot.slice(1)} · ${axisLabel(proteinAxis)}`,
-    });
+  for (let round = 0; round < perType; round += 1) {
+    for (let typeIdx = 0; typeIdx < MEAL_TYPES.length; typeIdx += 1) {
+      const mealSlot = MEAL_TYPES[typeIdx]!;
+      const proteinAxis = proteinAxisForSlot(slotIndex, hard, mealSlot);
+      const variantSeed =
+        (baseSeed ^ (slotIndex * 0x9e3779b9) ^ (mealSlot.length << 12) ^ (round << 18) ^ (typeIdx << 6)) >>> 0;
+      slots.push({
+        slotId: `slot-${slotIndex}`,
+        mealSlot,
+        proteinAxis,
+        variantSeed,
+        label: `${mealSlot.charAt(0).toUpperCase() + mealSlot.slice(1)} · ${axisLabel(proteinAxis)}`,
+      });
+      slotIndex += 1;
+    }
   }
 
   return slots;
