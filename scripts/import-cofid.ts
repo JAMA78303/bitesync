@@ -31,6 +31,7 @@ export type CofidRow = {
   sodium_mg: number | null;
   salt_g: number | null;
   vitamin_a_ug: number | null;
+  retinol_ug: number | null;
   vitamin_d_ug: number | null;
   vitamin_e_mg: number | null;
   vitamin_k_ug: number | null;
@@ -126,6 +127,9 @@ function mapVitamins(row: Record<string, unknown>): Partial<CofidRow> {
     food_code: foodCode(row["Food Code"]),
     vitamin_a_ug: parseNumeric(
       row["Retinol Equivalent (µg)"] ?? row["Vitamin A (µg)"] ?? row["Retinol Equivalent (ug)"],
+    ),
+    retinol_ug: parseNumeric(
+      row["Retinol (µg)"] ?? row["Retinol (ug)"] ?? row["Preformed vitamin A (µg)"],
     ),
     vitamin_d_ug: parseNumeric(row["Vitamin D (µg)"] ?? row["Vitamin D (ug)"]),
     vitamin_e_mg: parseNumeric(row["Vitamin E (mg)"]),

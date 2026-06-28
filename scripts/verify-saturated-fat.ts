@@ -40,7 +40,7 @@ const baseRow = (satd: number | null): CoFIDNutrition =>
     fibre_g: 0,
     sodium_mg: 0,
     salt_g: 0,
-    vitamin_a_ug: null, vitamin_d_ug: null, vitamin_e_mg: null, vitamin_k_ug: null,
+    vitamin_a_ug: null, retinol_ug: null, vitamin_d_ug: null, vitamin_e_mg: null, vitamin_k_ug: null,
     vitamin_c_mg: null, thiamin_mg: null, riboflavin_mg: null, niacin_mg: null,
     vitamin_b6_mg: null, vitamin_b12_ug: null, folate_ug: null, calcium_mg: null,
     iron_mg: null, zinc_mg: null, magnesium_mg: null, potassium_mg: null,

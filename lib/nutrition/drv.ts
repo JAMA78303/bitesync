@@ -103,19 +103,38 @@ export function dailyAverageFromWeekly(weeklyTotal: number): number {
   return weeklyTotal / 7;
 }
 
+export type MicroCheckContext = {
+  /** Weekly preformed retinol (mcg) — vitamin A upper limit uses this, not total RE. */
+  weeklyRetinolMcg?: number;
+};
+
 export function isUnderTarget(nutrientKey: string, weeklyTotal: number, sex: Sex): boolean {
   const drv = UK_DRVS[nutrientKey]?.[sex];
   if (!drv || drv.type === "limit" || drv.rni <= 0) return false;
   return dailyAverageFromWeekly(weeklyTotal) < drv.rni;
 }
 
-export function isAboveUpperLimit(nutrientKey: string, weeklyTotal: number, sex: Sex): boolean {
+export function isAboveUpperLimit(
+  nutrientKey: string,
+  weeklyTotal: number,
+  sex: Sex,
+  context?: MicroCheckContext,
+): boolean {
   const drv = UK_DRVS[nutrientKey]?.[sex];
   if (!drv?.upper || drv.upper <= 0) return false;
+  if (nutrientKey === "vitamin_a_mcg") {
+    const retinolWeekly = context?.weeklyRetinolMcg ?? weeklyTotal;
+    return dailyAverageFromWeekly(retinolWeekly) > drv.upper;
+  }
   return dailyAverageFromWeekly(weeklyTotal) > drv.upper;
 }
 
-export function getTrafficLight(nutrientKey: string, weeklyTotal: number, sex: Sex): TrafficLight {
+export function getTrafficLight(
+  nutrientKey: string,
+  weeklyTotal: number,
+  sex: Sex,
+  context?: MicroCheckContext,
+): TrafficLight {
   const drv = UK_DRVS[nutrientKey]?.[sex];
   if (!drv) return "green";
   const dailyAvg = dailyAverageFromWeekly(weeklyTotal);
@@ -132,11 +151,16 @@ export function getTrafficLight(nutrientKey: string, weeklyTotal: number, sex: S
   if (pctRni < MICRO_HIT_AMBER_THRESHOLD) return "amber";
 
   // Target met — excess above a safe upper limit is a distinct amber, not deficiency red.
-  if (isAboveUpperLimit(nutrientKey, weeklyTotal, sex)) return "amber";
+  if (isAboveUpperLimit(nutrientKey, weeklyTotal, sex, context)) return "amber";
   return "green";
 }
 
-export function getTrafficLightLabel(nutrientKey: string, weeklyTotal: number, sex: Sex): string {
+export function getTrafficLightLabel(
+  nutrientKey: string,
+  weeklyTotal: number,
+  sex: Sex,
+  context?: MicroCheckContext,
+): string {
   const drv = UK_DRVS[nutrientKey]?.[sex];
   if (!drv) return "";
   const dailyAvg = dailyAverageFromWeekly(weeklyTotal);
@@ -148,7 +172,10 @@ export function getTrafficLightLabel(nutrientKey: string, weeklyTotal: number, s
 
   const pct = Math.round((dailyAvg / drv.rni) * 100);
   const base = `${pct}% of daily target`;
-  if (isAboveUpperLimit(nutrientKey, weeklyTotal, sex)) {
+  if (isAboveUpperLimit(nutrientKey, weeklyTotal, sex, context)) {
+    if (nutrientKey === "vitamin_a_mcg") {
+      return `${base} · above retinol upper limit`;
+    }
     return `${base} · above upper limit`;
   }
   return base;

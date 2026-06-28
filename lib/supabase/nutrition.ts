@@ -76,6 +76,8 @@ export async function getWeeklyMicroAnalysis(
   if (!aggregated) return null;
 
   const { weeklyTotals, totalItems, coveredItems } = aggregated;
+  const weeklyRetinolMcg = Number(weeklyTotals.retinol_mcg ?? 0);
+  const microContext = { weeklyRetinolMcg };
   // Some ingredients had no nutrient data, so summed intakes are a known floor, not a
   // complete total. For "must not exceed" limits, under-reporting is the dangerous
   // direction, so a green that could really be over the limit is shown as amber.
@@ -84,10 +86,10 @@ export async function getWeeklyMicroAnalysis(
   const results: NutrientResult[] = Object.keys(UK_DRVS).map((key) => {
     const drv = UK_DRVS[key]![sex];
     const weeklyValue = Number(weeklyTotals[key as keyof typeof weeklyTotals] ?? 0);
-    const baseTraffic = getTrafficLight(key, weeklyValue, sex);
+    const baseTraffic = getTrafficLight(key, weeklyValue, sex, microContext);
     const traffic: TrafficLight =
       partial && drv.type === "limit" && baseTraffic === "green" ? "amber" : baseTraffic;
-    const baseLabel = getTrafficLightLabel(key, weeklyValue, sex);
+    const baseLabel = getTrafficLightLabel(key, weeklyValue, sex, microContext);
 
     return {
       key,
@@ -100,7 +102,7 @@ export async function getWeeklyMicroAnalysis(
       traffic,
       pct_label: partial ? `${baseLabel} · partial data` : baseLabel,
       under_target: isUnderTarget(key, weeklyValue, sex),
-      above_upper: isAboveUpperLimit(key, weeklyValue, sex),
+      above_upper: isAboveUpperLimit(key, weeklyValue, sex, microContext),
       partial,
     };
   });

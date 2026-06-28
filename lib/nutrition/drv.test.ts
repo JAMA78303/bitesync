@@ -27,10 +27,24 @@ assertEqual(
   "iron upper label",
 );
 
-// vitamin A 517% — above 1500 mcg upper
+// vitamin A 517% RE — above 1500 mcg upper when retinol equals RE (no plant carve-out)
 const vitAWeekly = 3617 * 7;
 assertEqual(getTrafficLight("vitamin_a_mcg", vitAWeekly, "male"), "amber", "vitamin A above upper");
 assertEqual(isUnderTarget("vitamin_a_mcg", vitAWeekly, "male"), false, "vitamin A not under");
+
+// plant-heavy RE with low retinol — green, not false upper alarm
+const plantReWeekly = 700 * 3.73 * 7;
+const plantRetinolWeekly = 40 * 7;
+assertEqual(
+  getTrafficLight("vitamin_a_mcg", plantReWeekly, "male", { weeklyRetinolMcg: plantRetinolWeekly }),
+  "green",
+  "plant-heavy vitamin A stays green",
+);
+assertEqual(
+  isAboveUpperLimit("vitamin_a_mcg", plantReWeekly, "male", { weeklyRetinolMcg: plantRetinolWeekly }),
+  false,
+  "plant RE does not count toward retinol upper",
+);
 
 // folate 540% — above 1000 mcg upper
 const folateWeekly = 1080 * 7;

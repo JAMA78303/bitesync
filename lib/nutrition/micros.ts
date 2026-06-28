@@ -1,5 +1,9 @@
+import { attachRetinolToMicroEntry } from "@/lib/nutrition/vitamin-a-retinol";
+
 export type MicroEntry = {
   vitamin_a_mcg: number;
+  /** Preformed retinol (mcg) — set by lookupMicros for upper-limit checks. */
+  retinol_mcg?: number;
   vitamin_c_mg: number;
   vitamin_d_mcg: number;
   vitamin_b12_mcg: number;
@@ -685,26 +689,36 @@ function resolveMicroEntry(target: string): MicroEntry | null {
 
 export function lookupMicros(name: string): MicroEntry | null {
   const key = name.toLowerCase().trim();
-  if (MICRO_DB[key]) return MICRO_DB[key];
-  const aliased = MICRO_ALIASES[key];
-  if (aliased && MICRO_DB[aliased]) return MICRO_DB[aliased];
+  let entry: MicroEntry | null = null;
+  if (MICRO_DB[key]) entry = MICRO_DB[key];
+  else {
+    const aliased = MICRO_ALIASES[key];
+    if (aliased && MICRO_DB[aliased]) entry = MICRO_DB[aliased];
+  }
 
-  // Fuzzy fallback: match a known food as a whole-word phrase inside the ingredient
-  // name (e.g. "grilled chicken breast" -> "chicken breast", "tin of chickpeas" -> "chickpeas").
-  // Multi-word phrases are specific enough to match anywhere; single generic words
-  // (e.g. "milk", "rice") only match as the head noun (last word) to avoid mis-tagging
-  // compounds like "milk chocolate" or "rice pudding".
-  const lastWord = key.split(/\s+/).pop() ?? key;
-  for (const { phrase, target } of FUZZY_KEYS) {
-    const isMultiWord = phrase.includes(" ");
-    if (!isMultiWord && phrase !== lastWord) continue;
-    const re = new RegExp(`\\b${phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`);
-    if (re.test(key)) {
-      const entry = resolveMicroEntry(target);
-      if (entry) return entry;
+  if (!entry) {
+    // Fuzzy fallback: match a known food as a whole-word phrase inside the ingredient
+    // name (e.g. "grilled chicken breast" -> "chicken breast", "tin of chickpeas" -> "chickpeas").
+    // Multi-word phrases are specific enough to match anywhere; single generic words
+    // (e.g. "milk", "rice") only match as the head noun (last word) to avoid mis-tagging
+    // compounds like "milk chocolate" or "rice pudding".
+    const lastWord = key.split(/\s+/).pop() ?? key;
+    for (const { phrase, target } of FUZZY_KEYS) {
+      const isMultiWord = phrase.includes(" ");
+      if (!isMultiWord && phrase !== lastWord) continue;
+      const re = new RegExp(`\\b${phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`);
+      if (re.test(key)) {
+        const resolved = resolveMicroEntry(target);
+        if (resolved) {
+          entry = resolved;
+          break;
+        }
+      }
     }
   }
-  return null;
+
+  if (!entry) return null;
+  return attachRetinolToMicroEntry(name, entry);
 }
 
 export function scaleMicros(micros: MicroEntry, quantityG: number): MicroEntry {
@@ -715,6 +729,7 @@ export function scaleMicros(micros: MicroEntry, quantityG: number): MicroEntry {
 export function sumMicros(entries: MicroEntry[]): MicroEntry {
   const zero: MicroEntry = {
     vitamin_a_mcg: 0,
+    retinol_mcg: 0,
     vitamin_c_mg: 0,
     vitamin_d_mcg: 0,
     vitamin_b12_mcg: 0,

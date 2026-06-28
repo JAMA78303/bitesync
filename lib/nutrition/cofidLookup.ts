@@ -21,6 +21,7 @@ export interface CoFIDNutrition {
   sodium_mg: number | null;
   salt_g: number | null;
   vitamin_a_ug: number | null;
+  retinol_ug: number | null;
   vitamin_d_ug: number | null;
   vitamin_e_mg: number | null;
   vitamin_k_ug: number | null;
@@ -58,6 +59,7 @@ type CofidDbRow = {
   sodium_mg: number | null;
   salt_g: number | null;
   vitamin_a_ug: number | null;
+  retinol_ug: number | null;
   vitamin_d_ug: number | null;
   vitamin_e_mg: number | null;
   vitamin_k_ug: number | null;
@@ -135,7 +137,7 @@ export function invalidateCofidOverrideCache(): void {
 }
 
 const COFID_SELECT =
-  "food_code,food_name,food_group,kcal,protein_g,fat_g,saturated_fat_g,carbs_g,sugars_g,fibre_g,sodium_mg,salt_g,vitamin_a_ug,vitamin_d_ug,vitamin_e_mg,vitamin_k_ug,vitamin_c_mg,thiamin_mg,riboflavin_mg,niacin_mg,vitamin_b6_mg,vitamin_b12_ug,folate_ug,calcium_mg,iron_mg,zinc_mg,magnesium_mg,potassium_mg,phosphorus_mg,selenium_ug,iodine_ug";
+  "food_code,food_name,food_group,kcal,protein_g,fat_g,saturated_fat_g,carbs_g,sugars_g,fibre_g,sodium_mg,salt_g,vitamin_a_ug,retinol_ug,vitamin_d_ug,vitamin_e_mg,vitamin_k_ug,vitamin_c_mg,thiamin_mg,riboflavin_mg,niacin_mg,vitamin_b6_mg,vitamin_b12_ug,folate_ug,calcium_mg,iron_mg,zinc_mg,magnesium_mg,potassium_mg,phosphorus_mg,selenium_ug,iodine_ug";
 
 function addCandidates(
   target: CofidCandidate[],
@@ -309,6 +311,7 @@ export function scaleNutrition(nutrition: CoFIDNutrition, grams: number): CoFIDN
     sodium_mg: scale(nutrition.sodium_mg),
     salt_g: scale(nutrition.salt_g),
     vitamin_a_ug: scale(nutrition.vitamin_a_ug),
+    retinol_ug: scale(nutrition.retinol_ug),
     vitamin_d_ug: scale(nutrition.vitamin_d_ug),
     vitamin_e_mg: scale(nutrition.vitamin_e_mg),
     vitamin_k_ug: scale(nutrition.vitamin_k_ug),
