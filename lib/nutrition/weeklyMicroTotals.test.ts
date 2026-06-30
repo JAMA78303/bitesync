@@ -3,6 +3,7 @@ import {
   type WeeklyMicroPlanEntry,
   type WeeklyMicroRecipeIngredient,
 } from "@/lib/nutrition/weeklyMicroTotals";
+import { getTrafficLight, isAboveUpperLimit } from "@/lib/nutrition/drv";
 
 const RECIPE_ID = "recipe-spinach-bowl";
 
@@ -65,5 +66,61 @@ assertNear(
   expectedIron / 7,
   "daily avg iron matches hand-check arithmetic",
 );
+
+// Plant-heavy week: high total vitamin A (RE) but retinol-only upper limit stays clear.
+const PLANT_RECIPE = "plant-heavy-day";
+const plantIngredients: WeeklyMicroRecipeIngredient[] = [
+  { recipe_id: PLANT_RECIPE, name: "sweet potato", quantity: 250, unit: "g" },
+  { recipe_id: PLANT_RECIPE, name: "carrots", quantity: 150, unit: "g" },
+  { recipe_id: PLANT_RECIPE, name: "red pepper", quantity: 120, unit: "g" },
+];
+const plantWeek = aggregateWeeklyMicrosFromPlan(
+  Array.from({ length: 7 }, () => ({ recipe_id: PLANT_RECIPE })),
+  plantIngredients,
+);
+if (!plantWeek) throw new Error("expected plant-heavy week aggregate");
+
+const plantReWeekly = plantWeek.weeklyTotals.vitamin_a_mcg;
+const plantRetinolWeekly = plantWeek.weeklyTotals.retinol_mcg ?? 0;
+const plantDailyRe = plantReWeekly / 7;
+const plantDailyRetinol = plantRetinolWeekly / 7;
+
+if (plantDailyRe < 700) {
+  throw new Error(`plant-heavy day should exceed RNI in RE: ${plantDailyRe}`);
+}
+if (plantDailyRetinol >= 1500) {
+  throw new Error(`plant-heavy day retinol should stay below upper: ${plantDailyRetinol}`);
+}
+if (
+  isAboveUpperLimit("vitamin_a_mcg", plantReWeekly, "male", { weeklyRetinolMcg: plantRetinolWeekly })
+) {
+  throw new Error("plant-heavy week must not trip vitamin A upper limit");
+}
+if (getTrafficLight("vitamin_a_mcg", plantReWeekly, "male", { weeklyRetinolMcg: plantRetinolWeekly }) !== "green") {
+  throw new Error("plant-heavy week vitamin A traffic should stay green");
+}
+
+// High preformed retinol (butter) still flags the upper limit.
+const BUTTER_RECIPE = "butter-heavy-day";
+const butterIngredients: WeeklyMicroRecipeIngredient[] = [
+  { recipe_id: BUTTER_RECIPE, name: "butter", quantity: 250, unit: "g" },
+];
+const butterWeek = aggregateWeeklyMicrosFromPlan(
+  Array.from({ length: 7 }, () => ({ recipe_id: BUTTER_RECIPE })),
+  butterIngredients,
+);
+if (!butterWeek) throw new Error("expected butter-heavy week aggregate");
+
+const butterRetinolWeekly = butterWeek.weeklyTotals.retinol_mcg ?? 0;
+if (butterRetinolWeekly / 7 < 1500) {
+  throw new Error(`butter-heavy day retinol should exceed upper: ${butterRetinolWeekly / 7}`);
+}
+if (
+  !isAboveUpperLimit("vitamin_a_mcg", butterWeek.weeklyTotals.vitamin_a_mcg, "male", {
+    weeklyRetinolMcg: butterRetinolWeekly,
+  })
+) {
+  throw new Error("high preformed retinol week must trip vitamin A upper limit");
+}
 
 console.log("weeklyMicroTotals.test.ts: all assertions passed");
