@@ -2,6 +2,11 @@ import { Fragment } from "react";
 import { ChevronRight } from "lucide-react";
 import { LandingDemoShot } from "@/components/landing/LandingDemoShot";
 import { MockGrocery, MockPlanner, MockToday } from "@/components/landing/LandingPhoneMockups";
+import { landingFeatureShot } from "@/lib/landing/featurePreviewShots";
+
+const plannerShot = landingFeatureShot("planner");
+const groceryShot = landingFeatureShot("grocery");
+const todayShot = landingFeatureShot("today");
 
 const DEMO_BEATS = [
   {
@@ -9,24 +14,24 @@ const DEMO_BEATS = [
     title: "Plan your week",
     caption: "Drop recipes onto the planner — daily calories and protein update as you build each day.",
     Mock: MockPlanner,
-    image: { light: "/landing/planner.png", dark: "/landing/planner-dark.png", width: 284, height: 354 },
-    imageAlt: "BiteSync weekly meal planner",
+    image: { light: plannerShot.light, dark: plannerShot.dark, width: plannerShot.width, height: plannerShot.height },
+    imageAlt: plannerShot.alt,
   },
   {
     step: "2",
     title: "Get one grocery list",
     caption: "Generate a merged shopping list from that exact week. Check items off as you shop.",
     Mock: MockGrocery,
-    image: { light: "/landing/grocery.png", dark: "/landing/grocery-dark.png", width: 284, height: 315 },
-    imageAlt: "BiteSync grocery list",
+    image: { light: groceryShot.light, dark: groceryShot.dark, width: groceryShot.width, height: groceryShot.height },
+    imageAlt: groceryShot.alt,
   },
   {
     step: "3",
     title: "Hit your targets",
     caption: "Open Today to see your calorie ring, macro bars, and every meal against your goals.",
     Mock: MockToday,
-    image: { light: "/landing/today.png", dark: "/landing/today-dark.png", width: 284, height: 323 },
-    imageAlt: "BiteSync Today dashboard",
+    image: { light: todayShot.light, dark: todayShot.dark, width: todayShot.width, height: todayShot.height },
+    imageAlt: todayShot.alt,
   },
 ] as const;
 

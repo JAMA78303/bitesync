@@ -1,11 +1,10 @@
 import { notFound } from "next/navigation";
-import { MockGrocery, MockPlanner, MockToday } from "@/components/landing/LandingPhoneMockups";
+import { LANDING_FEATURE_SHOT_IDS, LANDING_FEATURE_SHOTS } from "@/lib/landing/featurePreviewShots";
 
-const TARGETS = [
-  { id: "planner", Mock: MockPlanner },
-  { id: "grocery", Mock: MockGrocery },
-  { id: "today", Mock: MockToday },
-] as const;
+const TARGETS = LANDING_FEATURE_SHOT_IDS.map((id) => ({
+  id,
+  Mock: LANDING_FEATURE_SHOTS[id].Mock,
+}));
 
 /** Dev-only targets for `npm run capture:landing` — 404s in production builds. */
 export default function ScreenshotCapturePage() {

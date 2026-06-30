@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useId, useState, type ComponentType, type KeyboardEvent } from "react";
+import { useCallback, useId, useState, type KeyboardEvent } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   Activity,
@@ -14,24 +14,17 @@ import {
   Target,
 } from "lucide-react";
 import { LandingDemoShot } from "@/components/landing/LandingDemoShot";
-import { MockGrocery, MockPlanner, MockToday } from "@/components/landing/LandingPhoneMockups";
-
-type PreviewShot = {
-  light: string;
-  dark: string;
-  width: number;
-  height: number;
-  alt: string;
-};
+import {
+  LANDING_FEATURE_SHOTS,
+  type LandingFeaturePreviewId,
+} from "@/lib/landing/featurePreviewShots";
 
 type FeaturePreview = {
-  id: string;
+  id: LandingFeaturePreviewId;
   Icon: LucideIcon;
   title: string;
   desc: string;
   previewCaption: string;
-  shot: PreviewShot;
-  Mock: ComponentType;
   isPro?: boolean;
 };
 
@@ -41,9 +34,7 @@ const FEATURE_PREVIEWS: FeaturePreview[] = [
     Icon: Target,
     title: "Personal calorie & protein targets",
     desc: "TDEE-based daily goals from your weight, activity, and whether you want to lose, maintain, or build.",
-    previewCaption: "Your calorie ring and macro bars against the targets you set once.",
-    shot: { light: "/landing/today.png", dark: "/landing/today-dark.png", width: 284, height: 323, alt: "BiteSync Today macro targets" },
-    Mock: MockToday,
+    previewCaption: "Set daily calories and macros once — TDEE, activity, and goal drive the numbers.",
   },
   {
     id: "planner",
@@ -51,8 +42,6 @@ const FEATURE_PREVIEWS: FeaturePreview[] = [
     title: "Weekly planner with running totals",
     desc: "Plan breakfast through snacks across the week. See each day's calories and protein as you build the plan.",
     previewCaption: "Drag recipes onto the week — daily totals update as you fill each slot.",
-    shot: { light: "/landing/planner.png", dark: "/landing/planner-dark.png", width: 284, height: 354, alt: "BiteSync weekly meal planner" },
-    Mock: MockPlanner,
   },
   {
     id: "today",
@@ -60,8 +49,6 @@ const FEATURE_PREVIEWS: FeaturePreview[] = [
     title: "Today dashboard",
     desc: "A home screen with your calorie ring and macro progress — always know where the day stands.",
     previewCaption: "Open Today to see progress at a glance and every meal lined up for the day.",
-    shot: { light: "/landing/today.png", dark: "/landing/today-dark.png", width: 284, height: 323, alt: "BiteSync Today dashboard" },
-    Mock: MockToday,
   },
   {
     id: "nutrition",
@@ -69,8 +56,6 @@ const FEATURE_PREVIEWS: FeaturePreview[] = [
     title: "Automatic nutrition",
     desc: "Calories, protein, carbs, fat, and fibre calculated from your ingredients — no manual logging.",
     previewCaption: "Macros are calculated from your recipe ingredients — no spreadsheet required.",
-    shot: { light: "/landing/today.png", dark: "/landing/today-dark.png", width: 284, height: 323, alt: "BiteSync automatic macro tracking" },
-    Mock: MockToday,
   },
   {
     id: "ai-plans",
@@ -78,8 +63,6 @@ const FEATURE_PREVIEWS: FeaturePreview[] = [
     title: "AI weekly meal plans",
     desc: "Pro users can fill the week from their own recipe library, tuned to hit daily macro targets.",
     previewCaption: "Generate a full week from your library, sized to your calorie and protein goals.",
-    shot: { light: "/landing/planner.png", dark: "/landing/planner-dark.png", width: 284, height: 354, alt: "BiteSync AI meal planning" },
-    Mock: MockPlanner,
     isPro: true,
   },
   {
@@ -88,8 +71,6 @@ const FEATURE_PREVIEWS: FeaturePreview[] = [
     title: "Pantry-aware grocery lists",
     desc: "Skip what you already have at home so you buy less and waste less.",
     previewCaption: "One merged list from your plan — check items off as you shop.",
-    shot: { light: "/landing/grocery.png", dark: "/landing/grocery-dark.png", width: 284, height: 315, alt: "BiteSync grocery list" },
-    Mock: MockGrocery,
   },
   {
     id: "import",
@@ -97,8 +78,6 @@ const FEATURE_PREVIEWS: FeaturePreview[] = [
     title: "Recipe import",
     desc: "Paste a URL from popular recipe sites — ingredients and nutrition in seconds.",
     previewCaption: "Imported recipes land in your library, ready to drop onto the planner.",
-    shot: { light: "/landing/planner.png", dark: "/landing/planner-dark.png", width: 284, height: 354, alt: "BiteSync recipes in your planner" },
-    Mock: MockPlanner,
   },
   {
     id: "dietary",
@@ -106,8 +85,6 @@ const FEATURE_PREVIEWS: FeaturePreview[] = [
     title: "Dietary preferences",
     desc: "Vegetarian, vegan, gluten-free, and more — wired into planning from onboarding.",
     previewCaption: "Your diet settings filter recipe generation and planning from day one.",
-    shot: { light: "/landing/planner.png", dark: "/landing/planner-dark.png", width: 284, height: 354, alt: "BiteSync diet-aware meal plan" },
-    Mock: MockPlanner,
   },
   {
     id: "micros",
@@ -115,19 +92,19 @@ const FEATURE_PREVIEWS: FeaturePreview[] = [
     title: "Weekly micronutrient analysis",
     desc: "Track vitamins and minerals against reference values on Pro.",
     previewCaption: "Weekly nutrition view flags gaps and helps you adjust the plan.",
-    shot: { light: "/landing/today.png", dark: "/landing/today-dark.png", width: 284, height: 323, alt: "BiteSync nutrition tracking" },
-    Mock: MockToday,
     isPro: true,
   },
 ];
 
-const DEFAULT_ID = "planner";
+const DEFAULT_ID: LandingFeaturePreviewId = "planner";
 
 export function LandingFeaturePreviews() {
   const baseId = useId();
-  const [activeId, setActiveId] = useState(DEFAULT_ID);
+  const [activeId, setActiveId] = useState<LandingFeaturePreviewId>(DEFAULT_ID);
 
-  const active = FEATURE_PREVIEWS.find((f) => f.id === activeId) ?? FEATURE_PREVIEWS[0]!;
+  const activeMeta = FEATURE_PREVIEWS.find((f) => f.id === activeId) ?? FEATURE_PREVIEWS[0]!;
+  const activeShot = LANDING_FEATURE_SHOTS[activeMeta.id];
+  const ActiveMock = activeShot.Mock;
 
   const onKeyDown = useCallback(
     (e: KeyboardEvent, index: number) => {
@@ -211,20 +188,20 @@ export function LandingFeaturePreviews() {
         <div
           id={`${baseId}-panel`}
           role="tabpanel"
-          aria-labelledby={`${baseId}-tab-${active.id}`}
+          aria-labelledby={`${baseId}-tab-${activeMeta.id}`}
           className="mx-auto w-full max-w-[300px] lg:sticky lg:top-24"
         >
           <div className="flex flex-col items-center transition-opacity duration-200 motion-reduce:transition-none">
             <LandingDemoShot
-              key={active.id}
-              srcLight={active.shot.light}
-              srcDark={active.shot.dark}
-              alt={active.shot.alt}
-              width={active.shot.width}
-              height={active.shot.height}
-              fallback={<active.Mock />}
+              key={activeMeta.id}
+              srcLight={activeShot.light}
+              srcDark={activeShot.dark}
+              alt={activeShot.alt}
+              width={activeShot.width}
+              height={activeShot.height}
+              fallback={<ActiveMock />}
             />
-            <p className="mt-4 text-center text-sm leading-relaxed text-[var(--text-muted)]">{active.previewCaption}</p>
+            <p className="mt-4 text-center text-sm leading-relaxed text-[var(--text-muted)]">{activeMeta.previewCaption}</p>
           </div>
         </div>
       </div>

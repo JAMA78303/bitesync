@@ -17,7 +17,18 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 const outDir = path.join(root, "public", "landing");
 const baseUrl = process.env.BASE_URL ?? "http://localhost:3000";
-const targets = ["planner", "grocery", "today"];
+/** Keep in sync with `LANDING_FEATURE_SHOT_IDS` in lib/landing/featurePreviewShots.ts */
+const targets = [
+  "targets",
+  "planner",
+  "today",
+  "nutrition",
+  "ai-plans",
+  "grocery",
+  "import",
+  "dietary",
+  "micros",
+];
 
 async function captureTheme(page, theme) {
   await page.evaluate((t) => {
@@ -38,7 +49,7 @@ async function captureTheme(page, theme) {
     }
     const png = await handle.screenshot({ type: "png", omitBackground: true });
     const suffix = theme === "dark" ? "-dark" : "";
-    const file = path.join(outDir, `${id}${suffix}.png`);
+    const file = path.join(outDir, `feature-${id}${suffix}.png`);
     await writeFile(file, png);
     console.log(`Wrote ${file}`);
   }

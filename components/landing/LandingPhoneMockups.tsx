@@ -156,3 +156,159 @@ export function MockGrocery() {
  );
 }
 
+export function MockTargets() {
+ return (
+ <PhoneFrame label="BiteSync calorie and macro targets preview">
+ <section className="bg-gradient-to-b from-[var(--header-from)] to-[var(--header-to)] px-3 pt-7 pb-3">
+ <p className="text-2xs text-[var(--text-on-brand-muted)]">Nutrition &amp; goals</p>
+ <p className="text-xs font-bold text-[var(--text-on-brand)]">Calorie &amp; macro targets</p>
+ </section>
+ <section className="space-y-2 px-2 pb-3 pt-2">
+ <article className="rounded-xl bg-[var(--surface-card)] p-2.5 shadow-sm">
+ <p className="text-2xs text-[var(--text-muted)]">Daily target</p>
+ <p className="text-lg font-bold text-[var(--text-primary)]">2,200 kcal</p>
+ <p className="mt-1 text-2xs text-[var(--text-muted)]">155g protein · lose weight</p>
+ </article>
+ <div className="grid grid-cols-3 gap-1.5">
+ {[
+ { label: "Protein", value: "155g" },
+ { label: "Carbs", value: "220g" },
+ { label: "Fat", value: "73g" },
+ ].map((m) => (
+ <div key={m.label} className="rounded-lg bg-[var(--surface-brand-subtle)] p-2 text-center">
+ <p className="text-2xs font-bold text-[var(--text-primary)]">{m.value}</p>
+ <p className="text-2xs text-[var(--text-muted)]">{m.label}</p>
+ </div>
+ ))}
+ </div>
+ <p className="text-2xs text-[var(--text-muted)]">Based on TDEE, activity &amp; goal</p>
+ </section>
+ </PhoneFrame>
+ );
+}
+
+export function MockRecipeNutrition() {
+ return (
+ <PhoneFrame label="BiteSync recipe nutrition preview">
+ <section className="bg-[var(--surface-action-subtle)] px-3 pt-7 pb-4 text-center">
+ <p className="text-xs font-bold text-[var(--text-primary)]">Chicken quinoa bowl</p>
+ </section>
+ <section className="px-2 pb-3 pt-2">
+ <div className="mb-2 grid grid-cols-4 gap-1">
+ {[
+ { label: "kcal", value: "485" },
+ { label: "Protein", value: "42g" },
+ { label: "Carbs", value: "51g" },
+ { label: "Fat", value: "12g" },
+ ].map((m) => (
+ <div key={m.label} className="rounded-lg bg-[var(--surface-brand-subtle)] p-1.5 text-center">
+ <p className="text-2xs font-bold text-[var(--text-primary)]">{m.value}</p>
+ <p className="text-[10px] text-[var(--text-muted)]">{m.label}</p>
+ </div>
+ ))}
+ </div>
+ <p className="text-2xs font-semibold text-[var(--text-muted)]">Ingredients</p>
+ <ul className="mt-1 space-y-1 text-2xs text-[var(--text-secondary)]">
+ <li>Chicken breast · 140g</li>
+ <li>Quinoa · 60g</li>
+ <li>Broccoli · 100g</li>
+ </ul>
+ </section>
+ </PhoneFrame>
+ );
+}
+
+export function MockAiPlans() {
+ return (
+ <PhoneFrame label="BiteSync AI weekly meal plan preview">
+ <section className="bg-gradient-to-b from-[var(--header-from)] to-[var(--header-to)] px-2 pt-7 pb-2">
+ <p className="text-xs font-bold text-[var(--text-on-brand)]">Weekly Plan</p>
+ <p className="mt-1 text-2xs text-[var(--text-on-brand-muted)]">AI-filled from your library</p>
+ </section>
+ <section className="space-y-1.5 px-2 pb-2 pt-2">
+ <MealRow name="Turkey & sweet potato" meta="Lunch · 520 kcal" mealType="lunch" />
+ <MealRow name="Salmon tray bake" meta="Dinner · 610 kcal" mealType="dinner" />
+ </section>
+ <div className="mx-2 mb-3 rounded-lg bg-[var(--brand-primary)] px-2 py-1.5 text-center text-2xs font-semibold text-[var(--text-on-brand)]">
+ Generate week · macros on target
+ </div>
+ </PhoneFrame>
+ );
+}
+
+export function MockRecipeImport() {
+ return (
+ <PhoneFrame label="BiteSync recipe import preview">
+ <header className="border-b border-[var(--border-subtle)] bg-[var(--surface-card)] px-3 pt-7 pb-2">
+ <p className="text-xs font-bold text-[var(--text-primary)]">Import recipe</p>
+ </header>
+ <section className="space-y-2 px-3 py-3">
+ <p className="text-2xs text-[var(--text-muted)]">Paste a recipe URL</p>
+ <div className="rounded-lg border border-[var(--border-default)] bg-[var(--surface-muted)] px-2 py-1.5 text-2xs text-[var(--text-secondary)]">
+ bbcgoodfood.com/recipes/...
+ </div>
+ <div className="rounded-lg bg-[var(--brand-primary)] py-1.5 text-center text-2xs font-semibold text-[var(--text-on-brand)]">
+ Fetch recipe
+ </div>
+ <p className="text-2xs text-[var(--text-muted)]">Ingredients &amp; nutrition pulled automatically</p>
+ </section>
+ </PhoneFrame>
+ );
+}
+
+export function MockDietary() {
+ const prefs = ["Vegetarian", "Gluten-free", "High protein"];
+ return (
+ <PhoneFrame label="BiteSync dietary preferences preview">
+ <section className="bg-gradient-to-b from-[var(--header-from)] to-[var(--header-to)] px-3 pt-7 pb-3">
+ <p className="text-xs font-bold text-[var(--text-on-brand)]">Dietary preferences</p>
+ </section>
+ <section className="space-y-1.5 px-2 pb-3 pt-2">
+ {prefs.map((pref, i) => (
+ <div
+ key={pref}
+ className={`rounded-lg border px-2 py-1.5 text-2xs font-medium ${
+ i < 2
+ ? "border-[var(--brand-primary)] bg-[var(--surface-brand-subtle)] text-[var(--text-primary)]"
+ : "border-[var(--border-default)] bg-[var(--surface-card)] text-[var(--text-secondary)]"
+ }`}
+ >
+ {pref}
+ </div>
+ ))}
+ <p className="pt-1 text-2xs text-[var(--text-muted)]">Used for AI plans &amp; recipe generation</p>
+ </section>
+ </PhoneFrame>
+ );
+}
+
+export function MockMicros() {
+ const rows = [
+ { name: "Vitamin D", pct: "97%", tone: "green" },
+ { name: "Iron", pct: "112%", tone: "green" },
+ { name: "Iodine", pct: "86%", tone: "amber" },
+ ] as const;
+ return (
+ <PhoneFrame label="BiteSync micronutrient analysis preview">
+ <header className="border-b border-[var(--border-subtle)] bg-[var(--surface-card)] px-3 pt-7 pb-2">
+ <p className="text-xs font-bold text-[var(--text-primary)]">Weekly nutrition</p>
+ <p className="text-2xs text-[var(--text-muted)]">Micronutrients vs UK DRVs</p>
+ </header>
+ <ul className="space-y-1.5 px-2 py-2">
+ {rows.map((row) => (
+ <li key={row.name} className="flex items-center gap-2 rounded-lg bg-[var(--surface-card)] px-2 py-1.5">
+ <span
+ className={`h-2 w-2 shrink-0 rounded-full ${
+ row.tone === "green" ? "bg-[var(--semantic-success-text)]" : "bg-[var(--semantic-warn-text)]"
+ }`}
+ aria-hidden
+ />
+ <span className="flex-1 text-2xs text-[var(--text-secondary)]">{row.name}</span>
+ <span className="text-2xs font-medium text-[var(--text-muted)]">{row.pct}</span>
+ </li>
+ ))}
+ </ul>
+ </PhoneFrame>
+ );
+}
+
