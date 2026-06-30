@@ -43,7 +43,7 @@ function buildStatus(kind: GoalStatusKind): GoalStatus {
     kind === "on-track"
       ? "On track"
       : kind === "under"
-        ? "↑ Below target"
+        ? "↓ Below target"
         : kind === "over-moderate"
           ? "↑ Over target"
           : "↑ Well over target";
