@@ -1,25 +1,28 @@
 import Link from "next/link";
-import type { LucideIcon } from "lucide-react";
 import {
-  BarChart3,
-  BookOpen,
-  CalendarDays,
   Check,
   ChevronRight,
-  Flame,
-  Leaf,
-  Refrigerator,
-  Shield,
-  Target,
-  Zap,
-  Utensils,
-  Activity,
-  Sparkles,
   MapPin,
+  Shield,
+  Utensils,
+  Zap,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { Logo } from "@/components/shared/Logo";
 import { Reveal } from "@/components/landing/Reveal";
+import { LandingTrustSignals } from "@/components/landing/LandingTrustSignals";
+
+const LandingFeaturePreviews = dynamic(
+  () =>
+    import("@/components/landing/LandingFeaturePreviews").then((m) => ({
+      default: m.LandingFeaturePreviews,
+    })),
+  {
+    loading: () => (
+      <div className="mx-auto h-96 max-w-6xl animate-pulse rounded-2xl bg-[var(--surface-muted)]" aria-hidden />
+    ),
+  },
+);
 
 const LandingDemoFlow = dynamic(
   () => import("@/components/landing/LandingDemoFlow").then((m) => ({ default: m.LandingDemoFlow })),
@@ -50,65 +53,11 @@ const MockPlanner = dynamic(
 const NAV_LINKS = [
   { href: "#how-it-works", label: "How it works" },
   { href: "#features", label: "Features" },
+  { href: "#privacy-trust", label: "Privacy" },
   { href: "#pricing", label: "Pricing" },
   { href: "#faq", label: "FAQ" },
   { href: "#blog", label: "Blog" },
 ] as const;
-
-/** Lead story: nutrition and macro goals */
-const LEAD_FEATURES: { Icon: LucideIcon; title: string; desc: string; isPro?: boolean }[] = [
-  {
-    Icon: Target,
-    title: "Personal calorie & protein targets",
-    desc: "TDEE-based daily goals from your weight, activity, and whether you want to lose, maintain, or build.",
-  },
-  {
-    Icon: CalendarDays,
-    title: "Weekly planner with running totals",
-    desc: "Plan breakfast through snacks across the week. See each day's calories and protein as you build the plan.",
-  },
-  {
-    Icon: Activity,
-    title: "Today dashboard",
-    desc: "A home screen with your calorie ring and macro progress — always know where the day stands.",
-  },
-  {
-    Icon: Flame,
-    title: "Automatic nutrition",
-    desc: "Calories, protein, carbs, fat, and fibre calculated from your ingredients — no manual logging.",
-  },
-  {
-    Icon: Sparkles,
-    title: "AI weekly meal plans",
-    desc: "Pro users can fill the week from their own recipe library, tuned to hit daily macro targets.",
-    isPro: true,
-  },
-];
-
-/** Supporting benefits — after the lead story */
-const SUPPORTING_FEATURES: { Icon: LucideIcon; title: string; desc: string; isPro?: boolean }[] = [
-  {
-    Icon: Refrigerator,
-    title: "Pantry-aware grocery lists",
-    desc: "Skip what you already have at home so you buy less and waste less.",
-  },
-  {
-    Icon: BookOpen,
-    title: "Recipe import",
-    desc: "Paste a URL from popular recipe sites — ingredients and nutrition in seconds.",
-  },
-  {
-    Icon: Leaf,
-    title: "Dietary preferences",
-    desc: "Vegetarian, vegan, gluten-free, and more — wired into planning from onboarding.",
-  },
-  {
-    Icon: BarChart3,
-    title: "Weekly micronutrient analysis",
-    desc: "Track vitamins and minerals against reference values on Pro.",
-    isPro: true,
-  },
-];
 
 const FREE_FEATURES = [
   "Up to 10 recipes",
@@ -145,35 +94,6 @@ const BLOG_POSTS = [
     readTime: "5 min read",
   },
 ] as const;
-
-function FeatureCard({
-  Icon,
-  title,
-  desc,
-  isPro,
-}: {
-  Icon: LucideIcon;
-  title: string;
-  desc: string;
-  isPro?: boolean;
-}) {
-  return (
-    <article className="group rounded-2xl border border-[var(--border-default)] bg-[var(--surface-card)] p-5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-[var(--brand-action-mid)]/40 hover:shadow-lg">
-      <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--surface-brand-subtle)] transition-colors duration-200 group-hover:bg-[var(--brand-action)]">
-        <Icon className="h-6 w-6 text-[var(--brand-primary)] transition-colors duration-200 group-hover:text-[var(--text-on-brand)]" aria-hidden />
-      </span>
-      <h3 className="mb-2 font-semibold text-[var(--text-primary)]">
-        {title}
-        {isPro ? (
-          <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-2xs font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
-            Pro
-          </span>
-        ) : null}
-      </h3>
-      <p className="text-sm leading-relaxed text-[var(--text-muted)]">{desc}</p>
-    </article>
-  );
-}
 
 export default function LandingPage() {
   return (
@@ -248,8 +168,9 @@ export default function LandingPage() {
               Start planning for free
               <ChevronRight className="h-4 w-4" aria-hidden />
             </Link>
-            <p className="mt-6 text-xs text-[var(--text-on-brand-subtle)]">
-              Evidence-based nutrition targets · Private by default · Free to start — no card needed
+            <LandingTrustSignals variant="hero" />
+            <p className="mt-4 text-xs text-[var(--text-on-brand-subtle)]">
+              Evidence-based nutrition targets · Free to start — no card needed
             </p>
             <div className="mt-10 hidden justify-center sm:flex">
               <div className="relative z-10 drop-shadow-2xl">
@@ -266,51 +187,12 @@ export default function LandingPage() {
         </section>
 
         <section id="features" className="scroll-mt-24 bg-[var(--surface-card)] py-16 sm:py-20">
-          <div className="mx-auto max-w-6xl px-4">
-            <Reveal>
-              <div className="mb-12 text-center">
-                <h2 className="mb-3 text-2xl font-bold text-[var(--text-primary)] sm:text-3xl">
-                  Built for people with a nutrition goal
-                </h2>
-                <p className="mx-auto max-w-lg text-sm text-[var(--text-muted)] sm:text-base">
-                  Whether you&apos;re building muscle, cutting fat, or eating to maintain — BiteSync
-                  handles the food side so you can focus on training and life.
-                </p>
-              </div>
-            </Reveal>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {LEAD_FEATURES.map((feature, i) => (
-                <Reveal key={feature.title} delay={(i % 3) * 90}>
-                  <FeatureCard {...feature} />
-                </Reveal>
-              ))}
-            </div>
-          </div>
+          <Reveal>
+            <LandingFeaturePreviews />
+          </Reveal>
         </section>
 
-        <section className="bg-[var(--surface-muted)] py-16 sm:py-20">
-          <div className="mx-auto max-w-6xl px-4">
-            <Reveal>
-              <div className="mb-10 text-center">
-                <h2 className="mb-3 text-2xl font-bold text-[var(--text-primary)] sm:text-3xl">
-                  And less hassle when you shop
-                </h2>
-                <p className="mx-auto max-w-lg text-sm text-[var(--text-muted)]">
-                  Import recipes, respect dietary needs, and buy only what you need.
-                </p>
-              </div>
-            </Reveal>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {SUPPORTING_FEATURES.map((feature, i) => (
-                <Reveal key={feature.title} delay={(i % 3) * 90}>
-                  <FeatureCard {...feature} />
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section id="pricing" className="scroll-mt-24 bg-[var(--surface-card)] py-16 sm:py-20">
+        <section id="pricing" className="scroll-mt-24 bg-[var(--surface-muted)] py-16 sm:py-20">
           <div className="mx-auto max-w-6xl px-4">
             <Reveal>
               <div className="mb-12 text-center">
@@ -374,7 +256,9 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="border-y border-[var(--border-subtle)] bg-[var(--surface-muted)] py-12">
+        <LandingTrustSignals />
+
+        <section className="border-y border-[var(--border-subtle)] bg-[var(--surface-card)] py-12">
           <div className="mx-auto grid max-w-4xl grid-cols-1 gap-8 px-4 sm:grid-cols-3">
             <article className="text-center">
               <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--surface-brand-subtle)]">
@@ -459,6 +343,7 @@ export default function LandingPage() {
                 Get started free
                 <ChevronRight className="h-4 w-4" aria-hidden />
               </Link>
+              <LandingTrustSignals variant="cta" />
             </div>
           </Reveal>
         </section>
@@ -484,9 +369,13 @@ export default function LandingPage() {
             </nav>
           </div>
           <p className="text-center text-xs text-[var(--text-muted)]">
-            © {new Date().getFullYear()} BiteSync · GDPR compliant ·{" "}
-            <Link href="/privacy" className="ml-1 hover:underline">
-              Privacy
+            © {new Date().getFullYear()} BiteSync ·{" "}
+            <Link href="/privacy" className="font-medium hover:underline">
+              Privacy policy
+            </Link>
+            {" · "}
+            <Link href="/terms" className="hover:underline">
+              Terms
             </Link>
           </p>
         </div>
