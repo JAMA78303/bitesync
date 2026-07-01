@@ -1,20 +1,24 @@
 import { Fragment } from "react";
 import { ChevronRight } from "lucide-react";
 import { LandingDemoShot } from "@/components/landing/LandingDemoShot";
-import { MockGrocery, MockMicros, MockPlanner, MockToday } from "@/components/landing/LandingPhoneMockups";
 import { landingFeatureShot } from "@/lib/landing/featurePreviewShots";
+import { LANDING_SCREENSHOT_SCENES } from "@/components/landing/screenshot/LandingScreenshotScenes";
 
 const plannerShot = landingFeatureShot("planner");
 const groceryShot = landingFeatureShot("grocery");
 const todayShot = landingFeatureShot("today");
 const microsShot = landingFeatureShot("micros");
+const ScenePlanner = LANDING_SCREENSHOT_SCENES.planner;
+const SceneGrocery = LANDING_SCREENSHOT_SCENES.grocery;
+const SceneToday = LANDING_SCREENSHOT_SCENES.today;
+const SceneMicros = LANDING_SCREENSHOT_SCENES.micros;
 
 const DEMO_BEATS = [
   {
     step: "1",
     title: "Plan your week",
     caption: "Drop recipes onto the planner — daily calories and protein update as you build each day.",
-    Mock: MockPlanner,
+    Mock: ScenePlanner,
     image: { light: plannerShot.light, dark: plannerShot.dark, width: plannerShot.width, height: plannerShot.height },
     imageAlt: plannerShot.alt,
     isPro: false,
@@ -23,7 +27,7 @@ const DEMO_BEATS = [
     step: "2",
     title: "Get one grocery list",
     caption: "Generate a merged shopping list from that exact week. Check items off as you shop.",
-    Mock: MockGrocery,
+    Mock: SceneGrocery,
     image: { light: groceryShot.light, dark: groceryShot.dark, width: groceryShot.width, height: groceryShot.height },
     imageAlt: groceryShot.alt,
     isPro: false,
@@ -32,7 +36,7 @@ const DEMO_BEATS = [
     step: "3",
     title: "Hit your targets",
     caption: "Open Today to see your calorie ring, macro bars, and every meal against your goals.",
-    Mock: MockToday,
+    Mock: SceneToday,
     image: { light: todayShot.light, dark: todayShot.dark, width: todayShot.width, height: todayShot.height },
     imageAlt: todayShot.alt,
     isPro: false,
@@ -42,7 +46,7 @@ const DEMO_BEATS = [
     title: "Spot micronutrient gaps",
     caption:
       "See what your week is missing — iron, iodine, vitamin D — checked against UK reference values. Something no calorie-counter shows you.",
-    Mock: MockMicros,
+    Mock: SceneMicros,
     image: { light: microsShot.light, dark: microsShot.dark, width: microsShot.width, height: microsShot.height },
     imageAlt: microsShot.alt,
     isPro: true,

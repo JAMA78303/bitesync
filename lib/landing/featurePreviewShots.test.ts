@@ -20,7 +20,7 @@ for (const id of LANDING_FEATURE_SHOT_IDS) {
   assert(shot.id === id, `shot id matches key for ${id}`);
   assert(shot.light === `/landing/feature-${id}.png`, `light path for ${id}`);
   assert(shot.dark === `/landing/feature-${id}-dark.png`, `dark path for ${id}`);
-  assert(Boolean(shot.Mock), `mock component for ${id}`);
+  assert(Boolean(shot.light), `light path for ${id}`);
 }
 
 assert(

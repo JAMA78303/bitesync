@@ -30,6 +30,11 @@ type Step ="url" |"preview" |"servings";
 type Props = {
  onClose: () => void;
  onImport: (result: ImportResult) => Promise<void> | void;
+ /** Render inline for marketing captures — no modal overlay. */
+ embedded?: boolean;
+ initialStep?: Step;
+ initialUrl?: string;
+ initialResult?: Omit<ImportResult,"cookingFor"> | null;
 };
 
 const EMPTY_INGREDIENT = (): ParsedIngredient => ({
@@ -41,13 +46,20 @@ const EMPTY_INGREDIENT = (): ParsedIngredient => ({
  rawText:"",
 });
 
-export function ImportRecipeModal({ onClose, onImport }: Props) {
- const [step, setStep] = useState<Step>("url");
- const [url, setUrl] = useState("");
+export function ImportRecipeModal({
+ onClose,
+ onImport,
+ embedded = false,
+ initialStep = "url",
+ initialUrl = "",
+ initialResult = null,
+}: Props) {
+ const [step, setStep] = useState<Step>(initialResult ? "preview" : initialStep);
+ const [url, setUrl] = useState(initialUrl);
  const [loading, setLoading] = useState(false);
  const [saving, setSaving] = useState(false);
  const [error, setError] = useState("");
- const [result, setResult] = useState<Omit<ImportResult,"cookingFor"> | null>(null);
+ const [result, setResult] = useState<Omit<ImportResult,"cookingFor"> | null>(initialResult);
  const [cookingFor, setCookingFor] = useState(1);
 
  const canImport = useMemo(() => url.trim().length > 0 && !loading, [url, loading]);
@@ -157,15 +169,15 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
  const detected = result?.detectedServings ?? 1;
  const hasValidIngredients = (result?.ingredients ?? []).some((i) => i.name.trim().length > 0);
 
- return (
- <ModalPortal>
- <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
- <div className="max-h-[min(90vh,calc(100dvh-2rem))] w-full max-w-2xl overflow-y-auto rounded-2xl bg-[var(--surface-card)] p-6 shadow-xl">
+ const panel = (
+ <div className={embedded ? "bg-[var(--surface-card)] p-3" : "max-h-[min(90vh,calc(100dvh-2rem))] w-full max-w-2xl overflow-y-auto rounded-2xl bg-[var(--surface-card)] p-6 shadow-xl"}>
  <div className="mb-4 flex items-center justify-between">
  <h2 className="text-lg font-semibold text-[var(--text-primary)]">Import recipe</h2>
+ {!embedded ? (
  <button onClick={onClose} className="rounded-lg p-1 hover:bg-[var(--btn-secondary-hover)]" aria-label="Close import modal">
  <X className="h-5 w-5" />
  </button>
+ ) : null}
  </div>
 
  {step ==="url" ? (
@@ -411,6 +423,14 @@ export function ImportRecipeModal({ onClose, onImport }: Props) {
 
  {error ? <p className="mt-3 text-sm text-[var(--semantic-error-text)]">{error}</p> : null}
  </div>
+ );
+
+ if (embedded) return panel;
+
+ return (
+ <ModalPortal>
+ <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
+ {panel}
  </div>
  </ModalPortal>
  );

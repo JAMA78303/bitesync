@@ -19,6 +19,7 @@ import {
   LANDING_FEATURE_SHOTS,
   type LandingFeaturePreviewId,
 } from "@/lib/landing/featurePreviewShots";
+import { LANDING_SCREENSHOT_SCENES } from "@/components/landing/screenshot/LandingScreenshotScenes";
 
 type FeaturePreview = {
   id: LandingFeaturePreviewId;
@@ -103,7 +104,7 @@ export function LandingFeaturePreviews() {
 
   const activeMeta = FEATURE_PREVIEWS.find((f) => f.id === activeId) ?? FEATURE_PREVIEWS[0]!;
   const activeShot = LANDING_FEATURE_SHOTS[activeMeta.id];
-  const ActiveMock = activeShot.Mock;
+  const ActiveScene = LANDING_SCREENSHOT_SCENES[activeMeta.id];
 
   const onKeyDown = useCallback(
     (e: KeyboardEvent, index: number) => {
@@ -198,7 +199,7 @@ export function LandingFeaturePreviews() {
               alt={activeShot.alt}
               width={activeShot.width}
               height={activeShot.height}
-              fallback={<ActiveMock />}
+              fallback={<ActiveScene />}
             />
             <p className="mt-4 text-center text-sm leading-relaxed text-[var(--text-muted)]">{activeMeta.previewCaption}</p>
           </div>

@@ -39,7 +39,7 @@ async function captureTheme(page, theme) {
     content:
       'html, body, html[data-theme="light"], html[data-theme="light"] body, html[data-theme="dark"], html[data-theme="dark"] body { background: transparent !important; }',
   });
-  await new Promise((r) => setTimeout(r, 300));
+  await new Promise((r) => setTimeout(r, 800));
 
   for (const id of targets) {
     const handle = await page.$(`[data-screenshot="${id}"]`);
