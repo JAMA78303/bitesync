@@ -2,6 +2,7 @@ import Link from "next/link";
 import { logout } from "@/app/(app)/settings/actions";
 import { DeleteAccountSection } from "@/components/settings/DeleteAccountSection";
 import { SettingsThemeRow } from "@/components/settings/SettingsThemeRow";
+import { FeedbackForm } from "@/components/feedback/FeedbackForm";
 import { isProSubscriptionStatus } from "@/lib/subscription";
 import { reconcileBillingSubscriptionFromStripe } from "@/lib/stripe/reconcile-billing-subscription";
 import { getProfile } from "@/lib/supabase/profile";
@@ -23,7 +24,6 @@ const SETTINGS_GROUPS = [
  items: [
  { icon:"📋", label:"Privacy policy", href:"/privacy" },
  { icon:"📄", label:"Terms of service", href:"/terms" },
- { icon:"💬", label:"Give feedback", href:"mailto:hello@bitesync.io", external: true },
  ],
  },
 ] as const;
@@ -102,6 +102,13 @@ export default async function SettingsPage() {
  </span>
  <Chevron />
  </Link>
+
+ <div>
+ <p className={`${ds.label} mb-2 px-1`}>Feedback</p>
+ <div className={`${ds.card} overflow-hidden`}>
+ <FeedbackForm />
+ </div>
+ </div>
 
  {SETTINGS_GROUPS.map((group) => (
  <div key={group.title}>
