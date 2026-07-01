@@ -23,6 +23,9 @@ export type LandingFeaturePreviewId =
   | "dietary"
   | "micros";
 
+/** Initial feature tab on load — must match its entry in LANDING_FEATURE_SHOTS. */
+export const LANDING_FEATURE_PREVIEW_DEFAULT_ID: LandingFeaturePreviewId = "today";
+
 export type LandingFeatureShot = {
   id: LandingFeaturePreviewId;
   light: string;

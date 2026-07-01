@@ -1,4 +1,5 @@
 import {
+  LANDING_FEATURE_PREVIEW_DEFAULT_ID,
   LANDING_FEATURE_SHOT_IDS,
   LANDING_FEATURE_SHOTS,
   landingFeatureShot,
@@ -25,6 +26,13 @@ for (const id of LANDING_FEATURE_SHOT_IDS) {
 assert(
   LANDING_FEATURE_SHOT_IDS.length === Object.keys(LANDING_FEATURE_SHOTS).length,
   "shot ids cover all entries",
+);
+
+const defaultShot = landingFeatureShot(LANDING_FEATURE_PREVIEW_DEFAULT_ID);
+assert(defaultShot.id === LANDING_FEATURE_PREVIEW_DEFAULT_ID, "default preview id has a shot");
+assert(
+  defaultShot.light === `/landing/feature-${LANDING_FEATURE_PREVIEW_DEFAULT_ID}.png`,
+  "default preview uses matching screenshot asset",
 );
 
 console.log("featurePreviewShots: ok");

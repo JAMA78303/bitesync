@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { LandingDemoShot } from "@/components/landing/LandingDemoShot";
 import {
+  LANDING_FEATURE_PREVIEW_DEFAULT_ID,
   LANDING_FEATURE_SHOTS,
   type LandingFeaturePreviewId,
 } from "@/lib/landing/featurePreviewShots";
@@ -96,11 +97,9 @@ const FEATURE_PREVIEWS: FeaturePreview[] = [
   },
 ];
 
-const DEFAULT_ID: LandingFeaturePreviewId = "planner";
-
 export function LandingFeaturePreviews() {
   const baseId = useId();
-  const [activeId, setActiveId] = useState<LandingFeaturePreviewId>(DEFAULT_ID);
+  const [activeId, setActiveId] = useState<LandingFeaturePreviewId>(LANDING_FEATURE_PREVIEW_DEFAULT_ID);
 
   const activeMeta = FEATURE_PREVIEWS.find((f) => f.id === activeId) ?? FEATURE_PREVIEWS[0]!;
   const activeShot = LANDING_FEATURE_SHOTS[activeMeta.id];
