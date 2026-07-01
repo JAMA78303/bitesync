@@ -1,41 +1,42 @@
-"use client";
+import { createClient } from "@/lib/supabase/server";
+import { getProfile } from "@/lib/supabase/profile";
+import { isProSubscriptionStatus } from "@/lib/subscription";
+import { FirstRunWizard } from "@/components/onboarding/FirstRunWizard";
+import { clampFirstRunStep, FIRST_RUN_STEP } from "@/lib/onboarding/first-run";
+import { redirect } from "next/navigation";
 
-import { useRouter } from "next/navigation";
-import { DietaryPreferencesPicker } from "@/components/settings/DietaryPreferencesPicker";
+export const dynamic = "force-dynamic";
 
-export default function OnboardingPage() {
- const router = useRouter();
+export default async function OnboardingPage() {
+  const profile = await getProfile();
+  if (profile?.first_run_completed) {
+    redirect("/today");
+  }
 
- return (
- <div className="flex min-h-screen flex-col bg-gradient-to-b from-[var(--header-from)] to-[var(--surface-page)]">
- <div className="flex h-48 items-center justify-center">
- <div className="flex h-24 w-24 items-center justify-center rounded-full bg-[var(--surface-overlay)]/20 text-5xl backdrop-blur-sm">
- 🥗
- </div>
- </div>
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
- <div className="flex flex-1 flex-col rounded-t-3xl bg-[var(--surface-card)] px-6 pt-8 pb-6">
- <h1 className="mb-1 text-2xl font-bold text-[var(--text-primary)]">
- What are your food preferences?
- </h1>
- <p className="mb-6 text-sm text-[var(--text-muted)]">
- We&apos;ll use this to personalise your meal plans.
- </p>
+  let recipeCount = 0;
+  if (user) {
+    const { count } = await supabase
+      .from("recipes")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .is("archived_at", null);
+    recipeCount = count ?? 0;
+  }
 
- <DietaryPreferencesPicker
- initialSelected={[]}
- completeOnboarding
- onSaved={() => router.push("/today")}
- />
+  const step = clampFirstRunStep(profile?.onboarding_step);
+  const resumeStep = step >= FIRST_RUN_STEP.WEEK ? 3 : step === FIRST_RUN_STEP.LIBRARY ? 2 : 1;
 
- <div className="mt-8 flex items-center justify-between">
- <div className="flex gap-1.5">
- <div className="h-1.5 w-6 rounded-full bg-[var(--brand-primary)]" />
- <div className="h-1.5 w-1.5 rounded-full bg-[var(--progress-track)]" />
- <div className="h-1.5 w-1.5 rounded-full bg-[var(--progress-track)]" />
- </div>
- </div>
- </div>
- </div>
- );
+  return (
+    <FirstRunWizard
+      profile={profile}
+      isPro={isProSubscriptionStatus(profile?.subscription_status)}
+      recipeCount={recipeCount}
+      key={resumeStep}
+    />
+  );
 }

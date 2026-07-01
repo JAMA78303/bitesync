@@ -30,7 +30,7 @@ export async function saveDietaryPreferences(values: DietPreferencesInput) {
 
 export async function saveDietaryPreferenceKeys(
   selected: string[],
-  options?: { completeOnboarding?: boolean },
+  options?: { completeOnboarding?: boolean; advanceFirstRunStep?: boolean },
 ) {
   const supabase = await createClient();
   const {
@@ -49,6 +49,8 @@ export async function saveDietaryPreferenceKeys(
   };
   if (options?.completeOnboarding) {
     update.has_completed_onboarding = true;
+    update.onboarding_step = 4;
+    update.first_run_completed = true;
   }
 
   const { error } = await supabase.from("profiles").update(update).eq("id", user.id);
@@ -63,7 +65,10 @@ export async function saveDietaryPreferenceKeys(
   return { success: true as const };
 }
 
-export async function saveTDEEProfile(values: TDEEFormValues) {
+export async function saveTDEEProfile(
+  values: TDEEFormValues,
+  options?: { allowFreeFirstRun?: boolean },
+) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -72,11 +77,14 @@ export async function saveTDEEProfile(values: TDEEFormValues) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("subscription_status")
+    .select("subscription_status, first_run_completed")
     .eq("id", user.id)
     .maybeSingle();
 
-  if (!isProSubscriptionStatus(profile?.subscription_status)) {
+  const allowFree =
+    options?.allowFreeFirstRun === true && profile?.first_run_completed !== true;
+
+  if (!isProSubscriptionStatus(profile?.subscription_status) && !allowFree) {
     return { error: "Upgrade to Pro to set TDEE targets." };
   }
 
@@ -105,6 +113,8 @@ export async function saveTDEEProfile(values: TDEEFormValues) {
   revalidatePath("/planner");
   revalidatePath("/nutrition");
   revalidatePath("/today");
+  revalidatePath("/onboarding");
+  revalidatePath("/recipes");
   return {
     success: true,
     overrideApplied: safe.overrideApplied,
@@ -146,7 +156,10 @@ export async function getProfile() {
       follows_vegan,
       follows_gluten_free,
       dietary_preferences,
-      has_completed_onboarding
+      has_completed_onboarding,
+      onboarding_step,
+      first_run_completed,
+      first_run_skipped
     `,
     )
     .eq("id", user.id)

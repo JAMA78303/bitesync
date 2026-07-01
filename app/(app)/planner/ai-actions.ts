@@ -841,9 +841,24 @@ export async function generateAIWeekPlan(input: GenerateAIWeekPlanInput) {
   }
 }
 
-async function generateAIWeekPlanInner(input: GenerateAIWeekPlanInput) {
+/** Heuristic week fill — available on free tier (e.g. first-run onboarding). */
+export async function generateHeuristicWeekPlan(input: GenerateAIWeekPlanInput) {
+  try {
+    return await generateAIWeekPlanInner(input, { skipProCheck: true, heuristicOnly: true });
+  } catch (err) {
+    console.error("[generateHeuristicWeekPlan] unexpected failure:", err);
+    return { error: FRIENDLY_WEEK_PLAN_FAIL };
+  }
+}
+
+async function generateAIWeekPlanInner(
+  input: GenerateAIWeekPlanInput,
+  options?: { skipProCheck?: boolean; heuristicOnly?: boolean },
+) {
   const tier = await getUserTier();
-  if (tier !== "pro") return { error: "Upgrade to Pro to generate AI weekly plans." };
+  if (!options?.skipProCheck && tier !== "pro") {
+    return { error: "Upgrade to Pro to generate AI weekly plans." };
+  }
 
   const supabase = await createClient();
   const {
@@ -948,7 +963,7 @@ async function generateAIWeekPlanInner(input: GenerateAIWeekPlanInput) {
   let snackLibraryNotice: string | undefined;
   let claudeApplyError: string | undefined;
 
-  if (isAnthropicMealAiEnabled()) {
+  if (!options?.heuristicOnly && tier === "pro" && isAnthropicMealAiEnabled()) {
     try {
       const aiPlan = await generateMealPlan({
         recipes: formattedRecipes,

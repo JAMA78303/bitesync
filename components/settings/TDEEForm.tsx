@@ -39,9 +39,12 @@ type HeightUnit ="cm" |"m" |"ft_in";
 
 type Props = {
  defaultValues?: Partial<TDEEFormValues>;
+ /** First-run onboarding — allows free users to set targets once. */
+ onboardingMode?: boolean;
+ onSaved?: () => void;
 };
 
-export function TDEEForm({ defaultValues }: Props) {
+export function TDEEForm({ defaultValues, onboardingMode = false, onSaved }: Props) {
  const [isPending, startTransition] = useTransition();
  const [preview, setPreview] = useState<(TDEEResult & { bmi: number; rawDailyCalories: number }) | null>(null);
  const [weightUnit, setWeightUnit] = useState<WeightUnit>("kg");
@@ -105,7 +108,7 @@ export function TDEEForm({ defaultValues }: Props) {
 
  function onSubmit(values: TDEEFormValues) {
  startTransition(async () => {
- const result = await saveTDEEProfile(values);
+ const result = await saveTDEEProfile(values, { allowFreeFirstRun: onboardingMode });
  if (result &&"error" in result) {
  toast({ title:"Failed to save", description: result.error, variant:"destructive" });
  return;
@@ -122,6 +125,10 @@ export function TDEEForm({ defaultValues }: Props) {
  bmi: result.targets.bmi,
  rawDailyCalories: rawCal,
  });
+ }
+ if (onboardingMode && onSaved) {
+ onSaved();
+ return;
  }
  const desc =
  result?.overrideApplied && result.overrideReason ==="underweight"

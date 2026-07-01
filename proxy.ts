@@ -7,7 +7,7 @@ import {
 } from "@/lib/auth/emailVerification";
 import { updateSession } from "@/lib/supabase/middleware";
 
-const PROTECTED_ROUTES = ["/today", "/planner", "/recipes", "/grocery", "/pantry", "/nutrition", "/goals", "/settings", "/billing"];
+const PROTECTED_ROUTES = ["/today", "/planner", "/recipes", "/grocery", "/pantry", "/nutrition", "/goals", "/settings", "/billing", "/sample-week"];
 const AUTH_ROUTES = ["/login", "/signup", VERIFY_EMAIL_PATH];
 const ONBOARDING_ROUTE = "/onboarding";
 const ADMIN_USER_IDS = (process.env.ADMIN_USER_ID ?? "")
@@ -20,9 +20,23 @@ async function hasCompletedOnboarding(
   response: NextResponse,
   userId: string,
 ): Promise<boolean> {
+  const flags = await getOnboardingFlags(request, response, userId);
+  return flags.hasCompletedOnboarding;
+}
+
+async function getOnboardingFlags(
+  request: NextRequest,
+  response: NextResponse,
+  userId: string,
+): Promise<{
+  hasCompletedOnboarding: boolean;
+  firstRunCompleted: boolean;
+}> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!supabaseUrl || !supabaseAnonKey) return true;
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return { hasCompletedOnboarding: true, firstRunCompleted: true };
+  }
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
@@ -39,11 +53,14 @@ async function hasCompletedOnboarding(
 
   const { data } = await supabase
     .from("profiles")
-    .select("has_completed_onboarding")
+    .select("has_completed_onboarding, first_run_completed")
     .eq("id", userId)
     .maybeSingle();
 
-  return data?.has_completed_onboarding !== false;
+  return {
+    hasCompletedOnboarding: data?.has_completed_onboarding !== false,
+    firstRunCompleted: data?.first_run_completed === true,
+  };
 }
 
 export async function proxy(request: NextRequest) {
@@ -73,12 +90,20 @@ export async function proxy(request: NextRequest) {
     }
 
     const onboardingDone = await hasCompletedOnboarding(request, response, user.id);
+    const onboardingFlags = await getOnboardingFlags(request, response, user.id);
 
     if (emailConfirmed && !onboardingDone && PROTECTED_ROUTES.some((route) => path.startsWith(route))) {
-      return NextResponse.redirect(new URL(ONBOARDING_ROUTE, request.url));
+      if (!path.startsWith("/sample-week")) {
+        return NextResponse.redirect(new URL(ONBOARDING_ROUTE, request.url));
+      }
     }
 
-    if (emailConfirmed && onboardingDone && path.startsWith(ONBOARDING_ROUTE)) {
+    if (
+      emailConfirmed &&
+      onboardingDone &&
+      path.startsWith(ONBOARDING_ROUTE) &&
+      onboardingFlags.firstRunCompleted
+    ) {
       return NextResponse.redirect(new URL("/today", request.url));
     }
 

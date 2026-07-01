@@ -8,6 +8,7 @@ import {
  saveFillLibraryRecipes,
 } from "@/app/(app)/recipes/bulkFillActions";
 import { bulkFillBatchSummary, defaultBulkRecipeCount } from "@/lib/recipes/bulkFillLibrary";
+import { FIRST_RUN_LIBRARY_COUNT } from "@/lib/onboarding/first-run";
 import { ds } from "@/lib/ui/classes";
 import { ModalPortal } from "@/components/ui/ModalPortal";
 import type { HybridRecipeDraft } from "@/lib/recipes/hybridRecipeEngine";
@@ -21,13 +22,18 @@ type DraftRow = HybridRecipeDraft & {
 
 type Props = {
  onClose: () => void;
+ /** Inline panel for onboarding — no modal overlay. */
+ embedded?: boolean;
+ /** Smaller batch + simplified UI for first-run step 2. */
+ firstRun?: boolean;
+ onComplete?: () => void;
 };
 
-export function FillMyLibraryModal({ onClose }: Props) {
+export function FillMyLibraryModal({ onClose, embedded = false, firstRun = false, onComplete }: Props) {
  const router = useRouter();
  const [isPending, startTransition] = useTransition();
  const [phase, setPhase] = useState<"setup" |"generating" |"review" |"done">("setup");
- const [count, setCount] = useState(defaultBulkRecipeCount());
+ const [count, setCount] = useState(firstRun ? FIRST_RUN_LIBRARY_COUNT : defaultBulkRecipeCount());
  const [rows, setRows] = useState<DraftRow[]>([]);
  const [progress, setProgress] = useState("");
  const [globalError, setGlobalError] = useState<string | null>(null);
@@ -174,29 +180,40 @@ export function FillMyLibraryModal({ onClose }: Props) {
  setSaveSummary(parts.join(""));
  setPhase("done");
  router.refresh();
+ onComplete?.();
  });
  }
 
- return (
- <ModalPortal>
- <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
+ const panel = (
  <div
- className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-[var(--surface-card)] shadow-xl"
- role="dialog"
+ className={
+ embedded
+ ? "flex flex-col"
+ : "flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-[var(--surface-card)] shadow-xl"
+ }
+ role={embedded ? undefined : "dialog"}
  aria-labelledby="fill-library-title"
  >
- <div className="border-b border-[var(--border-subtle)] px-5 py-4">
+ <div className={embedded ? "mb-3" : "border-b border-[var(--border-subtle)] px-5 py-4"}>
  <h2 id="fill-library-title" className="text-lg font-semibold text-[var(--text-primary)]">
  Fill my library
  </h2>
  <p className="mt-1 text-sm text-[var(--text-muted)]">
- Generate varied breakfasts, lunches, dinners, and snacks sized to your daily target. Review before saving — if a slot fails, you can run fill again or add that meal type manually.
+ {firstRun
+ ? "We’ll generate a starter set sized to your diet and targets — review, then save."
+ : "Generate varied breakfasts, lunches, dinners, and snacks sized to your daily target. Review before saving — if a slot fails, you can run fill again or add that meal type manually."}
  </p>
  </div>
 
- <div className="flex-1 overflow-y-auto px-5 py-4">
+ <div className={embedded ? "" : "flex-1 overflow-y-auto px-5 py-4"}>
  {phase ==="setup" ? (
  <div className="space-y-4">
+ {firstRun ? (
+ <p className="text-sm text-[var(--text-secondary)]">
+ {FIRST_RUN_LIBRARY_COUNT} recipes ({bulkFillBatchSummary(FIRST_RUN_LIBRARY_COUNT)}) — enough to plan a varied week.
+ </p>
+ ) : (
+ <>
  <label className="block text-sm font-medium text-[var(--text-secondary)]">
  How many recipes?
  <select
@@ -216,6 +233,8 @@ export function FillMyLibraryModal({ onClose }: Props) {
  generated week can rotate without repeats — run fill again for another mix. Omnivores get
  meat, fish, and plant-based mains.
  </p>
+ </>
+ )}
  </div>
  ) : null}
 
@@ -298,7 +317,8 @@ export function FillMyLibraryModal({ onClose }: Props) {
  ) : null}
  </div>
 
- <div className="flex gap-2 border-t border-[var(--border-subtle)] px-5 py-4">
+ <div className={`flex gap-2 ${embedded ? "mt-4" : "border-t border-[var(--border-subtle)] px-5 py-4"}`}>
+ {!embedded ? (
  <button
  type="button"
  onClick={onClose}
@@ -306,13 +326,14 @@ export function FillMyLibraryModal({ onClose }: Props) {
  >
  {phase ==="done" ?"Close" :"Cancel"}
  </button>
+ ) : null}
  {phase ==="setup" ? (
  <button
  type="button"
  onClick={() => void runGeneration()}
  className={`flex-1 ${ds.primaryBtn}`}
  >
- Generate batch
+ {firstRun ? "Fill my library" : "Generate batch"}
  </button>
  ) : null}
  {phase ==="review" ? (
@@ -325,8 +346,21 @@ export function FillMyLibraryModal({ onClose }: Props) {
  {isPending ?"Saving…" : `Save ${selectedCount} selected`}
  </button>
  ) : null}
+ {phase ==="done" && embedded && onComplete ? (
+ <button type="button" onClick={onComplete} className={`flex-1 ${ds.primaryBtn}`}>
+ Continue
+ </button>
+ ) : null}
  </div>
  </div>
+ );
+
+ if (embedded) return panel;
+
+ return (
+ <ModalPortal>
+ <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
+ {panel}
  </div>
  </ModalPortal>
  );
