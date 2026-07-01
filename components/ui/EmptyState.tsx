@@ -11,10 +11,11 @@ type Props = {
   title: string;
   description: string;
   action?: Action;
+  secondaryAction?: ActionLink;
   className?: string;
 };
 
-export function EmptyState({ icon: Icon, title, description, action, className = "" }: Props) {
+export function EmptyState({ icon: Icon, title, description, action, secondaryAction, className = "" }: Props) {
   return (
     <div className={`${ds.card} flex flex-col items-center px-6 py-16 text-center ${className}`.trim()}>
       <div
@@ -34,6 +35,14 @@ export function EmptyState({ icon: Icon, title, description, action, className =
         <button type="button" onClick={action.onClick} className={ds.primaryBtn}>
           {action.label}
         </button>
+      ) : null}
+      {secondaryAction ? (
+        <Link
+          href={secondaryAction.href}
+          className="mt-3 text-sm font-medium text-[var(--brand-primary)] hover:underline"
+        >
+          {secondaryAction.label}
+        </Link>
       ) : null}
     </div>
   );

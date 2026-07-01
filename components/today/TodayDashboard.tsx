@@ -69,8 +69,9 @@ export function TodayDashboard({ meals, totals, targets, dietaryPreferences }: P
  <EmptyState
  icon={CalendarDays}
  title="Nothing planned for today"
- description="Add meals to your weekly planner and they will show up here"
- action={{ href: "/planner", label: "Go to planner" }}
+ description="Plan your week and today's meals will show up here with your calorie ring and macros"
+ action={{ href: "/onboarding", label: "Finish setup" }}
+ secondaryAction={{ href: "/sample-week", label: "See a sample week" }}
  className="py-12"
  />
  ) : (

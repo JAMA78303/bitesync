@@ -277,8 +277,9 @@ export function RecipesPageClient({
  <EmptyState
  icon={ChefHat}
  title="No recipes yet"
- description="Add your first recipe manually or import one from a website"
- action={{ href: "/recipes/new", label: "Add your first recipe" }}
+ description="Fill your library in a minute — or add and import recipes one at a time"
+ action={{ href: "/onboarding", label: "Finish setup" }}
+ secondaryAction={{ href: "/sample-week", label: "See a sample week" }}
  />
  ) : (
  <EmptyState
