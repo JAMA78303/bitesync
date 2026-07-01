@@ -5,7 +5,6 @@ import {
   MapPin,
   Shield,
   Utensils,
-  Zap,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { Logo } from "@/components/shared/Logo";
@@ -150,16 +149,12 @@ export default function LandingPage() {
             style={{ animationDelay: "-7s" }}
           />
           <div className="relative z-10 mx-auto max-w-3xl">
-            <p className="mb-4 inline-flex items-center gap-2 rounded-full bg-[var(--surface-overlay)]/15 px-3 py-1.5 text-xs font-medium backdrop-blur-sm">
-              <Zap className="h-3.5 w-3.5" aria-hidden />
-              Free to start — no credit card needed
-            </p>
             <h1 className="mb-4 text-4xl leading-tight font-bold tracking-tight sm:text-5xl lg:text-6xl">
               Your week of meals, planned to your macros.
             </h1>
             <p className="mx-auto mb-8 max-w-xl text-base leading-relaxed text-[var(--text-on-brand-muted)] sm:text-lg">
-              Plan your week, hit your protein and calorie targets, and get one grocery list —
-              automatically.
+              Plan your week, hit your protein, calorie, and micronutrient targets, and get one grocery
+              list — automatically.
             </p>
             <Link
               href="/signup"
@@ -249,7 +244,7 @@ export default function LandingPage() {
                   href="/signup"
                   className="block w-full rounded-xl bg-[var(--surface-card)] py-2.5 text-center text-sm font-semibold text-[var(--text-link)] hover:bg-[var(--surface-brand-subtle)]"
                 >
-                  Start free trial
+                  Upgrade to Pro
                 </Link>
               </article>
             </div>
