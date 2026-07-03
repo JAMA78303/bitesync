@@ -66,10 +66,10 @@ export function LandingDemoFlow() {
         </p>
       </div>
 
-      <div className="flex flex-col items-center gap-8 lg:flex-row lg:flex-wrap lg:items-start lg:justify-center lg:gap-6">
+      <div className="flex flex-col items-center gap-5 sm:gap-8 lg:flex-row lg:flex-wrap lg:items-start lg:justify-center lg:gap-6">
         {DEMO_BEATS.map(({ step, title, caption, Mock, image, imageAlt, isPro }, index) => (
           <Fragment key={step}>
-            <article className="flex w-full max-w-[260px] flex-col items-center">
+            <article className="flex w-full max-w-[360px] flex-col items-center lg:max-w-[260px]">
               <div className="mb-4 flex items-center gap-2">
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--brand-primary)] text-sm font-bold text-[var(--text-on-brand)]">
                   {step}
@@ -83,7 +83,7 @@ export function LandingDemoFlow() {
                   ) : null}
                 </h3>
               </div>
-              <div className="mb-4 flex justify-center">
+              <div className="mb-4 flex w-full justify-center">
                 <LandingDemoShot
                   srcLight={image.light}
                   srcDark={image.dark}
@@ -91,6 +91,7 @@ export function LandingDemoFlow() {
                   width={image.width}
                   height={image.height}
                   fallback={<Mock />}
+                  sizeClassName="w-full max-w-[360px] lg:w-[260px] lg:max-h-none"
                 />
               </div>
               <p className="text-center text-sm leading-relaxed text-[var(--text-muted)]">{caption}</p>

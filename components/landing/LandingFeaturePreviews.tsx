@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useId, useState, type KeyboardEvent } from "react";
+import { useCallback, useId, useRef, useState, type KeyboardEvent } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   Activity,
@@ -101,10 +101,27 @@ const FEATURE_PREVIEWS: FeaturePreview[] = [
 export function LandingFeaturePreviews() {
   const baseId = useId();
   const [activeId, setActiveId] = useState<LandingFeaturePreviewId>(LANDING_FEATURE_PREVIEW_DEFAULT_ID);
+  const cardRefs = useRef<Partial<Record<LandingFeaturePreviewId, HTMLButtonElement | null>>>({});
 
   const activeMeta = FEATURE_PREVIEWS.find((f) => f.id === activeId) ?? FEATURE_PREVIEWS[0]!;
   const activeShot = LANDING_FEATURE_SHOTS[activeMeta.id];
   const ActiveScene = LANDING_SCREENSHOT_SCENES[activeMeta.id];
+
+  /** Keep the tapped card in view after the accordion above it collapses (mobile only). */
+  const selectFeature = useCallback((id: LandingFeaturePreviewId) => {
+    setActiveId(id);
+    if (typeof window === "undefined" || window.matchMedia("(min-width: 1024px)").matches) return;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.setTimeout(
+      () => {
+        cardRefs.current[id]?.scrollIntoView({
+          block: "nearest",
+          behavior: reduceMotion ? "auto" : "smooth",
+        });
+      },
+      reduceMotion ? 0 : 220,
+    );
+  }, []);
 
   const onKeyDown = useCallback(
     (e: KeyboardEvent, index: number) => {
@@ -125,9 +142,9 @@ export function LandingFeaturePreviews() {
       } else {
         return;
       }
-      setActiveId(FEATURE_PREVIEWS[next]!.id);
+      selectFeature(FEATURE_PREVIEWS[next]!.id);
     },
-    [],
+    [selectFeature],
   );
 
   return (
@@ -145,51 +162,84 @@ export function LandingFeaturePreviews() {
         <div
           role="tablist"
           aria-label="App features"
-          className="grid grid-cols-1 gap-2 sm:grid-cols-2"
+          className="grid grid-cols-1 gap-2 lg:grid-cols-2"
         >
           {FEATURE_PREVIEWS.map((feature, index) => {
             const selected = feature.id === activeId;
             const tabId = `${baseId}-tab-${feature.id}`;
             const panelId = `${baseId}-panel`;
+            const shot = LANDING_FEATURE_SHOTS[feature.id];
+            const Scene = LANDING_SCREENSHOT_SCENES[feature.id];
             return (
-              <button
-                key={feature.id}
-                id={tabId}
-                type="button"
-                role="tab"
-                aria-selected={selected}
-                aria-controls={panelId}
-                tabIndex={selected ? 0 : -1}
-                onClick={() => setActiveId(feature.id)}
-                onKeyDown={(e) => onKeyDown(e, index)}
-                className={`rounded-2xl border p-4 text-left transition-[border-color,background-color,box-shadow,transform] duration-200 motion-reduce:transition-none ${
-                  selected
-                    ? "border-[var(--brand-action-mid)] bg-[var(--surface-brand-subtle)] shadow-md"
-                    : "border-[var(--border-default)] bg-[var(--surface-card)] shadow-sm hover:border-[var(--brand-action-mid)]/40 hover:shadow-md"
-                }`}
-              >
-                <span className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--surface-card)]">
-                  <feature.Icon className="h-5 w-5 text-[var(--brand-primary)]" aria-hidden />
-                </span>
-                <span className="block font-semibold text-[var(--text-primary)]">
-                  {feature.title}
-                  {feature.isPro ? (
-                    <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-2xs font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
-                      Pro
-                    </span>
-                  ) : null}
-                </span>
-                <span className="mt-1 block text-sm leading-relaxed text-[var(--text-muted)]">{feature.desc}</span>
-              </button>
+              <div key={feature.id} className="min-w-0">
+                <button
+                  id={tabId}
+                  ref={(el) => {
+                    cardRefs.current[feature.id] = el;
+                  }}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  aria-controls={panelId}
+                  aria-expanded={selected}
+                  tabIndex={selected ? 0 : -1}
+                  onClick={() => selectFeature(feature.id)}
+                  onKeyDown={(e) => onKeyDown(e, index)}
+                  className={`w-full rounded-2xl border p-4 text-left transition-[border-color,background-color,box-shadow,transform] duration-200 motion-reduce:transition-none ${
+                    selected
+                      ? "border-[var(--brand-action-mid)] bg-[var(--surface-brand-subtle)] shadow-md"
+                      : "border-[var(--border-default)] bg-[var(--surface-card)] shadow-sm hover:border-[var(--brand-action-mid)]/40 hover:shadow-md"
+                  }`}
+                >
+                  <span className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--surface-card)]">
+                    <feature.Icon className="h-5 w-5 text-[var(--brand-primary)]" aria-hidden />
+                  </span>
+                  <span className="block font-semibold text-[var(--text-primary)]">
+                    {feature.title}
+                    {feature.isPro ? (
+                      <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-2xs font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+                        Pro
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="mt-1 block text-sm leading-relaxed text-[var(--text-muted)]">{feature.desc}</span>
+                </button>
+
+                {/* Mobile accordion: preview expands inline beneath its card */}
+                <div
+                  className={`grid overflow-hidden transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none lg:hidden ${
+                    selected ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                  }`}
+                  aria-hidden={!selected}
+                >
+                  <div className="min-h-0">
+                    <div className="flex flex-col items-center px-2 pt-4 pb-2">
+                      <LandingDemoShot
+                        srcLight={shot.light}
+                        srcDark={shot.dark}
+                        alt={shot.alt}
+                        width={shot.width}
+                        height={shot.height}
+                        fallback={<Scene />}
+                        sizeClassName="w-full"
+                      />
+                      <p className="mt-3 text-center text-sm leading-relaxed text-[var(--text-muted)]">
+                        {feature.previewCaption}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             );
           })}
         </div>
 
+        {/* Desktop: sticky side-by-side preview */}
         <div
           id={`${baseId}-panel`}
           role="tabpanel"
           aria-labelledby={`${baseId}-tab-${activeMeta.id}`}
-          className="mx-auto w-full max-w-[300px] lg:sticky lg:top-24"
+          className="mx-auto hidden w-full max-w-[300px] lg:sticky lg:top-24 lg:block"
         >
           <div className="flex flex-col items-center transition-opacity duration-200 motion-reduce:transition-none">
             <LandingDemoShot

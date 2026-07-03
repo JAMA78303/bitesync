@@ -20,25 +20,41 @@ type Props = {
  totals: TodayTotals;
  targets: UserNutritionTargets;
  dietaryPreferences: string[];
+ /** Landing capture — goals card only (ring + macro bars). */
+ heroOnly?: boolean;
+ /** Landing capture — ring + one macro bar (~260px crop). */
+ compactHero?: boolean;
+ /** Fixed date string for screenshot staging. */
+ dateLabel?: string;
 };
 
-export function TodayDashboard({ meals, totals, targets, dietaryPreferences }: Props) {
+export function TodayDashboard({
+ meals,
+ totals,
+ targets,
+ dietaryPreferences,
+ heroOnly = false,
+ compactHero = false,
+ dateLabel,
+}: Props) {
  const remaining = Math.max(0, targets.kcal - totals.kcal);
  const calorieStatus = getGoalStatus("kcal", totals.kcal, targets.kcal);
- const dateLabel = formatLongDateWithOrdinal(new Date());
+ const headerDate = dateLabel ?? formatLongDateWithOrdinal(new Date());
 
  return (
- <div className={`${ds.mobilePage} ${ds.pageContent}`}>
+ <div className={`${ds.mobilePage} ${compactHero ? "" : ds.pageContent}`}>
+ {compactHero ? null : (
  <div className={ds.gradientHeaderCompact}>
- <p className={`mb-0.5 text-sm ${ds.pageSubtitle}`}>{dateLabel}</p>
+ <p className={`mb-0.5 text-sm ${ds.pageSubtitle}`}>{headerDate}</p>
  <h1 className="text-2xl font-bold text-[var(--text-on-header)]">Your Goals</h1>
  </div>
+ )}
 
- <div className={`${ds.mobileGutter} ${ds.overlap}`}>
- <div className={`mb-4 ${ds.card} p-6`}>
- <div className="mb-6 flex items-center gap-6">
+ <div className={compactHero ? "p-3" : `${ds.mobileGutter} ${ds.overlap}`}>
+ <div className={`${compactHero ? "" : "mb-4 "}${ds.card} ${compactHero ? "p-4" : "p-6"}`}>
+ <div className={`flex items-center gap-4 ${compactHero ? "mb-3" : "mb-6"}`}>
  <CalorieRing consumed={totals.kcal} target={targets.kcal} />
- <div>
+ <div className="min-w-0">
  <p className={ds.statLabel}>Calories</p>
  <p className={ds.statValue}>
  {Math.round(totals.kcal)}
@@ -51,15 +67,22 @@ export function TodayDashboard({ meals, totals, targets, dietaryPreferences }: P
  </div>
  </div>
 
- <div className="grid grid-cols-2 gap-4">
+ {compactHero ? (
+ <MacroBar metric="protein" label="Protein" value={totals.protein} target={targets.protein} unit="g" />
+ ) : (
+ <>
+ <div className="grid grid-cols-2 gap-x-3 gap-y-4">
  <MacroBar metric="protein" label="Protein" value={totals.protein} target={targets.protein} unit="g" />
  <MacroBar metric="fibre" label="Fibre" value={totals.fibre} target={targets.fibre} unit="g" />
  <MacroBar metric="fat" label="Fat" value={totals.fat} target={targets.fat} unit="g" />
  <MacroBar metric="carbs" label="Carbs" value={totals.carbs} target={targets.carbs} unit="g" />
  </div>
  <GoalsStatusLegend />
+ </>
+ )}
  </div>
 
+ {heroOnly ? null : (
  <div className="mb-4">
  <h2 className={`mb-3 flex items-center gap-2 ${ds.sectionTitle}`}>
  Meals for Today
@@ -94,6 +117,7 @@ export function TodayDashboard({ meals, totals, targets, dietaryPreferences }: P
  })
  )}
  </div>
+ )}
  </div>
  </div>
  );

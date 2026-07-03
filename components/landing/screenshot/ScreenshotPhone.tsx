@@ -2,26 +2,26 @@
 
 import type { ReactNode } from "react";
 import { PhoneFrame } from "@/components/landing/PhoneFrame";
+import { SCREENSHOT_INNER_WIDTH_PX } from "@/lib/landing/screenshotConfig";
 
 type Props = {
   id: string;
   label: string;
   children: ReactNode;
-  /** Crop tall app pages to phone preview height. */
-  maxHeightClass?: string;
+  /** Optional fixed height for hero crop — omit to size to content. */
+  heightPx?: number;
 };
 
-export function ScreenshotPhone({
-  id,
-  label,
-  children,
-  maxHeightClass = "max-h-[520px]",
-}: Props) {
+export function ScreenshotPhone({ id, label, children, heightPx }: Props) {
   return (
-    <div id={id} data-screenshot={id} className="p-8">
-      <PhoneFrame label={label}>
+    <div id={id} data-screenshot={id} className="inline-block p-4">
+      <PhoneFrame label={label} innerWidthPx={SCREENSHOT_INNER_WIDTH_PX}>
         <div
-          className={`pointer-events-none w-[220px] overflow-hidden ${maxHeightClass} [&_*]:!cursor-default`}
+          className="pointer-events-none overflow-hidden bg-[var(--surface-page)] [&_*]:!cursor-default"
+          style={{
+            width: SCREENSHOT_INNER_WIDTH_PX,
+            ...(heightPx ? { height: heightPx } : {}),
+          }}
         >
           {children}
         </div>

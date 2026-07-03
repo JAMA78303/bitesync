@@ -5,18 +5,24 @@ import type { MicroAnalysis, NutrientResult } from "@/lib/supabase/nutrition";
 
 type Props = {
  analysis: MicroAnalysis;
+ /** Landing capture — show only the first N daily-target rows. */
+ rowLimit?: number;
 };
 
-export function MicronutrientPanel({ analysis }: Props) {
+export function MicronutrientPanel({ analysis, rowLimit }: Props) {
+ const compact = rowLimit != null;
  return (
  <div className={`overflow-hidden rounded-xl ${ds.card}`}>
- <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-5 py-4">
- <div>
+ <div className={`flex items-center justify-between border-b border-[var(--border-subtle)] ${compact ? "px-3 py-2" : "px-5 py-4"}`}>
+ <div className="min-w-0">
  <h2 className="text-sm font-semibold text-[var(--text-primary)]">Weekly nutrition analysis</h2>
+ {compact ? null : (
  <p className="mt-0.5 text-xs text-[var(--text-muted)]">
  Based on UK Government dietary reference values · free sugars exclude whole fruit and milk lactose
  </p>
+ )}
  </div>
+ {compact ? null : (
  <a
  href="https://www.gov.uk/government/publications/sacn-dietary-reference-values-for-energy"
  target="_blank"
@@ -25,19 +31,24 @@ export function MicronutrientPanel({ analysis }: Props) {
  >
  <Info className="h-4 w-4" />
  </a>
+ )}
  </div>
 
- <div className="p-5">
+ <div className={compact ? "p-3" : "p-5"}>
+ {compact ? null : (
  <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
  Daily targets (avg per day this week)
  </p>
+ )}
  <div className="space-y-2">
- {analysis.must_hit.map((nutrient) => (
+ {(rowLimit ? analysis.must_hit.slice(0, rowLimit) : analysis.must_hit).map((nutrient) => (
  <NutrientRow key={nutrient.key} nutrient={nutrient} />
  ))}
  </div>
  </div>
 
+ {rowLimit ? null : (
+ <>
  <div className="border-t border-[var(--border-subtle)] px-5 pb-5 pt-5">
  <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
  Daily limits (must not exceed)
@@ -61,6 +72,8 @@ export function MicronutrientPanel({ analysis }: Props) {
  </p>
  <CofidAttribution className="text-center text-[var(--text-muted)]" />
  </div>
+ </>
+ )}
  </div>
  );
 }
@@ -85,22 +98,32 @@ function NutrientRow({ nutrient }: { nutrient: NutrientResult }) {
  },
  }[traffic];
 
+ // Full label ("138% of daily target") overflows a phone-width card, so show just
+ // the percentage below the sm breakpoint — never clip a number mid-digit.
+ const compactLabel = pct_label.split(" of ")[0] ?? pct_label;
+
  return (
- <div className="flex items-center gap-3">
+ <div className="flex items-center gap-2 sm:gap-3">
  <div
  className={`h-2.5 w-2.5 flex-shrink-0 rounded-full ${
  traffic === "green" ? ds.trafficGreen : traffic === "amber" ? ds.trafficAmber : ds.trafficRed
  }`}
  />
- <span className="w-28 flex-shrink-0 text-sm text-[var(--text-secondary)]">{label}</span>
- <div className="h-1.5 flex-1 rounded-full bg-[var(--surface-muted)]">
+ <span className="w-24 flex-shrink-0 text-sm text-[var(--text-secondary)] sm:w-28">{label}</span>
+ <div className="h-1.5 min-w-4 flex-1 rounded-full bg-[var(--surface-muted)]">
  <div className={`h-1.5 rounded-full transition-all ${colours.bar}`} style={{ width: `${Math.min(pct, 100)}%` }} />
  </div>
- <span className="w-20 text-right text-xs text-[var(--text-muted)]">
+ <span className="w-16 flex-shrink-0 text-right text-xs text-[var(--text-muted)] sm:w-20">
  {daily_avg.toFixed(1)}
  {unit}
  </span>
- <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-xs ${colours.badge}`}>{pct_label}</span>
+ <span
+ className={`flex-shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-xs ${colours.badge}`}
+ title={pct_label}
+ >
+ <span className="sm:hidden">{compactLabel}</span>
+ <span className="hidden sm:inline">{pct_label}</span>
+ </span>
  </div>
  );
 }

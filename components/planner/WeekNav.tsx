@@ -5,9 +5,9 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { addDays, formatWeekLabel, toLocalISO, isCurrentWeek } from "@/lib/utils/dates";
 
-type Props = { weekStart: Date; onGradient?: boolean };
+type Props = { weekStart: Date; onGradient?: boolean; weekLabel?: string };
 
-export function WeekNav({ weekStart, onGradient = false }: Props) {
+export function WeekNav({ weekStart, onGradient = false, weekLabel }: Props) {
  const router = useRouter();
  const current = isCurrentWeek(weekStart);
 
@@ -38,7 +38,7 @@ export function WeekNav({ weekStart, onGradient = false }: Props) {
  >
  <ChevronLeft className="h-4 w-4" />
  </Button>
- <p className={labelClass}>{formatWeekLabel(weekStart)}</p>
+ <p className={labelClass}>{weekLabel ?? formatWeekLabel(weekStart)}</p>
  <Button
  type="button"
  variant="outline"

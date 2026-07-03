@@ -56,6 +56,8 @@ type Props = {
  dailyProteinTarget?: number | null;
  dietPrefs?: ProfileDietPrefs | null;
  dietaryPreferences?: string[];
+ /** Force mobile day layout (screenshot capture at 390px). */
+ forceMobileLayout?: boolean;
 };
 
 export function PlannerGrid({
@@ -70,6 +72,7 @@ export function PlannerGrid({
  dailyProteinTarget,
  dietPrefs,
  dietaryPreferences = [],
+ forceMobileLayout = false,
 }: Props) {
  const [modalOpen, setModalOpen] = useState(false);
  const [activeDay, setActiveDay] = useState<number | null>(null);
@@ -112,7 +115,9 @@ export function PlannerGrid({
  className="mb-4"
  />
  ) : null}
- <div className="hidden overflow-x-auto rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] sm:block">
+ <div
+ className={`${forceMobileLayout ? "hidden" : "hidden sm:block"} overflow-x-auto rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)]`}
+ >
  <div className="grid min-w-[980px] grid-cols-[120px_repeat(7,minmax(112px,1fr))]">
  <div className="border-b border-[var(--border-default)] p-2" />
  {Array.from({ length: 7 }, (_, day) => (
@@ -202,6 +207,7 @@ export function PlannerGrid({
  dietPrefs={dietPrefs}
  dietaryPreferences={dietaryPreferences}
  showBreakfastTip={showBreakfastTip}
+ forceMobileLayout={forceMobileLayout}
  />
 
  <RecipePickerModal
@@ -233,6 +239,7 @@ type MobileProps = {
  dietPrefs?: ProfileDietPrefs | null;
  dietaryPreferences?: string[];
  showBreakfastTip: boolean;
+ forceMobileLayout?: boolean;
 };
 
 function PlannerGridMobileInline({
@@ -248,6 +255,7 @@ function PlannerGridMobileInline({
  dietPrefs,
  dietaryPreferences = [],
  showBreakfastTip,
+ forceMobileLayout = false,
 }: MobileProps) {
  const [activeDay, setActiveDay] = useState(initialActiveDay);
 
@@ -261,7 +269,7 @@ function PlannerGridMobileInline({
  const nextSnackSlot = snackEntries.length ? Math.max(...snackEntries.map((e) => e.slot_index ?? 0)) + 1 : 0;
 
  return (
- <div className="space-y-3 sm:hidden">
+ <div className={forceMobileLayout ? "space-y-3" : "space-y-3 sm:hidden"}>
  <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-1">
  {Array.from({ length: 7 }, (_, day) => (
  <button

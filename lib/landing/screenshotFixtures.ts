@@ -20,6 +20,8 @@ import type { ImportResult } from "@/components/recipes/ImportRecipeModal";
 export const SCREENSHOT_WEEK_START = new Date("2026-05-12T12:00:00");
 export const SCREENSHOT_WEEK_ISO = "2026-05-12";
 export const SCREENSHOT_WEEK_DATES = Array.from({ length: 7 }, (_, i) => addDays(SCREENSHOT_WEEK_START, i));
+export const SCREENSHOT_WEEK_LABEL = "12th May – 18th May, 2026";
+export const SCREENSHOT_TODAY_DATE_LABEL = "Monday 12th May";
 
 export const SCREENSHOT_TARGETS: UserNutritionTargets = {
   kcal: 2200,
@@ -38,12 +40,13 @@ export const SCREENSHOT_TDEE_DEFAULTS: TDEEFormValues = {
   goal: "lose",
 };
 
+/** Completed on-target day — greens on ring and macro bars. */
 export const SCREENSHOT_TODAY_TOTALS: TodayTotals = {
-  kcal: 1850,
-  protein: 142,
-  carbs: 168,
-  fat: 58,
-  fibre: 26,
+  kcal: 2140,
+  protein: 162,
+  carbs: 208,
+  fat: 70,
+  fibre: 32,
 };
 
 export const SCREENSHOT_TODAY_MEALS: TodayMeal[] = [
@@ -51,18 +54,18 @@ export const SCREENSHOT_TODAY_MEALS: TodayMeal[] = [
     id: "t1",
     mealType: "breakfast",
     slotIndex: 0,
-    logged: false,
+    logged: true,
     servingLabel: null,
     quickAddName: null,
     quickAddCalories: null,
     recipe: {
       id: "r1",
-      name: "Greek yoghurt & berries",
-      kcal: 320,
-      protein: 24,
-      carbs: 38,
-      fat: 8,
-      fibre: 4,
+      name: "Oats & berries",
+      kcal: 400,
+      protein: 28,
+      carbs: 48,
+      fat: 12,
+      fibre: 6,
       imageUrl: null,
     },
   },
@@ -70,17 +73,17 @@ export const SCREENSHOT_TODAY_MEALS: TodayMeal[] = [
     id: "t2",
     mealType: "lunch",
     slotIndex: 0,
-    logged: false,
+    logged: true,
     servingLabel: null,
     quickAddName: null,
     quickAddCalories: null,
     recipe: {
       id: "r2",
-      name: "Chicken quinoa bowl",
-      kcal: 485,
-      protein: 42,
-      carbs: 51,
-      fat: 12,
+      name: "Quinoa bowl",
+      kcal: 580,
+      protein: 46,
+      carbs: 55,
+      fat: 18,
       fibre: 8,
       imageUrl: null,
     },
@@ -89,30 +92,74 @@ export const SCREENSHOT_TODAY_MEALS: TodayMeal[] = [
     id: "t3",
     mealType: "dinner",
     slotIndex: 0,
-    logged: false,
+    logged: true,
     servingLabel: null,
     quickAddName: null,
     quickAddCalories: null,
     recipe: {
       id: "r3",
-      name: "Salmon tray bake",
-      kcal: 610,
-      protein: 48,
-      carbs: 42,
+      name: "Salmon bake",
+      kcal: 710,
+      protein: 52,
+      carbs: 62,
       fat: 22,
-      fibre: 7,
+      fibre: 9,
       imageUrl: null,
     },
   },
+  {
+    id: "t4",
+    mealType: "snack",
+    slotIndex: 0,
+    logged: true,
+    servingLabel: null,
+    quickAddName: null,
+    quickAddCalories: null,
+    recipe: {
+      id: "r4",
+      name: "Greek yoghurt",
+      kcal: 450,
+      protein: 36,
+      carbs: 43,
+      fat: 18,
+      fibre: 9,
+      imageUrl: null,
+    },
+  },
+];
+
+type MealSeed = { name: string; kcal: number; protein: number };
+
+/** Short names that fit planner cards at 390px — 21 unique meals for a full week. */
+const SCREENSHOT_WEEK_MEALS: MealSeed[] = [
+  { name: "Oats & berries", kcal: 320, protein: 18 },
+  { name: "Quinoa bowl", kcal: 485, protein: 42 },
+  { name: "Salmon bake", kcal: 610, protein: 48 },
+  { name: "Turkey bowl", kcal: 520, protein: 44 },
+  { name: "Pesto pasta", kcal: 620, protein: 28 },
+  { name: "Lentil soup", kcal: 410, protein: 22 },
+  { name: "Beef stir-fry", kcal: 580, protein: 38 },
+  { name: "Niçoise salad", kcal: 455, protein: 36 },
+  { name: "Roast chicken", kcal: 540, protein: 46 },
+  { name: "Halloumi bowl", kcal: 495, protein: 26 },
+  { name: "Overnight oats", kcal: 360, protein: 18 },
+  { name: "Prawn linguine", kcal: 590, protein: 34 },
+  { name: "Fajita bowl", kcal: 505, protein: 40 },
+  { name: "Eggs & toast", kcal: 380, protein: 22 },
+  { name: "Mushroom risotto", kcal: 560, protein: 16 },
+  { name: "Tofu stir-fry", kcal: 430, protein: 24 },
+  { name: "Chicken wrap", kcal: 470, protein: 38 },
+  { name: "Fish tacos", kcal: 520, protein: 32 },
+  { name: "Veggie curry", kcal: 490, protein: 18 },
+  { name: "Steak & greens", kcal: 550, protein: 44 },
+  { name: "Shakshuka", kcal: 390, protein: 20 },
 ];
 
 function recipeEntry(
   id: string,
   day: number,
   mealType: MealType,
-  name: string,
-  calories: number,
-  protein: number,
+  seed: MealSeed,
 ): MealPlanEntry {
   return {
     id,
@@ -125,62 +172,71 @@ function recipeEntry(
     quick_add_calories: null,
     recipe: {
       id: `recipe-${id}`,
-      name,
-      recipe_nutrition: { calories, protein_g: protein, carbs_g: 45, fat_g: 14, fibre_g: 6 },
+      name: seed.name,
+      recipe_nutrition: {
+        calories: seed.kcal,
+        protein_g: seed.protein,
+        carbs_g: 45,
+        fat_g: 14,
+        fibre_g: 6,
+      },
     },
   };
 }
 
-/** Varied planner week — no recipe repeats in the same meal slot. */
-export const SCREENSHOT_PLANNER_ENTRIES: MealPlanEntry[] = [
-  recipeEntry("a", 0, "lunch", "Chicken quinoa bowl", 485, 42),
-  recipeEntry("b", 0, "dinner", "Salmon tray bake", 610, 48),
-  recipeEntry("c", 1, "lunch", "Turkey & sweet potato", 520, 44),
-  recipeEntry("d", 1, "dinner", "Pesto pasta primavera", 620, 28),
-  recipeEntry("e", 2, "breakfast", "Greek yoghurt & berries", 320, 24),
-  recipeEntry("f", 2, "lunch", "Lentil & spinach soup", 410, 22),
-  recipeEntry("g", 3, "dinner", "Beef stir-fry & rice", 580, 38),
-  recipeEntry("h", 4, "lunch", "Tuna niçoise salad", 455, 36),
-  recipeEntry("i", 5, "dinner", "Roast chicken & veg", 540, 46),
-];
+function buildFullWeekEntries(includeSnacks = false): MealPlanEntry[] {
+  const entries: MealPlanEntry[] = [];
+  const mealTypes: MealType[] = ["breakfast", "lunch", "dinner"];
+  let seedIndex = 0;
 
-/** Fuller week for AI plan screenshot. */
-export const SCREENSHOT_AI_PLAN_ENTRIES: MealPlanEntry[] = [
-  ...SCREENSHOT_PLANNER_ENTRIES,
-  recipeEntry("j", 3, "lunch", "Halloumi grain bowl", 495, 26),
-  recipeEntry("k", 4, "breakfast", "Overnight oats", 360, 18),
-  recipeEntry("l", 4, "dinner", "Prawn linguine", 590, 34),
-  recipeEntry("m", 5, "lunch", "Chicken fajita bowl", 505, 40),
-  recipeEntry("n", 6, "breakfast", "Scrambled eggs & toast", 380, 22),
-  recipeEntry("o", 6, "dinner", "Mushroom risotto", 560, 16),
-];
+  for (let day = 0; day < 7; day += 1) {
+    for (const mealType of mealTypes) {
+      const seed = SCREENSHOT_WEEK_MEALS[seedIndex % SCREENSHOT_WEEK_MEALS.length]!;
+      entries.push(recipeEntry(`w${seedIndex}`, day, mealType, seed));
+      seedIndex += 1;
+    }
+    if (includeSnacks) {
+      const snack = SCREENSHOT_WEEK_MEALS[seedIndex % SCREENSHOT_WEEK_MEALS.length]!;
+      entries.push(recipeEntry(`s${day}`, day, "snack", snack));
+      seedIndex += 1;
+    }
+  }
+
+  return entries;
+}
+
+/** Full varied week — every breakfast/lunch/dinner slot filled. */
+export const SCREENSHOT_PLANNER_ENTRIES = buildFullWeekEntries(false);
+/** AI plan adds a snack slot per day. */
+export const SCREENSHOT_AI_PLAN_ENTRIES = buildFullWeekEntries(true);
 
 export const SCREENSHOT_PLANNER_GRID = buildGridFromEntries(SCREENSHOT_PLANNER_ENTRIES);
 export const SCREENSHOT_AI_PLAN_GRID = buildGridFromEntries(SCREENSHOT_AI_PLAN_ENTRIES);
 
-export const SCREENSHOT_PLANNER_RECIPES = [
-  { id: "recipe-a", name: "Chicken quinoa bowl", calories: 485, ingredientNames: ["chicken", "quinoa"] },
-  { id: "recipe-b", name: "Salmon tray bake", calories: 610, ingredientNames: ["salmon", "broccoli"] },
-  { id: "recipe-c", name: "Turkey & sweet potato", calories: 520, ingredientNames: ["turkey", "sweet potato"] },
-  { id: "recipe-d", name: "Pesto pasta primavera", calories: 620, ingredientNames: ["pasta", "pesto"] },
-  { id: "recipe-e", name: "Greek yoghurt & berries", calories: 320, ingredientNames: ["yoghurt", "berries"] },
-  { id: "recipe-f", name: "Lentil & spinach soup", calories: 410, ingredientNames: ["lentils", "spinach"] },
-  { id: "recipe-g", name: "Beef stir-fry & rice", calories: 580, ingredientNames: ["beef", "rice"] },
-  { id: "recipe-h", name: "Tuna niçoise salad", calories: 455, ingredientNames: ["tuna", "eggs"] },
-  { id: "recipe-i", name: "Roast chicken & veg", calories: 540, ingredientNames: ["chicken", "potatoes"] },
-  { id: "recipe-j", name: "Halloumi grain bowl", calories: 495, ingredientNames: ["halloumi", "quinoa"] },
-  { id: "recipe-k", name: "Overnight oats", calories: 360, ingredientNames: ["oats", "milk"] },
-  { id: "recipe-l", name: "Prawn linguine", calories: 590, ingredientNames: ["prawns", "pasta"] },
-  { id: "recipe-m", name: "Chicken fajita bowl", calories: 505, ingredientNames: ["chicken", "pepper"] },
-  { id: "recipe-n", name: "Scrambled eggs & toast", calories: 380, ingredientNames: ["eggs", "bread"] },
-  { id: "recipe-o", name: "Mushroom risotto", calories: 560, ingredientNames: ["mushrooms", "rice"] },
-];
+export const SCREENSHOT_PLANNER_RECIPES = Array.from(
+  new Map(
+    [...SCREENSHOT_PLANNER_ENTRIES, ...SCREENSHOT_AI_PLAN_ENTRIES].map((entry) => {
+      const nutrition = entry.recipe?.recipe_nutrition;
+      const calories =
+        nutrition && !Array.isArray(nutrition) ? (nutrition.calories ?? 0) : 0;
+      return [
+        entry.recipe_id,
+        {
+          id: entry.recipe_id!,
+          name: entry.recipe?.name ?? "Meal",
+          calories,
+          ingredientNames: [entry.recipe?.name?.split(" ")[0]?.toLowerCase() ?? "food"],
+        },
+      ];
+    }),
+  ).values(),
+) as { id: string; name: string; calories: number; ingredientNames: string[] }[];
 
 export const SCREENSHOT_RECIPE_DETAIL = {
   recipe: {
     id: "screenshot-recipe",
-    name: "Chicken quinoa bowl",
-    description: "A balanced bowl with lean protein and whole grains.",
+    name: "Quinoa bowl",
+    description: "Lean protein with whole grains and greens.",
     method_steps: ["Cook quinoa.", "Pan-fry chicken.", "Steam broccoli and assemble."],
     servings: 2,
     source_url: null,
@@ -202,13 +258,13 @@ export const SCREENSHOT_GROCERY_ITEMS = [
   { id: "g2", name: "Greek yoghurt", quantity: 500, unit: "g", is_checked: true },
   { id: "g3", name: "Quinoa", quantity: 250, unit: "g", is_checked: false },
   { id: "g4", name: "Spinach", quantity: 200, unit: "g", is_checked: false },
-  { id: "g5", name: "Salmon fillet", quantity: 2, unit: "pack", is_checked: false },
+  { id: "g5", name: "Salmon fillet", quantity: 2, unit: "each", is_checked: false },
 ];
 
 export const SCREENSHOT_DIETARY_SELECTED = ["vegetarian", "gluten_free"];
 
 export const SCREENSHOT_IMPORT_PREVIEW: Omit<ImportResult, "cookingFor"> = {
-  name: "One-pan lemon chicken",
+  name: "Lemon chicken traybake",
   sourceUrl: "https://www.bbcgoodfood.com/recipes/lemon-chicken",
   sourceDomain: "bbcgoodfood.com",
   sourceType: "recipe_blog",
@@ -247,7 +303,7 @@ function nutrientResult(
   };
 }
 
-/** Threshold colours from real DRV logic — iodine 86% amber, vitamin D 97% green. */
+/** Threshold colours from real DRV logic — iodine 86% amber, rest mostly green. */
 export const SCREENSHOT_MICRO_ANALYSIS: MicroAnalysis = {
   week_start: SCREENSHOT_WEEK_ISO,
   covered_items: 28,
