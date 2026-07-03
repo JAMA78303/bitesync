@@ -14,20 +14,16 @@ export function MacroBar({ metric, label, value, target, unit }: Props) {
  const status = getGoalStatus(metric, value, target);
 
  return (
- <div>
- <div className="mb-1.5 flex items-center justify-between gap-2">
- <span className="text-xs font-medium text-[var(--text-muted)]">{label}</span>
- <div className="text-right">
- <span className="text-xs text-[var(--text-muted)]">
+ <div className="min-w-0 overflow-hidden">
+ <p className="text-xs font-medium text-[var(--text-muted)]">{label}</p>
+ <p className="mt-0.5 truncate text-xs text-[var(--text-muted)]">
  <span className="font-semibold text-[var(--text-secondary)]">{Math.round(value)}</span>
- {" /"}
+ {" / "}
  {target}
  {unit}
- </span>
+ </p>
  <p className={`text-2xs font-medium leading-tight ${status.textClassName}`}>{status.label}</p>
- </div>
- </div>
- <div className="h-1.5 overflow-hidden rounded-full bg-[var(--surface-muted)]">
+ <div className="mb-0 mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--surface-muted)]">
  <div
  className="h-full rounded-full transition-all duration-500"
  style={{
