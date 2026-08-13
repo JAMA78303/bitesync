@@ -8,7 +8,12 @@ import { redirect } from "next/navigation";
 export const dynamic = "force-dynamic";
 
 export default async function OnboardingPage() {
-  const profile = await getProfile();
+  let profile = null;
+  try {
+    profile = await getProfile();
+  } catch (error) {
+    console.error("[onboarding] getProfile failed", error);
+  }
   if (profile?.first_run_completed) {
     redirect("/today");
   }

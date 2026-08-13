@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ds } from "@/lib/ui/classes";
 import { useToast } from "@/components/ui/use-toast";
-import { saveTDEEProfile } from "@/lib/supabase/profile";
+import { saveTDEEProfile } from "@/lib/supabase/profile-actions";
 import {
  cmToFtIn,
  cmToM,

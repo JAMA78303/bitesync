@@ -16,8 +16,10 @@ export default function RouteError({ error, reset }: ErrorPageProps) {
       <div className="max-w-md rounded-2xl border border-[var(--border-default)] bg-[var(--surface-card)] p-8 text-center shadow-sm">
         <p className="mb-2 text-lg font-bold">{BRANDED_ERROR_TITLE}</p>
         <p className="mb-2 text-sm text-[var(--text-muted)]">{BRANDED_ERROR_MESSAGE}</p>
-        {error.message ? (
-          <p className="mb-6 break-words font-mono text-2xs text-[var(--text-muted)]">{error.message}</p>
+        {error.message || error.digest ? (
+          <p className="mb-6 break-words font-mono text-2xs text-[var(--text-muted)]">
+            {[error.message, error.digest ? `digest ${error.digest}` : null].filter(Boolean).join(" · ")}
+          </p>
         ) : (
           <div className="mb-6" />
         )}

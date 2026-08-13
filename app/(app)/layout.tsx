@@ -7,7 +7,12 @@ import { getProfile } from "@/lib/supabase/profile";
 export default async function ProtectedLayout({
  children,
 }: Readonly<{ children: React.ReactNode }>) {
- const profile = await getProfile();
+ let profile = null;
+ try {
+  profile = await getProfile();
+ } catch (error) {
+  console.error("[app-layout] getProfile failed", error);
+ }
  const resume = firstRunResumeFromProfile(profile);
 
  return (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { saveDietaryPreferences } from "@/lib/supabase/profile";
+import { saveDietaryPreferences } from "@/lib/supabase/profile-actions";
 import { ds } from "@/lib/ui/classes";
 
 type DietPrefs = {

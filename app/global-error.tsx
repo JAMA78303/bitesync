@@ -41,9 +41,9 @@ export default function GlobalError({ error, reset }: ErrorPageProps) {
           <p style={{ marginBottom: "0.5rem", fontSize: "0.875rem", color: "#6b7280" }}>
             {BRANDED_ERROR_MESSAGE}
           </p>
-          {error.message ? (
+          {error.message || error.digest ? (
             <p style={{ marginBottom: "1.5rem", fontSize: "0.75rem", color: "#9ca3af", wordBreak: "break-word" }}>
-              {error.message}
+              {[error.message, error.digest ? `digest ${error.digest}` : null].filter(Boolean).join(" · ")}
             </p>
           ) : (
             <div style={{ marginBottom: "1.5rem" }} />

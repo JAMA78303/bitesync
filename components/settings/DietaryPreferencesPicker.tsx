@@ -5,7 +5,7 @@ import {
  DIETARY_PREFERENCE_OPTIONS,
  toggleDietarySelection,
 } from "@/lib/dietary/constants";
-import { saveDietaryPreferenceKeys } from "@/lib/supabase/profile";
+import { saveDietaryPreferenceKeys } from "@/lib/supabase/profile-actions";
 
 type Props = {
  initialSelected: string[];

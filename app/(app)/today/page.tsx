@@ -15,7 +15,16 @@ export default async function TodayPage() {
  } = await supabase.auth.getUser();
  if (!user) redirect("/login");
 
- const [meals, profile] = await Promise.all([getTodaysMeals(user.id), getProfile()]);
+ const [meals, profile] = await Promise.all([
+  getTodaysMeals(user.id).catch((error) => {
+   console.error("[today] getTodaysMeals failed", error);
+   return [];
+  }),
+  getProfile().catch((error) => {
+   console.error("[today] getProfile failed", error);
+   return null;
+  }),
+ ]);
  const targets = deriveNutritionTargets(profile);
  const totals = sumTodayTotals(meals);
  const dietaryPreferences = initialDietaryPreferencesFromProfile(profile);
