@@ -30,7 +30,7 @@ const iconDisplay = {
 export function Logo({ size ="md", variant ="full", href ="/planner", className }: Props) {
  const wrapperClass = [
   "inline-flex shrink-0 items-center",
-  variant === "full" ? "rounded-lg dark:bg-white dark:px-2 dark:py-0.5" : "",
+  variant === "full" ? "rounded-lg bg-[var(--logo-lockup-bg)] dark:px-2 dark:py-0.5" : "",
   className ?? "",
  ]
   .filter(Boolean)

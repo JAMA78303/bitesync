@@ -60,6 +60,7 @@ html {
   --surface-info: #f8fafc;
   --surface-brand-subtle: #f0f7f0;
   --surface-overlay: #ffffff;
+  --logo-lockup-bg: transparent;
 
   /* Borders */
   --border-default: #e5e7eb;
@@ -158,6 +159,7 @@ html {
   --surface-info: #1f2937;
   --surface-brand-subtle: #1a2e1d;
   --surface-overlay: #000000;
+  --logo-lockup-bg: #ffffff;
 
   --border-default: #334155;
   --border-subtle: #1f2937;
