@@ -1,3 +1,5 @@
+import { AppProviders } from "@/components/ui/AppProviders";
+
 export default function OnboardingLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return <AppProviders>{children}</AppProviders>;
 }
