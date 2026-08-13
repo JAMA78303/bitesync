@@ -1,5 +1,3 @@
-"use server";
-
 import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 import { isProSubscriptionStatus } from "@/lib/subscription";
 import { toUserFacingError } from "@/lib/errors/userFacing";
@@ -20,6 +18,7 @@ export type DietPreferencesInput = {
 
 /** @deprecated Use saveDietaryPreferenceKeys */
 export async function saveDietaryPreferences(values: DietPreferencesInput) {
+  "use server";
   const keys: string[] = [];
   if (values.followsVegan) keys.push("vegan");
   else if (values.followsVegetarian) keys.push("vegetarian");
@@ -32,6 +31,7 @@ export async function saveDietaryPreferenceKeys(
   selected: string[],
   options?: { completeOnboarding?: boolean; advanceFirstRunStep?: boolean },
 ) {
+  "use server";
   const supabase = await createClient();
   const {
     data: { user },
@@ -69,6 +69,7 @@ export async function saveTDEEProfile(
   values: TDEEFormValues,
   options?: { allowFreeFirstRun?: boolean },
 ) {
+  "use server";
   const supabase = await createClient();
   const {
     data: { user },

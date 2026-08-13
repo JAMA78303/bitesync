@@ -15,7 +15,12 @@ export default function RouteError({ error, reset }: ErrorPageProps) {
     <div className="flex min-h-screen items-center justify-center bg-[var(--surface-page)] p-6 text-[var(--text-primary)]">
       <div className="max-w-md rounded-2xl border border-[var(--border-default)] bg-[var(--surface-card)] p-8 text-center shadow-sm">
         <p className="mb-2 text-lg font-bold">{BRANDED_ERROR_TITLE}</p>
-        <p className="mb-6 text-sm text-[var(--text-muted)]">{BRANDED_ERROR_MESSAGE}</p>
+        <p className="mb-2 text-sm text-[var(--text-muted)]">{BRANDED_ERROR_MESSAGE}</p>
+        {error.message ? (
+          <p className="mb-6 break-words font-mono text-2xs text-[var(--text-muted)]">{error.message}</p>
+        ) : (
+          <div className="mb-6" />
+        )}
         <button
           type="button"
           onClick={reset}

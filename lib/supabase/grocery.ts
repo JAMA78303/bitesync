@@ -1,5 +1,3 @@
-"use server";
-
 import { toUserFacingError } from "@/lib/errors/userFacing";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
@@ -234,6 +232,7 @@ export async function getGroceryItems(meal_plan_id: string) {
 }
 
 export async function toggleGroceryItem(item_id: string, is_checked: boolean) {
+  "use server";
   const supabase = await createClient();
   const { error } = await supabase.from("grocery_items").update({ is_checked }).eq("id", item_id);
   if (error) return { error: toUserFacingError(error, "grocery", "groceryDb") };
@@ -242,6 +241,7 @@ export async function toggleGroceryItem(item_id: string, is_checked: boolean) {
 }
 
 export async function deleteGroceryItem(item_id: string) {
+  "use server";
   const supabase = await createClient();
   const now = new Date().toISOString();
   const { error } = await supabase.from("grocery_items").update({ archived_at: now }).eq("id", item_id);
@@ -293,6 +293,7 @@ export async function groceryListExists(meal_plan_id: string): Promise<boolean> 
 }
 
 export async function generateGroceryList(meal_plan_id: string, selectedDays?: number[], selectedMealTypes?: MealType[]) {
+  "use server";
   const supabase = await createClient();
   const {
     data: { user },
@@ -345,6 +346,7 @@ export async function generateGroceryList(meal_plan_id: string, selectedDays?: n
 }
 
 export async function addManualGroceryItem(meal_plan_id: string, name: string, quantity: number, unit: string) {
+  "use server";
   const supabase = await createClient();
   const {
     data: { user },
@@ -383,6 +385,7 @@ export async function addManualGroceryItem(meal_plan_id: string, name: string, q
 }
 
 export async function deleteGroceryList(meal_plan_id: string) {
+  "use server";
   const supabase = await createClient();
   const {
     data: { user },

@@ -38,9 +38,16 @@ export default function GlobalError({ error, reset }: ErrorPageProps) {
           <p style={{ marginBottom: "0.5rem", fontSize: "1.125rem", fontWeight: 700 }}>
             {BRANDED_ERROR_TITLE}
           </p>
-          <p style={{ marginBottom: "1.5rem", fontSize: "0.875rem", color: "#6b7280" }}>
+          <p style={{ marginBottom: "0.5rem", fontSize: "0.875rem", color: "#6b7280" }}>
             {BRANDED_ERROR_MESSAGE}
           </p>
+          {error.message ? (
+            <p style={{ marginBottom: "1.5rem", fontSize: "0.75rem", color: "#9ca3af", wordBreak: "break-word" }}>
+              {error.message}
+            </p>
+          ) : (
+            <div style={{ marginBottom: "1.5rem" }} />
+          )}
           <button
             type="button"
             onClick={reset}
