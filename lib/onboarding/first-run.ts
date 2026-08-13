@@ -42,3 +42,17 @@ export function shouldShowFirstRunResume(profile: {
   if (profile.first_run_completed) return false;
   return profile.first_run_skipped === true || profile.has_completed_onboarding === true;
 }
+
+export function firstRunResumeFromProfile(
+  profile: {
+    first_run_completed?: boolean | null;
+    first_run_skipped?: boolean | null;
+    has_completed_onboarding?: boolean | null;
+    onboarding_step?: number | null;
+  } | null,
+): { show: boolean; step: number } {
+  return {
+    show: shouldShowFirstRunResume(profile),
+    step: profile?.onboarding_step ?? 1,
+  };
+}

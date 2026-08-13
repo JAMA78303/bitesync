@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { shouldShowFirstRunResume } from "@/lib/onboarding/first-run";
 
 type Props = {
   show: boolean;
@@ -32,18 +31,4 @@ export function FirstRunResumeBanner({ show, step }: Props) {
       </div>
     </div>
   );
-}
-
-export function firstRunResumeFromProfile(
-  profile: {
-    first_run_completed?: boolean | null;
-    first_run_skipped?: boolean | null;
-    has_completed_onboarding?: boolean | null;
-    onboarding_step?: number | null;
-  } | null,
-): { show: boolean; step: number } {
-  return {
-    show: shouldShowFirstRunResume(profile),
-    step: profile?.onboarding_step ?? 1,
-  };
 }

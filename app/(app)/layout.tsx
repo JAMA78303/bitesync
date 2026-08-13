@@ -1,8 +1,11 @@
 import { AppShell } from "@/components/shared/AppShell";
 import { AppProviders } from "@/components/ui/AppProviders";
-import { FirstRunResumeBanner, firstRunResumeFromProfile } from "@/components/onboarding/FirstRunResumeBanner";
+import { FirstRunResumeBanner } from "@/components/onboarding/FirstRunResumeBanner";
 import { FeedbackFab } from "@/components/feedback/FeedbackFab";
+import { firstRunResumeFromProfile } from "@/lib/onboarding/first-run";
 import { getProfile } from "@/lib/supabase/profile";
+
+export const dynamic = "force-dynamic";
 
 export default async function ProtectedLayout({
  children,

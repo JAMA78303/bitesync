@@ -1,3 +1,5 @@
+"use server";
+
 import { toUserFacingError } from "@/lib/errors/userFacing";
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -172,7 +174,6 @@ export async function assignRecipeToSlot(
   meal_type: MealType,
   slot_index = 0,
 ) {
-  "use server";
   const supabase = await createClient();
   const {
     data: { user },
@@ -235,7 +236,6 @@ export async function quickAddMeal(
   quick_add_calories?: number | null,
   slot_index = 0,
 ) {
-  "use server";
   const supabase = await createClient();
   const {
     data: { user },
@@ -296,7 +296,6 @@ export async function quickAddMeal(
 }
 
 export async function removeSlotEntry(entry_id: string) {
-  "use server";
   try {
     const supabase = await createClient();
     const { error } = await supabase.from("meal_plan_entries").delete().eq("id", entry_id);
