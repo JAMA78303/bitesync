@@ -15,7 +15,7 @@ import {
  AlertDialogFooter,
  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { deleteGroceryList } from "@/lib/supabase/grocery";
+import { deleteGroceryList } from "@/lib/supabase/grocery-actions";
 import type { MealType } from "@/types";
 
 type Props = {

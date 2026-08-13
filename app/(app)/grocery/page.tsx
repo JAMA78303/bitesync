@@ -16,6 +16,8 @@ type Props = {
  searchParams: Promise<{ week?: string; plan?: string }>;
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function GroceryPage({ searchParams }: Props) {
  const params = await searchParams;
  const supabase = await createClient();

@@ -10,6 +10,8 @@ import { createClient } from "@/lib/supabase/server";
 import { deriveNutritionTargets } from "@/lib/utils/nutrition-targets";
 import { formatDayMonthOrdinal, getMonday, toLocalISO } from "@/lib/utils/dates";
 
+export const dynamic = "force-dynamic";
+
 export default async function NutritionPage({
  searchParams,
 }: {

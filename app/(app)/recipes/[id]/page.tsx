@@ -8,6 +8,8 @@ import { createClient } from "@/lib/supabase/server";
 
 type RecipePageProps = { params: Promise<{ id: string }> };
 
+export const dynamic = "force-dynamic";
+
 export default async function RecipeDetailPage({ params }: RecipePageProps) {
  const raw = (await params).id;
  const id = typeof raw ==="string" ? raw.trim() :"";

@@ -40,6 +40,8 @@ const BREAKFAST_KEYWORDS = [
 "morning",
 ] as const;
 
+export const dynamic = "force-dynamic";
+
 export default async function RecipesPage({ searchParams }: Props) {
  const params = await searchParams;
  const showArchived = params.view ==="archived";

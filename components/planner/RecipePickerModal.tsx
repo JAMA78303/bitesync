@@ -5,7 +5,7 @@ import { Search, Plus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { assignRecipeToSlot } from "@/lib/supabase/meal-plans";
+import { assignRecipeToSlot } from "@/lib/supabase/meal-plan-actions";
 import { useToast } from "@/components/ui/use-toast";
 import { recipeDietWarnings, type ProfileDietPrefs } from "@/lib/utils/diet";
 import { recipeMatchesPlannerSlot } from "@/lib/planner/meal-slot-eligibility";

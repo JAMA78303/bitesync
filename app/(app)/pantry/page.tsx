@@ -2,6 +2,8 @@ import { PantryPageClient } from "@/components/pantry/PantryPageClient";
 import { getPantryItems } from "@/lib/supabase/pantry";
 import { ds } from "@/lib/ui/classes";
 
+export const dynamic = "force-dynamic";
+
 export default async function PantryPage() {
  const items = await getPantryItems();
 

@@ -2,7 +2,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getMonday, toLocalISO, addDays, isCurrentWeek } from "@/lib/utils/dates";
 import { fetchRecipeNutritionMap } from "@/lib/supabase/recipe-nutrition-query";
-import { getOrCreateMealPlan, getMealPlanEntries, buildGrid } from "@/lib/supabase/meal-plans";
+import { getOrCreateMealPlan, getMealPlanEntries } from "@/lib/supabase/meal-plans";
+import { buildGridFromEntries } from "@/lib/planner/build-grid";
 import { initialDietaryPreferencesFromProfile } from "@/lib/dietary/constraints";
 import { getProfile } from "@/lib/supabase/profile";
 import { getDailyCalorieTarget, getDailyProteinTarget } from "@/lib/utils/nutrition-targets";
@@ -17,6 +18,8 @@ import { ds } from "@/lib/ui/classes";
 import { MEAL_TYPES } from "@/types";
 
 type Props = { searchParams: Promise<{ week?: string }> };
+
+export const dynamic = "force-dynamic";
 
 export default async function PlannerPage({ searchParams }: Props) {
  const supabase = await createClient();
@@ -107,7 +110,7 @@ export default async function PlannerPage({ searchParams }: Props) {
  }
  : null;
  const dietaryPreferences = initialDietaryPreferencesFromProfile(profile);
- const grid = await buildGrid(entries ?? []);
+ const grid = buildGridFromEntries(entries ?? []);
  const plannerEntries = entries ?? [];
  const filledDays = Array.from({ length: 7 }, (_, day) => {
  const hasEntry = plannerEntries.some(

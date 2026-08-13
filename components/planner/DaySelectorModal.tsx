@@ -5,7 +5,7 @@ import { Loader2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { generateGroceryList } from "@/lib/supabase/grocery";
+import { generateGroceryList } from "@/lib/supabase/grocery-actions";
 import { useToast } from "@/components/ui/use-toast";
 import { DAY_NAMES, MEAL_LABELS, MEAL_TYPES } from "@/types";
 import type { MealType } from "@/types";

@@ -1,5 +1,4 @@
-"use server";
-
+/** Query helpers and mutation implementations. Not a Server Action module — clients must import from grocery-actions.ts. */
 import { toUserFacingError } from "@/lib/errors/userFacing";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";

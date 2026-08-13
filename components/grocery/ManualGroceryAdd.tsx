@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { Loader2, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { addManualGroceryItem } from "@/lib/supabase/grocery";
+import { addManualGroceryItem } from "@/lib/supabase/grocery-actions";
 import { useToast } from "@/components/ui/use-toast";
 import { ALLOWED_UNITS } from "@/types";
 

@@ -3,7 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { Check, Trash2 } from "lucide-react";
 import { formatGroceryItem } from "@/lib/grocery/storeUnits";
-import { deleteGroceryItem, toggleGroceryItem } from "@/lib/supabase/grocery";
+import { deleteGroceryItem, toggleGroceryItem } from "@/lib/supabase/grocery-actions";
 import { useToast } from "@/components/ui/use-toast";
 
 type Props = {

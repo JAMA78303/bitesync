@@ -15,15 +15,6 @@ const ADMIN_USER_IDS = (process.env.ADMIN_USER_ID ?? "")
   .map((v) => v.trim())
   .filter(Boolean);
 
-async function hasCompletedOnboarding(
-  request: NextRequest,
-  response: NextResponse,
-  userId: string,
-): Promise<boolean> {
-  const flags = await getOnboardingFlags(request, response, userId);
-  return flags.hasCompletedOnboarding;
-}
-
 async function getOnboardingFlags(
   request: NextRequest,
   response: NextResponse,
@@ -89,8 +80,8 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL("/today", request.url));
     }
 
-    const onboardingDone = await hasCompletedOnboarding(request, response, user.id);
     const onboardingFlags = await getOnboardingFlags(request, response, user.id);
+    const onboardingDone = onboardingFlags.hasCompletedOnboarding;
 
     if (emailConfirmed && !onboardingDone && PROTECTED_ROUTES.some((route) => path.startsWith(route))) {
       if (!path.startsWith("/sample-week")) {

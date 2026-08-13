@@ -43,6 +43,7 @@ export function LoginForm({ redirectTo }: Props) {
  ?"Incorrect email or password"
  : authError.message,
  );
+ setPending(false);
  return;
  }
 
@@ -51,9 +52,10 @@ export function LoginForm({ redirectTo }: Props) {
  return;
  }
 
- router.refresh();
- router.push(redirectTo.startsWith("/") ? redirectTo :"/today");
- } finally {
+ // Hard navigation so the first server render is guaranteed to see the new session cookies.
+ window.location.replace(redirectTo.startsWith("/") ? redirectTo :"/today");
+ } catch {
+ setError("Something went wrong — please try again.");
  setPending(false);
  }
  }

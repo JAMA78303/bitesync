@@ -4,7 +4,7 @@ import { X, Flame, Leaf, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { removeSlotEntry } from "@/lib/supabase/meal-plans";
+import { removeSlotEntry } from "@/lib/supabase/meal-plan-actions";
 import { useToast } from "@/components/ui/use-toast";
 import { MealThumbnail } from "@/components/ui/MealThumbnail";
 import { getDietTag } from "@/lib/ui/dietTags";

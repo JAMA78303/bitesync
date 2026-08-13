@@ -1,12 +1,10 @@
-"use server";
-
+/** Query helpers and mutation implementations. Not a Server Action module — clients must import from meal-plan-actions.ts. */
 import { toUserFacingError } from "@/lib/errors/userFacing";
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { fetchRecipeNutritionMap } from "@/lib/supabase/recipe-nutrition-query";
-import { buildGridFromEntries } from "@/lib/planner/build-grid";
-import type { MealType, PlannerGrid, MealPlanEntry } from "@/types";
+import type { MealType, MealPlanEntry } from "@/types";
 
 async function enrichEntriesWithNutrition(
   supabase: SupabaseClient,
@@ -164,9 +162,6 @@ export async function getMealPlanEntries(mealPlanId: string) {
   return { data: enriched as MealPlanEntry[] | null, error: null };
 }
 
-export async function buildGrid(entries: MealPlanEntry[]): Promise<PlannerGrid> {
-  return buildGridFromEntries(entries);
-}
 export async function assignRecipeToSlot(
   meal_plan_id: string,
   recipe_id: string,

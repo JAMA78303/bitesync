@@ -4,6 +4,8 @@ type Props = {
  searchParams: Promise<{ success?: string; cancelled?: string }>;
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function LegacyBillingRedirect({ searchParams }: Props) {
  const p = await searchParams;
  const q = new URLSearchParams();
