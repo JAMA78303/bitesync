@@ -1,44 +1,32 @@
 import { Fragment } from "react";
 import { ChevronRight } from "lucide-react";
-import { LandingDemoShot } from "@/components/landing/LandingDemoShot";
-import { landingFeatureShot } from "@/lib/landing/featurePreviewShots";
-import { LANDING_SCREENSHOT_SCENES } from "@/components/landing/screenshot/LandingScreenshotScenes";
-
-const plannerShot = landingFeatureShot("planner");
-const groceryShot = landingFeatureShot("grocery");
-const todayShot = landingFeatureShot("today");
-const microsShot = landingFeatureShot("micros");
-const ScenePlanner = LANDING_SCREENSHOT_SCENES.planner;
-const SceneGrocery = LANDING_SCREENSHOT_SCENES.grocery;
-const SceneToday = LANDING_SCREENSHOT_SCENES.today;
-const SceneMicros = LANDING_SCREENSHOT_SCENES.micros;
+import {
+  MockGrocery,
+  MockMicros,
+  MockPlanner,
+  MockToday,
+} from "@/components/landing/LandingPhoneMockups";
 
 const DEMO_BEATS = [
   {
     step: "1",
     title: "Plan your week",
     caption: "Drop recipes onto the planner — daily calories and protein update as you build each day.",
-    Mock: ScenePlanner,
-    image: { light: plannerShot.light, dark: plannerShot.dark, width: plannerShot.width, height: plannerShot.height },
-    imageAlt: plannerShot.alt,
+    Mock: MockPlanner,
     isPro: false,
   },
   {
     step: "2",
     title: "Get one grocery list",
     caption: "Generate a merged shopping list from that exact week. Check items off as you shop.",
-    Mock: SceneGrocery,
-    image: { light: groceryShot.light, dark: groceryShot.dark, width: groceryShot.width, height: groceryShot.height },
-    imageAlt: groceryShot.alt,
+    Mock: MockGrocery,
     isPro: false,
   },
   {
     step: "3",
     title: "Hit your targets",
     caption: "Open Today to see your calorie ring, macro bars, and every meal against your goals.",
-    Mock: SceneToday,
-    image: { light: todayShot.light, dark: todayShot.dark, width: todayShot.width, height: todayShot.height },
-    imageAlt: todayShot.alt,
+    Mock: MockToday,
     isPro: false,
   },
   {
@@ -46,9 +34,7 @@ const DEMO_BEATS = [
     title: "Spot micronutrient gaps",
     caption:
       "See what your week is missing — iron, iodine, vitamin D — checked against UK reference values. Something no calorie-counter shows you.",
-    Mock: SceneMicros,
-    image: { light: microsShot.light, dark: microsShot.dark, width: microsShot.width, height: microsShot.height },
-    imageAlt: microsShot.alt,
+    Mock: MockMicros,
     isPro: true,
   },
 ] as const;
@@ -67,7 +53,7 @@ export function LandingDemoFlow() {
       </div>
 
       <div className="flex flex-col items-center gap-5 sm:gap-8 lg:flex-row lg:flex-wrap lg:items-start lg:justify-center lg:gap-6">
-        {DEMO_BEATS.map(({ step, title, caption, Mock, image, imageAlt, isPro }, index) => (
+        {DEMO_BEATS.map(({ step, title, caption, Mock, isPro }, index) => (
           <Fragment key={step}>
             <article className="flex w-full max-w-[360px] flex-col items-center lg:max-w-[260px]">
               <div className="mb-4 flex items-center gap-2">
@@ -84,15 +70,7 @@ export function LandingDemoFlow() {
                 </h3>
               </div>
               <div className="mb-4 flex w-full justify-center">
-                <LandingDemoShot
-                  srcLight={image.light}
-                  srcDark={image.dark}
-                  alt={imageAlt}
-                  width={image.width}
-                  height={image.height}
-                  fallback={<Mock />}
-                  sizeClassName="w-full max-w-[360px] lg:w-[260px] lg:max-h-none"
-                />
+                <Mock />
               </div>
               <p className="text-center text-sm leading-relaxed text-[var(--text-muted)]">{caption}</p>
             </article>

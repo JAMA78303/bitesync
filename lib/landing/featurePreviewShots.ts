@@ -1,3 +1,16 @@
+import type { ComponentType } from "react";
+import {
+  MockAiPlans,
+  MockDietary,
+  MockGrocery,
+  MockMicros,
+  MockPlanner,
+  MockRecipeImport,
+  MockRecipeNutrition,
+  MockTargets,
+  MockToday,
+} from "@/components/landing/LandingPhoneMockups";
+
 /** Landing feature preview id — must match PNG basename `feature-{id}.png`. */
 export type LandingFeaturePreviewId =
   | "targets"
@@ -20,6 +33,7 @@ export type LandingFeatureShotMeta = {
   width: number;
   height: number;
   alt: string;
+  Mock: ComponentType;
 };
 
 /** Canonical card id → screenshot asset. Filenames always `feature-{id}.png`. */
@@ -31,6 +45,7 @@ export const LANDING_FEATURE_SHOTS: Record<LandingFeaturePreviewId, LandingFeatu
     width: 720,
     height: 520,
     alt: "BiteSync calorie and macro targets",
+    Mock: MockTargets,
   },
   planner: {
     id: "planner",
@@ -39,6 +54,7 @@ export const LANDING_FEATURE_SHOTS: Record<LandingFeaturePreviewId, LandingFeatu
     width: 720,
     height: 520,
     alt: "BiteSync weekly meal planner",
+    Mock: MockPlanner,
   },
   today: {
     id: "today",
@@ -47,6 +63,7 @@ export const LANDING_FEATURE_SHOTS: Record<LandingFeaturePreviewId, LandingFeatu
     width: 720,
     height: 520,
     alt: "BiteSync Today dashboard",
+    Mock: MockToday,
   },
   nutrition: {
     id: "nutrition",
@@ -55,6 +72,7 @@ export const LANDING_FEATURE_SHOTS: Record<LandingFeaturePreviewId, LandingFeatu
     width: 720,
     height: 520,
     alt: "BiteSync recipe nutrition breakdown",
+    Mock: MockRecipeNutrition,
   },
   "ai-plans": {
     id: "ai-plans",
@@ -63,6 +81,7 @@ export const LANDING_FEATURE_SHOTS: Record<LandingFeaturePreviewId, LandingFeatu
     width: 720,
     height: 520,
     alt: "BiteSync AI weekly meal plan",
+    Mock: MockAiPlans,
   },
   grocery: {
     id: "grocery",
@@ -71,6 +90,7 @@ export const LANDING_FEATURE_SHOTS: Record<LandingFeaturePreviewId, LandingFeatu
     width: 720,
     height: 520,
     alt: "BiteSync grocery list",
+    Mock: MockGrocery,
   },
   import: {
     id: "import",
@@ -79,6 +99,7 @@ export const LANDING_FEATURE_SHOTS: Record<LandingFeaturePreviewId, LandingFeatu
     width: 720,
     height: 520,
     alt: "BiteSync recipe import from URL",
+    Mock: MockRecipeImport,
   },
   dietary: {
     id: "dietary",
@@ -87,6 +108,7 @@ export const LANDING_FEATURE_SHOTS: Record<LandingFeaturePreviewId, LandingFeatu
     width: 720,
     height: 520,
     alt: "BiteSync dietary preferences",
+    Mock: MockDietary,
   },
   micros: {
     id: "micros",
@@ -95,6 +117,7 @@ export const LANDING_FEATURE_SHOTS: Record<LandingFeaturePreviewId, LandingFeatu
     width: 720,
     height: 520,
     alt: "BiteSync weekly micronutrient analysis",
+    Mock: MockMicros,
   },
 };
 

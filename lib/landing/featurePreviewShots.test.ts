@@ -21,6 +21,7 @@ for (const id of LANDING_FEATURE_SHOT_IDS) {
   assert(shot.light === `/landing/feature-${id}.png`, `light path for ${id}`);
   assert(shot.dark === `/landing/feature-${id}-dark.png`, `dark path for ${id}`);
   assert(Boolean(shot.light), `light path for ${id}`);
+  assert(typeof shot.Mock === "function", `generated mock for ${id}`);
 }
 
 assert(

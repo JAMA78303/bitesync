@@ -13,13 +13,11 @@ import {
   Sparkles,
   Target,
 } from "lucide-react";
-import { LandingDemoShot } from "@/components/landing/LandingDemoShot";
 import {
   LANDING_FEATURE_PREVIEW_DEFAULT_ID,
   LANDING_FEATURE_SHOTS,
   type LandingFeaturePreviewId,
 } from "@/lib/landing/featurePreviewShots";
-import { LANDING_SCREENSHOT_SCENES } from "@/components/landing/screenshot/LandingScreenshotScenes";
 
 type FeaturePreview = {
   id: LandingFeaturePreviewId;
@@ -104,8 +102,7 @@ export function LandingFeaturePreviews() {
   const cardRefs = useRef<Partial<Record<LandingFeaturePreviewId, HTMLButtonElement | null>>>({});
 
   const activeMeta = FEATURE_PREVIEWS.find((f) => f.id === activeId) ?? FEATURE_PREVIEWS[0]!;
-  const activeShot = LANDING_FEATURE_SHOTS[activeMeta.id];
-  const ActiveScene = LANDING_SCREENSHOT_SCENES[activeMeta.id];
+  const ActiveMock = LANDING_FEATURE_SHOTS[activeMeta.id].Mock;
 
   /** Keep the tapped card in view after the accordion above it collapses (mobile only). */
   const selectFeature = useCallback((id: LandingFeaturePreviewId) => {
@@ -154,7 +151,7 @@ export function LandingFeaturePreviews() {
           Built for people with a nutrition goal
         </h2>
         <p className="mx-auto max-w-lg text-sm text-[var(--text-muted)] sm:text-base">
-          Tap a feature to preview the real app — planning, shopping, and tracking in one place.
+          Tap a feature to preview the app — planning, shopping, and tracking in one place.
         </p>
       </div>
 
@@ -168,8 +165,7 @@ export function LandingFeaturePreviews() {
             const selected = feature.id === activeId;
             const tabId = `${baseId}-tab-${feature.id}`;
             const panelId = `${baseId}-panel`;
-            const shot = LANDING_FEATURE_SHOTS[feature.id];
-            const Scene = LANDING_SCREENSHOT_SCENES[feature.id];
+            const Mock = LANDING_FEATURE_SHOTS[feature.id].Mock;
             return (
               <div key={feature.id} className="min-w-0">
                 <button
@@ -214,15 +210,7 @@ export function LandingFeaturePreviews() {
                 >
                   <div className="min-h-0">
                     <div className="flex flex-col items-center px-2 pt-4 pb-2">
-                      <LandingDemoShot
-                        srcLight={shot.light}
-                        srcDark={shot.dark}
-                        alt={shot.alt}
-                        width={shot.width}
-                        height={shot.height}
-                        fallback={<Scene />}
-                        sizeClassName="w-full"
-                      />
+                      <Mock />
                       <p className="mt-3 text-center text-sm leading-relaxed text-[var(--text-muted)]">
                         {feature.previewCaption}
                       </p>
@@ -242,15 +230,7 @@ export function LandingFeaturePreviews() {
           className="mx-auto hidden w-full max-w-[300px] lg:sticky lg:top-24 lg:block"
         >
           <div className="flex flex-col items-center transition-opacity duration-200 motion-reduce:transition-none">
-            <LandingDemoShot
-              key={activeMeta.id}
-              srcLight={activeShot.light}
-              srcDark={activeShot.dark}
-              alt={activeShot.alt}
-              width={activeShot.width}
-              height={activeShot.height}
-              fallback={<ActiveScene />}
-            />
+            <ActiveMock key={activeMeta.id} />
             <p className="mt-4 text-center text-sm leading-relaxed text-[var(--text-muted)]">{activeMeta.previewCaption}</p>
           </div>
         </div>

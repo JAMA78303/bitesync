@@ -37,19 +37,14 @@ const LandingFaq = dynamic(
   { loading: () => <div className="h-48" aria-hidden /> },
 );
 
-import { LandingDemoShot } from "@/components/landing/LandingDemoShot";
-import { landingFeatureShot } from "@/lib/landing/featurePreviewShots";
-
-const plannerShot = landingFeatureShot("planner");
-
-const ScenePlanner = dynamic(
+const MockPlanner = dynamic(
   () =>
-    import("@/components/landing/screenshot/LandingScreenshotScenes").then((m) => ({
-      default: m.LANDING_SCREENSHOT_SCENES.planner,
+    import("@/components/landing/LandingPhoneMockups").then((m) => ({
+      default: m.MockPlanner,
     })),
   {
     loading: () => (
-      <div className="relative z-10 -mb-20 hidden h-[320px] w-[280px] sm:block" aria-hidden />
+      <div className="relative z-10 hidden h-[320px] w-[280px] sm:block" aria-hidden />
     ),
   },
 );
@@ -173,15 +168,8 @@ export default function LandingPage() {
               Evidence-based nutrition targets · Free to start — no card needed
             </p>
             <div className="mt-10 hidden justify-center sm:flex">
-              <div className="relative z-10 -mb-20 drop-shadow-2xl">
-                <LandingDemoShot
-                  srcLight={plannerShot.light}
-                  srcDark={plannerShot.dark}
-                  alt={plannerShot.alt}
-                  width={plannerShot.width}
-                  height={plannerShot.height}
-                  fallback={<ScenePlanner />}
-                />
+              <div className="relative z-10 drop-shadow-2xl">
+                <MockPlanner />
               </div>
             </div>
           </div>
