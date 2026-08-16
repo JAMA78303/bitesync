@@ -14,7 +14,55 @@ export type RecipeCoherenceResult = {
   ok: boolean;
   orphanIngredients: string[];
   nameMismatch?: string;
+  /** Set when the dish stacks two starch bases, e.g. potato *and* sweet potato. */
+  redundantStarch?: string;
 };
+
+/** Starch bases that serve the same role on a plate — a dish should use one. */
+const STARCH_BASES = [
+  "potato",
+  "sweet potato",
+  "rice",
+  "white rice",
+  "brown rice",
+  "pasta",
+  "couscous",
+  "quinoa",
+  "bulgur wheat",
+  "buckwheat groats",
+  "oats",
+  "bread",
+  "wholemeal bread",
+  "noodles",
+  "egg noodles",
+  "rice noodles",
+] as const;
+
+/** Minimum grams for a starch to count as a base rather than a garnish. */
+const STARCH_BASE_MIN_G = 30;
+
+function starchBaseFor(name: string): string | null {
+  const n = name.toLowerCase().trim();
+  // Longest match first so "sweet potato" is not misread as "potato".
+  const sorted = [...STARCH_BASES].sort((a, b) => b.length - a.length);
+  for (const base of sorted) {
+    if (n === base || n.includes(base)) return base;
+  }
+  return null;
+}
+
+function checkRedundantStarch(ingredients: RecipeIngredientInput[]): string | undefined {
+  const found = new Set<string>();
+  for (const item of ingredients) {
+    const unit = (item.unit ?? "").toLowerCase();
+    // Only weigh gram-based amounts; "1 each" of bread is a slice, still a base.
+    if (unit === "g" && item.quantity < STARCH_BASE_MIN_G) continue;
+    const base = starchBaseFor(item.name);
+    if (base) found.add(base);
+  }
+  if (found.size <= 1) return undefined;
+  return `dish stacks ${found.size} starch bases (${[...found].join(", ")})`;
+}
 
 function significantIngredients(ingredients: RecipeIngredientInput[]): RecipeIngredientInput[] {
   return ingredients.filter((i) => {
@@ -119,10 +167,12 @@ function checkNameMatchesMethod(input: RecipeCoherenceInput): string | undefined
 export function validateRecipeCoherence(input: RecipeCoherenceInput): RecipeCoherenceResult {
   const orphans = orphanIngredients(input.steps, input.ingredients);
   const nameMismatch = checkNameMatchesMethod(input);
+  const redundantStarch = checkRedundantStarch(input.ingredients);
 
   return {
-    ok: orphans.length === 0 && !nameMismatch,
+    ok: orphans.length === 0 && !nameMismatch && !redundantStarch,
     orphanIngredients: orphans.map((i) => i.name),
     nameMismatch,
+    redundantStarch,
   };
 }

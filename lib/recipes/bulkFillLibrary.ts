@@ -198,6 +198,10 @@ export function ingredientSignature(ingredients: RecipeIngredientInput[]): strin
 export function normalizeRecipeName(name: string): string {
   return name
     .toLowerCase()
+    // Strip a disambiguating "(2)" suffix first: without this, a renamed duplicate
+    // normalises to "chicken curry with rice 2" and never collides with its own
+    // base name again, so the same dish can be re-added indefinitely.
+    .replace(/\s*\(\s*\d+\s*\)\s*$/, "")
     .replace(/[^a-z0-9\s]/g, " ")
     .replace(/\s+/g, " ")
     .trim();

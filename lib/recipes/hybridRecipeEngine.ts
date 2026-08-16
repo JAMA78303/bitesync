@@ -22,7 +22,6 @@ import {
   excludeTemplateCountForAttempt,
   isDuplicateDraft,
   normalizeRecipeName,
-  skipDuplicateChecks,
   type BulkFillSlotPlan,
   type ExistingLibrarySnapshot,
   type HardDietConstraints,
@@ -389,14 +388,26 @@ export async function generateHybridRecipeDraft(
     );
     if (!draft) continue;
 
-    if (
-      isDuplicateDraft(
-        { name: draft.name, ingredients: draft.ingredients },
-        input.existing,
-        input.acceptedInBatch,
-        attempt >= 6 ? skipDuplicateChecks() : { nameOnly: true },
-      )
-    ) {
+    // Ingredient-level duplicates must never be returned: renaming one to
+    // "Chicken Curry With Rice (2)" ships the same dish twice, which is exactly
+    // how a library ends up with four near-identical curries.
+    const isIngredientDuplicate = isDuplicateDraft(
+      { name: draft.name, ingredients: draft.ingredients },
+      input.existing,
+      input.acceptedInBatch,
+      { batchOverlap: 0.85, libraryOverlap: 0.9 },
+    );
+    if (isIngredientDuplicate) continue;
+
+    // Only the title collides — the dish itself is genuinely different, so a
+    // disambiguating suffix is legitimate here.
+    const isNameDuplicate = isDuplicateDraft(
+      { name: draft.name, ingredients: draft.ingredients },
+      input.existing,
+      input.acceptedInBatch,
+      { nameOnly: true },
+    );
+    if (isNameDuplicate) {
       draft = await buildDraftFromIngredients(
         fallbackCtx,
         composed.ingredients,

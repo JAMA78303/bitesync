@@ -1,6 +1,7 @@
 import type { GoalMealSlot, GoalMatchedRecipeOptions } from "@/lib/ai/goal-matched-recipe";
 import {
   GOAL_MEAL_KCAL_TOLERANCE,
+  buildCuratedMicroSnack,
   buildGoalMatchedRecipeIngredients,
   buildGoalMatchedRecipeTitle,
 } from "@/lib/ai/goal-matched-recipe";
@@ -162,6 +163,14 @@ export async function resolveGoalMatchedDraft(
   opts: GoalMatchedRecipeOptions & { preferLibrary?: boolean },
 ): Promise<{ ingredients: RecipeIngredientInput[]; name: string; source: "library" | "assembled" }> {
   const preferLibrary = opts.preferLibrary !== false && !opts.microFocusKey?.trim();
+
+  // Micro-targeted snacks use curated combos. The template composer only filters
+  // candidates per role, so roles with no nutrient-rich option fall back to any
+  // candidate — that is how "boiled eggs & orange" gets built for vitamin D.
+  const curated = buildCuratedMicroSnack(opts);
+  if (curated) {
+    return { ingredients: curated.ingredients, name: curated.name, source: "assembled" };
+  }
 
   if (preferLibrary) {
     const library = await loadLibraryRecipesForMatch(supabase, userId);
