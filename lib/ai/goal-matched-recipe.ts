@@ -1,5 +1,5 @@
 import type { RecipeIngredientInput } from "@/lib/nutrition/calculate";
-import { MICRO_RICH_FOODS } from "@/lib/nutrition/micro-rich-foods";
+import { microSnackCombosFor } from "@/lib/nutrition/micro-snack-combos";
 import { getRecipeNutritionTotals } from "@/lib/nutrition/recipeNutritionTotals";
 
 /** Match a single meal to this fraction of daily calories (rough day split). */
@@ -183,49 +183,6 @@ export function buildGoalMatchedRecipeTitle(ingredients: RecipeIngredientInput[]
   return core ? `${core} — ${slot}` : `${slot} plate`;
 }
 
-const ANIMAL_RICH_FOODS = [
-  "salmon",
-  "mackerel",
-  "tuna",
-  "tuna canned",
-  "chicken breast",
-  "eggs",
-  "egg",
-  "milk",
-  "greek yoghurt",
-  "greek yogurt",
-  "cottage cheese",
-  "cheddar",
-];
-const MEAT_FISH_RICH_FOODS = ["salmon", "mackerel", "tuna", "tuna canned", "chicken breast"];
-
-function filterRichFoodsForDiet(foods: readonly string[], vegan: boolean, vegetarian: boolean): string[] {
-  return foods.filter((food) => {
-    const lower = food.toLowerCase();
-    if (vegan && ANIMAL_RICH_FOODS.some((a) => lower.includes(a) || a.includes(lower))) return false;
-    if (vegetarian && !vegan && MEAT_FISH_RICH_FOODS.some((a) => lower.includes(a))) return false;
-    return true;
-  });
-}
-
-function defaultQuantityForRichFood(name: string): { quantity: number; unit: string } {
-  const lower = name.toLowerCase();
-  if (lower.includes("egg")) return { quantity: 2, unit: "each" };
-  if (lower.includes("oats")) return { quantity: 30, unit: "g" };
-  if (["almonds", "walnuts", "chia seeds", "peanut butter"].some((n) => lower.includes(n))) {
-    return { quantity: lower.includes("peanut butter") ? 16 : 15, unit: "g" };
-  }
-  if (lower.includes("milk") || lower.includes("yoghurt") || lower.includes("yogurt") || lower.includes("cheese")) {
-    return { quantity: 110, unit: "g" };
-  }
-  if (["salmon", "tuna", "chicken", "turkey", "tofu"].some((n) => lower.includes(n))) {
-    return { quantity: 85, unit: "g" };
-  }
-  if (lower.includes("orange")) return { quantity: 130, unit: "g" };
-  if (["lentils", "chickpeas"].some((n) => lower.includes(n))) return { quantity: 85, unit: "g" };
-  return { quantity: 80, unit: "g" };
-}
-
 /** Dish-style snacks only — avoids chickpeas + carrots + oats style piles. */
 async function buildComposedSnackIngredientsRaw(
   opts: GoalMatchedRecipeOptions,
@@ -345,32 +302,39 @@ async function buildComposedSnackIngredientsRaw(
   return builders[pickVariant(seed, builders.length)]!();
 }
 
-async function buildMicroFocusedSnack(
-  opts: GoalMatchedRecipeOptions,
-  target: number,
-): Promise<RecipeIngredientInput[] | null> {
+/**
+ * Micro-focused snacks come from curated real-world combos, not from pairing two
+ * arbitrary "rich in X" foods — that produced things nobody eats (boiled eggs
+ * with an orange for vitamin D). Returns null when no sensible snack exists for
+ * the nutrient, so callers can say so rather than invent one.
+ */
+export function buildCuratedMicroSnack(opts: {
+  microFocusKey?: string;
+  mealSlot: GoalMealSlot;
+  vegan: boolean;
+  vegetarian: boolean;
+  glutenFree: boolean;
+  variantSeed: number;
+}): { name: string; ingredients: RecipeIngredientInput[] } | null {
   const key = opts.microFocusKey?.trim();
   if (!key || opts.mealSlot !== "snack") return null;
 
-  const rich = filterRichFoodsForDiet(MICRO_RICH_FOODS[key] ?? [], opts.vegan, opts.vegetarian);
-  if (rich.length < 2) return null;
-
-  const seed = opts.variantSeed;
-  const i0 = pickVariant(seed, rich.length);
-  const i1 = pickVariantAlt(seed, rich.length);
-  const primary = rich[i0]!;
-  const secondary = rich[i1 === i0 ? (i1 + 1) % rich.length : i1]!;
-
-  const base = [primary, secondary].map((name) => {
-    const { quantity, unit } = defaultQuantityForRichFood(name);
-    return ing(name, quantity, unit);
+  const combos = microSnackCombosFor(key, {
+    vegan: opts.vegan,
+    vegetarian: opts.vegetarian,
+    glutenFree: opts.glutenFree,
   });
+  if (!combos.length) return null;
 
-  const carb = opts.glutenFree
-    ? glutenFreeSnackCarbTune(seed ^ 0x51c2f19a)
-    : { name: "oats" as const, minG: 0, maxG: 45 };
+  const combo = combos[pickVariant(opts.variantSeed, combos.length)]!;
+  return {
+    name: combo.name,
+    ingredients: combo.ingredients.map((i) => ing(i.name, i.quantity, i.unit)),
+  };
+}
 
-  return findBestCarbAdjustment(base, carb, target);
+function buildMicroFocusedSnack(opts: GoalMatchedRecipeOptions): RecipeIngredientInput[] | null {
+  return buildCuratedMicroSnack(opts)?.ingredients ?? null;
 }
 
 /** Builds ingredient rows from the in-app nutrition DB; calories should land within ±100 kcal of target when possible. */
@@ -387,7 +351,7 @@ async function buildGoalMatchedRecipeIngredientsRaw(
   }
 
   if (opts.mealSlot === "snack" && opts.microFocusKey && !opts.composedSnackOnly) {
-    const focused = await buildMicroFocusedSnack(opts, target);
+    const focused = buildMicroFocusedSnack(opts);
     if (focused) return focused;
   }
 
