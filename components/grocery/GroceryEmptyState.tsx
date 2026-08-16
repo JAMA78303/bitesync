@@ -6,8 +6,8 @@ export function GroceryEmptyState() {
  <EmptyState
  icon={ShoppingCart}
  title="No grocery list yet"
- description="Generate a list from your planner — or finish setup to get one automatically"
- action={{ href: "/onboarding", label: "Finish setup" }}
+ description="Plan meals for the week, then generate your list from the planner"
+ action={{ href: "/planner", label: "Open planner" }}
  secondaryAction={{ href: "/sample-week", label: "See a sample week" }}
  />
  );

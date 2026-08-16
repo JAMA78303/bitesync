@@ -35,6 +35,7 @@ import {
   ensureDailySnackCoverage,
   ensureDailyProteinCoverage,
   enforceDailyCalorieCeiling,
+  fillSnackShortfallAsLastResort,
   plannerSlotSpecs,
   proteinFloorForTarget,
   trimSnacksIfDayOverMacroCaps,
@@ -552,6 +553,7 @@ function pickRecipeWithBudgetAndUsage(
   logCtx: { day: number; meal_type: MealPlanInsertRow["meal_type"]; slot_index: number },
   snackMicroPriorities?: MicroPriority[],
   goalBias: CalorieGoalBias = "neutral",
+  prevDayPickId?: string,
 ): RecipeWithNutrition | null {
   const slotCalTarget = Math.max(targetCal, 0);
   const slotProTarget = Math.max(targetPro, 0);
@@ -644,15 +646,19 @@ function pickRecipeWithBudgetAndUsage(
     if (pickPool.length === 0) pickPool = [...consideredPool];
   }
 
-  const scored = pickPool.map((r) =>
-    scoreRecipeForDaySlot(
-      r,
-      logCtx.meal_type,
-      Math.max(effectiveCal, 1),
-      Math.max(effectivePro, 0.5),
-      snackMicroPriorities,
-      goalBias,
-    ),
+  // Nudge away from repeating yesterday's pick in the same slot — only flips near-ties,
+  // so a clearly better macro fit still wins over variety.
+  const SAME_AS_YESTERDAY_PENALTY = 45;
+  const scored = pickPool.map(
+    (r) =>
+      scoreRecipeForDaySlot(
+        r,
+        logCtx.meal_type,
+        Math.max(effectiveCal, 1),
+        Math.max(effectivePro, 0.5),
+        snackMicroPriorities,
+        goalBias,
+      ) - (prevDayPickId && r.id === prevDayPickId ? SAME_AS_YESTERDAY_PENALTY : 0),
   );
   const tieSeed = logCtx.day * 10 + logCtx.slot_index;
   const picked = pickLeastUsedByScore(pickPool, usedCount, (r) => {
@@ -1030,6 +1036,7 @@ async function generateAIWeekPlanInner(
       protein_g: dailyProteinTarget,
     });
 
+    const prevDayPickBySlot = new Map<string, string>();
     for (let day = 0; day < 7; day += 1) {
       let remainingCal = bandMax;
       let remainingPro = dailyProteinTarget;
@@ -1038,6 +1045,7 @@ async function generateAIWeekPlanInner(
       for (const spec of slotPlan) {
         const slotCalTarget = dailyCalorieTarget * spec.calFrac;
         const slotProTarget = dailyProteinTarget * spec.calFrac;
+        const slotKey = `${spec.meal_type}#${spec.slot_index}`;
         const picked = pickRecipeWithBudgetAndUsage(
           pool,
           usedCount,
@@ -1050,10 +1058,12 @@ async function generateAIWeekPlanInner(
           { day, meal_type: spec.meal_type, slot_index: spec.slot_index },
           snackMicroPriorities,
           goalBias,
+          prevDayPickBySlot.get(slotKey),
         );
         if (!picked) {
           continue;
         }
+        prevDayPickBySlot.set(slotKey, picked.id);
         usedOnDay.add(picked.id);
         remainingCal -= picked.calories;
         remainingPro -= picked.protein;
@@ -1198,6 +1208,19 @@ async function generateAIWeekPlanInner(
       allowedRecipeIds: allowedIds,
       snackMicroPriorities,
     });
+    fillSnackShortfallAsLastResort({
+      rows: rows as PlanCalorieRow[],
+      days: selectedDaysFullWeek,
+      pool,
+      calById,
+      proById,
+      mealPlanId: input.mealPlanId,
+      dailyTarget: dailyCalorieTarget,
+      dailyProteinTarget,
+      snackCountPerDay,
+      allowedRecipeIds: allowedIds,
+      snackMicroPriorities,
+    });
 
     const mealOrder: Record<string, number> = { breakfast: 0, lunch: 1, dinner: 2, snack: 3 };
     const nameById = new Map(pool.map((r) => [r.id, r.name]));
@@ -1261,6 +1284,15 @@ async function generateAIWeekPlanInner(
       const extra =
         "Your library may need more lighter meals for days that run high — try salads, soups, or smaller portions.";
       heuristicWarning = heuristicWarning ? `${heuristicWarning} ${extra}` : extra;
+    }
+
+    // 3 main slots/day at ≤2 uses per week needs ~10 distinct mains before repeats stop.
+    const mainMealCount = pool.filter(
+      (r) => !excludeFromMainMealSlots(r.name, r.ingredientNames ?? []),
+    ).length;
+    if (mainMealCount < 8) {
+      const varietyNotice = `Your library has ${mainMealCount} main-meal recipe${mainMealCount === 1 ? "" : "s"}, so the week repeats meals — import or generate more recipes for a more varied plan.`;
+      heuristicWarning = heuristicWarning ? `${heuristicWarning} ${varietyNotice}` : varietyNotice;
     }
 
     const persisted = await persistWeeklyMealPlanRows(

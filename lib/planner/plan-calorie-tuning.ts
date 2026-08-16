@@ -204,14 +204,22 @@ export function sameDayDuplicateRecipeIds(rows: PlanCalorieRow[], day: number): 
   return dupes;
 }
 
-export function poolHasSnackRecipes(pool: PlanRecipeMeta[]): boolean {
-  return pool.some(
-    (r) =>
-      !excludeFromMainMealSlots(r.name, r.ingredientNames ?? []) &&
-      r.calories >= SNACK_MIN_CALORIES &&
-      r.calories <= SNACK_MAX_CALORIES &&
-      isRecipeAISnackAppropriate(r.calories, r.ingredientNames ?? []),
+function isPoolSnackCandidate(r: PlanRecipeMeta): boolean {
+  return (
+    !excludeFromMainMealSlots(r.name, r.ingredientNames ?? []) &&
+    r.calories >= SNACK_MIN_CALORIES &&
+    r.calories <= SNACK_MAX_CALORIES &&
+    isRecipeAISnackAppropriate(r.calories, r.ingredientNames ?? [])
   );
+}
+
+export function poolHasSnackRecipes(pool: PlanRecipeMeta[]): boolean {
+  return pool.some(isPoolSnackCandidate);
+}
+
+/** Distinct snack-eligible recipes — a day needs at least snackCountPerDay of these to fill every slot without repeats. */
+export function countPoolSnackRecipes(pool: PlanRecipeMeta[]): number {
+  return pool.filter(isPoolSnackCandidate).length;
 }
 
 function snackCountOnDay(rows: PlanCalorieRow[], day: number): number {
@@ -226,21 +234,26 @@ function pickSnackForGap(
   usedOnDay: Set<string>,
   allowedRecipeIds: Set<string>,
   snackMicroPriorities?: MicroPriority[],
-  opts?: { proById?: Map<string, number>; proteinGap?: number },
+  opts?: { proById?: Map<string, number>; proteinGap?: number; allowSameDayRepeat?: boolean },
 ): PlanRecipeMeta | null {
   const ideal = Math.min(Math.max(gapToMin, SNACK_MIN_CALORIES), SNACK_MAX_CALORIES);
   const headroom = Math.max(bandMax - currentDayCal, 0);
-  const candidates = pool.filter(
-    (r) =>
-      allowedRecipeIds.has(r.id) &&
-      !usedOnDay.has(r.id) &&
-      !excludeFromMainMealSlots(r.name, r.ingredientNames ?? []) &&
-      r.calories >= SNACK_MIN_CALORIES &&
-      r.calories <= SNACK_MAX_CALORIES &&
-      r.calories <= headroom &&
-      isRecipeAISnackAppropriate(r.calories, r.ingredientNames ?? []) &&
-      currentDayCal + r.calories <= bandMax,
-  );
+  const fitsSlot = (r: PlanRecipeMeta) =>
+    allowedRecipeIds.has(r.id) &&
+    isPoolSnackCandidate(r) &&
+    r.calories <= headroom &&
+    currentDayCal + r.calories <= bandMax;
+  let candidates = pool.filter((r) => fitsSlot(r) && !usedOnDay.has(r.id));
+  // Last resort: repeating a snack beats an empty slot that leaves the day under its
+  // calorie/protein floor — but when chasing protein, only a snack that meaningfully
+  // closes the gap justifies breaking the no-repeat rule.
+  if (!candidates.length && opts?.allowSameDayRepeat) {
+    const proteinGap = opts?.proteinGap ?? 0;
+    const repeatMinProtein = proteinGap > 5 ? Math.max(10, proteinGap * 0.25) : 0;
+    candidates = pool.filter(
+      (r) => fitsSlot(r) && (opts?.proById?.get(r.id) ?? 0) >= repeatMinProtein,
+    );
+  }
   if (!candidates.length) return null;
 
   const scored = candidates
@@ -746,7 +759,11 @@ export function ensureDailyProteinCoverage(opts: {
         usedOnDay,
         opts.allowedRecipeIds,
         opts.snackMicroPriorities,
-        { proById: opts.proById, proteinGap },
+        {
+          proById: opts.proById,
+          proteinGap,
+          allowSameDayRepeat: countPoolSnackRecipes(opts.pool) < opts.snackCountPerDay,
+        },
       );
       if (!picked) break;
 
@@ -762,6 +779,75 @@ export function ensureDailyProteinCoverage(opts: {
       });
       console.warn(
         `[protein-coverage] day ${day} snack#${slotIndex}: added "${picked.name}" (${Math.round(picked.protein * 10) / 10}g P, ${Math.round(picked.calories)} kcal)`,
+      );
+    }
+  }
+}
+
+/**
+ * Truly final pass: days still under the calorie band with unfilled snack slots, where the
+ * library has too few distinct snacks, get a repeated snack — a same-day repeat beats
+ * silently missing the day's calorie/protein target. Run after every other tuning pass.
+ */
+export function fillSnackShortfallAsLastResort(opts: {
+  rows: PlanCalorieRow[];
+  days: number[];
+  pool: PlanRecipeMeta[];
+  calById: Map<string, number>;
+  proById?: Map<string, number>;
+  mealPlanId: string;
+  dailyTarget: number;
+  dailyProteinTarget?: number;
+  snackCountPerDay: number;
+  allowedRecipeIds: Set<string>;
+  snackMicroPriorities?: MicroPriority[];
+}): void {
+  if (opts.snackCountPerDay < 1) return;
+  if (countPoolSnackRecipes(opts.pool) >= opts.snackCountPerDay) return;
+  const band = dailyCalorieBand(opts.dailyTarget);
+
+  for (const day of opts.days) {
+    for (let guard = 0; guard < 4; guard += 1) {
+      if (snackCountOnDay(opts.rows, day) >= opts.snackCountPerDay) break;
+      const current = dayCaloriesFromRows(opts.rows, day, opts.calById);
+      const proteinGap =
+        opts.dailyProteinTarget != null && opts.dailyProteinTarget > 0 && opts.proById
+          ? Math.max(
+              0,
+              proteinFloorForTarget(opts.dailyProteinTarget) -
+                dayProteinFromRows(opts.rows, day, opts.proById),
+            )
+          : 0;
+      if (current >= band.min && proteinGap <= 0) break;
+      if (current + SNACK_MIN_CALORIES > band.max) break;
+
+      const usedOnDay = new Set(
+        opts.rows.filter((r) => r.day_of_week === day && r.recipe_id).map((r) => r.recipe_id),
+      );
+      const picked = pickSnackForGap(
+        opts.pool,
+        Math.min(Math.max(band.min - current, SNACK_MIN_CALORIES), band.max - current),
+        current,
+        band.max,
+        usedOnDay,
+        opts.allowedRecipeIds,
+        opts.snackMicroPriorities,
+        { proById: opts.proById, proteinGap, allowSameDayRepeat: true },
+      );
+      if (!picked) break;
+
+      const slotIndex = snackCountOnDay(opts.rows, day);
+      opts.rows.push({
+        meal_plan_id: opts.mealPlanId,
+        recipe_id: picked.id,
+        day_of_week: day,
+        meal_type: "snack",
+        slot_index: slotIndex,
+        quick_add_name: null,
+        quick_add_calories: null,
+      });
+      console.warn(
+        `[snack-shortfall] day ${day} snack#${slotIndex}: repeated "${picked.name}" — library has too few distinct snack recipes`,
       );
     }
   }

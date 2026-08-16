@@ -6,6 +6,7 @@ import { formatDayWithOrdinal } from "@/lib/utils/dates";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { RecipeSlotCard } from "@/components/planner/RecipeSlotCard";
 import { AddSlotButton } from "@/components/planner/AddSlotButton";
+import { ClearWeekButton } from "@/components/planner/ClearWeekButton";
 import { DailyTotalsRow } from "@/components/planner/DailyTotalsRow";
 import { RecipePickerModal } from "@/components/planner/RecipePickerModal";
 import type { ProfileDietPrefs } from "@/lib/utils/diet";
@@ -109,11 +110,16 @@ export function PlannerGrid({
  <EmptyState
  icon={CalendarDays}
  title="Your week is empty"
- description="Tap any meal slot to add a recipe — or finish setup to generate a full week automatically"
- action={{ href: "/onboarding", label: "Finish setup" }}
+ description="Tap any meal slot to add a recipe — or use Generate AI plan above to fill the whole week"
+ action={{ href: "/recipes", label: "Browse recipes" }}
  secondaryAction={{ href: "/sample-week", label: "See a sample week" }}
  className="mb-4"
  />
+ ) : null}
+ {hasAnyMeals ? (
+ <div className="mb-2 flex justify-end">
+ <ClearWeekButton mealPlanId={mealPlanId} />
+ </div>
  ) : null}
  <div
  className={`${forceMobileLayout ? "hidden" : "hidden sm:block"} overflow-x-auto rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)]`}

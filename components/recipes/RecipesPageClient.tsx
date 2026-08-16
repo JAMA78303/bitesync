@@ -15,7 +15,9 @@ const FillMyLibraryModal = dynamic(
 );
 import { RecipeListCard, type RecipeListItem } from "@/components/recipes/RecipeListCard";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { archiveRecipe, createImportedRecipe, restoreRecipe } from "@/app/(app)/recipes/actions";
+import { archiveGeneratedRecipes, archiveRecipe, createImportedRecipe, restoreRecipe } from "@/app/(app)/recipes/actions";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
+import { useToast } from "@/components/ui/use-toast";
 import {
  parsedIngredientsToInputs,
  scaleParsedIngredients,
@@ -61,6 +63,29 @@ export function RecipesPageClient({
  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
  const [isPending, startTransition] = useTransition();
  const router = useRouter();
+ const { confirm } = useConfirm();
+ const { toast } = useToast();
+
+ async function handleArchiveGenerated() {
+ const ok = await confirm({
+ title: "Archive all AI-generated recipes?",
+ description:
+ "Every recipe created by AI generation will move to your archive. You can restore any of them individually from the Archived view.",
+ confirmLabel: "Archive all",
+ destructive: true,
+ });
+ if (!ok) return;
+
+ startTransition(async () => {
+ const result = await archiveGeneratedRecipes();
+ if ("error" in result) {
+ toast({ title: "Couldn't archive recipes", description: result.error, variant: "destructive" });
+ return;
+ }
+ toast({ title: "Done", description: result.message });
+ router.refresh();
+ });
+ }
 
  useEffect(() => {
  setListRecipes(recipes);
@@ -240,6 +265,18 @@ export function RecipesPageClient({
  {!canFillLibrary && fillLibraryBlockedMessage ? (
  <p className="text-center text-xs text-[var(--semantic-warn-text)]">{fillLibraryBlockedMessage}</p>
  ) : null}
+ {listRecipes.length > 0 ? (
+ <div className="flex justify-end">
+ <button
+ type="button"
+ onClick={handleArchiveGenerated}
+ disabled={isPending}
+ className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--semantic-error-text)] transition-colors hover:bg-[var(--semantic-error-bg)] disabled:opacity-60"
+ >
+ Archive all AI-generated
+ </button>
+ </div>
+ ) : null}
  </div>
  ) : null}
 
@@ -278,7 +315,7 @@ export function RecipesPageClient({
  icon={ChefHat}
  title="No recipes yet"
  description="Fill your library in a minute — or add and import recipes one at a time"
- action={{ href: "/onboarding", label: "Finish setup" }}
+ action={{ onClick: () => setShowFillLibrary(true), label: "Fill my library" }}
  secondaryAction={{ href: "/sample-week", label: "See a sample week" }}
  />
  ) : (

@@ -315,6 +315,29 @@ export async function removeSlotEntry(entry_id: string) {
   }
 }
 
+export async function clearWeekEntries(meal_plan_id: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const { data: plan } = await supabase
+    .from("meal_plans")
+    .select("id")
+    .eq("id", meal_plan_id)
+    .eq("user_id", user.id)
+    .single();
+  if (!plan) return { error: "Meal plan not found" };
+
+  const { error } = await supabase.from("meal_plan_entries").delete().eq("meal_plan_id", meal_plan_id);
+  if (error) return { error: toUserFacingError(error, "week-plan", "clearWeekEntries") };
+
+  revalidatePath("/planner");
+  revalidatePath("/today");
+  return { success: true as const };
+}
+
 export async function groceryListExists(meal_plan_id: string): Promise<boolean> {
   const supabase = await createClient();
   const { count, error } = await supabase

@@ -2,8 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { fractionForMealSlot } from "@/lib/ai/goal-matched-recipe";
 import { dailyCalorieBand } from "@/lib/planner/calorie-bands";
 import {
+  countPoolSnackRecipes,
   dayCaloriesFromRows,
-  poolHasSnackRecipes,
   type PlanCalorieRow,
   type PlanRecipeMeta,
 } from "@/lib/planner/plan-calorie-tuning";
@@ -41,6 +41,11 @@ export async function createPlannerSnackRecipe(
   const hard = hardConstraintsFromPreferences(initialDietaryPreferencesFromProfile(profile));
   const attempt = opts?.attempt ?? 0;
   const variantSeed = (Date.now() ^ gapKcal ^ Math.imul(attempt + 1, 0x9e3779b9)) >>> 0;
+  const microPriorities = [...(opts?.microPriorities ?? [])].sort((a, b) => b.weight - a.weight);
+  // Rotate through priority nutrients across attempts so a batch of snacks covers more than one gap.
+  const microFocusKey = microPriorities.length
+    ? microPriorities[attempt % microPriorities.length]?.key
+    : undefined;
   const hybrid = await generateHybridRecipeDraft({
     slot: {
       slotId: `planner-snack-${variantSeed}`,
@@ -55,6 +60,7 @@ export async function createPlannerSnackRecipe(
     existing: { names: opts?.existingNames ?? [], signatures: [] },
     acceptedInBatch: [],
     useLlmMethod: true,
+    microFocusKey,
   });
 
   if (!hybrid) return null;
@@ -105,22 +111,30 @@ export async function autoFillSnackRecipesForPlan(opts: {
   /** When set, also create snacks so every day can carry this many snack slots. */
   snackCountPerDay?: number;
 }): Promise<number> {
-  if (poolHasSnackRecipes(opts.pool)) return 0;
+  // A day needs snackCountPerDay distinct snack recipes to fill every slot without
+  // repeats — create the shortfall, not only when the library has zero snacks.
+  const distinctSnacks = countPoolSnackRecipes(opts.pool);
+  const wantSnacks = Math.max(1, opts.snackCountPerDay ?? 1);
+  const snackShortfall = Math.max(0, wantSnacks - distinctSnacks);
 
   const band = dailyCalorieBand(opts.dailyTarget);
   const underDays = opts.days.filter(
     (d) => dayCaloriesFromRows(opts.rows, d, opts.calById) < band.min,
   );
-  if (!underDays.length) return 0;
+  if (snackShortfall === 0 && !underDays.length) return 0;
 
-  const minDayCal = Math.min(
-    ...underDays.map((d) => dayCaloriesFromRows(opts.rows, d, opts.calById)),
+  const minDayCal = underDays.length
+    ? Math.min(...underDays.map((d) => dayCaloriesFromRows(opts.rows, d, opts.calById)))
+    : opts.dailyTarget;
+  const gapKcal = Math.max(
+    SNACK_MIN_CALORIES,
+    Math.min(band.min - minDayCal, Math.round(opts.dailyTarget * 0.1)),
   );
-  const gapKcal = Math.min(band.min - minDayCal, Math.round(opts.dailyTarget * 0.1));
+  const toCreate = Math.min(2, Math.max(snackShortfall, underDays.length ? 1 : 0));
   let created = 0;
   const createdNames: string[] = [];
 
-  for (let i = 0; i < 2; i += 1) {
+  for (let i = 0; i < toCreate; i += 1) {
     const snack = await createPlannerSnackRecipe(
       opts.supabase,
       opts.userId,
