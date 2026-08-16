@@ -2,6 +2,7 @@ import Link from "next/link";
 import { logout } from "@/app/(app)/settings/actions";
 import { DeleteAccountSection } from "@/components/settings/DeleteAccountSection";
 import { SettingsThemeRow } from "@/components/settings/SettingsThemeRow";
+import { NotificationSettings } from "@/components/settings/NotificationSettings";
 import { FeedbackForm } from "@/components/feedback/FeedbackForm";
 import { isProSubscriptionStatus } from "@/lib/subscription";
 import { reconcileBillingSubscriptionFromStripe } from "@/lib/stripe/reconcile-billing-subscription";
@@ -90,6 +91,8 @@ export default async function SettingsPage() {
  <SettingsThemeRow />
  </div>
  </div>
+
+ <NotificationSettings vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} />
 
  <Link
  href="/goals"
