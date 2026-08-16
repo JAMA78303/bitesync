@@ -573,6 +573,43 @@ export async function archiveRecipe(recipeId: string): Promise<ActionResult> {
   return { success: true, message: "Recipe archived." };
 }
 
+/** Bulk-archive every AI-generated recipe. Individual archive/restore stays available. */
+export async function archiveGeneratedRecipes(): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from("recipes")
+    .update({ archived_at: now, updated_at: now })
+    .eq("user_id", user.id)
+    .in("recipe_source", ["ai", "generated"])
+    .is("archived_at", null)
+    .select("id");
+
+  if (error) {
+    // Databases without the recipe_source migration have no AI-generated recipes to archive.
+    if (error.message.toLowerCase().includes("recipe_source")) {
+      return { success: true, message: "No AI-generated recipes to archive." };
+    }
+    return { error: toUserFacingError(error, "recipe-save", "archiveGeneratedRecipes") };
+  }
+
+  revalidatePath("/recipes");
+  revalidatePath("/planner");
+  const count = data?.length ?? 0;
+  return {
+    success: true,
+    message:
+      count > 0
+        ? `Archived ${count} AI-generated recipe${count === 1 ? "" : "s"}.`
+        : "No AI-generated recipes to archive.",
+  };
+}
+
 export async function toggleRecipeFavourite(
   recipeId: string,
   isFavourite: boolean,

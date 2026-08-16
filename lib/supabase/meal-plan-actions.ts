@@ -3,6 +3,7 @@
 import type { MealType } from "@/types";
 import {
   assignRecipeToSlot as assignRecipeToSlotImpl,
+  clearWeekEntries as clearWeekEntriesImpl,
   quickAddMeal as quickAddMealImpl,
   removeSlotEntry as removeSlotEntryImpl,
 } from "@/lib/supabase/meal-plans";
@@ -37,4 +38,8 @@ export async function quickAddMeal(
 
 export async function removeSlotEntry(entry_id: string) {
   return removeSlotEntryImpl(entry_id);
+}
+
+export async function clearWeekEntries(meal_plan_id: string) {
+  return clearWeekEntriesImpl(meal_plan_id);
 }
