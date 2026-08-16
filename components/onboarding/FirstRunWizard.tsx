@@ -19,6 +19,7 @@ import {
   FIRST_RUN_STEP,
   FIRST_RUN_STEP_LABELS,
   clampFirstRunStep,
+  firstRunLibraryCount,
 } from "@/lib/onboarding/first-run";
 import { trackFirstRunSkipped } from "@/lib/analytics/events";
 import type { GoalContext } from "@/app/(app)/planner/ai-actions";
@@ -216,6 +217,7 @@ export function FirstRunWizard({ profile, isPro, recipeCount }: Props) {
             </p>
             <div className="rounded-2xl border border-[var(--border-default)] p-4">
               <FillMyLibraryModal
+                firstRunCount={firstRunLibraryCount(isPro)}
                 embedded
                 firstRun
                 onComplete={onLibraryComplete}

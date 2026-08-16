@@ -14,8 +14,18 @@ export const FIRST_RUN_STEP_LABELS: Record<1 | 2 | 3, string> = {
   3: "Generate your week",
 };
 
-/** Smaller batch for onboarding — faster than the full 28-recipe library fill. */
-export const FIRST_RUN_LIBRARY_COUNT = 8;
+/**
+ * Onboarding seed sizes. The first generated week is the make-or-break moment, and its
+ * quality is capped by library depth: 3 main slots/day at ≤2 uses per week needs ~10+
+ * mains before meals stop repeating, plus enough distinct snacks to fill every slot.
+ * Pro seeds 16 (4 per meal type); free seeds 10 — its recipe cap — split 3/3/2/2.
+ */
+export const FIRST_RUN_LIBRARY_COUNT_PRO = 16;
+export const FIRST_RUN_LIBRARY_COUNT_FREE = 10;
+
+export function firstRunLibraryCount(isPro: boolean): number {
+  return isPro ? FIRST_RUN_LIBRARY_COUNT_PRO : FIRST_RUN_LIBRARY_COUNT_FREE;
+}
 
 export function clampFirstRunStep(step: number | null | undefined): FirstRunStep {
   if (step === 2) return FIRST_RUN_STEP.LIBRARY;

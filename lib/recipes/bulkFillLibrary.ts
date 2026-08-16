@@ -56,6 +56,24 @@ export function recipesPerMealType(totalCount: number): number {
   return Math.min(MAX_PER_TYPE, Math.max(MIN_PER_TYPE, Math.round(n / MEAL_TYPES.length)));
 }
 
+/**
+ * Per-type split that honours non-multiples of 4: the remainder goes to the earliest
+ * meal types (breakfast first) so a 10-recipe free-tier batch lands as 3/3/2/2
+ * instead of over-planning 12 and failing 2 at the recipe cap.
+ */
+export function bulkFillMealTypeCountsExact(totalCount: number): Record<GoalMealSlot, number> {
+  const n = Math.min(Math.max(Math.round(totalCount), MIN_TOTAL), MAX_TOTAL);
+  const base = Math.floor(n / MEAL_TYPES.length);
+  let remainder = n - base * MEAL_TYPES.length;
+  const counts = {} as Record<GoalMealSlot, number>;
+  for (const mealType of MEAL_TYPES) {
+    const extra = remainder > 0 ? 1 : 0;
+    counts[mealType] = Math.min(MAX_PER_TYPE, Math.max(MIN_PER_TYPE, base + extra));
+    if (extra) remainder -= 1;
+  }
+  return counts;
+}
+
 export function bulkFillMealTypeCounts(totalCount: number): Record<GoalMealSlot, number> {
   const perType = recipesPerMealType(totalCount);
   return {
@@ -67,7 +85,7 @@ export function bulkFillMealTypeCounts(totalCount: number): Record<GoalMealSlot,
 }
 
 export function bulkFillBatchSummary(totalCount: number): string {
-  const counts = bulkFillMealTypeCounts(totalCount);
+  const counts = bulkFillMealTypeCountsExact(totalCount);
   return MEAL_TYPES.map((t) => `${counts[t]} ${t}`).join(", ");
 }
 
@@ -118,13 +136,15 @@ export function planBulkFillBatch(
   hard: HardDietConstraints,
   baseSeed: number,
 ): BulkFillSlotPlan[] {
-  const perType = recipesPerMealType(count);
+  const typeCounts = bulkFillMealTypeCountsExact(count);
+  const maxRounds = Math.max(...MEAL_TYPES.map((t) => typeCounts[t]));
   const slots: BulkFillSlotPlan[] = [];
   let slotIndex = 0;
 
-  for (let round = 0; round < perType; round += 1) {
+  for (let round = 0; round < maxRounds; round += 1) {
     for (let typeIdx = 0; typeIdx < MEAL_TYPES.length; typeIdx += 1) {
       const mealSlot = MEAL_TYPES[typeIdx]!;
+      if (round >= typeCounts[mealSlot]) continue;
       const proteinAxis = proteinAxisForSlot(slotIndex, hard, mealSlot);
       const variantSeed =
         (baseSeed ^ (slotIndex * 0x9e3779b9) ^ (mealSlot.length << 12) ^ (round << 18) ^ (typeIdx << 6)) >>> 0;

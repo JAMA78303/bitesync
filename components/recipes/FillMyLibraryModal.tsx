@@ -8,7 +8,7 @@ import {
  saveFillLibraryRecipes,
 } from "@/app/(app)/recipes/bulkFillActions";
 import { bulkFillBatchSummary, defaultBulkRecipeCount } from "@/lib/recipes/bulkFillLibrary";
-import { FIRST_RUN_LIBRARY_COUNT } from "@/lib/onboarding/first-run";
+import { FIRST_RUN_LIBRARY_COUNT_PRO } from "@/lib/onboarding/first-run";
 import { ds } from "@/lib/ui/classes";
 import { ModalPortal } from "@/components/ui/ModalPortal";
 import type { HybridRecipeDraft } from "@/lib/recipes/hybridRecipeEngine";
@@ -26,14 +26,18 @@ type Props = {
  embedded?: boolean;
  /** Smaller batch + simplified UI for first-run step 2. */
  firstRun?: boolean;
+ /** First-run batch size — tier-aware, pass firstRunLibraryCount(isPro). */
+ firstRunCount?: number;
  onComplete?: () => void;
 };
 
-export function FillMyLibraryModal({ onClose, embedded = false, firstRun = false, onComplete }: Props) {
+export function FillMyLibraryModal({ onClose, embedded = false, firstRun = false, firstRunCount, onComplete }: Props) {
  const router = useRouter();
  const [isPending, startTransition] = useTransition();
  const [phase, setPhase] = useState<"setup" |"generating" |"review" |"done">("setup");
- const [count, setCount] = useState(firstRun ? FIRST_RUN_LIBRARY_COUNT : defaultBulkRecipeCount());
+ const [count, setCount] = useState(
+ firstRun ? (firstRunCount ?? FIRST_RUN_LIBRARY_COUNT_PRO) : defaultBulkRecipeCount(),
+ );
  const [rows, setRows] = useState<DraftRow[]>([]);
  const [progress, setProgress] = useState("");
  const [globalError, setGlobalError] = useState<string | null>(null);
@@ -210,7 +214,7 @@ export function FillMyLibraryModal({ onClose, embedded = false, firstRun = false
  <div className="space-y-4">
  {firstRun ? (
  <p className="text-sm text-[var(--text-secondary)]">
- {FIRST_RUN_LIBRARY_COUNT} recipes ({bulkFillBatchSummary(FIRST_RUN_LIBRARY_COUNT)}) — enough to plan a varied week.
+ {count} recipes ({bulkFillBatchSummary(count)}) — enough to plan a varied week.
  </p>
  ) : (
  <>
