@@ -109,8 +109,8 @@ export function PlannerGrid({
  <EmptyState
  icon={CalendarDays}
  title="Your week is empty"
- description="Tap any meal slot to add a recipe — or finish setup to generate a full week automatically"
- action={{ href: "/onboarding", label: "Finish setup" }}
+ description="Tap any meal slot to add a recipe — or use Generate AI plan above to fill the whole week"
+ action={{ href: "/recipes", label: "Browse recipes" }}
  secondaryAction={{ href: "/sample-week", label: "See a sample week" }}
  className="mb-4"
  />

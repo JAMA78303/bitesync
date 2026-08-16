@@ -9,6 +9,7 @@ import {
 import dynamic from "next/dynamic";
 import { Logo } from "@/components/shared/Logo";
 import { Reveal } from "@/components/landing/Reveal";
+import { LandingMobileNav } from "@/components/landing/LandingMobileNav";
 import { LandingTrustSignals } from "@/components/landing/LandingTrustSignals";
 
 const LandingFeaturePreviews = dynamic(
@@ -114,7 +115,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-2">
             <Link
               href="/login"
-              className="rounded-lg px-3 py-2 text-sm text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
+              className="hidden rounded-lg px-3 py-2 text-sm text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] sm:block"
             >
               Sign in
             </Link>
@@ -124,6 +125,7 @@ export default function LandingPage() {
             >
               Get started free
             </Link>
+            <LandingMobileNav links={NAV_LINKS} />
           </div>
         </div>
       </nav>

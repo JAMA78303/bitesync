@@ -278,7 +278,7 @@ export function RecipesPageClient({
  icon={ChefHat}
  title="No recipes yet"
  description="Fill your library in a minute — or add and import recipes one at a time"
- action={{ href: "/onboarding", label: "Finish setup" }}
+ action={{ onClick: () => setShowFillLibrary(true), label: "Fill my library" }}
  secondaryAction={{ href: "/sample-week", label: "See a sample week" }}
  />
  ) : (
