@@ -33,7 +33,7 @@ console.log(`\nFull nutrition DB: ${covered}/${dbNames.length} foods covered (${
 
 // Whole foods carry meaningful micros; processed/branded items are long-tail and low signal.
 // We don't require 100% here, but guard against the coverage % collapsing.
-const MIN_DB_COVERAGE_PCT = 12;
+const MIN_DB_COVERAGE_PCT = 35;
 if (pct < MIN_DB_COVERAGE_PCT) {
   failures += 1;
   console.log(`  ❌ coverage ${pct}% below floor of ${MIN_DB_COVERAGE_PCT}%`);

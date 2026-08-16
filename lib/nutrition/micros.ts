@@ -1,4 +1,5 @@
 import { attachRetinolToMicroEntry } from "@/lib/nutrition/vitamin-a-retinol";
+import { MICRO_ALIAS_EXPANSION, MICRO_DB_EXPANSION } from "@/lib/nutrition/micros-expansion";
 
 export type MicroEntry = {
   vitamin_a_mcg: number;
@@ -671,6 +672,10 @@ const MICRO_ALIASES: Record<string, string> = {
   "new potatoes": "potato",
   "jacket potato": "potato",
 };
+
+// Merge the expansion before FUZZY_KEYS derives from these maps.
+Object.assign(MICRO_DB, MICRO_DB_EXPANSION);
+Object.assign(MICRO_ALIASES, MICRO_ALIAS_EXPANSION);
 
 /**
  * Candidate keys for fuzzy matching, longest first so the most specific phrase wins
