@@ -150,21 +150,22 @@ export function PantryPageClient({ items }: Props) {
  type="button"
  onClick={() => handleToggleLow(item.id, !item.running_low)}
  disabled={isPending}
- title="Mark running low"
- className={`rounded-full px-2 py-0.5 text-2xs font-medium ${
+ aria-pressed={item.running_low}
+ title={item.running_low ? `Mark ${item.name} as in stock` : `Mark ${item.name} as running low`}
+ className={`cursor-pointer rounded-full border px-2.5 py-0.5 text-2xs font-medium transition-colors disabled:opacity-60 ${
  item.running_low
- ?"bg-[var(--semantic-warn-bg)] text-[var(--semantic-warn-text)]"
- :"bg-[var(--surface-muted)] text-[var(--text-muted)]"
+ ?"border-[var(--semantic-warn-border)] bg-[var(--semantic-warn-bg)] text-[var(--semantic-warn-text)] hover:border-[var(--border-default)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-secondary)]"
+ :"border-[var(--border-default)] bg-[var(--surface-muted)] text-[var(--text-secondary)] hover:border-[var(--semantic-warn-border)] hover:bg-[var(--semantic-warn-bg)] hover:text-[var(--semantic-warn-text)]"
  }`}
  >
- {item.running_low ?"Low" :"OK"}
+ {item.running_low ?"Running low" :"In stock"}
  </button>
  <button
  type="button"
  onClick={() => handleRemove(item.id)}
  disabled={isPending}
  aria-label={`Remove ${item.name}`}
- className="text-xs text-[var(--text-muted)] hover:text-[var(--semantic-error-text)]"
+ className="cursor-pointer text-xs text-[var(--text-muted)] transition-colors hover:text-[var(--semantic-error-text)] disabled:opacity-60"
  >
  Remove
  </button>
