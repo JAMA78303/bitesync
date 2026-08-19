@@ -54,6 +54,13 @@ export type MealTemplate = {
 };
 
 const LIQUID_DAIRY = ["milk", "oat milk", "almond milk"];
+/**
+ * Bases you can actually simmer into porridge. Whitelisted rather than excluded:
+ * `breakfast_base` also holds cornflakes and rice cakes, and the porridge template
+ * names itself "<fruit> Porridge" regardless of which base it drew — which is how
+ * "Apple Porridge" ended up made of cornflakes.
+ */
+const PORRIDGE_BASES = ["oats", "buckwheat groats"];
 /** Toppings that belong on sweet bowls (no cheese / avocado). */
 const SWEET_TOPPINGS = ["almonds", "walnuts", "cashews", "peanut butter", "chia seeds", "pumpkin seeds"];
 /** Dairy proteins are bowl/snack foods, not stir-fry / roast / curry mains. */
@@ -102,7 +109,7 @@ export const MEAL_TEMPLATES: MealTemplate[] = [
     kcalRange: [260, 720],
     booster: { name: "peanut butter", unit: "g", steps: [12, 22, 32] },
     slots: [
-      { role: "breakfast_base", required: true, scale: { min: 30, max: 120 }, not: ["wholemeal bread", "rice cake"] },
+      { role: "breakfast_base", required: true, scale: { min: 30, max: 120 }, only: PORRIDGE_BASES },
       { role: "dairy", required: true, only: LIQUID_DAIRY },
       { role: "fruit", required: true },
       { role: "fat_topping", required: false, only: SWEET_TOPPINGS },
