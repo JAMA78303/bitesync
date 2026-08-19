@@ -573,6 +573,56 @@ export async function archiveRecipe(recipeId: string): Promise<ActionResult> {
   return { success: true, message: "Recipe archived." };
 }
 
+/**
+ * Permanently delete every recipe in the library, plus any planned meals that
+ * referenced them. Unlike archiving this cannot be undone — it exists to give a
+ * genuinely clean slate (e.g. re-testing generation from scratch), where leftover
+ * archived rows would still skew library counts and duplicate checks.
+ */
+export async function deleteAllRecipes(): Promise<ActionResult<{ deleted: number }>> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  // Clear planner entries first so nothing is left pointing at a deleted recipe.
+  // Done explicitly rather than relying on the FK's delete behaviour.
+  const { data: plans } = await supabase.from("meal_plans").select("id").eq("user_id", user.id);
+  const planIds = (plans ?? []).map((p) => p.id as string);
+  if (planIds.length) {
+    const { error: entriesError } = await supabase
+      .from("meal_plan_entries")
+      .delete()
+      .in("meal_plan_id", planIds);
+    if (entriesError) {
+      return { error: toUserFacingError(entriesError, "week-plan", "deleteAllRecipes") };
+    }
+  }
+
+  const { data, error } = await supabase
+    .from("recipes")
+    .delete()
+    .eq("user_id", user.id)
+    .select("id");
+
+  if (error) return { error: toUserFacingError(error, "recipe-save", "deleteAllRecipes") };
+
+  revalidatePath("/recipes");
+  revalidatePath("/planner");
+  revalidatePath("/today");
+  revalidatePath("/grocery");
+
+  const deleted = data?.length ?? 0;
+  return {
+    success: true,
+    data: { deleted },
+    message: deleted
+      ? `Deleted ${deleted} recipe${deleted === 1 ? "" : "s"} and cleared your planner.`
+      : "No recipes to delete.",
+  };
+}
+
 /** Bulk-archive every AI-generated recipe. Individual archive/restore stays available. */
 export async function archiveGeneratedRecipes(): Promise<ActionResult> {
   const supabase = await createClient();

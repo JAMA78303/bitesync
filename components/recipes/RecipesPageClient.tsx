@@ -15,7 +15,13 @@ const FillMyLibraryModal = dynamic(
 );
 import { RecipeListCard, type RecipeListItem } from "@/components/recipes/RecipeListCard";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { archiveGeneratedRecipes, archiveRecipe, createImportedRecipe, restoreRecipe } from "@/app/(app)/recipes/actions";
+import {
+ archiveGeneratedRecipes,
+ archiveRecipe,
+ createImportedRecipe,
+ deleteAllRecipes,
+ restoreRecipe,
+} from "@/app/(app)/recipes/actions";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/use-toast";
 import {
@@ -83,6 +89,27 @@ export function RecipesPageClient({
  return;
  }
  toast({ title: "Done", description: result.message });
+ router.refresh();
+ });
+ }
+
+ async function handleDeleteAll() {
+ const ok = await confirm({
+ title: `Permanently delete all ${recipeCount} recipes?`,
+ description:
+ "This cannot be undone. Every recipe — imported, hand-written, and AI-generated — is deleted, and any planned meals using them are removed from your planner. Use 'Archive all AI-generated' instead if you only want to clear generated recipes.",
+ confirmLabel: "Delete everything",
+ destructive: true,
+ });
+ if (!ok) return;
+
+ startTransition(async () => {
+ const result = await deleteAllRecipes();
+ if ("error" in result) {
+ toast({ title: "Couldn't delete recipes", description: result.error, variant: "destructive" });
+ return;
+ }
+ toast({ title: "Library cleared", description: result.message });
  router.refresh();
  });
  }
@@ -266,14 +293,22 @@ export function RecipesPageClient({
  <p className="text-center text-xs text-[var(--semantic-warn-text)]">{fillLibraryBlockedMessage}</p>
  ) : null}
  {listRecipes.length > 0 ? (
- <div className="flex justify-end">
+ <div className="flex flex-wrap justify-end gap-1">
  <button
  type="button"
  onClick={handleArchiveGenerated}
  disabled={isPending}
- className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--semantic-error-text)] transition-colors hover:bg-[var(--semantic-error-bg)] disabled:opacity-60"
+ className="cursor-pointer rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-muted)] hover:text-[var(--text-secondary)] disabled:opacity-60"
  >
  Archive all AI-generated
+ </button>
+ <button
+ type="button"
+ onClick={handleDeleteAll}
+ disabled={isPending}
+ className="cursor-pointer rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--semantic-error-text)] transition-colors hover:bg-[var(--semantic-error-bg)] disabled:opacity-60"
+ >
+ Delete all recipes
  </button>
  </div>
  ) : null}
