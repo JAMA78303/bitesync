@@ -11,6 +11,7 @@ import {
   isStapleGrainPulseQuery,
   isBreadcrumbCompositeMismatch,
   isMinceMismatch,
+  isPlantMilkMismatch,
   isSpaghettiSquashMismatch,
   queryRequestsRawDry,
 } from "@/lib/nutrition/cofidMatch";
@@ -131,6 +132,11 @@ function shouldPreferLocalOverCofidMismatch(
     return true;
   }
   if (isBreadcrumbCompositeMismatch(query, name) && localEntry.name === "bread") {
+    return true;
+  }
+  // Plant drinks must never take dairy milk's numbers — wrong macros, and it
+  // models a vegan ingredient as an animal product.
+  if (isPlantMilkMismatch(query, name)) {
     return true;
   }
   return false;

@@ -403,6 +403,29 @@ export function isBreadcrumbCompositeMismatch(query: string, foodName: string): 
   return /\b(in|with|coated in|coated with)\s+breadcrumbs?\b/.test(normalizeForMatch(foodName));
 }
 
+/** Plant drinks: "oat milk", "almond milk", "soya milk", "coconut milk drink", … */
+const PLANT_MILK_QUERY_PATTERN =
+  /\b(oat|almond|soy|soya|rice|cashew|hazelnut|hemp|pea|coconut)\s*(milk|drink)\b/;
+
+/** CoFID rows that are dairy milk rather than a plant drink. */
+const DAIRY_MILK_FOOD_PATTERN = /\bmilk\b/;
+const PLANT_FOOD_PATTERN = /\b(oat|almond|soy|soya|rice|cashew|hazelnut|hemp|pea|coconut|plant)\b/;
+
+/**
+ * "oat milk" scores highest against CoFID's dairy "Milk, whole, pasteurised" because
+ * both contain "milk" — so every plant drink resolved to dairy nutrition. That is
+ * ~3x the protein and ~4x the calories for almond milk, and it silently models a
+ * vegan ingredient as an animal product.
+ */
+export function isPlantMilkMismatch(query: string, foodName: string): boolean {
+  const q = normalizeCofidQuery(query);
+  if (!PLANT_MILK_QUERY_PATTERN.test(q)) return false;
+  const f = normalizeForMatch(foodName);
+  // A genuine plant-drink row is a correct match; only dairy rows are the problem.
+  if (PLANT_FOOD_PATTERN.test(f)) return false;
+  return DAIRY_MILK_FOOD_PATTERN.test(f);
+}
+
 /** Score how well a CoFID row matches the user's ingredient name (higher = better). */
 export function scoreCofidMatch(
   query: string,
@@ -413,6 +436,10 @@ export function scoreCofidMatch(
   const q = normalizeCofidQuery(query);
   const f = normalizeForMatch(foodName);
   if (!q || !f) return -Infinity;
+
+  // Dairy rows share the word "milk" with every plant drink and would otherwise
+  // outrank the correct plant row. Push them below any real candidate.
+  if (isPlantMilkMismatch(query, foodName)) return -Infinity;
 
   if (q === f) return 10_000;
 

@@ -249,4 +249,39 @@ const oilCandidates: CofidCandidate[] = [
 ];
 assertMatch("rapeseed oil", oilCandidates, "rapeseed", ["asparagus"]);
 
+// Plant drinks must never resolve to dairy milk: dairy has ~3x the protein and,
+// for almond, ~4x the calories, and it models a vegan ingredient as an animal product.
+const dairyRows: CofidCandidate[] = [
+  { food_code: "K1", food_name: "Milk, whole, pasteurised, average", food_group: "MA", matchKind: "exact" },
+  { food_code: "K2", food_name: "Milk, semi-skimmed, pasteurised, average", food_group: "MA", matchKind: "exact" },
+];
+
+// With a real plant row present, it wins.
+assertMatch(
+  "oat milk",
+  [...dairyRows, { food_code: "P1", food_name: "Oat drink, unsweetened, fortified", food_group: "MA", matchKind: "partial" }],
+  "oat drink",
+  ["milk, whole"],
+);
+assertMatch(
+  "almond milk",
+  [...dairyRows, { food_code: "P2", food_name: "Almond drink, unsweetened", food_group: "MA", matchKind: "partial" }],
+  "almond drink",
+  ["milk, whole"],
+);
+
+// With only dairy rows, CoFID must decline so the local DB's plant values are used.
+for (const query of ["oat milk", "almond milk", "soya milk", "soy milk"]) {
+  if (pickBestCofidCandidate(query, dairyRows) !== null) {
+    throw new Error(`${query} must not resolve to a dairy CoFID row`);
+  }
+}
+
+// Real dairy queries are unaffected.
+for (const query of ["milk", "whole milk", "semi skimmed milk"]) {
+  if (!pickBestCofidCandidate(query, dairyRows)) {
+    throw new Error(`${query} should still match a dairy CoFID row`);
+  }
+}
+
 console.log("OK: CoFID matcher regression tests passed");
