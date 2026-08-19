@@ -88,18 +88,43 @@ export async function insertGeneratedRecipe(
     return null;
   }
 
+  // Derive the stored nutrition from the rows that actually landed, not from the
+  // in-memory draft. A recipe whose macros describe ingredients its own list does
+  // not contain is worse than a missing figure: every calorie and protein target
+  // in the app is computed from these numbers.
+  const { data: storedIngredients } = await supabase
+    .from("recipe_ingredients")
+    .select("name,quantity,unit")
+    .eq("recipe_id", row.id);
+
+  let finalTotals = totals;
+  if (storedIngredients?.length) {
+    const stored = storedIngredients.map((i) => ({
+      name: String(i.name ?? ""),
+      quantity: Number(i.quantity ?? 0),
+      unit: String(i.unit ?? "g"),
+    }));
+    if (stored.length !== ingredients.length) {
+      console.warn(
+        `[insertGeneratedRecipe] stored ${stored.length} of ${ingredients.length} ingredients for "${recipe.name}" — recomputing nutrition from stored rows`,
+      );
+    }
+    const recomputed = await calculateRecipeNutritionWithMeta(stored, { aiEnabled: true });
+    finalTotals = recomputed.totals;
+  }
+
   const { error: nutritionError } = await supabase.from("recipe_nutrition").upsert(
     {
       recipe_id: row.id,
-      calories: totals.calories,
-      protein_g: totals.protein_g,
-      carbs_g: totals.carbs_g,
-      fat_g: totals.fat_g,
-      fibre_g: totals.fibre_g,
-      sugar_g: totals.sugar_g,
-      sodium_mg: totals.sodium_mg,
-      saturated_fat_g: totals.saturated_fat_g,
-      coverage_pct: totals.coverage_pct,
+      calories: finalTotals.calories,
+      protein_g: finalTotals.protein_g,
+      carbs_g: finalTotals.carbs_g,
+      fat_g: finalTotals.fat_g,
+      fibre_g: finalTotals.fibre_g,
+      sugar_g: finalTotals.sugar_g,
+      sodium_mg: finalTotals.sodium_mg,
+      saturated_fat_g: finalTotals.saturated_fat_g,
+      coverage_pct: finalTotals.coverage_pct,
     },
     { onConflict: "recipe_id" },
   );
