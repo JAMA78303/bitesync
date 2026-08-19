@@ -403,6 +403,36 @@ export function isBreadcrumbCompositeMismatch(query: string, foodName: string): 
   return /\b(in|with|coated in|coated with)\s+breadcrumbs?\b/.test(normalizeForMatch(foodName));
 }
 
+/** CoFID preparations that add substantial cooking fat to a plain staple. */
+const FAT_ADDED_PREP_PATTERN =
+  /\b(chips|fries|crisps|fried|deep[- ]fried|roast|roasted|saut[eé]ed|dauphinoise|croquette|hash brown|wedges)\b/;
+/** The same words in a query mean the user actually wants that preparation. */
+const FAT_ADDED_QUERY_PATTERN =
+  /\b(chip|chips|fries|crisps|fried|fry|roast|roasted|saut[eé]|sauteed|wedges|hash brown)\b/;
+
+/**
+ * A bare staple ("potato", "quinoa") must not resolve to a fat-added preparation.
+ * "Potatoes, chips, fried in vegetable oil" is cooked — so the raw/dry guard does
+ * not catch it — but it carries ~14g more fat and ~300 more kcal per portion than
+ * the boiled potato the recipe actually calls for.
+ */
+export function isFatAddedPrepMismatch(query: string, foodName: string): boolean {
+  const q = normalizeCofidQuery(query);
+  if (!q || FAT_ADDED_QUERY_PATTERN.test(q)) return false;
+  if (!isStapleGrainPulseQuery(q) && !/\b(potato|potatoes)\b/.test(q)) return false;
+  return FAT_ADDED_PREP_PATTERN.test(normalizeForMatch(foodName));
+}
+
+/**
+ * A bare staple resolving to its raw/dry row. `pickBestCofidCandidate` already
+ * prefers a cooked sibling when one exists among the candidates; this covers the
+ * case where CoFID offers no cooked form at all, where raw grain is ~3x denser.
+ */
+export function isRawStapleMismatch(query: string, foodName: string): boolean {
+  if (!isStapleGrainPulseQuery(query)) return false;
+  return isRawDryStapleForm(foodName);
+}
+
 /** Plant drinks: "oat milk", "almond milk", "soya milk", "coconut milk drink", … */
 const PLANT_MILK_QUERY_PATTERN =
   /\b(oat|almond|soy|soya|rice|cashew|hazelnut|hemp|pea|coconut)\s*(milk|drink)\b/;
@@ -441,6 +471,10 @@ export function scoreCofidMatch(
   // outrank the correct plant row. Push them below any real candidate.
   if (isPlantMilkMismatch(query, foodName)) return -Infinity;
 
+  // Chip/roast rows for a plain staple stay selectable (CoFID may offer nothing
+  // else) but must lose to any boiled/plain sibling.
+  const fatAddedPenalty = isFatAddedPrepMismatch(query, foodName) ? 3000 : 0;
+
   if (q === f) return 10_000;
 
   const primary = normalizeForMatch(primaryFoodName(foodName));
@@ -450,7 +484,7 @@ export function scoreCofidMatch(
     // without differentiation they all tie and the winner is just DB return order,
     // which lets "potato" resolve to "chips, fried" or "roast" and inflate macros.
     // Keep a strong base, then nudge toward the plain cooked form the user means.
-    return 9000 + sameFoodPrepAdjustment(q, f);
+    return 9000 + sameFoodPrepAdjustment(q, f) - fatAddedPenalty;
   }
 
   let score = matchKindBonus(matchKind);

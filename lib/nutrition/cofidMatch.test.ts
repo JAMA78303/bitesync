@@ -1,4 +1,6 @@
 import {
+  isFatAddedPrepMismatch,
+  isRawStapleMismatch,
   pickBestCofidCandidate,
   scoreCofidMatch,
   type CofidCandidate,
@@ -283,5 +285,54 @@ for (const query of ["milk", "whole milk", "semi skimmed milk"]) {
     throw new Error(`${query} should still match a dairy CoFID row`);
   }
 }
+
+// A bare staple must not inherit a chip/roast row's cooking fat, nor a raw
+// grain's density. 295g of potato read as fried chips is ~+300 kcal / +14g fat.
+for (const [query, food] of [
+  ["potato", "Potatoes, chips, retail, fried in vegetable oil"],
+  ["potato", "Potatoes, old, roast in vegetable oil"],
+] as const) {
+  if (!isFatAddedPrepMismatch(query, food)) {
+    throw new Error(`"${query}" vs "${food}" should be a fat-added mismatch`);
+  }
+}
+for (const [query, food] of [
+  ["quinoa", "Quinoa, raw"],
+  ["pasta", "Pasta, white, dried, raw"],
+] as const) {
+  if (!isRawStapleMismatch(query, food)) {
+    throw new Error(`"${query}" vs "${food}" should be a raw-staple mismatch`);
+  }
+}
+// Asking for the preparation explicitly must still resolve to it.
+for (const [query, food] of [
+  ["roast potatoes", "Potatoes, old, roast in vegetable oil"],
+  ["chips", "Potatoes, chips, retail, fried in vegetable oil"],
+] as const) {
+  if (isFatAddedPrepMismatch(query, food)) {
+    throw new Error(`"${query}" explicitly requests that preparation`);
+  }
+}
+if (isRawStapleMismatch("raw quinoa", "Quinoa, raw")) {
+  throw new Error('"raw quinoa" explicitly requests the raw form');
+}
+// Correct rows and non-staples are untouched.
+if (isFatAddedPrepMismatch("potato", "Potatoes, old, boiled in unsalted water")) {
+  throw new Error("boiled potato is the right match");
+}
+if (isFatAddedPrepMismatch("chicken breast", "Chicken, breast, roasted")) {
+  throw new Error("roasted chicken is not a fat-added staple mismatch");
+}
+// A boiled sibling must outrank chips/roast for a bare staple query.
+assertMatch(
+  "potato",
+  [
+    { food_code: "P1", food_name: "Potatoes, chips, retail, fried in vegetable oil", food_group: "DR", matchKind: "partial" },
+    { food_code: "P2", food_name: "Potatoes, old, roast in vegetable oil", food_group: "DR", matchKind: "partial" },
+    { food_code: "P3", food_name: "Potatoes, old, boiled in unsalted water", food_group: "DR", matchKind: "partial" },
+  ],
+  "boiled",
+  ["chips", "roast"],
+);
 
 console.log("OK: CoFID matcher regression tests passed");

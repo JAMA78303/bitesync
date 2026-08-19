@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { ExternalLink, Link as LinkIcon, Loader2, Plus, Trash2, X } from "lucide-react";
 import { ModalPortal } from "@/components/ui/ModalPortal";
+import { ds } from "@/lib/ui/classes";
 import type { PublisherNutritionPerServing } from "@/lib/nutrition/publisherNutrition";
 import type { RecipeSourceType } from "@/lib/recipes/detectSourceType";
 import type { ParsedIngredient } from "@/lib/recipes/parseIngredient";
@@ -168,6 +169,16 @@ export function ImportRecipeModal({
 
  const detected = result?.detectedServings ?? 1;
  const hasValidIngredients = (result?.ingredients ?? []).some((i) => i.name.trim().length > 0);
+
+ // A blank quantity is saved as "1", which silently produces a nutritionally
+ // meaningless recipe (a 1g portion of rice). Surface them so they get filled in.
+ const missingQuantity = (result?.ingredients ?? []).filter(
+ (i) =>
+ i.name.trim().length > 0 &&
+ i.gramsSource !== "explicit" &&
+ !(i.grams != null && i.grams > 0) &&
+ !(i.quantity != null && i.quantity > 0),
+ );
 
  const panel = (
  <div className={embedded ? "bg-[var(--surface-card)] p-3" : "max-h-[min(90vh,calc(100dvh-2rem))] w-full max-w-2xl overflow-y-auto rounded-2xl bg-[var(--surface-card)] p-6 shadow-xl"}>
@@ -356,6 +367,25 @@ export function ImportRecipeModal({
  <p className="mt-2 text-xs text-[var(--semantic-warn-text)]">
  Add at least one ingredient on the next screen before saving, or go back to fill them in now.
  </p>
+ ) : null}
+ {missingQuantity.length > 0 ? (
+ <div className={`mt-2 rounded-xl px-3 py-2 text-xs ${ds.warnCallout}`}>
+ <p className="font-semibold">
+ {missingQuantity.length} ingredient{missingQuantity.length === 1 ? "" : "s"} have no
+ quantity
+ </p>
+ <p className="mt-1">
+ {missingQuantity
+ .slice(0, 4)
+ .map((i) => i.name.trim())
+ .join(", ")}
+ {missingQuantity.length > 4 ? `, +${missingQuantity.length - 4} more` : ""}
+ </p>
+ <p className="mt-1">
+ They&apos;ll be saved as 1 unit each, so this recipe&apos;s calories and macros will be
+ wrong. Fill them in above unless they&apos;re seasonings.
+ </p>
+ </div>
  ) : null}
  </>
  ) : null}

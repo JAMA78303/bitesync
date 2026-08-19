@@ -10,8 +10,10 @@ import {
   isRawDryStapleForm,
   isStapleGrainPulseQuery,
   isBreadcrumbCompositeMismatch,
+  isFatAddedPrepMismatch,
   isMinceMismatch,
   isPlantMilkMismatch,
+  isRawStapleMismatch,
   isSpaghettiSquashMismatch,
   queryRequestsRawDry,
 } from "@/lib/nutrition/cofidMatch";
@@ -137,6 +139,14 @@ function shouldPreferLocalOverCofidMismatch(
   // Plant drinks must never take dairy milk's numbers — wrong macros, and it
   // models a vegan ingredient as an animal product.
   if (isPlantMilkMismatch(query, name)) {
+    return true;
+  }
+  // A plain staple must not take a chip/roast row's cooking fat, nor a raw
+  // grain's density, when the local DB holds the as-eaten cooked figure.
+  if (isFatAddedPrepMismatch(query, name) && localNameMatchesQuery(localEntry.name, query)) {
+    return true;
+  }
+  if (isRawStapleMismatch(query, name) && localNameMatchesQuery(localEntry.name, query)) {
     return true;
   }
   return false;
