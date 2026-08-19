@@ -331,6 +331,28 @@ async function scaleComposition(
  * accepting the first that lands in band. If none do, return the closest honest
  * attempt (targetMet=false) so callers can surface the miss instead of padding.
  */
+/**
+ * Re-derive the title from the ingredients that survived scaling.
+ *
+ * `fillTemplate` names the dish from its initial picks, but `scaleComposition`
+ * drops optional roles when a composition overshoots its target. Overnight oats
+ * names itself after `fat_topping`, which is optional — so a snack that
+ * overshot shipped as "Almonds Overnight Oats" containing no almonds.
+ */
+function nameForScaledIngredients(
+  comp: MealComposition,
+  ingredients: RecipeIngredientInput[],
+): string {
+  const present = new Set(ingredients.map((i) => i.name.toLowerCase().trim()));
+  const survivingByRole = new Map<IngredientRole, IngredientDef>();
+  for (const pick of comp.picks) {
+    if (!present.has(pick.def.name.toLowerCase().trim())) continue;
+    if (!survivingByRole.has(pick.role)) survivingByRole.set(pick.role, pick.def);
+  }
+  const rebuilt = comp.template.name((role) => survivingByRole.get(role)).trim();
+  return rebuilt || comp.template.archetype;
+}
+
 export async function composeMealFromTemplate(
   opts: GoalMatchedRecipeOptions,
   evalFn: NutritionEval = defaultNutritionEval,
@@ -346,7 +368,7 @@ export async function composeMealFromTemplate(
     const scaled = await scaleComposition(comp, target, evalFn);
     const candidate: ComposedMeal = {
       ingredients: scaled.ingredients,
-      name: comp.name,
+      name: nameForScaledIngredients(comp, scaled.ingredients),
       templateId: template.id,
       estimatedCalories: Math.round(scaled.calories),
       targetMet: scaled.targetMet,
