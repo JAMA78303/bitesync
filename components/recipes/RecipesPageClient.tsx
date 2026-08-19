@@ -20,6 +20,7 @@ import {
  archiveRecipe,
  createImportedRecipe,
  deleteAllRecipes,
+ deleteArchivedRecipes,
  restoreRecipe,
 } from "@/app/(app)/recipes/actions";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
@@ -89,6 +90,27 @@ export function RecipesPageClient({
  return;
  }
  toast({ title: "Done", description: result.message });
+ router.refresh();
+ });
+ }
+
+ async function handleEmptyArchive() {
+ const ok = await confirm({
+ title: `Permanently delete ${listRecipes.length} archived recipe${listRecipes.length === 1 ? "" : "s"}?`,
+ description:
+ "This cannot be undone. Your active recipes are not affected, but any planned meals still using these archived recipes will be removed.",
+ confirmLabel: "Empty archive",
+ destructive: true,
+ });
+ if (!ok) return;
+
+ startTransition(async () => {
+ const result = await deleteArchivedRecipes();
+ if ("error" in result) {
+ toast({ title: "Couldn't empty archive", description: result.error, variant: "destructive" });
+ return;
+ }
+ toast({ title: "Archive emptied", description: result.message });
  router.refresh();
  });
  }
@@ -312,6 +334,20 @@ export function RecipesPageClient({
  </button>
  </div>
  ) : null}
+ </div>
+ ) : listRecipes.length > 0 ? (
+ <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border-subtle)] px-3 py-2">
+ <p className="text-xs text-[var(--text-muted)]">
+ Archived recipes stay out of your planner. Restore any of them from its page.
+ </p>
+ <button
+ type="button"
+ onClick={handleEmptyArchive}
+ disabled={isPending}
+ className="shrink-0 cursor-pointer rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--semantic-error-text)] transition-colors hover:bg-[var(--semantic-error-bg)] disabled:opacity-60"
+ >
+ {isPending ? "Deleting…" : "Empty archive"}
+ </button>
  </div>
  ) : null}
 

@@ -574,6 +574,52 @@ export async function archiveRecipe(recipeId: string): Promise<ActionResult> {
 }
 
 /**
+ * Permanently delete archived recipes only — the active library is untouched.
+ * Emptying the archive is the natural companion to bulk-archiving, which would
+ * otherwise leave rows accumulating with no way to clear them.
+ */
+export async function deleteArchivedRecipes(): Promise<ActionResult<{ deleted: number }>> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const { data: archived, error: loadError } = await supabase
+    .from("recipes")
+    .select("id")
+    .eq("user_id", user.id)
+    .not("archived_at", "is", null);
+
+  if (loadError) return { error: toUserFacingError(loadError, "recipe-save", "deleteArchivedRecipes") };
+
+  const ids = (archived ?? []).map((r) => r.id as string);
+  if (!ids.length) return { success: true, data: { deleted: 0 }, message: "Archive is already empty." };
+
+  // Only unpick planner entries for these recipes — active recipes stay planned.
+  const { error: entriesError } = await supabase
+    .from("meal_plan_entries")
+    .delete()
+    .in("recipe_id", ids);
+  if (entriesError) {
+    return { error: toUserFacingError(entriesError, "week-plan", "deleteArchivedRecipes") };
+  }
+
+  const { error } = await supabase.from("recipes").delete().in("id", ids).eq("user_id", user.id);
+  if (error) return { error: toUserFacingError(error, "recipe-save", "deleteArchivedRecipes") };
+
+  revalidatePath("/recipes");
+  revalidatePath("/planner");
+  revalidatePath("/today");
+
+  return {
+    success: true,
+    data: { deleted: ids.length },
+    message: `Deleted ${ids.length} archived recipe${ids.length === 1 ? "" : "s"}.`,
+  };
+}
+
+/**
  * Permanently delete every recipe in the library, plus any planned meals that
  * referenced them. Unlike archiving this cannot be undone — it exists to give a
  * genuinely clean slate (e.g. re-testing generation from scratch), where leftover
