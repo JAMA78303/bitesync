@@ -60,7 +60,7 @@ const LIQUID_DAIRY = ["milk", "oat milk", "almond milk"];
  * names itself "<fruit> Porridge" regardless of which base it drew — which is how
  * "Apple Porridge" ended up made of cornflakes.
  */
-const PORRIDGE_BASES = ["oats", "buckwheat groats"];
+const PORRIDGE_BASES = ["oats", "buckwheat"];
 /** Toppings that belong on sweet bowls (no cheese / avocado). */
 const SWEET_TOPPINGS = ["almonds", "walnuts", "cashews", "peanut butter", "chia seeds", "pumpkin seeds"];
 /** Dairy proteins are bowl/snack foods, not stir-fry / roast / curry mains. */

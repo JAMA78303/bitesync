@@ -119,7 +119,7 @@ function glutenFreeBreakfastCarbTune(seed: number): { name: string; minG: number
     { name: "quinoa", minG: 25, maxG: 115 },
     { name: "sweet potato", minG: 70, maxG: 185 },
     { name: "potato", minG: 90, maxG: 210 },
-    { name: "buckwheat groats", minG: 22, maxG: 88 },
+    { name: "buckwheat", minG: 22, maxG: 88 },
     { name: "rice cake", minG: 22, maxG: 72 },
     { name: "cornflakes", minG: 30, maxG: 95 },
   ] as const;
@@ -132,7 +132,7 @@ function glutenFreeSnackCarbTune(seed: number): { name: string; minG: number; ma
     { name: "quinoa", minG: 18, maxG: 130 },
     { name: "rice cake", minG: 18, maxG: 65 },
     { name: "sweet potato", minG: 55, maxG: 150 },
-    { name: "buckwheat groats", minG: 18, maxG: 75 },
+    { name: "buckwheat", minG: 18, maxG: 75 },
     { name: "cornflakes", minG: 25, maxG: 80 },
   ] as const;
   return tunings[pickVariant(seed ^ 0x61d14cff, tunings.length)];

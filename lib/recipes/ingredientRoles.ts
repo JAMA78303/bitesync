@@ -96,7 +96,7 @@ export const INGREDIENT_CATALOG: IngredientDef[] = [
 
   // Breakfast bases
   def("oats", ["breakfast_base"], VEGAN_GLUTEN, 50, "g"),
-  def("buckwheat groats", ["breakfast_base"], VEGAN, 50, "g"),
+  def("buckwheat", ["breakfast_base"], VEGAN, 50, "g"),
   def("rice cake", ["breakfast_base"], VEGAN, 30, "g"),
   def("cornflakes", ["breakfast_base"], VEGAN, 40, "g"),
   def("wholemeal bread", ["base_carb", "breakfast_base"], VEGAN_GLUTEN, 80, "g"),
