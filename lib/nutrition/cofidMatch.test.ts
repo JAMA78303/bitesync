@@ -279,6 +279,28 @@ for (const query of ["oat milk", "almond milk", "soya milk", "soy milk"]) {
   }
 }
 
+// …and must never resolve to the SOLID food the drink is made from. Blocking dairy
+// alone left this open, and it is the worse error: 110g of almond drink is ~17 kcal,
+// 110g of almonds is ~637. Seen in production as a 762 kcal "Raspberry Porridge".
+const solidBaseRows: CofidCandidate[] = [
+  { food_code: "N1", food_name: "Almonds, flaked", food_group: "GB", matchKind: "partial" },
+  { food_code: "N2", food_name: "Almonds, kernel only", food_group: "GB", matchKind: "partial" },
+  { food_code: "N3", food_name: "Porridge oats, unfortified", food_group: "A", matchKind: "partial" },
+  { food_code: "N4", food_name: "Soya beans, dried", food_group: "G", matchKind: "partial" },
+];
+for (const query of ["almond milk", "oat milk", "soya milk"]) {
+  if (pickBestCofidCandidate(query, [...solidBaseRows, ...dairyRows]) !== null) {
+    throw new Error(`${query} must not resolve to the solid base food or dairy`);
+  }
+}
+// A real plant drink still wins even when the solid food is also a candidate.
+assertMatch(
+  "almond milk",
+  [...solidBaseRows, { food_code: "D1", food_name: "Almond drink, unsweetened", food_group: "MA", matchKind: "partial" }],
+  "almond drink",
+  ["almonds,"],
+);
+
 // Real dairy queries are unaffected.
 for (const query of ["milk", "whole milk", "semi skimmed milk"]) {
   if (!pickBestCofidCandidate(query, dairyRows)) {
