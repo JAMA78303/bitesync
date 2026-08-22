@@ -36,6 +36,47 @@ assertCover("Garlic", "garlic cloves", true);
 assertCover("Rosemary", "rosemary sprigs", true);
 assertCover("Cod", "cod fillets", true);
 
+// A pantry item with no quantity means "enough" only for store-cupboard staples.
+// Owning *some* chicken says nothing about owning the 980g a week of meals needs.
+{
+  const perishables = applyPantryToShoppingList(
+    [
+      { name: "chicken breast", quantity: 980, unit: "g" },
+      { name: "milk", quantity: 1400, unit: "ml" },
+      { name: "onion", quantity: 350, unit: "g" },
+      { name: "olive oil", quantity: 56, unit: "ml" },
+      { name: "garlic", quantity: 30, unit: "g" },
+      { name: "flour", quantity: 200, unit: "g" },
+    ],
+    [
+      { name: "Chicken Breast" },
+      { name: "Milk" },
+      { name: "Onion" },
+      { name: "Olive Oil" },
+      { name: "Garlic" },
+      { name: "Flour" },
+    ].map((p) => ({ ...p, runningLow: false })),
+  );
+  const kept = perishables.items.map((i) => i.name).sort().join(",");
+  if (kept !== "chicken breast,milk,onion") {
+    throw new Error(`perishables must stay on the list; got: ${kept}`);
+  }
+  if (perishables.omittedCount !== 3) {
+    throw new Error(`staples should account for 3 omissions, got ${perishables.omittedCount}`);
+  }
+}
+
+// A recorded quantity still reduces a perishable rather than dropping it.
+{
+  const result = applyPantryToShoppingList(
+    [{ name: "chicken breast", quantity: 980, unit: "g" }],
+    [{ name: "Chicken Breast", quantity: 500, unit: "g", runningLow: false }],
+  );
+  if (result.items[0]?.quantity !== 480 || result.reducedCount !== 1) {
+    throw new Error(`expected 480g remaining, got ${JSON.stringify(result.items[0])}`);
+  }
+}
+
 // Running-low stock must never omit a line — that is the point of the flag.
 {
   const result = applyPantryToShoppingList(
@@ -47,26 +88,32 @@ assertCover("Cod", "cod fillets", true);
   }
 }
 
-// End to end: only the genuinely-owned line disappears.
+// End to end: only genuinely-covered lines disappear.
+//  - "Pepper" must not cover "red pepper"     (different food)
+//  - "Butter" must not cover "peanut butter"  (different food)
+//  - "Onion" has no quantity and is perishable, so onion stays on the list
+//  - "Olive Oil" is a staple, so oil drops even without a quantity
 {
   const result = applyPantryToShoppingList(
     [
       { name: "red pepper", quantity: 2, unit: "" },
       { name: "peanut butter", quantity: 40, unit: "g" },
       { name: "onion", quantity: 1, unit: "" },
+      { name: "olive oil", quantity: 15, unit: "ml" },
     ],
     [
       { name: "Pepper", runningLow: false },
       { name: "Butter", runningLow: false },
       { name: "Onion", runningLow: false },
+      { name: "Olive Oil", runningLow: false },
     ],
   );
   const names = result.items.map((i) => i.name).sort();
-  if (names.join(",") !== "peanut butter,red pepper") {
-    throw new Error(`expected red pepper + peanut butter to survive, got: ${names.join(",")}`);
+  if (names.join(",") !== "onion,peanut butter,red pepper") {
+    throw new Error(`unexpected surviving lines: ${names.join(",")}`);
   }
   if (result.omittedCount !== 1) {
-    throw new Error(`expected exactly 1 omission (onion), got ${result.omittedCount}`);
+    throw new Error(`expected exactly 1 omission (olive oil), got ${result.omittedCount}`);
   }
 }
 
