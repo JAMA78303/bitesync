@@ -437,23 +437,29 @@ export function isRawStapleMismatch(query: string, foodName: string): boolean {
 const PLANT_MILK_QUERY_PATTERN =
   /\b(oat|almond|soy|soya|rice|cashew|hazelnut|hemp|pea|coconut)\s*(milk|drink)\b/;
 
-/** CoFID rows that are dairy milk rather than a plant drink. */
-const DAIRY_MILK_FOOD_PATTERN = /\bmilk\b/;
-const PLANT_FOOD_PATTERN = /\b(oat|almond|soy|soya|rice|cashew|hazelnut|hemp|pea|coconut|plant)\b/;
+/** CoFID rows that are actually a liquid: "… drink", "Milk, …", "beverage". */
+const LIQUID_FOOD_PATTERN = /\b(drink|milk|beverage|alternative to milk)\b/;
+/** The plant the drink is made from, as it appears in a CoFID row. */
+const PLANT_FOOD_PATTERN = /\b(oat|oats|almond|almonds|soy|soya|rice|cashew|hazelnut|hemp|pea|coconut|plant)\b/;
 
 /**
- * "oat milk" scores highest against CoFID's dairy "Milk, whole, pasteurised" because
- * both contain "milk" — so every plant drink resolved to dairy nutrition. That is
- * ~3x the protein and ~4x the calories for almond milk, and it silently models a
- * vegan ingredient as an animal product.
+ * A plant-milk query must resolve to a plant *drink* row and nothing else.
+ *
+ * Two distinct traps, both seen in production:
+ *   "almond milk" -> "Milk, whole, pasteurised"  (dairy: wrong food class entirely)
+ *   "almond milk" -> "Almonds, flaked"           (the solid nut: 579 kcal/100g vs 15)
+ *
+ * The second is far worse — 110g of almond drink is ~17 kcal, 110g of almonds is
+ * ~637 — so requiring a liquid row is the rule, rather than blocking dairy alone.
  */
 export function isPlantMilkMismatch(query: string, foodName: string): boolean {
   const q = normalizeCofidQuery(query);
   if (!PLANT_MILK_QUERY_PATTERN.test(q)) return false;
   const f = normalizeForMatch(foodName);
-  // A genuine plant-drink row is a correct match; only dairy rows are the problem.
-  if (PLANT_FOOD_PATTERN.test(f)) return false;
-  return DAIRY_MILK_FOOD_PATTERN.test(f);
+  const isLiquid = LIQUID_FOOD_PATTERN.test(f);
+  const isPlant = PLANT_FOOD_PATTERN.test(f);
+  // Correct only when the row is both the right plant and an actual drink.
+  return !(isLiquid && isPlant);
 }
 
 /** Score how well a CoFID row matches the user's ingredient name (higher = better). */
