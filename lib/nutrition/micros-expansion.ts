@@ -475,6 +475,10 @@ export const MICRO_DB_EXPANSION: Record<string, MicroEntry> = {
 
 /** Name variants that resolve to base or expansion entries. */
 export const MICRO_ALIAS_EXPANSION: Record<string, string> = {
+  // The ingredient catalog says "buckwheat"; the micro DB is keyed "buckwheat
+  // groats". Without this the food resolves for macros but contributes zero
+  // micronutrients — the same silent-zero failure unmatched ingredients cause.
+  buckwheat: "buckwheat groats",
   "pork chops": "pork chop",
   "lamb chops": "lamb chop",
   "sirloin steak": "beef steak",

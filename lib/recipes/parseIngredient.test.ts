@@ -2,7 +2,19 @@ import {
   parseIngredientLine,
   parsedIngredientToInput,
   scaleParsedIngredients,
+  type ParsedIngredient,
 } from "@/lib/recipes/parseIngredient";
+
+/**
+ * parseIngredientLine returns null for unparseable input. Every case here expects
+ * a successful parse, so narrow once and fail loudly rather than asserting against
+ * a possibly-null value.
+ */
+function parse(line: string): ParsedIngredient {
+  const parsed = parseIngredientLine(line);
+  if (!parsed) throw new Error(`failed to parse ingredient line: "${line}"`);
+  return parsed;
+}
 
 function assertNoPieceUnit(value: unknown): void {
   if (JSON.stringify(value).includes('"piece"')) {
@@ -12,7 +24,7 @@ function assertNoPieceUnit(value: unknown): void {
 
 // ½ Tbsp Olive Oil Plus An Extra Drizzle → qty 0.5, unit tbsp, name olive oil, grams ≈ 7
 {
-  const parsed = parseIngredientLine("½ Tbsp Olive Oil Plus An Extra Drizzle");
+  const parsed = parse("½ Tbsp Olive Oil Plus An Extra Drizzle");
   if (parsed.unit !== "tbsp") throw new Error(`unit: ${parsed.unit}`);
   if (parsed.quantity !== 0.5) throw new Error(`qty: ${parsed.quantity}`);
   if (!parsed.name.includes("olive oil")) throw new Error(`name: ${parsed.name}`);
@@ -23,7 +35,7 @@ function assertNoPieceUnit(value: unknown): void {
 
 // Red Peppers (about 220g) → grams 220, source explicit
 {
-  const parsed = parseIngredientLine("Red Peppers (about 220g)");
+  const parsed = parse("Red Peppers (about 220g)");
   if (parsed.grams !== 220) throw new Error(`grams: ${parsed.grams}`);
   if (parsed.gramsSource !== "explicit") throw new Error(`source: ${parsed.gramsSource}`);
   assertNoPieceUnit(parsedIngredientToInput(parsed));
@@ -31,7 +43,7 @@ function assertNoPieceUnit(value: unknown): void {
 
 // 3-4 Mushrooms Sliced → qty 3, no piece -4 artifact
 {
-  const parsed = parseIngredientLine("3-4 Mushrooms Sliced");
+  const parsed = parse("3-4 Mushrooms Sliced");
   if (parsed.quantity !== 3) throw new Error(`qty: ${parsed.quantity}`);
   if (parsed.name.includes("piece") || parsed.name.includes("-4")) {
     throw new Error(`name: ${parsed.name}`);
@@ -41,7 +53,7 @@ function assertNoPieceUnit(value: unknown): void {
 
 // 1 Garlic Clove → unit clove
 {
-  const parsed = parseIngredientLine("1 Garlic Clove");
+  const parsed = parse("1 Garlic Clove");
   if (parsed.unit !== "clove") throw new Error(`unit: ${parsed.unit}`);
   if (!parsed.name.includes("garlic")) throw new Error(`name: ${parsed.name}`);
   assertNoPieceUnit(parsedIngredientToInput(parsed));
@@ -49,7 +61,7 @@ function assertNoPieceUnit(value: unknown): void {
 
 // BBC-style dual metric/imperial weights → metric grams only, clean name
 {
-  const chicken = parseIngredientLine("250g/9oz chicken mince");
+  const chicken = parse("250g/9oz chicken mince");
   if (chicken.grams !== 250) throw new Error(`chicken grams: ${chicken.grams}`);
   if (chicken.gramsSource !== "explicit") throw new Error("chicken source");
   if (!chicken.name.includes("chicken mince")) throw new Error(`chicken name: ${chicken.name}`);
@@ -57,27 +69,27 @@ function assertNoPieceUnit(value: unknown): void {
     throw new Error(`chicken should be weight-only: ${JSON.stringify(chicken)}`);
   }
 
-  const ricotta = parseIngredientLine("100g/3½oz ricotta");
+  const ricotta = parse("100g/3½oz ricotta");
   if (ricotta.grams !== 100) throw new Error(`ricotta grams: ${ricotta.grams}`);
   if (ricotta.name !== "ricotta") throw new Error(`ricotta name: ${ricotta.name}`);
   if (ricotta.unit === "oz") throw new Error("ricotta should not keep oz unit");
 
-  const pasta = parseIngredientLine("75g/5½oz spaghetti or tagliatelle");
+  const pasta = parse("75g/5½oz spaghetti or tagliatelle");
   if (pasta.grams !== 75) throw new Error(`pasta grams: ${pasta.grams}`);
   if (!pasta.name.includes("spaghetti")) throw new Error(`pasta name: ${pasta.name}`);
 
-  const spinach = parseIngredientLine("25g/1¾oz baby spinach");
+  const spinach = parse("25g/1¾oz baby spinach");
   if (spinach.grams !== 25) throw new Error(`spinach grams: ${spinach.grams}`);
   if (!spinach.name.includes("baby spinach")) throw new Error(`spinach name: ${spinach.name}`);
 }
 
 {
-  const garlic = parseIngredientLine("1 garlic clove, crushed");
+  const garlic = parse("1 garlic clove, crushed");
   if (!garlic.name.includes("garlic") || garlic.name.includes(",")) {
     throw new Error(`garlic name: ${garlic.name}`);
   }
 
-  const parmesan = parseIngredientLine("1 tbsp grated Parmesan (optional, plus extra to serve)");
+  const parmesan = parse("1 tbsp grated Parmesan (optional, plus extra to serve)");
   if (!parmesan.name.includes("parmesan") || parmesan.name.includes("(")) {
     throw new Error(`parmesan name: ${parmesan.name}`);
   }
@@ -85,7 +97,7 @@ function assertNoPieceUnit(value: unknown): void {
 
 // Descriptive amounts
 {
-  const drizzle = parseIngredientLine("drizzle olive oil");
+  const drizzle = parse("drizzle olive oil");
   if (drizzle.unit !== "tbsp") throw new Error(`drizzle unit: ${drizzle.unit}`);
   if (!drizzle.name.includes("olive oil")) throw new Error(`drizzle name: ${drizzle.name}`);
   const drizzleInput = parsedIngredientToInput(drizzle);
@@ -93,13 +105,14 @@ function assertNoPieceUnit(value: unknown): void {
     throw new Error(`drizzle input should use estimated grams: ${JSON.stringify(drizzleInput)}`);
   }
 
-  const stock = parseIngredientLine("½ chicken stock pot");
+  const stock = parse("½ chicken stock pot");
   if (stock.grams !== 14) throw new Error(`stock grams: ${stock.grams}`);
   const stockInput = parsedIngredientToInput(stock);
   if (stockInput.quantity !== 14 || stockInput.unit !== "g") {
     throw new Error(`stock input should use estimated grams: ${JSON.stringify(stockInput)}`);
   }
 
+  // Deliberately the raw parser: this case asserts a null return, which `parse` throws on.
   const taste = parseIngredientLine("salt and freshly ground black pepper, to taste");
   if (taste !== null) throw new Error(`to taste should be excluded: ${JSON.stringify(taste)}`);
 }

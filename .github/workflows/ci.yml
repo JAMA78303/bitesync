@@ -33,10 +33,33 @@ jobs:
           fi
           echo "Theme token guard passed"
 
+      # Fastest, broadest signal first so failures surface early.
+      - name: Type check
+        run: npx tsc --noEmit
+
       - name: Plan calorie band verification
         run: npx tsx scripts/verify-plan-calorie-bands.ts
 
       - name: Nutrition regression tests
         run: npm run test:nutrition
+
+      # Covers recipe coherence, dedupe, method steps, and pantry matching.
+      - name: Planner and recipe regression tests
+        run: npm run test:planner
+
+      - name: Auth regression tests
+        run: npm run test:auth
+
+      # Unmatched foods contribute zero to the weekly analysis rather than
+      # reporting as unknown, so a coverage gap reads as a deficiency. Renaming
+      # "buckwheat groats" to "buckwheat" broke this and nothing caught it.
+      - name: Micronutrient coverage
+        run: npm run verify:micro-coverage
+
+      - name: Meal template coherence
+        run: npm run verify:meal-templates
+
+      - name: Meal template goal targeting
+        run: npm run verify:meal-template-goals
 
       - run: npm run lint
