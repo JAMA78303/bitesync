@@ -12,6 +12,10 @@ export async function GET(request: Request) {
   const type = requestUrl.searchParams.get("type");
   const next = requestUrl.searchParams.get("next") ?? "/today";
   const base = requestUrl.origin;
+  // Password recovery: the session exists only so the user can set a new password.
+  // It must not be funnelled through the email-confirmation or onboarding gates.
+  const isRecovery =
+    requestUrl.searchParams.get("flow") === "recovery" || type === "recovery";
 
   const supabase = await createClient();
 
@@ -21,6 +25,11 @@ export async function GET(request: Request) {
     } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.redirect(new URL("/login", base));
+    }
+
+    if (isRecovery) {
+      const target = next.startsWith("/") ? next : "/reset/confirm";
+      return NextResponse.redirect(new URL(target, base));
     }
 
     if (!isEmailConfirmed(user)) {
