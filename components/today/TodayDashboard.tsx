@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { CalendarDays } from "lucide-react";
 import { CalorieRing } from "@/components/today/CalorieRing";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -46,7 +47,10 @@ export function TodayDashboard({
  {compactHero ? null : (
  <div className={ds.gradientHeaderCompact}>
  <p className={`mb-0.5 text-sm ${ds.pageSubtitle}`}>{headerDate}</p>
- <h1 className="text-2xl font-bold text-[var(--text-on-header)]">Your Goals</h1>
+ {/* "Your Goals" collided with the /goals page, which is where targets are
+ actually set — two different things sharing a name. This view is today's
+ progress; the targets behind it are one tap away below. */}
+ <h1 className="text-2xl font-bold text-[var(--text-on-header)]">Today</h1>
  </div>
  )}
 
@@ -77,6 +81,22 @@ export function TodayDashboard({
  <MacroBar metric="fat" label="Fat" value={totals.fat} target={targets.fat} unit="g" />
  <MacroBar metric="carbs" label="Carbs" value={totals.carbs} target={targets.carbs} unit="g" />
  </div>
+ {/* On mobile /goals sits behind the "More" sheet, so the targets driving every
+ number above were effectively undiscoverable. Put the way in next to them. */}
+ <Link
+ href="/goals"
+ className="mt-4 flex items-center justify-between rounded-xl border border-[var(--border-subtle)] px-3 py-2.5 transition-colors hover:bg-[var(--surface-muted)]"
+ >
+ <span className="min-w-0">
+ <span className="block text-sm font-medium text-[var(--text-primary)]">
+ Adjust your targets
+ </span>
+ <span className="block text-xs text-[var(--text-muted)]">
+ {targets.kcal} kcal · {targets.protein}g protein · {targets.carbs}g carbs · {targets.fat}g fat
+ </span>
+ </span>
+ <span aria-hidden className="shrink-0 text-[var(--text-muted)]">›</span>
+ </Link>
  <GoalsStatusLegend />
  </>
  )}
