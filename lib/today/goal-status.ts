@@ -24,6 +24,18 @@ const ON_TRACK_MIN = 0.85;
 const ON_TRACK_MAX = 1.05;
 const OVER_MODERATE_MAX = 1.15;
 
+/**
+ * Minimum-metric tolerance. Requiring a literal 100% flagged 197g against a 200g
+ * protein target as "below target", while calories 189kcal short read "on track"
+ * off their 0.85 band — the same day both passing and failing.
+ *
+ * 0.95 matches PROTEIN_FLOOR_RATIO in lib/planner/plan-calorie-tuning.ts, which is
+ * the floor the week generator already treats as success. Kept as a local constant
+ * so this client-side module does not pull in planner internals; the two must move
+ * together.
+ */
+const MINIMUM_ON_TRACK_RATIO = 0.95;
+
 export const GOAL_STATUS_COLORS = {
   "on-track": "var(--brand-primary)",
   under: "var(--traffic-amber)",
@@ -63,7 +75,7 @@ function nearTargetStatus(ratio: number): GoalStatus {
 }
 
 function minimumTargetStatus(ratio: number): GoalStatus {
-  if (ratio >= 1) return buildStatus("on-track");
+  if (ratio >= MINIMUM_ON_TRACK_RATIO) return buildStatus("on-track");
   return buildStatus("under");
 }
 
