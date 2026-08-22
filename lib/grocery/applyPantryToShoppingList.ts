@@ -1,6 +1,5 @@
 import {
-  INGREDIENT_MATCH_THRESHOLD,
-  scoreIngredientOverlap,
+  pantryCoversIngredient,
   type AvailableIngredient,
 } from "@/lib/matching/ingredient-overlap";
 import { normalizeUnitLabel } from "@/lib/utils/merge";
@@ -18,19 +17,11 @@ function round2(n: number): number {
 }
 
 function findBestPantryMatch(lineName: string, pantry: AvailableIngredient[]): AvailableIngredient | null {
-  let best: AvailableIngredient | null = null;
-  let bestScore = INGREDIENT_MATCH_THRESHOLD - 1;
-
   for (const item of pantry) {
     if (item.runningLow) continue;
-    const score = scoreIngredientOverlap(item.name, lineName);
-    if (score > bestScore) {
-      bestScore = score;
-      best = item;
-    }
+    if (pantryCoversIngredient(item.name, lineName)) return item;
   }
-
-  return best;
+  return null;
 }
 
 function subtractQuantity(line: ShoppingLine, pantryItem: AvailableIngredient): ShoppingLine | null {
