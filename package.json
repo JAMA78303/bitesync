@@ -28,7 +28,8 @@
     "export:cofid-copy-page": "tsx scripts/generate-cofid-copy-page.ts",
     "export:cofid-retry-13-15": "tsx scripts/generate-cofid-retry-13-15.ts",
     "push:keys": "tsx scripts/generate-vapid-keys.ts",
-    "verify:nutrition-integrity": "tsx scripts/verify-nutrition-integrity.ts"
+    "verify:nutrition-integrity": "tsx scripts/verify-nutrition-integrity.ts",
+    "inspect:omega": "tsx scripts/inspect-omega-sources.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.92.0",

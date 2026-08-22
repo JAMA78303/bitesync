@@ -123,4 +123,37 @@ if (
   throw new Error("high preformed retinol week must trip vitamin A upper limit");
 }
 
+// Omega totals scale by portion and by how often a recipe appears on the plan.
+{
+  const omegaWeek = aggregateWeeklyMicrosFromPlan(
+    [{ recipe_id: "r1" }, { recipe_id: "r2" }],
+    [
+      { recipe_id: "r1", name: "salmon", quantity: 150, unit: "g" },
+      { recipe_id: "r1", name: "broccoli", quantity: 100, unit: "g" },
+      { recipe_id: "r2", name: "walnuts", quantity: 20, unit: "g" },
+      { recipe_id: "r2", name: "quinoa", quantity: 100, unit: "g" },
+    ],
+  );
+  // 150g salmon @3.93/100 = 5.90, 20g walnuts @7.47/100 = 1.49
+  const n3 = omegaWeek?.omega?.omega_3_g ?? 0;
+  if (Math.abs(n3 - 7.39) > 0.05) {
+    throw new Error(`omega-3 total should be ~7.39g, got ${n3}`);
+  }
+  if (omegaWeek?.omega?.coveredItems !== 2 || omegaWeek?.omega?.totalItems !== 4) {
+    throw new Error("omega coverage should count only foods with measured values");
+  }
+}
+
+// An unmeasured food must not be scored as zero — it is excluded, and a plan with
+// no measured foods reports null rather than a confident 0g.
+{
+  const noOmega = aggregateWeeklyMicrosFromPlan(
+    [{ recipe_id: "r1" }],
+    [{ recipe_id: "r1", name: "quinoa", quantity: 100, unit: "g" }],
+  );
+  if (noOmega?.omega !== null) {
+    throw new Error("a plan with no measured omega foods must report null, not 0g");
+  }
+}
+
 console.log("weeklyMicroTotals.test.ts: all assertions passed");
