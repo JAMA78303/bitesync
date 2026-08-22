@@ -75,4 +75,42 @@ for (const kcal of [1500, 2000, 2500, 2834, 3200]) {
   }
 }
 
+
+// Protein used to scale off TOTAL bodyweight at athlete multipliers regardless of
+// activity, prescribing a 140kg sedentary man 308g/day (~1.5kg of chicken).
+{
+  const heavySedentary = deriveNutritionTargets({
+    weight_kg: 140, height_cm: 178, age: 35, sex: "male",
+    activity_level: "sedentary", goal: "lose",
+    daily_calorie_target: null, daily_protein_target: null,
+  } as never);
+  if (heavySedentary.protein > 130) {
+    throw new Error(`140kg sedentary protein should use adjusted bodyweight, got ${heavySedentary.protein}g`);
+  }
+
+  // A trained user at the same weight should still get materially more.
+  const heavyActive = deriveNutritionTargets({
+    weight_kg: 140, height_cm: 178, age: 35, sex: "male",
+    activity_level: "extra_active", goal: "lose",
+    daily_calorie_target: null, daily_protein_target: null,
+  } as never);
+  if (heavyActive.protein <= heavySedentary.protein) {
+    throw new Error("activity level must raise the protein target");
+  }
+}
+
+// Fat was squeezed by high protein with no floor — a 60kg woman losing weight got
+// 33g (0.55 g/kg). Held at 0.6 g/kg, funded from carbohydrate.
+{
+  const lightFemale = deriveNutritionTargets({
+    weight_kg: 60, height_cm: 165, age: 30, sex: "female",
+    activity_level: "sedentary", goal: "lose",
+    daily_calorie_target: null, daily_protein_target: null,
+  } as never);
+  const gPerKg = lightFemale.fat / 60;
+  if (gPerKg < 0.59) {
+    throw new Error(`fat floor breached: ${lightFemale.fat}g (${gPerKg.toFixed(2)} g/kg)`);
+  }
+}
+
 console.log("nutrition-targets.test.ts: ok");

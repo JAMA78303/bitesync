@@ -62,14 +62,34 @@ function reconcileCarbFatRounding(kcal: number, protein: number, carbs: number, 
   return { carbs: c, fat: f };
 }
 
-function macroSplitFromKcalProtein(kcal: number, protein: number): Pick<UserNutritionTargets, "carbs" | "fat" | "fibre"> {
+/**
+ * Minimum dietary fat, g per kg bodyweight.
+ *
+ * The 5:3 carb:fat split runs on whatever is left after protein, so a high
+ * protein target used to squeeze fat toward levels associated with hormonal
+ * disruption — a 60kg woman losing weight was given 33g (0.55 g/kg) with nothing
+ * stopping it going lower. Held at 0.6 g/kg, taking the shortfall from carbs.
+ */
+const MIN_FAT_G_PER_KG = 0.6;
+
+function macroSplitFromKcalProtein(
+  kcal: number,
+  protein: number,
+  weightKg?: number,
+): Pick<UserNutritionTargets, "carbs" | "fat" | "fibre"> {
   const remaining = Math.max(0, kcal - protein * 4);
-  const rounded = reconcileCarbFatRounding(
-    kcal,
-    protein,
-    Math.round((remaining * CARB_KCAL_SHARE) / 4),
-    Math.round((remaining * FAT_KCAL_SHARE) / 9),
-  );
+  let carbs = Math.round((remaining * CARB_KCAL_SHARE) / 4);
+  let fat = Math.round((remaining * FAT_KCAL_SHARE) / 9);
+
+  const fatFloor = weightKg && weightKg > 0 ? Math.round(weightKg * MIN_FAT_G_PER_KG) : 0;
+  if (fatFloor > fat) {
+    // Buy the extra fat with carbohydrate so the calorie total still holds.
+    const extraKcal = (fatFloor - fat) * 9;
+    fat = fatFloor;
+    carbs = Math.max(0, carbs - Math.round(extraKcal / 4));
+  }
+
+  const rounded = reconcileCarbFatRounding(kcal, protein, carbs, fat);
   return { ...rounded, fibre: 30 };
 }
 
@@ -117,7 +137,7 @@ export function computeNutritionTargetsFromProfile(profile: ProfileForTargets): 
   const safe = calculateNutritionTargetsWithSafety(profileToTdeeValues(profile!));
   const kcal = safe.result.dailyCalories;
   const protein = safe.result.dailyProtein;
-  return { kcal, protein, ...macroSplitFromKcalProtein(kcal, protein) };
+  return { kcal, protein, ...macroSplitFromKcalProtein(kcal, protein, Number(profile!.weight_kg)) };
 }
 
 /** Daily calorie target for display/comparison, or null if user has not set targets. */
