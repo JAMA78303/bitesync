@@ -478,8 +478,8 @@ export function TDEEForm({ defaultValues, onboardingMode = false, onSaved }: Pro
  <p className="font-semibold text-[var(--semantic-success-text)]">NHS safe weight loss guideline</p>
  <p className="mt-1 text-xs leading-relaxed text-[var(--semantic-success-text)]/90">
  We follow the NHS recommendation of up to about{""}
- <strong>0.5 kg loss per week</strong>. A <strong>500 kcal</strong> daily deficit is applied to your calorie
- target.
+ <strong>0.5 kg loss per week</strong>. Your target sits <strong>20% below</strong> your estimated daily
+ energy needs, so the deficit scales with your body rather than being the same for everyone.
  </p>
  </div>
  </div>
