@@ -501,23 +501,43 @@ export function TDEEForm({ defaultValues, onboardingMode = false, onSaved }: Pro
  <Calculator className="h-4 w-4 text-[var(--brand-primary)]" />
  <span className="text-sm font-semibold text-[var(--brand-primary)]">Your estimates</span>
  </div>
+ {/* The four numbers used to sit in an even 2x2 grid as bare acronyms, which
+ read as four alternatives rather than a calculation ending in one answer.
+ Targets lead; BMR and TDEE follow as the working behind them. */}
  <div className="grid grid-cols-2 gap-3">
  <div>
- <p className="text-xs text-[var(--text-muted)]">BMR</p>
- <p className="text-base font-semibold text-[var(--text-secondary)]">{Math.round(preview.bmr)} kcal</p>
- </div>
- <div>
- <p className="text-xs text-[var(--text-muted)]">TDEE</p>
- <p className="text-base font-semibold text-[var(--text-secondary)]">{preview.tdee} kcal</p>
- </div>
- <div>
- <p className="text-xs text-[var(--text-muted)]">Daily target</p>
- <p className="text-base font-semibold text-[var(--brand-primary)]">{preview.dailyCalories} kcal</p>
+ <p className="text-xs text-[var(--text-muted)]">Eat this each day</p>
+ <p className="text-2xl font-bold text-[var(--brand-primary)]">{preview.dailyCalories} kcal</p>
  </div>
  <div>
  <p className="text-xs text-[var(--text-muted)]">Protein target</p>
- <p className="text-base font-semibold text-[var(--brand-primary)]">{preview.dailyProtein} g</p>
+ <p className="text-2xl font-bold text-[var(--brand-primary)]">{preview.dailyProtein} g</p>
  </div>
+ </div>
+
+ <div className="border-t border-[var(--border-subtle)] pt-3">
+ <p className="mb-2 text-xs font-medium text-[var(--text-muted)]">How we got there</p>
+ <dl className="space-y-1.5 text-xs">
+ <div className="flex items-baseline justify-between gap-3">
+ <dt className="text-[var(--text-muted)]">
+ At rest <span className="opacity-70">(BMR)</span> — burned doing nothing
+ </dt>
+ <dd className="font-medium text-[var(--text-secondary)]">{Math.round(preview.bmr)} kcal</dd>
+ </div>
+ <div className="flex items-baseline justify-between gap-3">
+ <dt className="text-[var(--text-muted)]">
+ Maintenance <span className="opacity-70">(TDEE)</span> — with your activity
+ </dt>
+ <dd className="font-medium text-[var(--text-secondary)]">{preview.tdee} kcal</dd>
+ </div>
+ <div className="flex items-baseline justify-between gap-3">
+ <dt className="text-[var(--text-muted)]">Adjusted for your goal</dt>
+ <dd className="font-medium text-[var(--text-secondary)]">
+ {preview.dailyCalories > preview.tdee ? "+" : ""}
+ {preview.dailyCalories - preview.tdee} kcal
+ </dd>
+ </div>
+ </dl>
  </div>
  </div>
  ) : null}
