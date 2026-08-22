@@ -48,8 +48,10 @@ async function getOnboardingFlags(
     .eq("id", userId)
     .maybeSingle();
 
+  // Missing profile ⇒ not onboarded. Using `!== false` treated null rows as done
+  // and sent brand-new users straight into /today after email confirm.
   return {
-    hasCompletedOnboarding: data?.has_completed_onboarding !== false,
+    hasCompletedOnboarding: data?.has_completed_onboarding === true,
     firstRunCompleted: data?.first_run_completed === true,
   };
 }

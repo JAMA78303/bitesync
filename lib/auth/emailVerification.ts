@@ -33,8 +33,11 @@ export function isDuplicateSignUpResponse(data: SignUpLikeResponse | null | unde
   return false;
 }
 
-export function confirmationCallbackUrl(next = "/planner"): string {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+export function confirmationCallbackUrl(next = "/onboarding"): string {
+  const appUrl =
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+    "http://localhost:3000";
   return `${appUrl}/auth/callback?next=${encodeURIComponent(next)}`;
 }
 
