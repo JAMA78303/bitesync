@@ -62,6 +62,49 @@ function buildToastSteps(ingredients: RecipeIngredientInput[]): string[] | null 
   return steps.length >= 2 ? steps : null;
 }
 
+const LIQUID_PATTERN = /\b(milk|water|stock|broth|juice|cream)\b/;
+const FRUIT_PATTERN = /\b(banana|strawberr|blueberr|raspberr|blackberr|apple|pear|orange|grape|mango|peach|plum|kiwi|pineapple|melon|berries)\b/;
+const VEG_PATTERN =
+  /\b(broccoli|spinach|kale|pepper|carrot|tomato|onion|lettuce|cucumber|beans|peas|mushroom|courgette|cabbage|leek|asparagus|aubergine|squash|sweetcorn|corn)\b/;
+const TOPPING_PATTERN = /\b(almond|walnut|cashew|pecan|seed|chia|granola|nut|avocado)\b/;
+const FAT_PATTERN = /\b(oil|butter(?! bean))\b/;
+const CHEESE_PATTERN = /\b(cheese|feta|parmesan|cheddar|mozzarella|halloumi)\b/;
+const HERB_SPICE_PATTERN =
+  /\b(salt|pepper corns?|paprika|cumin|turmeric|cinnamon|oregano|thyme|rosemary|basil|coriander|parsley|chilli|chili|spice|seasoning|herbs?)\b/;
+
+/**
+ * Phrase an ingredient the way it is actually used, rather than "Prepare X and add
+ * to the dish before serving" for everything. That generic line produced
+ * instructions like seasoning almond milk and cooking it "until safe to eat".
+ */
+/** Fold plurals so "mushrooms" matches a "mushroom" pattern. */
+function singular(word: string): string {
+  if (word.endsWith("ies") && word.length > 4) return `${word.slice(0, -3)}y`;
+  if (word.endsWith("oes") && word.length > 4) return word.slice(0, -2);
+  if (word.endsWith("s") && !word.endsWith("ss") && word.length > 3) return word.slice(0, -1);
+  return word;
+}
+
+function describeAddStep(ing: RecipeIngredientInput): string {
+  const name = ing.name
+    .toLowerCase()
+    .split(/\s+/)
+    .map(singular)
+    .join(" ");
+  const label = titleCase(ing.name);
+  const qty = formatQty(ing);
+
+  if (/\bavocado\b/.test(name)) return `Slice ${qty} ${label} and lay on top.`;
+  if (HERB_SPICE_PATTERN.test(name)) return `Season with ${qty} ${label}.`;
+  if (FAT_PATTERN.test(name)) return `Drizzle over ${qty} ${label}.`;
+  if (LIQUID_PATTERN.test(name)) return `Pour in ${qty} ${label} and stir through.`;
+  if (CHEESE_PATTERN.test(name)) return `Crumble over ${qty} ${label}.`;
+  if (TOPPING_PATTERN.test(name)) return `Scatter over ${qty} ${label}.`;
+  if (FRUIT_PATTERN.test(name)) return `Top with ${qty} ${label}.`;
+  if (VEG_PATTERN.test(name)) return `Add ${qty} ${label} and cook until tender.`;
+  return `Add ${qty} ${label} to the dish.`;
+}
+
 function appendStepsForOrphanIngredients(
   steps: string[],
   ingredients: RecipeIngredientInput[],
@@ -72,11 +115,7 @@ function appendStepsForOrphanIngredients(
   const out = [...steps];
   const insertAt = Math.max(out.length - 1, 0);
   for (const ing of orphans) {
-    out.splice(
-      insertAt,
-      0,
-      `Prepare ${formatQty(ing)} ${titleCase(ing.name)} and add to the dish before serving.`,
-    );
+    out.splice(insertAt, 0, describeAddStep(ing));
   }
   return out;
 }
@@ -90,9 +129,13 @@ function buildNoCookBowlSteps(ingredients: RecipeIngredientInput[], mealSlot: Go
   const cottage = findIngredient(ingredients, /cottage cheese/);
   const chia = findIngredient(ingredients, /chia/);
 
+  const milk = findIngredient(ingredients, /\bmilk\b/);
   const isBowl =
     (oats || yoghurt || cottage) &&
-    (pb || yoghurt || cottage || chia) &&
+    // Oats + a milk is porridge / overnight oats — the most common breakfast the
+    // generator makes. Without this it fell through to the generic builder and
+    // told users to season the almond milk and cook it "until safe to eat".
+    (pb || yoghurt || cottage || chia || (oats && milk)) &&
     !hasIngredient(ingredients, /\begg|chicken|salmon|tuna|beef|turkey|shrimp\b/);
 
   const isFruitNutSnack =
@@ -115,7 +158,16 @@ function buildNoCookBowlSteps(ingredients: RecipeIngredientInput[], mealSlot: Go
 
   const steps: string[] = [];
 
-  if (oats) {
+  if (oats && milk) {
+    steps.push(
+      `Combine ${formatQty(oats)} ${titleCase(oats.name)} with ${formatQty(milk)} ${titleCase(milk.name)} in a bowl or jar.`,
+    );
+    steps.push(
+      mealSlot === "breakfast"
+        ? `Simmer gently for 4–5 minutes until creamy, stirring often (or microwave 90 seconds).`
+        : `Chill for at least 2 hours, or overnight, until thick and creamy.`,
+    );
+  } else if (oats) {
     steps.push(
       `Stir ${formatQty(oats)} ${titleCase(oats.name)} with a splash of water or milk until creamy (microwave 90 seconds or soak 5 minutes).`,
     );
@@ -156,6 +208,18 @@ function mainProtein(ingredients: RecipeIngredientInput[]): string | null {
     "beef mince",
     "beef",
     "shrimp",
+    "prawn",
+    // White fish and other meats were missing entirely, so a cod dinner got no
+    // cooking step and the fish was appended as a generic "add to the dish".
+    "cod",
+    "haddock",
+    "mackerel",
+    "sea bass",
+    "trout",
+    "tilapia",
+    "pork",
+    "lamb",
+    "duck",
     "tofu",
     "lentils",
     "chickpeas",
@@ -169,8 +233,9 @@ function mainProtein(ingredients: RecipeIngredientInput[]): string | null {
   for (const p of proteins) {
     if (names.some((n) => n.includes(p))) return titleCase(p);
   }
-  const first = ingredients.find((i) => i.quantity >= 40 && i.unit === "g");
-  return first ? titleCase(first.name) : null;
+  // No fallback to "whatever weighs most". It picked almond milk as the protein
+  // of an overnight-oats snack and told the user to season it and cook it through.
+  return null;
 }
 
 /** Deterministic method steps from drafted ingredients (DB path — no LLM required). */
@@ -188,23 +253,34 @@ export function buildMethodStepsFromIngredients(
     return appendStepsForOrphanIngredients(bowlSteps, ingredients);
   }
 
-  const slot = mealLabel(mealSlot);
   const protein = mainProtein(ingredients);
   const veg = ingredients
     .filter((i) => /broccoli|spinach|pepper|carrot|tomato|onion|lettuce|cucumber|beans|peas/i.test(i.name))
     .map((i) => titleCase(i.name));
 
-  const steps: string[] = [
-    `Gather and weigh ingredients for this ${slot.toLowerCase()} recipe.`,
-  ];
+  // No "gather and weigh ingredients" opener — it is filler, not a cooking step.
+  const steps: string[] = [];
 
   if (protein && !/peanut butter/i.test(protein)) {
     if (/egg/i.test(protein)) {
       steps.push(`Beat or fry the eggs until cooked to your liking.`);
     } else if (/yoghurt|yogurt|cottage/i.test(protein)) {
       steps.push(`Spoon the ${protein} into a bowl — no cooking needed.`);
+    } else if (/cod|haddock|salmon|mackerel|sea bass|trout|tilapia|tuna/i.test(protein)) {
+      steps.push(
+        `Season the ${protein} and pan-fry or bake for 10–12 minutes, until it flakes easily.`,
+      );
+    } else if (/mince/i.test(protein)) {
+      steps.push(`Brown the ${protein} in a hot pan, breaking it up, until cooked through.`);
+    } else if (/tofu/i.test(protein)) {
+      steps.push(`Press and cube the ${protein}, then fry until golden on all sides.`);
+    } else if (/lentils|chickpeas/i.test(protein)) {
+      steps.push(`Rinse the ${protein} and warm through.`);
+    } else if (/shrimp|prawn/i.test(protein)) {
+      steps.push(`Fry the ${protein} for 2–3 minutes a side, until pink and opaque.`);
     } else {
-      steps.push(`Prepare ${protein}: season lightly and cook through until safe to eat.`);
+      // "until safe to eat" reads like a warning label, not a recipe.
+      steps.push(`Season the ${protein} and cook through, turning once, until done.`);
     }
   }
 
