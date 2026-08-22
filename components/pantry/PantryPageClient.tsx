@@ -14,6 +14,7 @@ import {
  suggestMealsFromPantry,
 } from "@/app/(app)/pantry/actions";
 import { PANTRY_STAPLES, type PantryItemRow } from "@/lib/pantry/constants";
+import { isStorePantryStaple } from "@/lib/pantry/staples";
 import { ds } from "@/lib/ui/classes";
 
 type Props = {
@@ -143,7 +144,13 @@ export function PantryPageClient({ items }: Props) {
  <p className="text-xs text-[var(--text-muted)]">
  {item.quantity} {item.unit}
  </p>
- ) : null}
+ ) : isStorePantryStaple(item.name) ? (
+ <p className="text-xs text-[var(--text-muted)]">Staple — kept off your grocery list</p>
+ ) : (
+ <p className="text-xs text-[var(--text-muted)]">
+ Add a quantity to subtract it from your grocery list
+ </p>
+ )}
  </div>
  <div className="flex shrink-0 items-center gap-2">
  <button

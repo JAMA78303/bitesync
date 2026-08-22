@@ -3,6 +3,7 @@ import {
   type AvailableIngredient,
 } from "@/lib/matching/ingredient-overlap";
 import { normalizeUnitLabel } from "@/lib/utils/merge";
+import { isStorePantryStaple } from "@/lib/pantry/staples";
 
 export type ShoppingLine = { name: string; quantity: number; unit: string };
 
@@ -27,7 +28,9 @@ function findBestPantryMatch(lineName: string, pantry: AvailableIngredient[]): A
 function subtractQuantity(line: ShoppingLine, pantryItem: AvailableIngredient): ShoppingLine | null {
   const pantryQty = pantryItem.quantity;
   if (pantryQty == null || !Number.isFinite(Number(pantryQty))) {
-    return null;
+    // No recorded amount. Assuming "enough" is only safe for store-cupboard
+    // staples; for a perishable it hid 980g of chicken behind one quick-add tap.
+    return isStorePantryStaple(pantryItem.name) ? null : line;
   }
 
   const needUnit = normalizeUnitLabel(line.unit);
