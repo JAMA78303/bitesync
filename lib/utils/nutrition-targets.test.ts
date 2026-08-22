@@ -1,3 +1,4 @@
+import { calculateBMR, calculateTDEE } from "@/lib/utils/tdee";
 import {
   computeNutritionTargetsFromProfile,
   deriveNutritionTargets,
@@ -110,6 +111,53 @@ for (const kcal of [1500, 2000, 2500, 2834, 3200]) {
   const gPerKg = lightFemale.fat / 60;
   if (gPerKg < 0.59) {
     throw new Error(`fat floor breached: ${lightFemale.fat}g (${gPerKg.toFixed(2)} g/kg)`);
+  }
+}
+
+
+// A flat ±500 meant very different things at different body sizes: a 32% deficit
+// for a small sedentary woman and ~18% for a large man. Adjustments are now
+// proportional to TDEE, so the same goal means the same thing to everyone.
+{
+  const small = deriveNutritionTargets({
+    weight_kg: 60, height_cm: 165, age: 30, sex: "female",
+    activity_level: "sedentary", goal: "lose",
+    daily_calorie_target: null, daily_protein_target: null,
+  } as never);
+  const large = deriveNutritionTargets({
+    weight_kg: 140, height_cm: 178, age: 35, sex: "male",
+    activity_level: "sedentary", goal: "lose",
+    daily_calorie_target: null, daily_protein_target: null,
+  } as never);
+
+  const smallBmr = calculateBMR(60, 165, 30, "female");
+  const largeBmr = calculateBMR(140, 178, 35, "male");
+  const smallPct = (calculateTDEE(smallBmr, "sedentary") - small.kcal) / calculateTDEE(smallBmr, "sedentary");
+  const largePct = (calculateTDEE(largeBmr, "sedentary") - large.kcal) / calculateTDEE(largeBmr, "sedentary");
+
+  if (Math.abs(smallPct - largePct) > 0.02) {
+    throw new Error(
+      `deficit should be proportional: ${(smallPct * 100).toFixed(0)}% vs ${(largePct * 100).toFixed(0)}%`,
+    );
+  }
+  if (Math.abs(smallPct - 0.2) > 0.02) {
+    throw new Error(`expected ~20% deficit, got ${(smallPct * 100).toFixed(0)}%`);
+  }
+}
+
+// "Build muscle" should be a lean gain, not a bulk — the old +500 added fat
+// beyond what the label promises.
+{
+  const bmr = calculateBMR(75, 178, 35, "male");
+  const tdee = calculateTDEE(bmr, "extra_active");
+  const gain = deriveNutritionTargets({
+    weight_kg: 75, height_cm: 178, age: 35, sex: "male",
+    activity_level: "extra_active", goal: "gain",
+    daily_calorie_target: null, daily_protein_target: null,
+  } as never);
+  const surplus = gain.kcal - tdee;
+  if (surplus < 200 || surplus > 400) {
+    throw new Error(`lean-gain surplus should be ~250-350 kcal, got ${surplus}`);
   }
 }
 

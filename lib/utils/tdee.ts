@@ -37,9 +37,9 @@ export const ACTIVITY_OPTIONS = [
 ] as const;
 
 export const GOAL_OPTIONS = [
-  { value: "lose", label: "Lose weight", description: "500 kcal daily deficit (~0.5kg/week)" },
+  { value: "lose", label: "Lose weight", description: "20% below your TDEE (~0.5kg/week)" },
   { value: "maintain", label: "Maintain weight", description: "Eat at your TDEE" },
-  { value: "gain", label: "Build muscle", description: "500 kcal daily surplus (~0.5kg/week)" },
+  { value: "gain", label: "Build muscle", description: "10% above your TDEE — a lean gain" },
 ] as const;
 
 export function calculateBMR(weightKg: number, heightCm: number, age: number, sex: Sex): number {
@@ -51,10 +51,25 @@ export function calculateTDEE(bmr: number, activityLevel: ActivityLevel): number
   return Math.round(bmr * PAL[activityLevel]);
 }
 
+/**
+ * Goal adjustment as a share of TDEE, not a flat figure.
+ *
+ * A flat -500 is a 27% deficit for a 60kg woman (TDEE ~1815) and a 14% deficit
+ * for a 140kg man (~3631) — the same number meaning very different things. A
+ * proportion scales with the person.
+ *
+ * -20% lands most users near 0.5-0.75kg/week. +10% is a lean-gain surplus of
+ * roughly 250-350 kcal; the previous +500 reliably added fat beyond what the
+ * "Build muscle" label promises.
+ */
+const GOAL_TDEE_ADJUSTMENT: Record<Goal, number> = {
+  lose: -0.2,
+  maintain: 0,
+  gain: 0.1,
+};
+
 export function calculateGoalCalories(tdee: number, goal: Goal): number {
-  if (goal === "lose") return tdee - 500;
-  if (goal === "gain") return tdee + 500;
-  return tdee;
+  return Math.round(tdee * (1 + GOAL_TDEE_ADJUSTMENT[goal]));
 }
 
 /**
