@@ -57,16 +57,69 @@ export function calculateGoalCalories(tdee: number, goal: Goal): number {
   return tdee;
 }
 
-export function calculateProteinTarget(weightKg: number, goal: Goal): number {
-  const multipliers: Record<Goal, number> = { lose: 2.2, maintain: 1.8, gain: 2.0 };
-  return Math.round(weightKg * multipliers[goal]);
+/**
+ * Ideal body weight (Devine) — the reference for the obesity adjustment below.
+ */
+function idealBodyWeightKg(heightCm: number, sex: Sex): number {
+  const inchesOver5ft = Math.max(0, heightCm / 2.54 - 60);
+  return (sex === "male" ? 50 : 45.5) + 2.3 * inchesOver5ft;
+}
+
+/**
+ * Weight to base protein on.
+ *
+ * Above BMI 30 the standard clinical adjustment applies — IBW + 25% of the excess
+ * — because fat mass does not need feeding in proportion to its weight. Without
+ * it, a 140kg man was prescribed 308g of protein a day (~1.5kg of chicken).
+ */
+export function proteinReferenceWeightKg(weightKg: number, heightCm: number, sex: Sex): number {
+  const heightM = heightCm / 100;
+  const bmi = heightM > 0 ? weightKg / (heightM * heightM) : 0;
+  if (bmi < 30) return weightKg;
+  const ibw = idealBodyWeightKg(heightCm, sex);
+  return ibw + 0.25 * (weightKg - ibw);
+}
+
+/**
+ * Protein g/kg of reference weight, scaled by how much the user actually trains.
+ *
+ * The previous flat 1.8–2.2 came from the resistance-trained-athlete-in-a-deficit
+ * literature (Helms et al.) and was applied to everyone, including sedentary
+ * users, on total bodyweight. Sedentary intakes now sit nearer clinical adequacy
+ * ranges (PENG/RNI territory); the athlete figures are reserved for people whose
+ * stated activity justifies them. Activity is already collected for TDEE.
+ */
+const PROTEIN_G_PER_KG: Record<ActivityLevel, Record<Goal, number>> = {
+  sedentary: { maintain: 1.0, lose: 1.2, gain: 1.2 },
+  light: { maintain: 1.1, lose: 1.2, gain: 1.2 },
+  moderate: { maintain: 1.4, lose: 1.6, gain: 1.6 },
+  active: { maintain: 1.6, lose: 1.8, gain: 1.8 },
+  extra_active: { maintain: 1.8, lose: 2.0, gain: 2.0 },
+};
+
+export function calculateProteinTarget(
+  weightKg: number,
+  goal: Goal,
+  opts?: { heightCm?: number; sex?: Sex; activityLevel?: ActivityLevel },
+): number {
+  const activity = opts?.activityLevel ?? "moderate";
+  const perKg = PROTEIN_G_PER_KG[activity][goal];
+  const reference =
+    opts?.heightCm && opts?.sex
+      ? proteinReferenceWeightKg(weightKg, opts.heightCm, opts.sex)
+      : weightKg;
+  return Math.round(reference * perKg);
 }
 
 export function calculateNutritionTargets(input: TDEEInput): TDEEResult {
   const bmr = calculateBMR(input.weightKg, input.heightCm, input.age, input.sex);
   const tdee = calculateTDEE(bmr, input.activityLevel);
   const dailyCalories = calculateGoalCalories(tdee, input.goal);
-  const dailyProtein = calculateProteinTarget(input.weightKg, input.goal);
+  const dailyProtein = calculateProteinTarget(input.weightKg, input.goal, {
+    heightCm: input.heightCm,
+    sex: input.sex,
+    activityLevel: input.activityLevel,
+  });
   return { bmr, tdee, dailyCalories, dailyProtein };
 }
 
