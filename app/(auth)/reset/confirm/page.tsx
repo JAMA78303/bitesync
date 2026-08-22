@@ -1,16 +1,46 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Logo } from "@/components/shared/Logo";
 import { createClient } from "@/lib/supabase/client";
 import { ds } from "@/lib/ui/classes";
 
+const LINK_DEAD =
+ "This reset link has expired or was already used. Request a new one — links are single-use and time-limited.";
+
 export default function ResetConfirmPage() {
+ const router = useRouter();
  const [password, setPassword] = useState("");
  const [message, setMessage] = useState<string | null>(null);
  const [error, setError] = useState<string | null>(null);
  const [isSaving, setIsSaving] = useState(false);
+ const [checking, setChecking] = useState(true);
+ const [hasSession, setHasSession] = useState(false);
+
+ // The recovery session is established by /auth/callback before we get here.
+ // Confirm it exists so an expired link explains itself instead of failing on submit.
+ useEffect(() => {
+ let cancelled = false;
+ (async () => {
+ try {
+ const supabase = createClient();
+ const { data } = await supabase.auth.getSession();
+ if (cancelled) return;
+ setHasSession(Boolean(data.session));
+ if (!data.session) setError(LINK_DEAD);
+ } catch {
+ // Client init or network failure — never leave the page stuck "checking".
+ if (!cancelled) setError("Couldn't verify your reset link. Please request a new one.");
+ } finally {
+ if (!cancelled) setChecking(false);
+ }
+ })();
+ return () => {
+ cancelled = true;
+ };
+ }, []);
 
  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
  event.preventDefault();
@@ -22,14 +52,16 @@ export default function ResetConfirmPage() {
  const { error: updateError } = await supabase.auth.updateUser({ password });
 
  if (updateError) {
- setError(updateError.message);
+ // Raw "Auth session missing!" means the recovery link never established one.
+ setError(/session/i.test(updateError.message) ? LINK_DEAD : updateError.message);
  setIsSaving(false);
  return;
  }
 
- setMessage("Password updated. You can now log in.");
+ setMessage("Password updated. Taking you to your planner…");
  setPassword("");
  setIsSaving(false);
+ router.replace("/today");
  }
 
  return (
@@ -52,6 +84,9 @@ export default function ResetConfirmPage() {
  {error}
  </p>
  ) : null}
+ {checking ? (
+ <p className="text-sm text-[var(--text-muted)]">Checking your reset link…</p>
+ ) : hasSession ? (
  <form onSubmit={onSubmit} className="space-y-4">
  <input
  type="password"
@@ -71,6 +106,14 @@ export default function ResetConfirmPage() {
  {isSaving ?"Updating..." :"Update password"}
  </button>
  </form>
+ ) : (
+ <Link
+ href="/reset"
+ className="flex h-11 w-full items-center justify-center rounded-md bg-[var(--brand-sage)] px-4 text-base font-medium text-[var(--btn-primary-text)]"
+ >
+ Request a new link
+ </Link>
+ )}
  <p className="text-sm text-[var(--text-secondary)]">
  Return to{""}
  <Link href="/login" className="font-medium text-[var(--brand-sage)]">
