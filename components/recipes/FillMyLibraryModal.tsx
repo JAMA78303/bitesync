@@ -11,6 +11,7 @@ import { bulkFillBatchSummary, defaultBulkRecipeCount } from "@/lib/recipes/bulk
 import { FIRST_RUN_LIBRARY_COUNT_PRO } from "@/lib/onboarding/first-run";
 import { ds } from "@/lib/ui/classes";
 import { ModalPortal } from "@/components/ui/ModalPortal";
+import { releaseScreenWakeLock, requestScreenWakeLock, waitUntilVisible } from "@/lib/ui/keepAwake";
 import type { HybridRecipeDraft } from "@/lib/recipes/hybridRecipeEngine";
 
 type DraftRow = HybridRecipeDraft & {
@@ -94,8 +95,17 @@ export function FillMyLibraryModal({ onClose, embedded = false, firstRun = false
  const accepted: HybridRecipeDraft[] = [];
  const slots = plan.data.slots;
 
+ // Generation is a client-side loop, so a locked phone or a backgrounded tab
+ // suspends it mid-batch and nothing resumes it. Hold a screen wake lock for
+ // the duration where the browser supports it.
+ const wakeLock = await requestScreenWakeLock();
+
+ try {
  for (let i = 0; i < slots.length; i++) {
  const slot = slots[i];
+ // If the tab was suspended, wait until it is visible again before
+ // continuing rather than failing the remaining slots.
+ await waitUntilVisible();
  setProgress(`Generating ${i + 1} of ${slots.length}: ${slot.label}…`);
  setRows((prev) =>
  prev.map((r) => (r.slotId === slot.slotId ? { ...r, status:"generating" } : r)),
@@ -137,6 +147,9 @@ export function FillMyLibraryModal({ onClose, embedded = false, firstRun = false
  : r,
  ),
  );
+ }
+ } finally {
+ await releaseScreenWakeLock(wakeLock);
  }
 
  setProgress("");

@@ -19,6 +19,18 @@ function isMissingMethodStepsColumn(message: string | undefined): boolean {
   return m.includes("method_steps") || m.includes("recipe_source");
 }
 
+type IngredientLike = { name: string; quantity: number; unit: string };
+
+/** Same foods at the same amounts, ignoring row order and casing. */
+function sameIngredientSet(a: IngredientLike[], b: IngredientLike[]): boolean {
+  if (a.length !== b.length) return false;
+  const key = (i: IngredientLike) =>
+    `${i.name.trim().toLowerCase()}|${Number(i.quantity)}|${(i.unit ?? "").trim().toLowerCase()}`;
+  const left = a.map(key).sort();
+  const right = b.map(key).sort();
+  return left.every((k, i) => k === right[i]);
+}
+
 /** Insert a generated recipe with nutrition rows; retries without optional columns when migration pending. */
 export async function insertGeneratedRecipe(
   supabase: SupabaseClient,
@@ -104,13 +116,17 @@ export async function insertGeneratedRecipe(
       quantity: Number(i.quantity ?? 0),
       unit: String(i.unit ?? "g"),
     }));
-    if (stored.length !== ingredients.length) {
+    // Recompute only when the rows that landed differ from what we costed.
+    // They are identical on every normal save, and a second AI-enabled pass
+    // means another CoFID lookup per ingredient — pure latency on the path the
+    // user waits behind, multiplied by every recipe in a bulk fill.
+    if (!sameIngredientSet(stored, ingredientRows)) {
       console.warn(
-        `[insertGeneratedRecipe] stored ${stored.length} of ${ingredients.length} ingredients for "${recipe.name}" — recomputing nutrition from stored rows`,
+        `[insertGeneratedRecipe] stored rows differ from draft for "${recipe.name}" (${stored.length} vs ${ingredients.length}) — recomputing nutrition from stored rows`,
       );
+      const recomputed = await calculateRecipeNutritionWithMeta(stored, { aiEnabled: true });
+      finalTotals = recomputed.totals;
     }
-    const recomputed = await calculateRecipeNutritionWithMeta(stored, { aiEnabled: true });
-    finalTotals = recomputed.totals;
   }
 
   const { error: nutritionError } = await supabase.from("recipe_nutrition").upsert(
