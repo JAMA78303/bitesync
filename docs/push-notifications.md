@@ -1,7 +1,7 @@
 # Push notification setup
 
 Weekly-ritual reminders: a Sunday "plan your week" nudge (only sent when the user's
-next week is still empty) and an opt-in daily "log your meals" reminder.
+next week is still empty) and an opt-in evening reminder showing tomorrow's plan.
 
 Nothing sends until the three setup steps below are done. Until then the Reminders
 card in Settings hides itself and the cron endpoint returns `503`.
@@ -49,7 +49,7 @@ windows stay within a sensible afternoon/evening either way.
 - **Weekly nudge** is on by default when a user enables notifications — it is the core
   ritual. It is skipped for anyone who has already planned meals for the upcoming week,
   so it nudges rather than nags.
-- **Daily reminder** is off by default and must be opted into.
+- **Evening prep reminder** is off by default and must be opted into. It points at the next day's plan — BiteSync has no food log, so it must never ask users to record intake.
 - `last_weekly_sent_on` / `last_daily_sent_on` guard against double-sends if a cron
   job fires more than once in a day.
 - Subscriptions rejected by the push service with `404`/`410` are deleted automatically.

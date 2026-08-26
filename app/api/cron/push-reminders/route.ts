@@ -33,10 +33,13 @@ const PAYLOADS: Record<ReminderKind, PushPayload> = {
     url: "/planner",
     tag: "bitesync-weekly",
   },
+  // BiteSync plans meals; it has no food log. The old copy ("Log what you ate")
+  // asked users to do something the app cannot do. An evening nudge is useful for
+  // a planner when it is about the next day's cooking, not yesterday's intake.
   daily: {
-    title: "How did today go?",
-    body: "Log what you ate to keep your calorie and protein tracking accurate.",
-    url: "/today",
+    title: "Check tomorrow's plan",
+    body: "See what's planned so you can defrost or prep anything you need.",
+    url: "/planner",
     tag: "bitesync-daily",
   },
 };
