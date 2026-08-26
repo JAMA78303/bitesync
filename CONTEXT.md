@@ -26,6 +26,41 @@ Update this file whenever behavior, architecture, or UX choices change.
 - **Why:** Reduces auth spoofing risk and avoids middleware over-triggering.
 - **Consequence:** Keep protected-route and webhook matcher rules in sync with route additions.
 
+### DEC-004: Nutrition Truth Lives With the Stored Ingredients
+- **Date:** 2026-08-22
+- **Status:** Accepted
+- **Decision:** A recipe's stored macros are derived from the ingredient rows actually written to the database, never from the in-memory draft. `verify:nutrition-integrity` audits the two against each other.
+- **Why:** A generated porridge stored 762 kcal while its saved ingredients came to 157 — ~100g of phantom almonds counted but never saved. Every calorie and protein target in the app is computed from these values.
+- **Consequence:** Recipe saves cost their ingredients once and re-cost only when the stored rows differ. Nutrition bugs are found by an audit rather than by users spotting odd numbers.
+
+### DEC-005: Unmeasured Nutrients Are Unknown, Not Zero
+- **Date:** 2026-08-22
+- **Status:** Accepted
+- **Decision:** A food with no measured value for a nutrient is excluded from that nutrient's totals and from its coverage count. Never scored as zero.
+- **Why:** The weekly analysis silently drops unmatched ingredients, so a coverage gap reads as a *deficiency*. Vitamin D showed 5%; buckwheat contributed no micronutrients for six commits after a rename.
+- **Consequence:** Omega tracking reports `null` rather than a confident `0g` when nothing on a plan has data. `verify:micro-coverage` is a CI gate.
+
+### DEC-006: CoFID Matching Needs Explicit Class Guards
+- **Date:** 2026-08-22
+- **Status:** Accepted
+- **Decision:** The CoFID matcher is fuzzy by design and must be constrained by explicit mismatch guards for known traps: plant milks must resolve to a *drink* row, bare staples must not take fried/roast or raw-grain values, mince/breadcrumb/pasta classes are guarded individually.
+- **Why:** "almond milk" resolved first to dairy (61 kcal/100g) and then, after a partial fix, to whole almonds (579 kcal/100g) — the fix made it ten times worse. "potato" resolved to fried chips, adding 14g of phantom fat.
+- **Consequence:** Guards require the *right* class rather than blocking wrong ones — a blocklist only stops the cases you thought of. Each guard carries a regression test.
+
+### DEC-007: Targets Scale With the Person
+- **Date:** 2026-08-22
+- **Status:** Accepted
+- **Decision:** Protein scales by activity level against adjusted bodyweight above BMI 30; calorie goals are a percentage of TDEE, not a flat 500; fat is floored at 0.6 g/kg.
+- **Why:** Flat figures meant different things to different bodies — a 140kg sedentary man was prescribed 308g of protein, and a 60kg woman got a 32% deficit from the same "lose weight" selection.
+- **Consequence:** Athlete-level multipliers are reserved for users whose stated activity justifies them. Multipliers were agreed against PENG ranges and should not be changed without the same scrutiny.
+
+### DEC-008: Pantry Matching Is Strict, Recipe Matching Is Fuzzy
+- **Date:** 2026-08-22
+- **Status:** Accepted
+- **Decision:** "Do I already own this?" uses exact significant-word matching (`pantryCoversIngredient`); "what could I cook?" keeps fuzzy scoring. A pantry item with no quantity only suppresses a shopping line for store-cupboard staples.
+- **Why:** Sharing the fuzzy CoFID matcher meant pantry "pepper" deleted red peppers from the shopping list, and "butter" deleted peanut butter. A missing ingredient found at the shop costs far more than a duplicate.
+- **Consequence:** Two functions for two questions. Perishables stay on the list unless a quantity says otherwise.
+
 ## API Contract
 
 All server actions should return one shared result union where possible.
@@ -51,6 +86,15 @@ export type ActionResult<T = void> =
 - Track lookup quality with `coverage_pct` in computed recipe nutrition.
 
 ## Product Agenda (Next Features)
+
+> Reviewed 2026-08-22. The August work was nutrition integrity, target
+> correctness, push notifications, and CI — none of it on this list. The items
+> below predate that and have not been re-validated against current priorities.
+
+### AGD-000: Template Calorie Undershoot - P0
+- **Goal:** Templates reach the top of their calorie bands so a generated day sums to its target.
+- **Why now:** Meal shares were over-allocating by 5-17% and accidentally compensating for templates that land at the low end of every band. Normalising the shares exposed a -8.3% shortfall on build-muscle weeks, so the normalisation is held (stashed) until this is fixed.
+- **Blocked work:** meal-fraction normalisation.
 
 ### AGD-001: Feeling Adventurous (AI Suggestion) - P1
 - **Goal:** One-tap inspiration with minimal complexity.

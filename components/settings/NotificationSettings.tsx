@@ -185,8 +185,8 @@ export function NotificationSettings({ vapidPublicKey }: Props) {
 
           <label className="flex cursor-pointer items-start justify-between gap-3 rounded-xl border border-[var(--border-subtle)] px-3 py-2">
             <span className="min-w-0">
-              <span className="block text-sm font-medium text-[var(--text-primary)]">Daily log reminder</span>
-              <span className="block text-xs text-[var(--text-muted)]">Each evening, to log what you ate</span>
+              <span className="block text-sm font-medium text-[var(--text-primary)]">Evening prep reminder</span>
+              <span className="block text-xs text-[var(--text-muted)]">Each evening, showing tomorrow's plan</span>
             </span>
             <input
               type="checkbox"
