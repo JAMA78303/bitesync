@@ -29,7 +29,7 @@ import {
  parsedIngredientsToInputs,
  scaleParsedIngredients,
 } from "@/lib/recipes/parseIngredient";
-import { getDietTag } from "@/lib/ui/dietTags";
+import { getDietTags } from "@/lib/ui/dietTags";
 import { ds } from "@/lib/ui/classes";
 import { UndoToast } from "@/components/ui/UndoToast";
 import { useRouter } from "next/navigation";
@@ -211,10 +211,13 @@ export function RecipesPageClient({
  if (activeFilter ==="Favourites") {
  list = list.filter((r) => r.isFavourite);
  } else if (activeFilter !=="All") {
+ // Match ANY qualifying tag, not just the highest-priority one: a 320 kcal
+ // recipe with 35g protein belongs in both High Protein and Low Calorie.
  list = list.filter((r) => {
  if (r.kcal == null) return false;
- const tag = getDietTag(r.kcal, r.protein ?? 0, r.carbs, r.fat, dietaryPreferences);
- return tag === activeFilter;
+ return getDietTags(r.kcal, r.protein ?? 0, r.carbs, r.fat, dietaryPreferences).includes(
+ activeFilter,
+ );
  });
  }
  return list;
@@ -386,8 +389,7 @@ export function RecipesPageClient({
  icon={ChefHat}
  title="No recipes yet"
  description="Fill your library in a minute — or add and import recipes one at a time"
- action={{ onClick: () => setShowFillLibrary(true), label: "Fill my library" }}
- secondaryAction={{ href: "/sample-week", label: "See a sample week" }}
+ action={{ href: "/sample-week", label: "See a sample week" }}
  />
  ) : (
  <EmptyState

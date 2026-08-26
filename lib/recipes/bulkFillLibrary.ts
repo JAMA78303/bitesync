@@ -137,14 +137,15 @@ export function planBulkFillBatch(
   baseSeed: number,
 ): BulkFillSlotPlan[] {
   const typeCounts = bulkFillMealTypeCountsExact(count);
-  const maxRounds = Math.max(...MEAL_TYPES.map((t) => typeCounts[t]));
   const slots: BulkFillSlotPlan[] = [];
   let slotIndex = 0;
 
-  for (let round = 0; round < maxRounds; round += 1) {
-    for (let typeIdx = 0; typeIdx < MEAL_TYPES.length; typeIdx += 1) {
-      const mealSlot = MEAL_TYPES[typeIdx]!;
-      if (round >= typeCounts[mealSlot]) continue;
+  // Grouped by meal type — all breakfasts, then lunches, then dinners, then
+  // snacks. Previously interleaved for "varied progress", which left the review
+  // list shuffled and made it hard to judge whether a meal type had enough depth.
+  for (let typeIdx = 0; typeIdx < MEAL_TYPES.length; typeIdx += 1) {
+    const mealSlot = MEAL_TYPES[typeIdx]!;
+    for (let round = 0; round < typeCounts[mealSlot]; round += 1) {
       const proteinAxis = proteinAxisForSlot(slotIndex, hard, mealSlot);
       const variantSeed =
         (baseSeed ^ (slotIndex * 0x9e3779b9) ^ (mealSlot.length << 12) ^ (round << 18) ^ (typeIdx << 6)) >>> 0;
