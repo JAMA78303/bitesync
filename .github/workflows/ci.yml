@@ -8,6 +8,12 @@ on:
 jobs:
   test-and-lint:
     runs-on: ubuntu-latest
+    env:
+      # Puppeteer is a devDependency used only by scripts/run-axe-audit.mjs and
+      # scripts/capture-landing-screenshots.mjs, neither of which runs here. Its
+      # postinstall downloads ~150MB of Chromium on every run and intermittently
+      # fails the whole build on a network hiccup — which is exactly what it did.
+      PUPPETEER_SKIP_DOWNLOAD: "1"
     steps:
       - uses: actions/checkout@v4
 
