@@ -341,9 +341,11 @@ export const MEAL_TEMPLATES: MealTemplate[] = [
     booster: { name: "almonds", unit: "g", steps: [12, 22, 32] },
     slots: [
       { role: "protein", required: true, only: ["egg"] },
-      { role: "fruit", required: true, scale: { min: 80, max: 240 } },
+      // Boiled eggs with fruit ("Boiled Eggs & Orange") is not a snack anyone
+      // eats. Paired with crudites it is one people actually recognise.
+      { role: "vegetable", required: true, scale: { min: 60, max: 200 }, only: ["cucumber", "tomato", "carrot", "red pepper"] },
     ],
-    name: (pick) => `Boiled Eggs & ${display(pick("fruit")?.name)}`,
+    name: (pick) => `Boiled Eggs with ${display(pick("vegetable")?.name)}`,
   },
 ];
 

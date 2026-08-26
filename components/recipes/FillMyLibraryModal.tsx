@@ -54,6 +54,13 @@ export function FillMyLibraryModal({ onClose, embedded = false, firstRun = false
  {} as Record<string, number>,
  );
  const selectedCount = rows.filter((r) => r.selected && r.status ==="ready").length;
+ const failedCount = rows.filter((r) => r.status ==="failed").length;
+ const allReadySelected = readyRows.length > 0 && selectedCount === readyRows.length;
+
+ function toggleSelectAll() {
+ const next = !allReadySelected;
+ setRows((prev) => prev.map((r) => (r.status ==="ready" ? { ...r, selected: next } : r)));
+ }
 
  const runGeneration = useCallback(async () => {
  setGlobalError(null);
@@ -74,7 +81,9 @@ export function FillMyLibraryModal({ onClose, embedded = false, firstRun = false
 
  const initial: DraftRow[] = plan.data.slots.map((slot) => ({
  slotId: slot.slotId,
- selected: true,
+ // Unselected by default: saving 40 recipes should be a deliberate choice,
+ // not the consequence of not unticking them.
+ selected: false,
  status:"pending",
  name:"",
  description:"",
@@ -141,7 +150,7 @@ export function FillMyLibraryModal({ onClose, embedded = false, firstRun = false
  ? {
  ...draft,
  slotId: slot.slotId,
- selected: true,
+ selected: false,
  status:"ready" as const,
  }
  : r,
@@ -262,12 +271,33 @@ export function FillMyLibraryModal({ onClose, embedded = false, firstRun = false
  {(phase ==="review" || phase ==="done") && rows.length > 0 ? (
  <>
  {readyRows.length > 0 ? (
- <p className="mb-3 text-xs text-[var(--text-muted)]">
+ <div className="mb-3 space-y-2">
+ <p className="text-xs text-[var(--text-muted)]">
  Ready:{" "}
  {["breakfast", "lunch", "dinner", "snack"]
  .map((t) => `${readyByType[t] ?? 0} ${t}`)
  .join(" · ")}
+ {/* Say plainly when a slot failed — "39 selected" out of a 40 batch
+ previously looked like an off-by-one rather than one bad slot. */}
+ {failedCount > 0
+ ? ` — ${readyRows.length} of ${rows.length} generated, ${failedCount} failed`
+ : ""}
  </p>
+ {phase === "review" ? (
+ <div className="flex items-center justify-between gap-2">
+ <span className="text-xs text-[var(--text-muted)]">
+ {selectedCount} of {readyRows.length} selected
+ </span>
+ <button
+ type="button"
+ onClick={toggleSelectAll}
+ className="cursor-pointer rounded-lg border border-[var(--border-default)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-muted)]"
+ >
+ {allReadySelected ? "Clear selection" : "Select all"}
+ </button>
+ </div>
+ ) : null}
+ </div>
  ) : null}
  <ul className="space-y-3">
  {rows.map((row) => (
