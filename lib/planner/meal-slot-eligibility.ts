@@ -355,6 +355,41 @@ export function excludeFromMainMealSlots(recipeName: string, ingredientNames: st
 }
 
 /**
+ * Dishes that are specifically a breakfast, rather than foods that merely read as
+ * breakfast-y. Porridge and overnight oats belong at breakfast; a 280 kcal pot of
+ * cottage cheese and fruit is an ordinary snack that happens to classify as
+ * breakfast because of its dairy.
+ */
+const DISTINCT_BREAKFAST_DISH = [
+  "porridge",
+  "overnight oats",
+  "oatmeal",
+  "granola bowl",
+  "muesli",
+  "cereal",
+  "toast",
+  "pancake",
+  "waffle",
+  "crumpet",
+  "croissant",
+  "bagel",
+  "scrambled egg",
+  "fried egg",
+  "omelette",
+  "shakshuka",
+  "full english",
+];
+
+export function isDistinctlyBreakfastDish(recipeName: string, ingredientNames: string[]): boolean {
+  const name = recipeName.toLowerCase();
+  if (DISTINCT_BREAKFAST_DISH.some((d) => name.includes(d))) return true;
+  if (recipeNameImpliesBreakfastSlot(recipeName)) return true;
+  // Oats or breakfast cereal as a substantial component makes it a breakfast dish.
+  const ings = ingredientNames.map((i) => i.toLowerCase().trim());
+  return ings.some((i) => /\b(oats|granola|muesli|cornflakes|cereal)\b/.test(i));
+}
+
+/**
  * Breakfast slot: no dinner mains (chicken breast dinners, curry, pasta dinner, etc.).
  * Titles with "breakfast"/"brunch" pass unless blocked ingredients.
  */
@@ -418,8 +453,16 @@ export function recipeMatchesPlannerSlot(
     return !excludeFromMainMealSlots(recipeName, ingredientNames);
   }
   if (mealType === "snack") {
-    if (recipeNameImpliesBreakfastSlot(recipeName)) return false;
-    if (excludeFromMainMealSlots(recipeName, ingredientNames)) return false;
+    // Breakfast-classified foods are not automatically disqualified: yoghurt pots,
+    // cottage cheese and boiled eggs are ordinary snacks. Only genuine breakfast
+    // dishes (porridge, overnight oats, toast) are excluded. Previously this
+    // rejected them all, leaving some libraries with 2 eligible snacks out of 40.
+    if (
+      excludeFromMainMealSlots(recipeName, ingredientNames) &&
+      isDistinctlyBreakfastDish(recipeName, ingredientNames)
+    ) {
+      return false;
+    }
     if (calories != null && calories > 0) {
       if (calories > SNACK_MAX_CALORIES || calories < SNACK_MIN_CALORIES) return false;
     }
