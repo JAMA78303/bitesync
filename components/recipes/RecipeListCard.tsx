@@ -19,6 +19,9 @@ export type RecipeListItem = {
  fat: number;
  imageUrl: string | null;
  isFavourite: boolean;
+ /** The recipe's own diet flags — not the user's preferences. */
+ fitsVegetarian?: boolean;
+ fitsVegan?: boolean;
 };
 
 type Props = {

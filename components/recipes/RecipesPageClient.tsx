@@ -215,9 +215,10 @@ export function RecipesPageClient({
  // recipe with 35g protein belongs in both High Protein and Low Calorie.
  list = list.filter((r) => {
  if (r.kcal == null) return false;
- return getDietTags(r.kcal, r.protein ?? 0, r.carbs, r.fat, dietaryPreferences).includes(
- activeFilter,
- );
+ return getDietTags(r.kcal, r.protein ?? 0, r.carbs, r.fat, dietaryPreferences, {
+ fitsVegetarian: r.fitsVegetarian,
+ fitsVegan: r.fitsVegan,
+ }).includes(activeFilter);
  });
  }
  return list;

@@ -141,7 +141,8 @@ async function replacePlanDaysWithClaudePlan(
 
   sanitizeAiPlanBreakfastSlots(rows, pool, selectedDays, mealPlanId, allowedRecipeIds);
   rebalanceInappropriateBreakfastAssignments(rows, pool, selectedDays);
-  enforceAiMealSlotSeparation(rows, pool, selectedDays, allowedRecipeIds);
+  const slotGaps = { count: 0 };
+  enforceAiMealSlotSeparation(rows, pool, selectedDays, allowedRecipeIds, slotGaps);
 
   if (!rows.length) {
     return { error: "Claude did not return any valid recipe IDs for the selected days." };
@@ -286,9 +287,16 @@ async function replacePlanDaysWithClaudePlan(
     snackCountPerDay,
   );
 
+  // An empty slot needs explaining, or it reads as the planner silently failing.
+  const slotGapNotice =
+    slotGaps.count > 0
+      ? `${slotGaps.count} slot${slotGaps.count === 1 ? " was" : "s were"} left empty — no recipe in your library suits that meal type at your calorie target. Add breakfast-style recipes (oats, eggs, yoghurt, toast) or fill those slots by hand.`
+      : null;
+  const combinedWarning = [warning, slotGapNotice].filter(Boolean).join(" ") || undefined;
+
   const persisted = await persistWeeklyMealPlanRows(supabase, mealPlanId, rows, selectedDays);
   if ("error" in persisted) return { error: persisted.error };
-  return { success: true as const, warning, snackLibraryNotice };
+  return { success: true as const, warning: combinedWarning, snackLibraryNotice };
 }
 
 type GenerateAIWeekPlanInput = {
@@ -421,10 +429,15 @@ function enforceAiMealSlotSeparation(
   pool: RecipeWithNutrition[],
   selectedDays: number[],
   allowedRecipeIds: Set<string>,
+  gaps?: { count: number },
 ): void {
   const meta = new Map(pool.map((r) => [r.id, r]));
   const mainsPool = pool.filter((r) => !excludeFromMainMealSlots(r.name, r.ingredientNames ?? []));
   const breakfastPool = pool.filter((r) => suitableForBreakfastSlot(r.name, r.ingredientNames ?? []));
+  // Rows that could not be swapped or replaced. Dropped rather than left wrong:
+  // this function promises slot separation, so giving up has to mean an empty
+  // slot, not a curry at breakfast.
+  const unfixable: number[] = [];
 
   for (const day of selectedDays) {
     const used = new Set(rows.filter((r) => r.day_of_week === day).map((r) => r.recipe_id));
@@ -480,11 +493,24 @@ function enforceAiMealSlotSeparation(
           !used.has(r.id) &&
           recipeMatchesPlannerSlot(r.name, r.ingredientNames ?? [], row.meal_type, r.calories ?? null),
       );
-      if (!replacement) continue;
+      if (!replacement) {
+        unfixable.push(i);
+        continue;
+      }
       used.delete(row.recipe_id);
       rows[i] = { ...row, recipe_id: replacement.id };
       used.add(replacement.id);
     }
+  }
+
+  for (const index of [...unfixable].sort((a, b) => b - a)) {
+    const dropped = rows[index];
+    if (!dropped) continue;
+    console.warn(
+      `[ai-plan] day ${dropped.day_of_week} ${dropped.meal_type}: no suitable recipe — leaving slot empty rather than mis-slotting`,
+    );
+    rows.splice(index, 1);
+    if (gaps) gaps.count += 1;
   }
 }
 
@@ -550,6 +576,7 @@ function pickRecipeWithBudgetAndUsage(
   remainingCal: number,
   remainingPro: number,
   strictAffordableMisses: { count: number },
+  breakfastGaps: { count: number },
   logCtx: { day: number; meal_type: MealPlanInsertRow["meal_type"]; slot_index: number },
   snackMicroPriorities?: MicroPriority[],
   goalBias: CalorieGoalBias = "neutral",
@@ -611,9 +638,13 @@ function pickRecipeWithBudgetAndUsage(
         `[heuristic] day ${logCtx.day} breakfast#${logCtx.slot_index}: light-calorie fallback (${light.length} in pool)`,
       );
     } else {
-      consideredPool = poolUse;
+      // Previously fell back to the ENTIRE pool, which put curries and tray bakes
+      // in breakfast slots. An empty slot the user can fill is better than a
+      // confidently wrong one, and it matches how the snack path already behaves.
+      consideredPool = [];
+      breakfastGaps.count += 1;
       console.warn(
-        `[heuristic] day ${logCtx.day} breakfast#${logCtx.slot_index}: full pool fallback — add oats/eggs/yoghurt-style recipes for better matches`,
+        `[heuristic] day ${logCtx.day} breakfast#${logCtx.slot_index}: no breakfast-appropriate recipe fits — leaving slot empty`,
       );
     }
   } else if (logCtx.meal_type === "snack") {
@@ -1021,6 +1052,7 @@ async function generateAIWeekPlanInner(
     const proById = new Map(pool.map((r) => [r.id, r.protein]));
     const slotPlan = plannerSlotSpecs(snackCountPerDay);
     const strictAffordableMisses = { count: 0 };
+    const breakfastGaps = { count: 0 };
     const bandMax = dailyCalorieBand(dailyCalorieTarget).max;
 
     console.log("=== HEURISTIC RECIPE LIBRARY ===");
@@ -1055,6 +1087,7 @@ async function generateAIWeekPlanInner(
           remainingCal,
           remainingPro,
           strictAffordableMisses,
+          breakfastGaps,
           { day, meal_type: spec.meal_type, slot_index: spec.slot_index },
           snackMicroPriorities,
           goalBias,
@@ -1252,6 +1285,25 @@ async function generateAIWeekPlanInner(
       );
     }
 
+    // Recipes are sized to the calorie target that was current when they were
+    // generated, so changing goal (e.g. maintain -> weight loss) leaves a library
+    // built for the old number. The planner then picks the same oversized meals
+    // because nothing smaller exists, and days miss the new targets.
+    const mainMeals = pool.filter((r) => !excludeFromMainMealSlots(r.name, r.ingredientNames ?? []));
+    const mainCals = mainMeals.map((r) => r.calories ?? 0).filter((c) => c > 0).sort((a, b) => a - b);
+    if (mainCals.length >= 4) {
+      const medianMainCal = mainCals[Math.floor(mainCals.length / 2)]!;
+      // Lunch and dinner are the biggest shares; if the median main is far off
+      // what a slot can hold, the library is sized for a different target.
+      const mainSlotTarget = dailyCalorieTarget * 0.33;
+      const ratio = medianMainCal / mainSlotTarget;
+      if (ratio > 1.35 || ratio < 0.7) {
+        const direction = ratio > 1 ? "larger than" : "smaller than";
+        const libraryNotice = `Your recipes average ${Math.round(medianMainCal)} kcal per main meal, ${direction} the ~${Math.round(mainSlotTarget)} kcal your current target allows. They were generated for a different calorie goal — regenerate your library so meals are sized to it.`;
+        heuristicWarning = heuristicWarning ? `${heuristicWarning} ${libraryNotice}` : libraryNotice;
+      }
+    }
+
     const minPoolCal = Math.min(...pool.map((r) => r.calories ?? 0));
     const calorieWarning = buildPlanCalorieAccuracyWarning(
       selectedDaysFullWeek,
@@ -1284,6 +1336,12 @@ async function generateAIWeekPlanInner(
       const extra =
         "Your library may need more lighter meals for days that run high — try salads, soups, or smaller portions.";
       heuristicWarning = heuristicWarning ? `${heuristicWarning} ${extra}` : extra;
+    }
+
+    // Breakfast slots are left empty rather than filled with a dinner, so say why.
+    if (breakfastGaps.count > 0) {
+      const breakfastNotice = `${breakfastGaps.count} breakfast slot${breakfastGaps.count === 1 ? " was" : "s were"} left empty — no breakfast-style recipe in your library fits that calorie target. Add oats, eggs, yoghurt or toast recipes, or fill them by hand.`;
+      heuristicWarning = heuristicWarning ? `${heuristicWarning} ${breakfastNotice}` : breakfastNotice;
     }
 
     // 3 main slots/day at ≤2 uses per week needs ~10 distinct mains before repeats stop.
