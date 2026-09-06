@@ -204,6 +204,33 @@ export function sameDayDuplicateRecipeIds(rows: PlanCalorieRow[], day: number): 
   return dupes;
 }
 
+/**
+ * How many times each recipe is already used across the week.
+ *
+ * The tuner only ever de-duplicated within a single day, then sorted candidates
+ * deterministically and took the winner — so every day converged on the same
+ * best-fitting recipe and a week came back with identical days. The picker's
+ * variety limits were undone by the pass that runs after it.
+ */
+function weekUsageFromRows(rows: PlanCalorieRow[]): Map<string, number> {
+  const uses = new Map<string, number>();
+  for (const row of rows) {
+    if (!row.recipe_id) continue;
+    uses.set(row.recipe_id, (uses.get(row.recipe_id) ?? 0) + 1);
+  }
+  return uses;
+}
+
+/** Prefer candidates not yet used twice this week; fall back when none remain. */
+function preferLeastUsed<T extends { id: string }>(
+  candidates: T[],
+  uses: Map<string, number>,
+  maxUses = 2,
+): T[] {
+  const fresh = candidates.filter((c) => (uses.get(c.id) ?? 0) < maxUses);
+  return fresh.length ? fresh : candidates;
+}
+
 function isPoolSnackCandidate(r: PlanRecipeMeta): boolean {
   return (
     !excludeFromMainMealSlots(r.name, r.ingredientNames ?? []) &&
@@ -234,7 +261,13 @@ function pickSnackForGap(
   usedOnDay: Set<string>,
   allowedRecipeIds: Set<string>,
   snackMicroPriorities?: MicroPriority[],
-  opts?: { proById?: Map<string, number>; proteinGap?: number; allowSameDayRepeat?: boolean },
+  opts?: {
+    proById?: Map<string, number>;
+    proteinGap?: number;
+    allowSameDayRepeat?: boolean;
+    /** Week-level usage so the same snack is not chosen for every day. */
+    weekUses?: Map<string, number>;
+  },
 ): PlanRecipeMeta | null {
   const ideal = Math.min(Math.max(gapToMin, SNACK_MIN_CALORIES), SNACK_MAX_CALORIES);
   const headroom = Math.max(bandMax - currentDayCal, 0);
@@ -269,6 +302,10 @@ function pickSnackForGap(
       if (proteinGap > 5 && opts?.proById) {
         score += (opts.proById.get(r.id) ?? 0) * 1.5;
       }
+      // Without this the highest-scoring snack wins on every day of the week —
+      // the same cottage cheese pot seven times. Large enough to break ties,
+      // small enough that a genuinely better calorie or protein fit still wins.
+      score -= (opts?.weekUses?.get(r.id) ?? 0) * 60;
       return { r, score };
     })
     .sort((a, b) => b.score - a.score);
@@ -307,8 +344,9 @@ function swapMainMealForProtein(
     });
     if (!candidates.length) continue;
 
-    candidates.sort((a, b) => b.protein - a.protein || b.calories - a.calories);
-    const pick = candidates[0]!;
+    const viable = preferLeastUsed(candidates, weekUsageFromRows(rows));
+    viable.sort((a, b) => b.protein - a.protein || b.calories - a.calories);
+    const pick = viable[0]!;
     rows[idx] = { ...rows[idx]!, recipe_id: pick.id };
     console.warn(
       `[tune] day ${day} ${mealType}: protein swap to "${pick.name}" (${Math.round(pick.protein * 10) / 10}g P, ${Math.round(pick.calories)} kcal)`,
@@ -356,8 +394,9 @@ function swapSnackForProtein(
     });
     if (!candidates.length) continue;
 
-    candidates.sort((a, b) => b.protein - a.protein || b.calories - a.calories);
-    const pick = candidates[0]!;
+    const viable = preferLeastUsed(candidates, weekUsageFromRows(rows));
+    viable.sort((a, b) => b.protein - a.protein || b.calories - a.calories);
+    const pick = viable[0]!;
     rows[idx] = { ...rows[idx]!, recipe_id: pick.id };
     console.warn(
       `[tune] day ${day} snack#${r.slot_index}: protein swap to "${pick.name}" (${Math.round(pick.protein * 10) / 10}g P)`,
@@ -411,17 +450,18 @@ function swapMainMealForCalories(
     });
     if (!candidates.length) continue;
 
+    const viable = preferLeastUsed(candidates, weekUsageFromRows(rows));
     if (direction === "up") {
-      candidates.sort((a, b) => b.calories - a.calories);
+      viable.sort((a, b) => b.calories - a.calories);
     } else {
-      candidates.sort(
+      viable.sort(
         (a, b) =>
           a.calories - b.calories ||
           b.protein - a.protein ||
           (opts?.proById?.get(b.id) ?? 0) - (opts?.proById?.get(a.id) ?? 0),
       );
     }
-    const pick = candidates[0]!;
+    const pick = viable[0]!;
     rows[idx] = { ...rows[idx]!, recipe_id: pick.id };
     console.warn(
       `[tune] day ${day} ${mealType}: swapped to "${pick.name}" (${Math.round(pick.calories)} kcal), ` +
@@ -505,6 +545,7 @@ function addSnackToCloseGap(
     usedOnDay,
     allowedRecipeIds,
     snackMicroPriorities,
+    { weekUses: weekUsageFromRows(rows) },
   );
   if (!picked) return false;
 
@@ -551,6 +592,7 @@ function addSnackWhenBelowTarget(
     usedOnDay,
     allowedRecipeIds,
     snackMicroPriorities,
+    { weekUses: weekUsageFromRows(rows) },
   );
   if (!picked) return false;
 
@@ -639,7 +681,7 @@ export function ensureDailySnackCoverage(opts: {
         usedOnDay,
         opts.allowedRecipeIds,
         opts.snackMicroPriorities,
-        { proById: opts.proById, proteinGap },
+        { proById: opts.proById, proteinGap, weekUses: weekUsageFromRows(opts.rows) },
       );
 
       if (picked) {
@@ -763,6 +805,7 @@ export function ensureDailyProteinCoverage(opts: {
           proById: opts.proById,
           proteinGap,
           allowSameDayRepeat: countPoolSnackRecipes(opts.pool) < opts.snackCountPerDay,
+          weekUses: weekUsageFromRows(opts.rows),
         },
       );
       if (!picked) break;
