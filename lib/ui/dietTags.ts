@@ -35,10 +35,19 @@ export function getDietTags(
   carbs: number,
   fat: number,
   preferences: string[] = [],
+  recipe?: { fitsVegetarian?: boolean; fitsVegan?: boolean },
 ): string[] {
   const tags: string[] = [];
-  if (preferences.includes("vegan")) tags.push("Vegan");
-  if (preferences.includes("vegetarian") || preferences.includes("vegan")) tags.push("Vegetarian");
+  // Diet tags describe the RECIPE. Deriving them from the viewer's preferences
+  // meant an omnivore never saw anything in the Vegetarian tab, and a vegetarian
+  // saw everything in it — including the chicken.
+  const isVegan = recipe?.fitsVegan === true || (recipe === undefined && preferences.includes("vegan"));
+  const isVegetarian =
+    isVegan ||
+    recipe?.fitsVegetarian === true ||
+    (recipe === undefined && preferences.includes("vegetarian"));
+  if (isVegan) tags.push("Vegan");
+  if (isVegetarian) tags.push("Vegetarian");
   if (protein >= 30) tags.push("High Protein");
   if (kcal <= 350) tags.push("Low Calorie");
   if (kcal >= 600) tags.push("High Calorie");

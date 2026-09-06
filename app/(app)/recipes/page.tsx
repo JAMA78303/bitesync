@@ -13,6 +13,8 @@ type RecipeRow = {
  source_domain?: string | null;
  image_url?: string | null;
  is_favourite?: boolean | null;
+ fits_vegetarian?: boolean | null;
+ fits_vegan?: boolean | null;
 };
 
 type Props = { searchParams: Promise<{ view?: string }> };
@@ -61,7 +63,7 @@ export default async function RecipesPage({ searchParams }: Props) {
  if (user) {
  let query = supabase
  .from("recipes")
- .select("id,name,source_domain,image_url,is_favourite")
+ .select("id,name,source_domain,image_url,is_favourite,fits_vegetarian,fits_vegan")
  .order("created_at", { ascending: false });
  query = showArchived ? query.not("archived_at","is", null) : query.is("archived_at", null);
  const { data } = await query;
