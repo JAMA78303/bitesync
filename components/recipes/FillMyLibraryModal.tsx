@@ -20,13 +20,17 @@ import { releaseScreenWakeLock, requestScreenWakeLock, waitUntilVisible } from "
 import type { HybridRecipeDraft } from "@/lib/recipes/hybridRecipeEngine";
 
 /**
- * Overlapping slot generations. 4 was a first guess that left a 32-recipe batch
- * at ~4 minutes; 8 halves that and still sits far below the request rate a
- * standard Anthropic tier allows, given each slot occupies its worker for tens
- * of seconds. The SDK client retries 429s (see lib/ai/anthropicClient.ts), so
- * brief limit pressure costs a retry rather than a template-quality recipe.
+ * Overlapping slot generations. Batch wall time is roughly
+ * (recipes x slot latency / this), so with a slot capped near 20s by
+ * MAX_LLM_CALLS_PER_SLOT, 16 puts 40 recipes at about 55s.
+ *
+ * This is the dial to turn down first if Anthropic starts rate-limiting: the
+ * SDK client retries 429s (lib/ai/anthropicClient.ts), but retries add the
+ * latency this is meant to remove, and an exhausted retry degrades a recipe to
+ * template quality silently. Watch the [hybridRecipe] logs — a jump in
+ * template-only results is the symptom of pushing this too high.
  */
-const FILL_CONCURRENCY = 8;
+const FILL_CONCURRENCY = 16;
 
 /** Intra-batch collisions only — the server already checked the saved library. */
 const EMPTY_LIBRARY: ExistingLibrarySnapshot = { names: [], signatures: [] };
