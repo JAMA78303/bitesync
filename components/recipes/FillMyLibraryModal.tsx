@@ -337,7 +337,11 @@ export function FillMyLibraryModal({ onClose, embedded = false, firstRun = false
  onChange={(e) => setCount(Number(e.target.value))}
  className="mt-1 block w-full rounded-lg border border-[var(--border-default)] bg-[var(--surface-card)] px-3 py-2 text-sm"
  >
- {[20, 28, 32, 36, 40].map((n) => (
+ {/* 8 is the engine's MIN_TOTAL (2 per meal type). The list used to start
+ at 20, which meant the cheapest way to try a change was 20 recipes —
+ fine when generation was free, expensive now that each one is a
+ billed Claude call. */}
+ {[8, 12, 20, 28, 32, 36, 40].map((n) => (
  <option key={n} value={n}>
  {n} recipes ({bulkFillBatchSummary(n)})
  </option>
