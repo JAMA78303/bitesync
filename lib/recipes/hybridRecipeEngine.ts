@@ -88,8 +88,15 @@ const MEAL_PROTEIN_FLOOR_RATIO = 0.95;
  * a fresh LLM write-up every time. Past this budget the loop keeps searching
  * for a non-duplicate composition using template steps only, which is both
  * free and fast. Uniqueness rules are unchanged — only their cost is capped.
+ *
+ * 2, not 4, because this budget also sets a slot's worst-case latency: each
+ * call is ~10s, and a batch's wall time is (recipes x slot latency / workers).
+ * 2 keeps a slot near 20s, which is what puts a 40-recipe fill under a minute.
+ * It buys one salvage attempt when Claude's first write-up is incoherent or
+ * collides; beyond that the recipe is built from templates, which is exactly
+ * what every recipe was before the LLM was switched on.
  */
-const MAX_LLM_CALLS_PER_SLOT = 4;
+const MAX_LLM_CALLS_PER_SLOT = 2;
 
 type LlmBudget = { remaining: number; used: number; denied: number };
 
