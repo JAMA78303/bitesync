@@ -19,8 +19,14 @@ import { ModalPortal } from "@/components/ui/ModalPortal";
 import { releaseScreenWakeLock, requestScreenWakeLock, waitUntilVisible } from "@/lib/ui/keepAwake";
 import type { HybridRecipeDraft } from "@/lib/recipes/hybridRecipeEngine";
 
-/** Overlapping slot generations, bounded well below Anthropic's rate limit. */
-const FILL_CONCURRENCY = 4;
+/**
+ * Overlapping slot generations. 4 was a first guess that left a 32-recipe batch
+ * at ~4 minutes; 8 halves that and still sits far below the request rate a
+ * standard Anthropic tier allows, given each slot occupies its worker for tens
+ * of seconds. The SDK client retries 429s (see lib/ai/anthropicClient.ts), so
+ * brief limit pressure costs a retry rather than a template-quality recipe.
+ */
+const FILL_CONCURRENCY = 8;
 
 /** Intra-batch collisions only — the server already checked the saved library. */
 const EMPTY_LIBRARY: ExistingLibrarySnapshot = { names: [], signatures: [] };
