@@ -24,13 +24,17 @@ import type { HybridRecipeDraft } from "@/lib/recipes/hybridRecipeEngine";
  * (recipes x slot latency / this), so with a slot capped near 20s by
  * MAX_LLM_CALLS_PER_SLOT, 16 puts 40 recipes at about 55s.
  *
- * This is the dial to turn down first if Anthropic starts rate-limiting: the
- * SDK client retries 429s (lib/ai/anthropicClient.ts), but retries add the
- * latency this is meant to remove, and an exhausted retry degrades a recipe to
- * template quality silently. Watch the [hybridRecipe] logs — a jump in
- * template-only results is the symptom of pushing this too high.
+ * 16 was too many: it provoked sustained rate limiting, and because the SDK
+ * client then had a 10-minute timeout, the batch stalled partway through while
+ * retries kept spending. The timeout is fixed (lib/ai/anthropicClient.ts), but
+ * the throughput that caused it is real — an entry-tier account cannot absorb
+ * 16 concurrent generations. 6 is chosen to stay under the limit rather than
+ * to race it, since a stalled batch costs far more than a slower one.
  */
-const FILL_CONCURRENCY = 16;
+const FILL_CONCURRENCY = 6;
+
+/** Ceiling on one slot before the worker abandons it and moves on. */
+const SLOT_TIMEOUT_MS = 120_000;
 
 /** Intra-batch collisions only — the server already checked the saved library. */
 const EMPTY_LIBRARY: ExistingLibrarySnapshot = { names: [], signatures: [] };
@@ -153,13 +157,26 @@ export function FillMyLibraryModal({ onClose, embedded = false, firstRun = false
  // continuing rather than failing the remaining slots.
  await waitUntilVisible();
  markGenerating(slot.slotId);
- const result = await generateFillLibrarySlot({
+ // Belt and braces against the stall this had in production: even with the
+ // SDK timeout fixed, one unresponsive request must not hold a worker (and
+ // with it the whole batch) open indefinitely. Losing one recipe is recoverable;
+ // a frozen batch that keeps billing is not.
+ const timedOut = new Promise<{ error: string }>((resolve) =>
+ setTimeout(
+ () => resolve({ error:"Timed out — this slot took too long and was skipped." }),
+ SLOT_TIMEOUT_MS,
+ ),
+ );
+ const result = await Promise.race([
+ generateFillLibrarySlot({
  slot,
  hardConstraints: planData.hardConstraints,
  dailyCalorieTarget: planData.dailyCalorieTarget,
  dailyProteinTarget: planData.dailyProteinTarget,
  acceptedDrafts: priorDrafts,
- });
+ }),
+ timedOut,
+ ]);
  if ("error" in result) return { error: result.error };
  // A slot that returns no draft used to `continue`, leaving its row spinning
  // on "generating" for the rest of the session with nothing to explain it.
