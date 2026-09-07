@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { anthropicClient } from "@/lib/ai/anthropicClient";
 import type { RecipeIngredientInput } from "@/lib/nutrition/calculate";
 import type { GoalMealSlot } from "@/lib/ai/goal-matched-recipe";
 import { CLAUDE_MEAL_PLAN_MODEL } from "@/lib/ai/client";
@@ -91,7 +92,7 @@ export async function generateFullRecipeFromIngredients(input: {
   if (!key) return null;
 
   try {
-    const anthropic = new Anthropic({ apiKey: key });
+    const anthropic = anthropicClient(key);
     const model = process.env.ANTHROPIC_RECIPE_MODEL?.trim() || CLAUDE_MEAL_PLAN_MODEL;
 
     const response = await anthropic.messages.create({
@@ -164,7 +165,7 @@ export async function generateFullRecipeForSlot(input: {
         : "";
 
   try {
-    const anthropic = new Anthropic({ apiKey: key });
+    const anthropic = anthropicClient(key);
     const model = process.env.ANTHROPIC_RECIPE_MODEL?.trim() || CLAUDE_MEAL_PLAN_MODEL;
 
     const response = await anthropic.messages.create({

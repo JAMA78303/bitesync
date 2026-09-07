@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { anthropicClient } from "@/lib/ai/anthropicClient";
 
 /**
  * Overridable per call site via ANTHROPIC_RECIPE_MODEL / ANTHROPIC_NUTRITION_MODEL.
@@ -62,7 +63,7 @@ function requireApiKey(): string {
 }
 
 function getAnthropic(): Anthropic {
-  return new Anthropic({ apiKey: requireApiKey() });
+  return anthropicClient(requireApiKey());
 }
 
 function firstTextBlock(content: Anthropic.Messages.ContentBlock[]): string | null {
