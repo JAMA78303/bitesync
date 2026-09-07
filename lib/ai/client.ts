@@ -1,6 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk";
 
-export const CLAUDE_MEAL_PLAN_MODEL = "claude-sonnet-4-20250514" as const;
+/**
+ * Overridable per call site via ANTHROPIC_RECIPE_MODEL / ANTHROPIC_NUTRITION_MODEL.
+ * Note nutrition figures are never taken from the model — it proposes ingredients
+ * and prose, and macros are computed from the ingredient database afterwards.
+ */
+export const CLAUDE_MEAL_PLAN_MODEL = "claude-sonnet-5" as const;
 
 export type ClaudeRecipeLibraryItem = {
   id: string;
