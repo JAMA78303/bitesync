@@ -37,7 +37,7 @@ Base your estimate on standard UK nutrition data. If the unit is 'each' or 'piec
     const model =
       process.env.ANTHROPIC_NUTRITION_MODEL?.trim() ||
       process.env.ANTHROPIC_MODEL?.trim() ||
-      "claude-sonnet-4-20250514";
+      "claude-sonnet-5";
 
     const response = await client.messages.create({
       model,
