@@ -84,6 +84,11 @@ function parseJsonFromAssistant(raw: string): unknown {
 
 /**
  * Claude-backed weekly (or partial-week) meal plan using only the user’s recipe IDs.
+ *
+ * `null` means "the model returned nothing usable" — a soft outcome the caller can
+ * fall back from. Call failures (rejected key, no credit, rate limit, outage) throw,
+ * so the caller can tell the user *why* it fell back instead of silently swapping in
+ * the heuristic planner. Swallowing both as `null` hid a misconfigured deployment.
  */
 export async function generateMealPlan(params: GenerateMealPlanParams): Promise<ClaudeMealPlanResult | null> {
   try {
@@ -191,7 +196,7 @@ Only use recipe IDs from the library above.`,
     return { plan: parsed.plan, notes: parsed.notes };
   } catch (err) {
     console.error("Claude meal plan generation failed:", err);
-    return null;
+    throw err;
   }
 }
 

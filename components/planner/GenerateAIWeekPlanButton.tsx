@@ -34,12 +34,18 @@ export function GenerateAIWeekPlanButton({ isPro, mealPlanId, goals }: Props) {
           toast({ title: "AI week plan failed", description: result.error, variant: "destructive" });
           return;
         }
-        const src = "planSource" in result && result.planSource === "claude" ? "Claude" : "Heuristic";
+        const src =
+          "planSource" in result && result.planSource === "claude" ? "Claude" : "Standard planner";
         const note = "notes" in result && result.notes ? ` ${result.notes}` : "";
         toast({
           title: "AI weekly plan applied",
           description: `${src}: 7 days, ${result.snackCountPerDay} snack slot(s)/day, ${result.recipePool} recipes.${note}`,
         });
+        // The plan still built, so this isn't destructive — but it is the only
+        // place a rejected key or unfunded account ever becomes visible.
+        if ("aiFallbackNotice" in result && result.aiFallbackNotice) {
+          toast({ title: "AI planning unavailable", description: result.aiFallbackNotice });
+        }
         if ("heuristicWarning" in result && result.heuristicWarning) {
           toast({ title: "Calorie goal note", description: result.heuristicWarning });
         }
