@@ -7,12 +7,23 @@ import {
  planFillMyLibrary,
  saveFillLibraryRecipes,
 } from "@/app/(app)/recipes/bulkFillActions";
-import { bulkFillBatchSummary, defaultBulkRecipeCount } from "@/lib/recipes/bulkFillLibrary";
+import {
+ bulkFillBatchSummary,
+ defaultBulkRecipeCount,
+ isDuplicateDraft,
+ type ExistingLibrarySnapshot,
+} from "@/lib/recipes/bulkFillLibrary";
 import { FIRST_RUN_LIBRARY_COUNT_PRO } from "@/lib/onboarding/first-run";
 import { ds } from "@/lib/ui/classes";
 import { ModalPortal } from "@/components/ui/ModalPortal";
 import { releaseScreenWakeLock, requestScreenWakeLock, waitUntilVisible } from "@/lib/ui/keepAwake";
 import type { HybridRecipeDraft } from "@/lib/recipes/hybridRecipeEngine";
+
+/** Overlapping slot generations, bounded well below Anthropic's rate limit. */
+const FILL_CONCURRENCY = 4;
+
+/** Intra-batch collisions only — the server already checked the saved library. */
+const EMPTY_LIBRARY: ExistingLibrarySnapshot = { names: [], signatures: [] };
 
 type DraftRow = HybridRecipeDraft & {
  slotId: string;
@@ -101,8 +112,50 @@ export function FillMyLibraryModal({ onClose, embedded = false, firstRun = false
  }));
  setRows(initial);
 
- const accepted: HybridRecipeDraft[] = [];
- const slots = plan.data.slots;
+ const planData = plan.data;
+ const slots = planData.slots;
+ const accepted: { slotId: string; draft: HybridRecipeDraft }[] = [];
+ let completed = 0;
+
+ const markGenerating = (slotId: string) =>
+ setRows((prev) => prev.map((r) => (r.slotId === slotId ? { ...r, status:"generating" } : r)));
+
+ const markFailed = (slotId: string, error: string) =>
+ setRows((prev) =>
+ prev.map((r) => (r.slotId === slotId ? { ...r, status:"failed", error, selected: false } : r)),
+ );
+
+ const markReady = (slotId: string, draft: HybridRecipeDraft) =>
+ setRows((prev) =>
+ prev.map((r) =>
+ r.slotId === slotId ? { ...draft, slotId, selected: false, status:"ready" as const } : r,
+ ),
+ );
+
+ // Returns the outcome rather than writing it, so the caller decides: the
+ // retry pass below has to leave the original draft in place when a
+ // replacement doesn't materialise, which a self-marking helper can't express.
+ const runSlot = async (
+ slot: (typeof slots)[number],
+ priorDrafts: HybridRecipeDraft[],
+ ): Promise<{ draft: HybridRecipeDraft } | { error: string }> => {
+ // If the tab was suspended, wait until it is visible again before
+ // continuing rather than failing the remaining slots.
+ await waitUntilVisible();
+ markGenerating(slot.slotId);
+ const result = await generateFillLibrarySlot({
+ slot,
+ hardConstraints: planData.hardConstraints,
+ dailyCalorieTarget: planData.dailyCalorieTarget,
+ dailyProteinTarget: planData.dailyProteinTarget,
+ acceptedDrafts: priorDrafts,
+ });
+ if ("error" in result) return { error: result.error };
+ // A slot that returns no draft used to `continue`, leaving its row spinning
+ // on "generating" for the rest of the session with nothing to explain it.
+ if (!result.data) return { error:"No recipe fitted this slot's calorie and diet limits." };
+ return { draft: result.data };
+ };
 
  // Generation is a client-side loop, so a locked phone or a backgrounded tab
  // suspends it mid-batch and nothing resumes it. Hold a screen wake lock for
@@ -110,52 +163,62 @@ export function FillMyLibraryModal({ onClose, embedded = false, firstRun = false
  const wakeLock = await requestScreenWakeLock();
 
  try {
- for (let i = 0; i < slots.length; i++) {
- const slot = slots[i];
- // If the tab was suspended, wait until it is visible again before
- // continuing rather than failing the remaining slots.
- await waitUntilVisible();
- setProgress(`Generating ${i + 1} of ${slots.length}: ${slot.label}…`);
- setRows((prev) =>
- prev.map((r) => (r.slotId === slot.slotId ? { ...r, status:"generating" } : r)),
- );
-
- const result = await generateFillLibrarySlot({
+ // Slots used to run strictly one after another. That was invisible while
+ // every call fell back to a local template, but with Claude actually
+ // answering a slot costs ~40s and a 40-recipe batch took ~26 minutes.
+ // Run a rolling window instead: each finished draft joins `accepted`
+ // immediately, so only the few in flight at any moment are blind to each
+ // other, and the reconciliation pass below repairs the collisions that
+ // blindness allows. Kept deliberately low — the point is to overlap
+ // latency, not to fan out hard enough to hit Anthropic's rate limit.
+ let cursor = 0;
+ const worker = async () => {
+ while (cursor < slots.length) {
+ const slot = slots[cursor++];
+ const outcome = await runSlot(
  slot,
- hardConstraints: plan.data.hardConstraints,
- dailyCalorieTarget: plan.data.dailyCalorieTarget,
- dailyProteinTarget: plan.data.dailyProteinTarget,
- acceptedDrafts: accepted,
- });
-
- if ("error" in result) {
- setRows((prev) =>
- prev.map((r) =>
- r.slotId === slot.slotId
- ? { ...r, status:"failed", error: result.error, selected: false }
- : r,
- ),
+ accepted.map((a) => a.draft),
  );
+ completed += 1;
+ setProgress(`Generated ${completed} of ${slots.length}…`);
+ if ("error" in outcome) {
+ markFailed(slot.slotId, outcome.error);
  continue;
  }
- if (!result.data) {
- continue;
+ accepted.push({ slotId: slot.slotId, draft: outcome.draft });
+ markReady(slot.slotId, outcome.draft);
+ }
+ };
+
+ await Promise.all(
+ Array.from({ length: Math.min(FILL_CONCURRENCY, slots.length) }, () => worker()),
+ );
+
+ // Concurrent slots can't see each other's results, so two of them can land
+ // on the same dish. The server already checks each draft against the saved
+ // library; this covers the gap it cannot see. Duplicates are re-run one at
+ // a time with the whole batch as context.
+ const kept: HybridRecipeDraft[] = [];
+ const collisions: { slotId: string; draft: HybridRecipeDraft }[] = [];
+ for (const entry of accepted) {
+ const check = { name: entry.draft.name, ingredients: entry.draft.ingredients };
+ if (isDuplicateDraft(check, EMPTY_LIBRARY, kept)) collisions.push(entry);
+ else kept.push(entry.draft);
  }
 
- accepted.push(result.data);
- const draft = result.data;
- setRows((prev) =>
- prev.map((r) =>
- r.slotId === slot.slotId
- ? {
- ...draft,
- slotId: slot.slotId,
- selected: false,
- status:"ready" as const,
+ for (let i = 0; i < collisions.length; i++) {
+ const slot = slots.find((s) => s.slotId === collisions[i].slotId);
+ if (!slot) continue;
+ setProgress(`Replacing duplicate ${i + 1} of ${collisions.length}…`);
+ const outcome = await runSlot(slot, kept);
+ // No replacement found: keep the duplicate rather than dropping the row.
+ // It is reviewable and untickable; an empty slot is neither.
+ if ("error" in outcome) {
+ markReady(slot.slotId, collisions[i].draft);
+ continue;
  }
- : r,
- ),
- );
+ kept.push(outcome.draft);
+ markReady(slot.slotId, outcome.draft);
  }
  } finally {
  await releaseScreenWakeLock(wakeLock);
