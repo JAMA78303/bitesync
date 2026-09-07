@@ -78,6 +78,36 @@ function isAnthropicMealAiEnabled(): boolean {
   return Boolean(process.env.ANTHROPIC_API_KEY) && (v === "true" || v === "1");
 }
 
+/**
+ * A Claude failure falls back to the heuristic planner, which is the right
+ * behaviour — but it used to do so in total silence. The only clue was the word
+ * "Heuristic" in the success toast, so a rejected key or an unfunded Anthropic
+ * account was indistinguishable from a healthy fallback and a misconfigured
+ * deployment could stay broken indefinitely. Name the cause instead.
+ */
+function describeAiPlannerFailure(err: unknown): string {
+  const status =
+    typeof err === "object" && err !== null && "status" in err
+      ? Number((err as { status?: unknown }).status)
+      : undefined;
+  const message = err instanceof Error ? err.message : String(err);
+  const tail = "so your standard planner built this week instead.";
+
+  if (status === 401 || status === 403) {
+    return `AI planning is switched on, but Anthropic rejected the API key — ${tail}`;
+  }
+  if (status === 400 && /credit|billing|quota/i.test(message)) {
+    return `AI planning is switched on, but the Anthropic account has no available credit — ${tail}`;
+  }
+  if (status === 429) {
+    return `AI planning hit Anthropic's rate limit — ${tail} Try again shortly.`;
+  }
+  if (status !== undefined && status >= 500) {
+    return `Anthropic was unavailable — ${tail} Try again shortly.`;
+  }
+  return `AI planning failed — ${tail}`;
+}
+
 type MealPlanInsertRow = {
   meal_plan_id: string;
   recipe_id: string;
@@ -999,6 +1029,7 @@ async function generateAIWeekPlanInner(
   let heuristicWarning: string | undefined;
   let snackLibraryNotice: string | undefined;
   let claudeApplyError: string | undefined;
+  let aiFallbackNotice: string | undefined;
 
   if (!options?.heuristicOnly && tier === "pro" && isAnthropicMealAiEnabled()) {
     try {
@@ -1036,11 +1067,17 @@ async function generateAIWeekPlanInner(
           snackLibraryNotice = applied.snackLibraryNotice;
         } else if ("error" in applied) {
           claudeApplyError = applied.error;
+          aiFallbackNotice =
+            "The AI planner's choices couldn't be applied, so your standard planner built this week instead.";
           console.warn("[generateAIWeekPlan] Claude plan not applied:", applied.error);
         }
+      } else {
+        aiFallbackNotice =
+          "The AI planner didn't return a usable plan, so your standard planner built this week instead.";
       }
     } catch (err) {
       console.warn("[generateAIWeekPlan] Claude planning failed, using heuristic:", err);
+      aiFallbackNotice = describeAiPlannerFailure(err);
     }
   }
 
@@ -1376,5 +1413,6 @@ async function generateAIWeekPlanInner(
     notes: claudeNotes,
     heuristicWarning,
     snackLibraryNotice,
+    aiFallbackNotice,
   };
 }
