@@ -75,6 +75,35 @@ const MAX_DEDUPE_RETRIES = 16;
 const MAX_FORCE_FILL_ATTEMPTS = 10;
 const MEAL_PROTEIN_FLOOR_RATIO = 0.95;
 
+/**
+ * Ceiling on Claude calls for one slot, across every retry path below.
+ *
+ * The retry loops were written when the LLM was optional decoration over a
+ * deterministic template engine — a retry cost a few milliseconds of local
+ * composition. With Claude actually answering, each attempt spends one or two
+ * billed calls, so the 16 dedupe attempts and 10 force-fill attempts could
+ * reach ~50 calls for a single recipe: ~25p and several minutes, observed.
+ *
+ * The retries themselves are still worth having; what they must not do is buy
+ * a fresh LLM write-up every time. Past this budget the loop keeps searching
+ * for a non-duplicate composition using template steps only, which is both
+ * free and fast. Uniqueness rules are unchanged — only their cost is capped.
+ */
+const MAX_LLM_CALLS_PER_SLOT = 4;
+
+type LlmBudget = { remaining: number; used: number; denied: number };
+
+/** Take one call from the slot's budget. False means "generate locally instead". */
+function spendLlmCall(ctx: DraftBuildContext): boolean {
+  if (ctx.llmBudget.remaining <= 0) {
+    ctx.llmBudget.denied += 1;
+    return false;
+  }
+  ctx.llmBudget.remaining -= 1;
+  ctx.llmBudget.used += 1;
+  return true;
+}
+
 type DraftBuildContext = {
   slot: BulkFillSlotPlan;
   hard: HardDietConstraints;
@@ -83,6 +112,8 @@ type DraftBuildContext = {
   dietaryLine: string;
   requireFullLlm: boolean;
   useLlmMethod: boolean;
+  /** Shared by every context derived for this slot, so the cap is per slot. */
+  llmBudget: LlmBudget;
   varietyRelaxed?: boolean;
 };
 
@@ -161,7 +192,7 @@ async function buildDraftFromIngredients(
     return validateRecipeCoherence({ name: recipeName, steps: recipeSteps, ingredients: ings }).ok;
   }
 
-  if (ctx.useLlmMethod) {
+  if (ctx.useLlmMethod && spendLlmCall(ctx)) {
     const full = await generateFullRecipeFromIngredients({
       mealSlot: ctx.slot.mealSlot,
       seedIngredients: ingredients,
@@ -183,7 +214,7 @@ async function buildDraftFromIngredients(
       workingIngredients = full.ingredients;
       source = "db+llm";
       fullLlmRecipe = true;
-    } else if (!ctx.requireFullLlm) {
+    } else if (!ctx.requireFullLlm && spendLlmCall(ctx)) {
       const llm = await generateRecipeMethodWithLLM(
         name,
         ingredients,
@@ -228,6 +259,26 @@ function uniqueTitle(name: string, attempt: number): string {
 export async function generateHybridRecipeDraft(
   input: GenerateHybridRecipeInput,
 ): Promise<HybridRecipeDraft | null> {
+  const llmBudget: LlmBudget = { remaining: MAX_LLM_CALLS_PER_SLOT, used: 0, denied: 0 };
+  const startedAt = Date.now();
+  const draft = await generateDraftForSlot(input, llmBudget);
+  // Nothing recorded how many calls a slot actually spent, which is exactly why
+  // ~50-call slots ran unnoticed until the bill showed them. `denied` above zero
+  // means this slot hit the cap and finished on template steps.
+  console.log("[hybridRecipe]", {
+    slot: input.slot.label,
+    llmCalls: llmBudget.used,
+    llmDenied: llmBudget.denied,
+    ms: Date.now() - startedAt,
+    result: draft ? draft.source : "none",
+  });
+  return draft;
+}
+
+async function generateDraftForSlot(
+  input: GenerateHybridRecipeInput,
+  llmBudget: LlmBudget,
+): Promise<HybridRecipeDraft | null> {
   const flags = dietFlagsForSlot(input.slot, input.hard);
   const fraction = fractionForMealSlot(input.slot.mealSlot);
   const rawTarget = Math.round(input.targetDailyCalories * fraction);
@@ -259,6 +310,7 @@ export async function generateHybridRecipeDraft(
     dietaryLine,
     requireFullLlm,
     useLlmMethod,
+    llmBudget,
   };
 
   for (let attempt = 0; attempt < MAX_DEDUPE_RETRIES; attempt++) {
@@ -325,7 +377,7 @@ export async function generateHybridRecipeDraft(
     return draft;
   }
 
-  if (useLlmMethod) {
+  if (useLlmMethod && spendLlmCall(buildCtx)) {
     const scratch = await generateFullRecipeForSlot({
       mealSlot: input.slot.mealSlot,
       targetCalories: targetMealCalories,
