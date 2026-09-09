@@ -9,7 +9,7 @@ const FAQ_ITEMS = [
  },
  {
  q:"What is the difference between Free and Pro nutrition tracking?",
- a:"Free users see calories and protein per meal. Pro users get all four macros plus micronutrient analysis against UK dietary reference values.",
+ a:"Free users see calories and protein per meal. Pro users get all four macros plus micronutrient analysis against published dietary reference values.",
  },
  {
  q:"Is my data private?",
@@ -20,8 +20,12 @@ const FAQ_ITEMS = [
  a:"Yes. Cancel anytime from settings and keep access until the current billing period ends.",
  },
  {
- q:"Is BiteSync only for people in the UK?",
- a:"BiteSync is built for UK users with GBP pricing and UK nutrition references.",
+ q:"Can I use BiteSync outside the UK?",
+ a:"Yes. Food composition data describes the food itself, so it travels — a chicken breast has the same protein wherever you shop. Two things to know: subscriptions are billed in GBP, and micronutrient targets follow UK dietary reference values, which track EFSA and WHO guidance closely for most nutrients.",
+ },
+ {
+ q:"Who built BiteSync?",
+ a:"A registered dietitian. The targets, portion logic and micronutrient analysis come from clinical practice rather than from whatever a calorie-counting app happened to do first.",
  },
  {
  q:"What happens when I reach the 10 recipe limit on Free?",

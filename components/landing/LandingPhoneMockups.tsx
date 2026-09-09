@@ -292,7 +292,7 @@ export function MockMicros() {
  <PhoneFrame label="BiteSync micronutrient analysis preview">
  <header className="border-b border-[var(--border-subtle)] bg-[var(--surface-card)] px-3 pt-7 pb-2">
  <p className="text-xs font-bold text-[var(--text-primary)]">Weekly nutrition</p>
- <p className="text-2xs text-[var(--text-muted)]">Micronutrients vs UK DRVs</p>
+ <p className="text-2xs text-[var(--text-muted)]">Micronutrients vs DRVs</p>
  </header>
  <ul className="space-y-1.5 px-2 py-2">
  {rows.map((row) => (

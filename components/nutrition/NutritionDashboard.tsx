@@ -174,7 +174,7 @@ export function NutritionDashboard({
  <div className="mb-4">
  <div className="mb-3 flex items-center justify-between">
  <h2 className={ds.sectionTitle}>Micronutrients</h2>
- <span className="text-xs text-[var(--text-muted)]">vs UK DRVs</span>
+ <span className="text-xs text-[var(--text-muted)]">vs DRVs</span>
  </div>
  {isProUser && microAnalysis ? (
  <div className="space-y-4">
@@ -195,7 +195,7 @@ export function NutritionDashboard({
  </div>
  <p className={`mb-1 ${ds.tierPrimary}`}>Micronutrient analysis</p>
  <p className="mb-4 text-xs text-[var(--text-muted)]">
- See how your diet compares to UK Government DRVs for vitamins and minerals.
+ See how your diet compares to dietary reference values for vitamins and minerals.
  </p>
  <Link href="/billing" className={ds.primaryBtn}>
  Upgrade to Pro

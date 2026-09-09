@@ -33,7 +33,7 @@ const DEMO_BEATS = [
     step: "4",
     title: "Spot micronutrient gaps",
     caption:
-      "See what your week is missing — iron, iodine, vitamin D — checked against UK reference values. Something no calorie-counter shows you.",
+      "See what your week is missing — iron, iodine, vitamin D — checked against published reference values. Something no calorie-counter shows you.",
     Mock: MockMicros,
     isPro: true,
   },
