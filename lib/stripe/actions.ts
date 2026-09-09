@@ -47,7 +47,12 @@ export async function createCheckoutSession(
   const session = await stripe.checkout.sessions.create({
     customer: customerId,
     mode: "subscription",
-    payment_method_types: ["card"],
+    // No `payment_method_types`: pinning it to ["card"] overrode the Dashboard
+    // and offered a card field to everyone, including customers whose usual
+    // method is iDEAL, Bancontact or SEPA. Omitting it lets Stripe present
+    // whatever is enabled in the Dashboard and appropriate for the buyer's
+    // location — which is the point of selling outside one country. Payment
+    // methods are now configured in Stripe, not in this file.
     line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?success=true`,
     cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?cancelled=true`,

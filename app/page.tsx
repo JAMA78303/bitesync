@@ -11,6 +11,12 @@ import { Logo } from "@/components/shared/Logo";
 import { Reveal } from "@/components/landing/Reveal";
 import { LandingMobileNav } from "@/components/landing/LandingMobileNav";
 import { LandingTrustSignals } from "@/components/landing/LandingTrustSignals";
+import {
+  FREE_PRICE,
+  PRO_ANNUAL_MONTHLY_EQUIVALENT,
+  PRO_ANNUAL_PRICE,
+  PRO_MONTHLY_PRICE,
+} from "@/lib/stripe/pricing";
 
 const LandingFeaturePreviews = dynamic(
   () =>
@@ -203,7 +209,7 @@ export default function LandingPage() {
               <article className="rounded-2xl border border-[var(--border-default)] bg-[var(--surface-card)] p-6">
                 <h3 className="mb-1 font-bold text-[var(--text-primary)]">Free</h3>
                 <p className="text-3xl font-bold text-[var(--text-primary)]">
-                  £0 <span className="text-sm font-normal text-[var(--text-muted)]">forever</span>
+                  {FREE_PRICE} <span className="text-sm font-normal text-[var(--text-muted)]">forever</span>
                 </p>
                 <ul className="mb-8 mt-6 space-y-3">
                   {FREE_FEATURES.map((item) => (
@@ -226,13 +232,16 @@ export default function LandingPage() {
                 </span>
                 <h3 className="mb-1 font-bold">Pro</h3>
                 <p className="text-3xl font-bold">
-                  £6.99<span className="text-base font-normal text-[var(--text-on-brand-muted)]">/month</span>
+                  {PRO_MONTHLY_PRICE}
+                  <span className="text-base font-normal text-[var(--text-on-brand-muted)]">/month</span>
                 </p>
                 <div className="mt-2 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
                   <span className="rounded-full bg-amber-300 px-2 py-0.5 text-2xs font-semibold text-amber-950">
                     SAVE 30%
                   </span>
-                  <span className="text-xs text-[var(--text-on-brand-muted)]">£59/year · works out to £4.92/mo</span>
+                  <span className="text-xs text-[var(--text-on-brand-muted)]">
+                    {PRO_ANNUAL_PRICE}/year · works out to {PRO_ANNUAL_MONTHLY_EQUIVALENT}/mo
+                  </span>
                 </div>
                 <ul className="mb-8 mt-6 space-y-3">
                   {PRO_FEATURES.map((item) => (
