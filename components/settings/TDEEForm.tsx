@@ -53,6 +53,13 @@ export function TDEEForm({ defaultValues, onboardingMode = false, onSaved }: Pro
  const [lbStr, setLbStr] = useState("");
  const [ftStr, setFtStr] = useState("");
  const [inStr, setInStr] = useState("");
+ // Pounds-only and metres held as raw strings for the same reason stones and
+ // feet are: deriving the field's value from the stored kg/cm fights the typist.
+ // Every keystroke round-trips through the canonical number, so "1" in pounds
+ // became 0.45 kg, failed the >= 30 guard and blanked the field, and "1." in
+ // metres parsed to 1 and lost the decimal point before "1.75" could be typed.
+ const [lbOnlyStr, setLbOnlyStr] = useState("");
+ const [mStr, setMStr] = useState("");
  const { toast } = useToast();
 
  const form = useForm<TDEEFormValues>({
@@ -74,6 +81,9 @@ export function TDEEForm({ defaultValues, onboardingMode = false, onSaved }: Pro
  setStStr(String(st));
  setLbStr(lb % 1 === 0 ? String(lb) : String(Math.round(lb * 10) / 10));
  }
+ if (next ==="lb" && Number.isFinite(kg) && kg > 0) {
+ setLbOnlyStr(String(Math.round(kgToLb(kg) * 10) / 10));
+ }
  }
 
  function onHeightUnitChange(next: HeightUnit) {
@@ -83,6 +93,9 @@ export function TDEEForm({ defaultValues, onboardingMode = false, onSaved }: Pro
  const { ft, inch } = cmToFtIn(cm);
  setFtStr(String(ft));
  setInStr(inch % 1 === 0 ? String(inch) : String(Math.round(inch * 10) / 10));
+ }
+ if (next ==="m" && Number.isFinite(cm) && cm > 0) {
+ setMStr(String(cmToM(cm)));
  }
  }
 
@@ -190,15 +203,11 @@ export function TDEEForm({ defaultValues, onboardingMode = false, onSaved }: Pro
  min={66}
  max={661}
  step="0.1"
- value={
- Number.isFinite(Number(weightKg)) && Number(weightKg) >= 30
- ? Math.round(kgToLb(Number(weightKg)) * 10) / 10
- :""
- }
+ value={lbOnlyStr}
  onChange={(e) => {
- const raw = e.target.value;
- if (raw ==="") return;
- const lb = Number.parseFloat(raw);
+ const v = e.target.value;
+ setLbOnlyStr(v);
+ const lb = Number.parseFloat(v);
  if (Number.isFinite(lb)) {
  form.setValue("weightKg", lbToKg(lb), { shouldValidate: true, shouldDirty: true });
  }
@@ -292,15 +301,11 @@ export function TDEEForm({ defaultValues, onboardingMode = false, onSaved }: Pro
  min={1}
  max={2.5}
  step={0.01}
- value={
- Number.isFinite(Number(heightCm)) && Number(heightCm) >= 100
- ? cmToM(Number(heightCm))
- :""
- }
+ value={mStr}
  onChange={(e) => {
- const raw = e.target.value;
- if (raw ==="") return;
- const m = Number.parseFloat(raw);
+ const v = e.target.value;
+ setMStr(v);
+ const m = Number.parseFloat(v);
  if (Number.isFinite(m)) {
  form.setValue("heightCm", mToCm(m), { shouldValidate: true, shouldDirty: true });
  }
