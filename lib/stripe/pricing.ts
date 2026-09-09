@@ -16,6 +16,11 @@
  * currency rather than the founder's.
  */
 
+/** Numeric forms for structured data, which needs a bare amount plus a code. */
+export const PRO_MONTHLY_AMOUNT = 6.99;
+export const PRO_ANNUAL_AMOUNT = 59;
+export const PRICE_CURRENCY = "GBP";
+
 export const PRO_MONTHLY_PRICE = "£6.99";
 export const PRO_ANNUAL_PRICE = "£59";
 /** Annual price divided across 12 months, for the "works out to" comparison. */

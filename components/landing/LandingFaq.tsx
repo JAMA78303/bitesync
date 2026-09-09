@@ -1,4 +1,9 @@
-const FAQ_ITEMS = [
+/**
+ * Exported so the FAQPage structured data is generated from the same array the
+ * page renders. Search and answer engines discard (and Google penalises) markup
+ * describing content a visitor cannot see, so these must not be allowed to drift.
+ */
+export const FAQ_ITEMS = [
  {
  q:"Does BiteSync work on my phone?",
  a:"Yes. BiteSync is a web app that works on any device including iPhone and Android. No download needed.",

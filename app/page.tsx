@@ -17,6 +17,9 @@ import {
   PRO_ANNUAL_PRICE,
   PRO_MONTHLY_PRICE,
 } from "@/lib/stripe/pricing";
+import { JsonLd } from "@/components/shared/JsonLd";
+import { faqPageSchema, softwareApplicationSchema } from "@/lib/seo/structuredData";
+import { FAQ_ITEMS } from "@/components/landing/LandingFaq";
 
 const LandingFeaturePreviews = dynamic(
   () =>
@@ -104,6 +107,8 @@ const BLOG_POSTS = [
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[var(--surface-page)]">
+      <JsonLd data={softwareApplicationSchema()} />
+      <JsonLd data={faqPageSchema(FAQ_ITEMS)} />
       <nav className="sticky top-0 z-50 border-b border-[var(--border-subtle)]/80 bg-[var(--surface-overlay)]/90 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
           <Logo size="sm" href="/" />
