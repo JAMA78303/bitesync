@@ -127,7 +127,7 @@ export function PantryPageClient({ items }: Props) {
  <EmptyState
  icon={Package}
  title="Your pantry is empty"
- description="Add staples above, pick quick-add chips, or seed common UK kitchen items"
+ description="Add staples above, pick quick-add chips, or seed common kitchen items"
  action={{ onClick: handleSeedStaples, label: "Add common staples" }}
  className="border-0 py-10 shadow-none"
  />

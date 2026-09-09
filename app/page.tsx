@@ -2,7 +2,7 @@ import Link from "next/link";
 import {
   Check,
   ChevronRight,
-  MapPin,
+  Stethoscope,
   Shield,
   Utensils,
 } from "lucide-react";
@@ -268,11 +268,11 @@ export default function LandingPage() {
             </article>
             <article className="text-center">
               <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--surface-brand-subtle)]">
-                <MapPin className="h-6 w-6 text-[var(--brand-primary)]" aria-hidden />
+                <Stethoscope className="h-6 w-6 text-[var(--brand-primary)]" aria-hidden />
               </span>
-              <h3 className="mb-1 text-sm font-semibold text-[var(--text-primary)]">Built in the UK</h3>
+              <h3 className="mb-1 text-sm font-semibold text-[var(--text-primary)]">Built by a dietitian</h3>
               <p className="text-xs leading-relaxed text-[var(--text-muted)]">
-                GBP pricing and nutrition data tuned for British shoppers.
+                Designed by a registered dietitian, not assembled from a calorie database.
               </p>
             </article>
             <article className="text-center">
