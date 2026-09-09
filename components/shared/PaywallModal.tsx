@@ -5,6 +5,7 @@ import { Lock, Loader2, Zap } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { createCheckoutSession } from "@/lib/stripe/actions";
+import { PRO_MONTHLY_PRICE } from "@/lib/stripe/pricing";
 
 type Props = {
  open: boolean;
@@ -51,7 +52,7 @@ export function PaywallModal({ open, onClose, reason }: Props) {
  ) : (
  <Zap className="mr-2 h-4 w-4" />
  )}
- {isPending ?"Redirecting..." :"Upgrade to Pro - £6.99/mo"}
+ {isPending ?"Redirecting..." : `Upgrade to Pro - ${PRO_MONTHLY_PRICE}/mo`}
  </Button>
 
  <Button variant="ghost" onClick={onClose} className="w-full text-[var(--text-muted)]">

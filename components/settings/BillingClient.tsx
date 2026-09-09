@@ -13,6 +13,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { ds } from "@/lib/ui/classes";
 import {
+ PRO_ANNUAL_MONTHLY_EQUIVALENT,
+ PRO_ANNUAL_PRICE,
+ PRO_MONTHLY_PRICE,
+} from "@/lib/stripe/pricing";
+import {
  createCheckoutSession,
  createCustomerPortalSession,
  syncSubscriptionFromStripe,
@@ -303,15 +308,15 @@ export function BillingClient({
  <div className="mb-5">
  {billing ==="monthly" ? (
  <div>
- <span className="text-3xl font-bold text-[var(--text-on-brand)]">£6.99</span>
+ <span className="text-3xl font-bold text-[var(--text-on-brand)]">{PRO_MONTHLY_PRICE}</span>
  <span className="ml-1 text-sm text-[var(--text-on-brand-muted)]">/month</span>
  </div>
  ) : (
  <div>
- <span className="text-3xl font-bold text-[var(--text-on-brand)]">£59</span>
+ <span className="text-3xl font-bold text-[var(--text-on-brand)]">{PRO_ANNUAL_PRICE}</span>
  <span className="ml-1 text-sm text-[var(--text-on-brand-muted)]">/year</span>
  <p className="mt-0.5 text-xs text-[var(--text-on-brand-muted)]">
- ~£4.92/month — save vs monthly
+ ~{PRO_ANNUAL_MONTHLY_EQUIVALENT}/month — save vs monthly
  </p>
  </div>
  )}
@@ -334,7 +339,7 @@ export function BillingClient({
  {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
  {isPending
  ?"Redirecting to checkout..."
- : `Upgrade — ${billing ==="monthly" ?"£6.99/mo" :"£59/yr"}`}
+ : `Upgrade — ${billing ==="monthly" ? `${PRO_MONTHLY_PRICE}/mo` : `${PRO_ANNUAL_PRICE}/yr`}`}
  </Button>
 
  <p className="mt-3 text-center text-xs text-[var(--text-on-brand-muted)]">
