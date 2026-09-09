@@ -231,13 +231,18 @@ function preferLeastUsed<T extends { id: string }>(
   return fresh.length ? fresh : candidates;
 }
 
+/**
+ * Delegates to the canonical slot gate rather than keeping its own copy.
+ *
+ * This function had inlined the pre-#35 rule — reject anything
+ * `excludeFromMainMealSlots` flags — so every breakfast-ish food was barred
+ * from snack slots here even after #35 fixed that for the planner. A yoghurt
+ * pot or boiled eggs could fill a snack slot when the planner chose it and not
+ * when the tuner tried to, which is how a day ended up stranded below its
+ * calorie band with no snack it was willing to swap in.
+ */
 function isPoolSnackCandidate(r: PlanRecipeMeta): boolean {
-  return (
-    !excludeFromMainMealSlots(r.name, r.ingredientNames ?? []) &&
-    r.calories >= SNACK_MIN_CALORIES &&
-    r.calories <= SNACK_MAX_CALORIES &&
-    isRecipeAISnackAppropriate(r.calories, r.ingredientNames ?? [])
-  );
+  return recipeMatchesPlannerSlot(r.name, r.ingredientNames ?? [], "snack", r.calories);
 }
 
 export function poolHasSnackRecipes(pool: PlanRecipeMeta[]): boolean {
@@ -513,6 +518,66 @@ function tryServingScaleSwap(
     rows[idx] = { ...rows[idx]!, recipe_id: pick.id };
     console.warn(
       `[tune] day ${day} ${mealType}: serving-scale swap to "${pick.name}" (${Math.round(pick.calories)} kcal)`,
+    );
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Raise a day's calories by replacing an existing snack with a larger one.
+ *
+ * This was the missing lever. On an undershoot the tuner tries a bigger main,
+ * then a serving-scale swap, then adding a snack — and `addSnackToCloseGap`
+ * can only act when a snack slot is still free. Once the day already has its
+ * full complement of snacks, nothing was left: main-meal candidates had
+ * already been exhausted, and `tryServingScaleSwap` filters the same pool with
+ * strictly tighter conditions, so it cannot succeed where the main swap
+ * failed. A day could sit 200+ kcal under target with no move available.
+ *
+ * Replaces rather than adds, so the user's snacks-per-day setting is honoured.
+ * Each swap strictly increases the day's calories and is capped at `bandMax`,
+ * so the caller's retry loop still terminates.
+ */
+function swapSnackForCalories(
+  rows: PlanCalorieRow[],
+  day: number,
+  pool: PlanRecipeMeta[],
+  calById: Map<string, number>,
+  bandMax: number,
+  allowedRecipeIds: Set<string>,
+): boolean {
+  const usedOnDay = new Set(rows.filter((r) => r.day_of_week === day && r.recipe_id).map((r) => r.recipe_id));
+  const currentTotal = dayCaloriesFromRows(rows, day, calById);
+
+  const snackRows = rows
+    .map((row, idx) => ({ row, idx }))
+    .filter(({ row }) => row.day_of_week === day && row.meal_type === "snack" && row.recipe_id);
+  if (!snackRows.length) return false;
+
+  // Smallest snack first — replacing it leaves the most room to grow.
+  snackRows.sort(
+    (a, b) => (calById.get(a.row.recipe_id) ?? 0) - (calById.get(b.row.recipe_id) ?? 0),
+  );
+
+  for (const { row, idx } of snackRows) {
+    const currentCal = calById.get(row.recipe_id) ?? 0;
+    const candidates = pool.filter((r) => {
+      if (!allowedRecipeIds.has(r.id)) return false;
+      if (r.id === row.recipe_id || usedOnDay.has(r.id)) return false;
+      if (!isPoolSnackCandidate(r)) return false;
+      if (r.calories <= currentCal) return false;
+      return currentTotal - currentCal + r.calories <= bandMax;
+    });
+    if (!candidates.length) continue;
+
+    const viable = preferLeastUsed(candidates, weekUsageFromRows(rows));
+    viable.sort((a, b) => b.calories - a.calories);
+    const pick = viable[0]!;
+    rows[idx] = { ...rows[idx]!, recipe_id: pick.id };
+    console.warn(
+      `[tune] day ${day} snack: swapped up to "${pick.name}" (${Math.round(pick.calories)} kcal), ` +
+        `day ~${Math.round(currentTotal - currentCal + pick.calories)} kcal`,
     );
     return true;
   }
@@ -988,6 +1053,19 @@ export function tuneDayTowardCalorieBand(opts: TuneDayOptions): void {
           opts.snackCountPerDay,
           opts.allowedRecipeIds,
           opts.snackMicroPriorities,
+        )
+      ) {
+        continue;
+      }
+      // Snack slots all taken: grow one instead of adding another.
+      if (
+        swapSnackForCalories(
+          opts.rows,
+          opts.day,
+          opts.pool,
+          opts.calById,
+          band.max,
+          opts.allowedRecipeIds,
         )
       ) {
         continue;
