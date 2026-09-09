@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Package, Settings, Target, X } from "lucide-react";
+import { Package, Settings, X } from "lucide-react";
 
+/** Goals moved into the primary bar — see the note in BottomNav. */
 const MORE_ITEMS = [
  { href:"/pantry", label:"Pantry", Icon: Package },
- { href:"/goals", label:"Goals", Icon: Target },
  { href:"/settings", label:"Settings", Icon: Settings },
 ] as const;
 
