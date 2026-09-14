@@ -1,5 +1,9 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { anthropicClient } from "@/lib/ai/anthropicClient";
+import {
+  anthropicClient,
+  describeEmptyResponse,
+  STRUCTURED_OUTPUT_CONFIG,
+} from "@/lib/ai/anthropicClient";
 import type { RecipeIngredientInput } from "@/lib/nutrition/calculate";
 import type { GoalMealSlot } from "@/lib/ai/goal-matched-recipe";
 import { CLAUDE_MEAL_PLAN_MODEL } from "@/lib/ai/client";
@@ -49,7 +53,8 @@ export async function generateRecipeMethodWithLLM(
 
     const response = await anthropic.messages.create({
       model,
-      max_tokens: 900,
+      max_tokens: 3000,
+      output_config: STRUCTURED_OUTPUT_CONFIG,
       system: `You write concise UK home-cooking recipes. Return ONLY JSON.`,
       messages: [
         {
@@ -73,7 +78,10 @@ Return ONLY:
     });
 
     const text = firstTextBlock(response.content);
-    if (!text) return null;
+    if (!text) {
+      console.warn("[generateRecipeMethodWithLLM]", describeEmptyResponse(response));
+      return null;
+    }
     const parsed = parseJsonFromAssistant(text) as MethodResult;
     if (!parsed?.steps?.length || typeof parsed.description !== "string") return null;
     const steps = parsed.steps.map((s) => String(s).trim()).filter(Boolean);

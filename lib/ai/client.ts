@@ -1,5 +1,9 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { anthropicClient } from "@/lib/ai/anthropicClient";
+import {
+  anthropicClient,
+  describeEmptyResponse,
+  STRUCTURED_OUTPUT_CONFIG,
+} from "@/lib/ai/anthropicClient";
 
 /**
  * Overridable per call site via ANTHROPIC_RECIPE_MODEL / ANTHROPIC_NUTRITION_MODEL.
@@ -101,7 +105,10 @@ export async function generateMealPlan(params: GenerateMealPlanParams): Promise<
 
     const response = await anthropic.messages.create({
       model: CLAUDE_MEAL_PLAN_MODEL,
-      max_tokens: 2000,
+      // Seven days of JSON is ~600 tokens; the headroom is for thinking, which
+      // counts against this cap. See STRUCTURED_OUTPUT_CONFIG.
+      max_tokens: 8000,
+      output_config: STRUCTURED_OUTPUT_CONFIG,
       system: `You are a nutrition expert and meal planner for UK users.
 You help users plan healthy weekly meals that hit their personal 
 nutrition targets using ONLY recipes from their own library.
@@ -191,9 +198,15 @@ Only use recipe IDs from the library above.`,
     });
 
     const text = firstTextBlock(response.content);
-    if (!text) return null;
+    if (!text) {
+      console.warn("[generateMealPlan]", describeEmptyResponse(response));
+      return null;
+    }
     const parsed = parseJsonFromAssistant(text) as { plan?: ClaudeMealPlanDay[]; notes?: string };
-    if (!parsed?.plan || !Array.isArray(parsed.plan)) return null;
+    if (!parsed?.plan || !Array.isArray(parsed.plan)) {
+      console.warn("[generateMealPlan] JSON parsed but carried no plan array; keys:", Object.keys(parsed ?? {}).join(","));
+      return null;
+    }
     return { plan: parsed.plan, notes: parsed.notes };
   } catch (err) {
     console.error("Claude meal plan generation failed:", err);
@@ -207,7 +220,8 @@ export async function callClaudeJSON<T>(prompt: string): Promise<T> {
   const anthropic = getAnthropic();
   const response = await anthropic.messages.create({
     model: CLAUDE_MEAL_PLAN_MODEL,
-    max_tokens: 1200,
+    max_tokens: 4000,
+    output_config: STRUCTURED_OUTPUT_CONFIG,
     messages: [{ role: "user", content: prompt }],
   });
   const text = firstTextBlock(response.content);
