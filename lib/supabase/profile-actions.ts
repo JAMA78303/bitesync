@@ -110,3 +110,25 @@ export async function saveTDEEProfile(values: TDEEFormValues) {
     },
   };
 }
+
+/** Snacks per day — 1 or 2. See lib/planner/snack-preference for the fallback rule. */
+export async function saveSnacksPerDay(value: 1 | 2) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+  if (value !== 1 && value !== 2) return { error: "Choose 1 or 2 snacks a day." };
+
+  const { error } = await supabase.from("profiles").update({ snacks_per_day: value }).eq("id", user.id);
+  if (error) {
+    if (error.message.includes("snacks_per_day")) {
+      return { error: "Snack preference needs the latest migration. Run sql/2026-09-14_snacks_per_day.sql, then try again." };
+    }
+    return { error: toUserFacingError(error, "profile", "saveSnacksPerDay") };
+  }
+
+  revalidatePath("/goals/targets");
+  revalidatePath("/planner");
+  return { success: true as const };
+}
