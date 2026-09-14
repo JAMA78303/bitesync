@@ -7,10 +7,21 @@ import {
 } from "@/lib/utils/recipe-nutrition";
 import type { MealType } from "@/types";
 
+/**
+ * planned: the default — counts toward the day, nothing recorded.
+ * eaten:   confirmed; still counts (it already did). The tick on the card.
+ * skipped: not eaten; excluded from totals. The one that changes numbers.
+ */
+export type TodayMealStatus = "planned" | "eaten" | "skipped";
+
 export type TodayMeal = {
   id: string;
+  mealPlanId: string;
+  dayOfWeek: number;
   mealType: MealType;
   slotIndex: number;
+  status: TodayMealStatus;
+  /** @deprecated derived from status; kept for callers that predate it. */
   logged: boolean;
   servingLabel: string | null;
   recipe: {
@@ -26,6 +37,24 @@ export type TodayMeal = {
   quickAddName: string | null;
   quickAddCalories: number | null;
 };
+
+type EntryRow = {
+  id: string | number;
+  meal_type: string;
+  slot_index: number | null;
+  recipe_id: string | null;
+  quick_add_name: string | null;
+  quick_add_calories: number | string | null;
+  recipe: { id: string; name: string } | { id: string; name: string }[] | null;
+  eaten_at?: string | null;
+  skipped_at?: string | null;
+};
+
+/** PostgREST reports an unknown column by name; both were added together. */
+function isMissingStatusColumns(message?: string | null): boolean {
+  if (!message) return false;
+  return message.includes("eaten_at") || message.includes("skipped_at");
+}
 
 function todayDayOfWeek(): number {
   const day = new Date().getDay();
@@ -46,10 +75,36 @@ export async function getTodaysMeals(userId: string): Promise<TodayMeal[]> {
 
   if (!plan?.id) return [];
 
-  const { data: entries, error } = await supabase
+  // Supabase infers row types from a literal select string, so the two shapes
+  // are written out rather than assembled, and both are read as EntryRow.
+  const withStatus = supabase
     .from("meal_plan_entries")
     .select(
       `
+      id,
+      meal_type,
+      slot_index,
+      recipe_id,
+      quick_add_name,
+      quick_add_calories,
+      eaten_at,
+      skipped_at,
+      recipe:recipes (
+        id,
+        name
+      )
+    `,
+    )
+    .eq("meal_plan_id", plan.id)
+    .eq("day_of_week", dayOfWeek)
+    .order("meal_type")
+    .order("slot_index");
+
+  const withoutStatus = () =>
+    supabase
+      .from("meal_plan_entries")
+      .select(
+        `
       id,
       meal_type,
       slot_index,
@@ -61,11 +116,22 @@ export async function getTodaysMeals(userId: string): Promise<TodayMeal[]> {
         name
       )
     `,
-    )
-    .eq("meal_plan_id", plan.id)
-    .eq("day_of_week", dayOfWeek)
-    .order("meal_type")
-    .order("slot_index");
+      )
+      .eq("meal_plan_id", plan.id)
+      .eq("day_of_week", dayOfWeek)
+      .order("meal_type")
+      .order("slot_index");
+
+  // eaten_at / skipped_at arrive with sql/2026-09-14_meal_entry_status.sql.
+  // Until that migration runs, selecting them fails the whole query — which
+  // would blank the Today screen rather than merely lose the status feature.
+  // Retry without them and treat every entry as planned, matching the
+  // tolerance quickAddMeal already shows for its own late-added columns.
+  let result = (await withStatus) as { data: EntryRow[] | null; error: { message: string } | null };
+  if (result.error && isMissingStatusColumns(result.error.message)) {
+    result = (await withoutStatus()) as { data: EntryRow[] | null; error: { message: string } | null };
+  }
+  const { data: entries, error } = result;
 
   if (error || !entries?.length) return [];
 
@@ -109,11 +175,16 @@ export async function getTodaysMeals(userId: string): Promise<TodayMeal[]> {
         ? `${kcal} kcal`
         : null;
 
+    const status: TodayMealStatus = entry.skipped_at ? "skipped" : entry.eaten_at ? "eaten" : "planned";
+
     meals.push({
       id: String(entry.id),
+      mealPlanId: plan.id,
+      dayOfWeek,
       mealType: entry.meal_type as MealType,
       slotIndex: Number(entry.slot_index ?? 0),
-      logged: false,
+      status,
+      logged: status === "eaten",
       servingLabel,
       recipe,
       quickAddName: entry.quick_add_name as string | null,
@@ -139,9 +210,15 @@ export type TodayTotals = {
   fibre: number;
 };
 
+/**
+ * The day's intake. Skipped meals are left out; planned and eaten both count,
+ * so the plan remains the default truth and only a recorded deviation moves
+ * the numbers. A user who never logs sees exactly what they saw before.
+ */
 export function sumTodayTotals(meals: TodayMeal[]): TodayTotals {
   return meals.reduce(
     (acc, meal) => {
+      if (meal.status === "skipped") return acc;
       if (meal.recipe) {
         return {
           kcal: acc.kcal + meal.recipe.kcal,

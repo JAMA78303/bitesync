@@ -49,7 +49,7 @@ windows stay within a sensible afternoon/evening either way.
 - **Weekly nudge** is on by default when a user enables notifications — it is the core
   ritual. It is skipped for anyone who has already planned meals for the upcoming week,
   so it nudges rather than nags.
-- **Evening prep reminder** is off by default and must be opted into. It points at the next day's plan — BiteSync has no food log, so it must never ask users to record intake.
+- **Evening prep reminder** is off by default and must be opted into. It points at the next day's plan. (The Today screen can record a skipped or replaced meal, but that is a deviation from the plan, not a food log — the reminder should stay about tomorrow's cooking, not yesterday's intake.)
 - `last_weekly_sent_on` / `last_daily_sent_on` guard against double-sends if a cron
   job fires more than once in a day.
 - Subscriptions rejected by the push service with `404`/`410` are deleted automatically.
