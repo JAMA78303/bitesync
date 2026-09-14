@@ -103,13 +103,20 @@ export async function generateMealPlan(params: GenerateMealPlanParams): Promise<
         ? `Each day must also include "snack_b" (recipe id or null) for the second snack slot.`
         : `Use only one "snack" field per day (no snack_b).`;
 
-    const response = await anthropic.messages.create({
-      model: CLAUDE_MEAL_PLAN_MODEL,
-      // Seven days of JSON is ~600 tokens; the headroom is for thinking, which
-      // counts against this cap. See STRUCTURED_OUTPUT_CONFIG.
-      max_tokens: 8000,
-      output_config: STRUCTURED_OUTPUT_CONFIG,
-      system: `You are a nutrition expert and meal planner for UK users.
+    const startedAt = Date.now();
+    const response = await anthropic.messages.create(
+      {
+        model: CLAUDE_MEAL_PLAN_MODEL,
+        // This call picks recipe IDs from a list into a fixed JSON shape. It
+        // does not need to reason, and every thinking token is latency the
+        // user sits through with a spinner. #58 replaced an exhausted budget
+        // with a generous one and the call went from failing in ~10s to
+        // succeeding in over a minute. Off entirely; the tuner enforces
+        // calories and variety afterwards regardless of how the IDs were chosen.
+        thinking: { type: "disabled" },
+        // Seven days of JSON is ~600 tokens. Ample, without inviting a long tail.
+        max_tokens: 4000,
+        system: `You are a nutrition expert and meal planner for UK users.
 You help users plan healthy weekly meals that hit their personal 
 nutrition targets using ONLY recipes from their own library.
 
@@ -195,6 +202,22 @@ Use null if no suitable recipe exists for a slot.
 Only use recipe IDs from the library above.`,
         },
       ],
+      },
+      // One attempt. The client default retries a timed-out request, so a
+      // slow plan was killed at 45s and tried again — up to 135s of spinner
+      // before the heuristic took over. A plan that is slow once is not going
+      // to be fast the second time; fall back instead. 60s is the ceiling for
+      // one honest attempt, above the ~10–20s a no-thinking call should take.
+      { timeout: 60_000, maxRetries: 0 },
+    );
+
+    // Elapsed and token counts on every call, success or not. #58 shipped a
+    // budget change with no way to see what it did to latency; this is that.
+    console.log("[generateMealPlan]", {
+      ms: Date.now() - startedAt,
+      stop: response.stop_reason,
+      in: response.usage.input_tokens,
+      out: response.usage.output_tokens,
     });
 
     const text = firstTextBlock(response.content);
