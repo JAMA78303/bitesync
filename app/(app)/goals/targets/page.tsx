@@ -1,16 +1,16 @@
 import Link from "next/link";
-import { Lock } from "lucide-react";
 import { CofidAttribution } from "@/components/nutrition/CofidAttribution";
 import { TDEEForm } from "@/components/settings/TDEEForm";
-import { isProSubscriptionStatus } from "@/lib/subscription";
 import { getProfile } from "@/lib/supabase/profile";
 import { ds } from "@/lib/ui/classes";
 
 export const dynamic ="force-dynamic";
 
+// Free-tier since the targets gate was lifted — see saveTDEEProfile. This page
+// used to show a padlock and an upgrade button to free users, which meant a
+// free user who mistyped their weight during onboarding had no way back here.
 export default async function TargetsGoalsPage() {
  const profile = await getProfile();
- const isPro = isProSubscriptionStatus(profile?.subscription_status);
 
  const defaultValues = profile?.weight_kg
  ? {
@@ -38,24 +38,9 @@ export default async function TargetsGoalsPage() {
  <p className={`mt-0.5 ${ds.pageSubtitle}`}>Based on your body stats and goal</p>
  </div>
  <div className={`${ds.mobileGutter} ${ds.overlap} pt-2`}>
- {isPro ? (
  <div className={`${ds.card} ${ds.cardPadding}`}>
  <TDEEForm defaultValues={defaultValues} />
  </div>
- ) : (
- <div className={`${ds.card} ${ds.cardPadding} text-center`}>
- <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
- <Lock className="h-5 w-5 text-amber-600" />
- </div>
- <p className="mb-1 text-sm font-medium text-[var(--text-secondary)]">Pro feature</p>
- <p className="mb-4 text-xs text-[var(--text-muted)]">
- Set calorie and protein targets based on body stats, activity level, and goal.
- </p>
- <Link href="/billing" className={ds.primaryBtn}>
- Upgrade to Pro
- </Link>
- </div>
- )}
  <CofidAttribution className="mt-6 px-1" />
  </div>
  </div>
