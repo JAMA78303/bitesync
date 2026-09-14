@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { isProSubscriptionStatus } from "@/lib/subscription";
 import { toUserFacingError } from "@/lib/errors/userFacing";
 import { createClient } from "@/lib/supabase/server";
 import { dietaryPreferencesToLegacyFlags } from "@/lib/dietary/constraints";
@@ -56,28 +55,20 @@ export async function saveDietaryPreferenceKeys(
   return { success: true as const };
 }
 
-export async function saveTDEEProfile(
-  values: TDEEFormValues,
-  options?: { allowFreeFirstRun?: boolean },
-) {
+/**
+ * Targets are free-tier. They used to be Pro after the first run: a free user
+ * could set them once during onboarding and never touch them again. With the
+ * wizard asking for body stats on its first screen, that made a mistyped
+ * weight permanent, and it gated the one number the free tier is built around
+ * — you cannot hit a protein target you are not allowed to correct. Macros
+ * beyond protein and the micronutrient analysis remain Pro; the inputs do not.
+ */
+export async function saveTDEEProfile(values: TDEEFormValues) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("subscription_status, first_run_completed")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  const allowFree =
-    options?.allowFreeFirstRun === true && profile?.first_run_completed !== true;
-
-  if (!isProSubscriptionStatus(profile?.subscription_status) && !allowFree) {
-    return { error: "Upgrade to Pro to set TDEE targets." };
-  }
 
   const safe = calculateNutritionTargetsWithSafety(values);
   const { result } = safe;

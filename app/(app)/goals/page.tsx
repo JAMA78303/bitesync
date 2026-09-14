@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { isProSubscriptionStatus } from "@/lib/subscription";
 import { getProfile } from "@/lib/supabase/profile";
 import { deriveNutritionTargets, hasCompleteTdeeProfile } from "@/lib/utils/nutrition-targets";
 import { ds } from "@/lib/ui/classes";
@@ -18,13 +17,11 @@ const GOALS_ITEMS = [
  label:"Calorie & macro targets",
  desc:"Body stats, activity, and daily goals from TDEE",
  href:"/goals/targets",
- pro: true,
  },
 ] as const;
 
 export default async function GoalsPage() {
  const profile = await getProfile();
- const isPro = isProSubscriptionStatus(profile?.subscription_status);
  const targets = deriveNutritionTargets(profile);
 
  return (
@@ -53,11 +50,6 @@ export default async function GoalsPage() {
  <span className="min-w-0 flex-1">
  <span className="flex items-center gap-2">
  <span className="text-sm font-medium text-[var(--text-secondary)]">{item.label}</span>
- {"pro" in item && item.pro && !isPro ? (
- <span className="rounded-full bg-amber-100 px-2 py-0.5 text-2xs font-semibold text-amber-700">
- Pro
- </span>
- ) : null}
  </span>
  <span className="mt-0.5 block text-xs text-[var(--text-muted)]">{item.desc}</span>
  </span>

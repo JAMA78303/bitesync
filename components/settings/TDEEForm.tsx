@@ -121,7 +121,7 @@ export function TDEEForm({ defaultValues, onboardingMode = false, onSaved }: Pro
 
  function onSubmit(values: TDEEFormValues) {
  startTransition(async () => {
- const result = await saveTDEEProfile(values, { allowFreeFirstRun: onboardingMode });
+ const result = await saveTDEEProfile(values);
  if (result &&"error" in result) {
  toast({ title:"Failed to save", description: result.error, variant:"destructive" });
  return;
