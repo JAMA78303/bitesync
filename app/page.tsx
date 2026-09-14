@@ -11,6 +11,7 @@ import { Logo } from "@/components/shared/Logo";
 import { Reveal } from "@/components/landing/Reveal";
 import { LandingMobileNav } from "@/components/landing/LandingMobileNav";
 import { LandingTrustSignals } from "@/components/landing/LandingTrustSignals";
+import { LandingFeaturePreviews } from "@/components/landing/LandingFeaturePreviews";
 import {
   FREE_PRICE,
   PRO_ANNUAL_MONTHLY_EQUIVALENT,
@@ -22,17 +23,15 @@ import { faqPageSchema, softwareApplicationSchema } from "@/lib/seo/structuredDa
 import { FAQ_ITEMS } from "@/components/landing/LandingFaq";
 import { loadAllPosts } from "@/content/blog/posts";
 
-const LandingFeaturePreviews = dynamic(
-  () =>
-    import("@/components/landing/LandingFeaturePreviews").then((m) => ({
-      default: m.LandingFeaturePreviews,
-    })),
-  {
-    loading: () => (
-      <div className="mx-auto h-96 max-w-6xl animate-pulse rounded-2xl bg-[var(--surface-muted)]" aria-hidden />
-    ),
-  },
-);
+// LandingFeaturePreviews is imported statically, unlike the sections below.
+// It is the page's primary interactive element — nine clickable cards driving a
+// preview panel — and code-splitting it put its JavaScript in a chunk that
+// arrives after the HTML has painted. In that window the cards look clickable
+// and do nothing; and if the chunk fails outright (a page cached across a
+// deploy, referencing assets the new build replaced) the section stays painted
+// but permanently dead, with no error and nothing else on the page affected.
+// That is exactly the report that prompted this. Shipping it with the main
+// bundle costs ~10 KB and removes both failure modes.
 
 const LandingDemoFlow = dynamic(
   () => import("@/components/landing/LandingDemoFlow").then((m) => ({ default: m.LandingDemoFlow })),
