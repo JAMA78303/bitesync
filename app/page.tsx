@@ -20,6 +20,7 @@ import {
 import { JsonLd } from "@/components/shared/JsonLd";
 import { faqPageSchema, softwareApplicationSchema } from "@/lib/seo/structuredData";
 import { FAQ_ITEMS } from "@/components/landing/LandingFaq";
+import { loadAllPosts } from "@/content/blog/posts";
 
 const LandingFeaturePreviews = dynamic(
   () =>
@@ -87,24 +88,15 @@ const PRO_FEATURES = [
   "Priority support",
 ] as const;
 
-const BLOG_POSTS = [
-  {
-    slug: "thermic-effect-of-protein",
-    category: "Nutrition science",
-    title: "Why protein keeps you fuller for longer",
-    desc: "The thermic effect of food — and how to use it when you plan your week in BiteSync.",
-    readTime: "4 min read",
-  },
-  {
-    slug: "meal-planning-reduce-food-waste",
-    category: "Sustainable shopping",
-    title: "How meal planning cuts food waste",
-    desc: "Shop once with a list built from your plan — fewer impulse buys and less in the bin.",
-    readTime: "5 min read",
-  },
-] as const;
+/** The landing strip shows the newest few; the full list lives at /blog. */
+const FEATURED_POST_COUNT = 3;
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  // Was a third hand-maintained copy of the post metadata, complete with a
+  // "4 min read" on a three-paragraph post. Now the same registry as the
+  // routes and sitemap, so publishing a post surfaces it here automatically.
+  const featuredPosts = (await loadAllPosts()).slice(0, FEATURED_POST_COUNT);
+
   return (
     <div className="min-h-screen bg-[var(--surface-page)]">
       <JsonLd data={softwareApplicationSchema()} />
@@ -312,7 +304,7 @@ export default function LandingPage() {
               </p>
             </div>
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-              {BLOG_POSTS.map((post) => (
+              {featuredPosts.map((post) => (
                 <article
                   key={post.slug}
                   className="group flex flex-col rounded-2xl border border-[var(--border-default)] bg-[var(--surface-card)] p-5 transition-shadow hover:shadow-md"
@@ -321,8 +313,7 @@ export default function LandingPage() {
                   <h3 className="mt-2 text-base font-semibold text-[var(--text-primary)] group-hover:text-[var(--text-link)]">
                     <Link href={`/blog/${post.slug}`}>{post.title}</Link>
                   </h3>
-                  <p className="mt-2 flex-1 text-sm leading-relaxed text-[var(--text-muted)]">{post.desc}</p>
-                  <p className="mt-4 text-xs text-[var(--text-muted)]">{post.readTime}</p>
+                  <p className="mt-2 flex-1 text-sm leading-relaxed text-[var(--text-muted)]">{post.description}</p>
                   <Link
                     href="/signup"
                     className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-[var(--text-link)] hover:underline"
@@ -333,6 +324,16 @@ export default function LandingPage() {
                 </article>
               ))}
             </div>
+            {/* The index is how a crawler finds posts that aren't featured here. */}
+            <p className="mt-8 text-center">
+              <Link
+                href="/blog"
+                className="inline-flex items-center gap-1 text-sm font-medium text-[var(--text-link)] hover:underline"
+              >
+                All posts
+                <ChevronRight className="h-4 w-4" aria-hidden />
+              </Link>
+            </p>
           </div>
         </section>
 

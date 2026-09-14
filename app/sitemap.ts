@@ -1,16 +1,13 @@
 import type { MetadataRoute } from "next";
+import { loadAllPosts } from "@/content/blog/posts";
 
 const BASE = "https://bitesync.io";
 
-const BLOG_SLUGS = [
-  "thermic-effect-of-protein",
-  "meal-planning-reduce-food-waste",
-] as const;
-
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   const pages: MetadataRoute.Sitemap = [
     { url: BASE, lastModified: now, changeFrequency: "weekly", priority: 1 },
+    { url: `${BASE}/blog`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
     { url: `${BASE}/login`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
     { url: `${BASE}/signup`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     // Present and crawlable but previously unlisted. Answer engines cite policy
@@ -19,10 +16,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/terms`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
   ];
 
-  for (const slug of BLOG_SLUGS) {
+  // Posts come from the same registry the routes use, so a new post cannot be
+  // published and left out of the sitemap. lastModified is the post's own
+  // date rather than "now": telling crawlers everything changed today, every
+  // day, teaches them to ignore the field.
+  for (const post of await loadAllPosts()) {
     pages.push({
-      url: `${BASE}/blog/${slug}`,
-      lastModified: now,
+      url: `${BASE}/blog/${post.slug}`,
+      lastModified: new Date(post.dateModified),
       changeFrequency: "monthly",
       priority: 0.6,
     });
