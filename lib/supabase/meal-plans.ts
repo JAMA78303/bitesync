@@ -354,3 +354,114 @@ export async function groceryListExists(meal_plan_id: string): Promise<boolean> 
   }
   return (count ?? 0) > 0;
 }
+
+export type MealEntryStatus = "planned" | "eaten" | "skipped";
+
+/** Both columns arrive with sql/2026-09-14_meal_entry_status.sql. */
+function isMissingStatusColumns(message?: string | null): boolean {
+  if (!message) return false;
+  return message.includes("eaten_at") || message.includes("skipped_at");
+}
+
+const STATUS_MIGRATION_MESSAGE =
+  "Logging meals needs the latest migration. Run sql/2026-09-14_meal_entry_status.sql, then try again.";
+
+/**
+ * Record whether a planned meal was eaten or skipped. Ownership is checked
+ * through the entry's plan rather than left to RLS alone, matching
+ * clearWeekEntries — a status write is cheap enough that the extra read is
+ * worth the certainty.
+ */
+export async function setMealEntryStatus(entry_id: string, status: MealEntryStatus) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const { data: entry } = await supabase
+    .from("meal_plan_entries")
+    .select("id, meal_plan:meal_plans!inner(user_id)")
+    .eq("id", entry_id)
+    .maybeSingle();
+  const owner = (entry?.meal_plan as { user_id?: string } | { user_id?: string }[] | null | undefined);
+  const ownerId = Array.isArray(owner) ? owner[0]?.user_id : owner?.user_id;
+  if (!entry || ownerId !== user.id) return { error: "Meal not found" };
+
+  const now = new Date().toISOString();
+  const { error } = await supabase
+    .from("meal_plan_entries")
+    .update({
+      eaten_at: status === "eaten" ? now : null,
+      skipped_at: status === "skipped" ? now : null,
+    })
+    .eq("id", entry_id);
+
+  if (error) {
+    if (isMissingStatusColumns(error.message)) return { error: STATUS_MIGRATION_MESSAGE };
+    return { error: toUserFacingError(error, "week-plan", "setMealEntryStatus") };
+  }
+
+  revalidatePath("/today");
+  revalidatePath("/planner");
+  return { success: true as const };
+}
+
+/**
+ * "Ate something else": the planned entry is marked skipped so it leaves the
+ * day's totals, and what replaced it is quick-added into the next free slot of
+ * the same meal type so it joins them. Both rows are kept — the plan and the
+ * deviation — which is the whole point of recording it.
+ */
+export async function replaceMealEntry(
+  entry_id: string,
+  replacement: { name: string; calories: number | null },
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const { data: entry } = await supabase
+    .from("meal_plan_entries")
+    .select("id, meal_plan_id, day_of_week, meal_type, meal_plan:meal_plans!inner(user_id)")
+    .eq("id", entry_id)
+    .maybeSingle();
+  const owner = (entry?.meal_plan as { user_id?: string } | { user_id?: string }[] | null | undefined);
+  const ownerId = Array.isArray(owner) ? owner[0]?.user_id : owner?.user_id;
+  if (!entry || ownerId !== user.id) return { error: "Meal not found" };
+
+  const name = replacement.name.trim();
+  if (!name) return { error: "Say what you ate." };
+
+  // Next free slot for this meal type on this day, so the quick-add sits
+  // beside the skipped plan instead of overwriting it.
+  const { data: siblings } = await supabase
+    .from("meal_plan_entries")
+    .select("slot_index")
+    .eq("meal_plan_id", entry.meal_plan_id)
+    .eq("day_of_week", entry.day_of_week)
+    .eq("meal_type", entry.meal_type);
+  const nextSlot = (siblings ?? []).reduce((max, s) => Math.max(max, Number(s.slot_index ?? 0)), -1) + 1;
+
+  const skipped = await setMealEntryStatus(entry_id, "skipped");
+  if ("error" in skipped) return skipped;
+
+  const added = await quickAddMeal(
+    entry.meal_plan_id as string,
+    Number(entry.day_of_week),
+    entry.meal_type as MealType,
+    name,
+    replacement.calories,
+    nextSlot,
+  );
+  if ("error" in added && added.error) {
+    // Don't leave the plan half-changed: put the original back.
+    await setMealEntryStatus(entry_id, "planned");
+    return { error: added.error };
+  }
+
+  revalidatePath("/today");
+  return { success: true as const };
+}

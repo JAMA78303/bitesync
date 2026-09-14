@@ -6,6 +6,9 @@ import {
   clearWeekEntries as clearWeekEntriesImpl,
   quickAddMeal as quickAddMealImpl,
   removeSlotEntry as removeSlotEntryImpl,
+  replaceMealEntry as replaceMealEntryImpl,
+  setMealEntryStatus as setMealEntryStatusImpl,
+  type MealEntryStatus,
 } from "@/lib/supabase/meal-plans";
 
 export async function assignRecipeToSlot(
@@ -42,4 +45,15 @@ export async function removeSlotEntry(entry_id: string) {
 
 export async function clearWeekEntries(meal_plan_id: string) {
   return clearWeekEntriesImpl(meal_plan_id);
+}
+
+export async function setMealEntryStatus(entry_id: string, status: MealEntryStatus) {
+  return setMealEntryStatusImpl(entry_id, status);
+}
+
+export async function replaceMealEntry(
+  entry_id: string,
+  replacement: { name: string; calories: number | null },
+) {
+  return replaceMealEntryImpl(entry_id, replacement);
 }

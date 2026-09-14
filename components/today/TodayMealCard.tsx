@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getDietTag } from "@/lib/ui/dietTags";
 import { getDietTagStyle } from "@/lib/ui/dietTagStyles";
 import { MealThumbnail } from "@/components/ui/MealThumbnail";
+import { TodayMealActions } from "@/components/today/TodayMealActions";
 import { ds } from "@/lib/ui/classes";
 import type { TodayMeal } from "@/lib/planner/today";
 
@@ -19,9 +20,14 @@ export function TodayMealCard({ meal, dietaryPreferences = [] }: Props) {
  getDietTag(recipe.kcal, recipe.protein, recipe.carbs, recipe.fat, dietaryPreferences);
 
  const recipeHref = recipe ? `/recipes/${encodeURIComponent(recipe.id)}` : null;
+ const skipped = meal.status ==="skipped";
 
  return (
- <div className="flex items-center gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3">
+ <div
+ className={`flex items-start gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3 transition-opacity ${
+ skipped ?"opacity-50" :""
+ }`}
+ >
  <MealThumbnail
  recipeName={name}
  mealType={meal.mealType}
@@ -30,7 +36,8 @@ export function TodayMealCard({ meal, dietaryPreferences = [] }: Props) {
  />
 
  <div className="min-w-0 flex-1">
- <p className={`truncate ${ds.cardTitle}`}>{name}</p>
+ <p className={`truncate ${ds.cardTitle} ${skipped ?"line-through" :""}`}>{name}</p>
+ {skipped ? <p className={`mb-1 ${ds.tierMeta}`}>Skipped — not counted today</p> : null}
  {meal.servingLabel ? (
  <p className={`mb-1.5 ${ds.tierMeta}`}>{meal.servingLabel}</p>
  ) : null}
@@ -63,16 +70,8 @@ export function TodayMealCard({ meal, dietaryPreferences = [] }: Props) {
  ) : null}
  </div>
 
- <div className="flex-shrink-0" aria-hidden>
- {meal.logged ? (
- <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--brand-action)]">
- <svg className="h-4 w-4 text-[var(--text-on-brand)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
- <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
- </svg>
- </div>
- ) : (
- <div className="h-7 w-7 rounded-full border-2 border-[var(--border-default)]" />
- )}
+ <div className="flex-shrink-0">
+ <TodayMealActions entryId={meal.id} status={meal.status} mealName={name} />
  </div>
  </div>
  );
