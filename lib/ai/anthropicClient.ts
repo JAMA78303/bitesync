@@ -26,3 +26,34 @@ export function anthropicClient(apiKey: string): Anthropic {
   cached = { key: apiKey, client };
   return client;
 }
+
+/**
+ * Request settings shared by every structured-output call — recipes, methods,
+ * week plans. All of them want a JSON object back, not reasoning.
+ *
+ * Sonnet 5 runs adaptive thinking by default, at high effort. The model these
+ * calls were written for did not think at all, so the switch (#36) silently
+ * changed what max_tokens had to cover: thinking counts against it. With the
+ * 900–2000 token caps in place, the model could spend the entire budget
+ * reasoning and return no text block — which surfaced as "didn't return a
+ * usable plan" and as recipe calls that quietly fell back to templates.
+ *
+ * Low effort keeps a little reasoning for constraint-heavy prompts (dedupe,
+ * dietary rules) while making the output the bulk of the spend.
+ */
+export const STRUCTURED_OUTPUT_CONFIG = { effort: "low" } as const;
+
+/**
+ * Why a response carried no text. Logged at every call site so an exhausted
+ * budget is named rather than reported as a generic null.
+ */
+export function describeEmptyResponse(response: {
+  stop_reason: string | null;
+  content: Array<{ type: string }>;
+}): string {
+  const blocks = response.content.map((b) => b.type).join(",") || "none";
+  if (response.stop_reason === "max_tokens") {
+    return `hit max_tokens before producing text (blocks: ${blocks}) — raise the cap or lower effort`;
+  }
+  return `no text block (stop_reason=${response.stop_reason ?? "null"}, blocks: ${blocks})`;
+}

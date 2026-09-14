@@ -1,5 +1,9 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { anthropicClient } from "@/lib/ai/anthropicClient";
+import {
+  anthropicClient,
+  describeEmptyResponse,
+  STRUCTURED_OUTPUT_CONFIG,
+} from "@/lib/ai/anthropicClient";
 import type { RecipeIngredientInput } from "@/lib/nutrition/calculate";
 import type { GoalMealSlot } from "@/lib/ai/goal-matched-recipe";
 import { CLAUDE_MEAL_PLAN_MODEL } from "@/lib/ai/client";
@@ -97,7 +101,8 @@ export async function generateFullRecipeFromIngredients(input: {
 
     const response = await anthropic.messages.create({
       model,
-      max_tokens: 1400,
+      max_tokens: 4000,
+      output_config: STRUCTURED_OUTPUT_CONFIG,
       system: `You write cookable UK home recipes. Return ONLY valid JSON, no markdown fences.`,
       messages: [
         {
@@ -130,7 +135,10 @@ Rules:
     });
 
     const text = firstTextBlock(response.content);
-    if (!text) return null;
+    if (!text) {
+      console.warn("[generateFullRecipeFromIngredients]", describeEmptyResponse(response));
+      return null;
+    }
     const parsed = parseJsonFromAssistant(text);
     return validateGeneratedFullRecipe(parsed, input.bannedIngredientTerms);
   } catch (err) {
@@ -170,7 +178,8 @@ export async function generateFullRecipeForSlot(input: {
 
     const response = await anthropic.messages.create({
       model,
-      max_tokens: 1600,
+      max_tokens: 4000,
+      output_config: STRUCTURED_OUTPUT_CONFIG,
       system: `You write varied, cookable UK home recipes. Return ONLY valid JSON, no markdown fences.`,
       messages: [
         {
@@ -198,7 +207,10 @@ Return ONLY this JSON:
     });
 
     const text = firstTextBlock(response.content);
-    if (!text) return null;
+    if (!text) {
+      console.warn("[generateFullRecipeForSlot]", describeEmptyResponse(response));
+      return null;
+    }
     const parsed = parseJsonFromAssistant(text);
     return validateGeneratedFullRecipe(parsed, []);
   } catch (err) {
