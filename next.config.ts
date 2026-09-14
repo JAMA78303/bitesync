@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import createMDX from "@next/mdx";
 import path from "node:path";
 
 const nextConfig: NextConfig = {
@@ -12,4 +13,10 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Enables importing .mdx modules (blog posts live in content/blog/). MDX files
+// are not routes here — pageExtensions is deliberately untouched — so a post
+// only becomes a page through app/blog/[slug], which controls metadata,
+// structured data and layout for all of them.
+const withMDX = createMDX({});
+
+export default withMDX(nextConfig);

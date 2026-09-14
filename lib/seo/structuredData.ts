@@ -79,6 +79,27 @@ export function softwareApplicationSchema() {
   };
 }
 
+export function blogPostingSchema(post: {
+  slug: string;
+  title: string;
+  description: string;
+  datePublished: string;
+  dateModified: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.description,
+    datePublished: post.datePublished,
+    dateModified: post.dateModified,
+    url: `${BASE}/blog/${post.slug}`,
+    mainEntityOfPage: `${BASE}/blog/${post.slug}`,
+    author: { "@type": "Organization", name: "BiteSync", url: BASE },
+    publisher: { "@type": "Organization", name: "BiteSync", url: BASE },
+  };
+}
+
 export function faqPageSchema(items: readonly { q: string; a: string }[]) {
   return {
     "@context": "https://schema.org",
