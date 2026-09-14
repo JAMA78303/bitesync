@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
  CalendarDays,
  ChefHat,
@@ -36,14 +36,52 @@ const PRIMARY_ITEMS = [
 
 const MORE_PATHS = ["/pantry","/settings"];
 
+/** Focus on one of these opens the on-screen keyboard. */
+function opensKeyboard(target: EventTarget | null): boolean {
+ if (!(target instanceof HTMLElement)) return false;
+ if (target.isContentEditable || target.tagName ==="TEXTAREA") return true;
+ if (target.tagName !=="INPUT") return false;
+ const type = (target as HTMLInputElement).type;
+ return !["button","checkbox","radio","submit","reset","range","file","color"].includes(type);
+}
+
+/**
+ * Whether a text field currently has focus — i.e. the keyboard is up.
+ *
+ * iOS Safari pins `position: fixed; bottom: 0` to the top of the on-screen
+ * keyboard rather than the bottom of the screen, and keeps it there as the
+ * page scrolls underneath. On the Recipes page that meant tapping search and
+ * scrolling results left the nav floating at mid-screen. Native apps hide
+ * the tab bar behind the keyboard; this does the same.
+ */
+function useKeyboardOpen(): boolean {
+ const [open, setOpen] = useState(false);
+ useEffect(() => {
+ const onFocusIn = (e: FocusEvent) => {
+ if (opensKeyboard(e.target)) setOpen(true);
+ };
+ const onFocusOut = (e: FocusEvent) => {
+ if (opensKeyboard(e.target)) setOpen(false);
+ };
+ document.addEventListener("focusin", onFocusIn);
+ document.addEventListener("focusout", onFocusOut);
+ return () => {
+ document.removeEventListener("focusin", onFocusIn);
+ document.removeEventListener("focusout", onFocusOut);
+ };
+ }, []);
+ return open;
+}
+
 export function BottomNav() {
  const pathname = usePathname();
  const [moreOpen, setMoreOpen] = useState(false);
+ const keyboardOpen = useKeyboardOpen();
  const moreActive = MORE_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
  return (
  <>
- {!moreOpen ? (
+ {!moreOpen && !keyboardOpen ? (
  <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:hidden">
  <nav
  className="pointer-events-auto grid w-full max-w-md grid-cols-7 gap-0.5 rounded-2xl bg-[var(--nav-bar-bg)] px-1.5 py-1.5 shadow-2xl shadow-black/25"
