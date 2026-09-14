@@ -1,0 +1,69 @@
+export const meta = {
+  title: "Which meal planners show micronutrient gaps — and why most can't",
+  description:
+    "Calories and macros are the easy part. The gaps that actually affect how you feel are in iron, iodine, vitamin D and B12 — and most apps have no way to see them. Here's what a planner needs to do it properly.",
+  category: "Nutrition science",
+  datePublished: "2026-09-14",
+  dateModified: "2026-09-14",
+};
+
+Most nutrition apps will tell you, to the calorie, how much you ate. Very few can tell you whether you got enough iron this week. That is a strange gap, because for most people the second question matters more.
+
+## Calories are the easy part
+
+Hitting a calorie target is a solved problem. Every app does it, and for weight change it is the number that counts. Macros — protein, carbohydrate, fat — are a step harder but still routine.
+
+What those numbers can't tell you is whether the food behind them is doing its job. Two days at 2,000 kcal and 120 g of protein can look identical on a dashboard and be nutritionally very different: one built on eggs, lentils, oily fish and leafy greens; the other on protein bars and white rice. The calorie ring is green either way.
+
+## Where the gaps actually hide
+
+In clinical practice, the shortfalls that come up again and again are not calories. They are a short list of micronutrients, and they cluster around predictable groups of people:
+
+- **Iron.** The UK reference intake is 14.8 mg a day for women of reproductive age, against 8.7 mg for men — a difference most apps ignore entirely. Low iron is the most common nutritional deficiency in the world, and fatigue is often the first sign.
+- **Iodine.** 140 µg a day. It comes mainly from dairy, fish and eggs, which makes it the nutrient most likely to fall short when someone moves to a plant-based diet without planning for it.
+- **Vitamin D.** 10 µg a day, and very hard to reach from food alone — which is why UK guidance is that everyone consider a supplement through autumn and winter. A planner should at least show you how far food gets you.
+- **Vitamin B12.** Only 1.5 µg, but it is essentially absent from plant foods, so vegans and many vegetarians need fortified foods or a supplement.
+- **Calcium, zinc, folate, selenium.** Less dramatic, but each has a realistic path to falling short on a restricted or repetitive diet.
+
+None of these show up in a calorie count. Several are the direct consequence of a diet that looks excellent on macros.
+
+## Why most apps can't show this
+
+It is not that developers don't care. Micronutrient analysis needs three things a calorie counter doesn't, and each one is genuinely hard.
+
+**Ingredient-level composition data.** A calorie label on a packet gives you energy and macros. It does not give you iodine. To know what is in a meal you need a food composition database — in the UK, McCance and Widdowson's *Composition of Foods* — and you need every ingredient in a recipe matched to an entry in it, at the right weight. "Chicken" is not enough; the app has to know breast from thigh, raw from roasted.
+
+**A reference to compare against.** A number on its own means nothing. 9 mg of iron is plenty for a man and well short for a woman. The comparison has to be against published dietary reference values, split by sex, and honest about which nutrients have an upper limit too.
+
+**A weekly frame, not a daily one.** This is the one most often got wrong. You do not need 14.8 mg of iron every single day; you need it on average across the week. A daily view flags a "deficit" on any day you didn't eat red meat or lentils, which is most days, which trains you to ignore it. The useful question is whether the *week* got there.
+
+## The trap that makes a bad analysis worse than none
+
+There is a failure mode in this kind of feature that is worth knowing about, because it is invisible from the outside.
+
+When an app cannot match an ingredient to its database — an unusual spelling, a brand name, "a handful of spinach" — the simplest thing for the code to do is count it as zero. Zero calories, zero iron, zero everything. The meal still shows a total, so nothing looks broken.
+
+But zero is not "unknown". Zero says *this food contains no iron*. Do that to a few ingredients a week and the analysis will tell you, with total confidence, that you are short on nutrients you are actually getting. Unmeasured and deficient look identical on the chart.
+
+We have spent a lot of effort on exactly this. Every ingredient that goes into a BiteSync recipe is matched against the composition database and the coverage is audited automatically, so an unmatched food gets fixed rather than quietly counted as nothing. It is unglamorous work and it is the difference between an analysis you can act on and one that sends you to the supplement aisle for no reason.
+
+## What to look for in a planner
+
+If micronutrients matter to you — and if you are vegetarian, vegan, a woman under 50, or cutting calories, they probably should — these are the questions to ask of any app:
+
+| Question | Why it matters | BiteSync |
+| --- | --- | --- |
+| Does it analyse from ingredients, not just labels? | Labels don't carry micronutrients | Yes — every ingredient matched to composition data |
+| Does it compare against published reference values? | A raw number means nothing without a target | Yes — UK dietary reference values, split by sex |
+| Does it show the week, not just today? | Micronutrient adequacy is a weekly pattern | Yes — weekly analysis is the primary view |
+| Does it distinguish "short" from "over the limit"? | Some nutrients have an upper bound too | Yes — hit targets and limits shown separately |
+| Does it audit its own coverage? | Unmatched food silently reads as deficiency | Yes — checked automatically on every change |
+| Does the gap feed back into the plan? | Knowing is only half of it | Yes — the planner favours foods rich in what you're short on |
+
+That last row is the one we care most about. An analysis that just reports a shortfall hands you homework. When BiteSync sees that your week is low on iron or iodine, the weekly planner nudges toward recipes that close the gap — so the fix is next week's plan, not a spreadsheet.
+
+## The honest limits
+
+This is analysis of what you *planned*, from composition data, against population reference values. It is a good guide to whether a way of eating is likely to cover you. It is not a blood test, and it does not know your absorption, your medications or your history. If you have symptoms, or you are pregnant, or you have a condition that affects how you handle a nutrient, the reference values are a starting point for a conversation with a dietitian or GP, not a replacement for one.
+
+But for the far more common situation — someone eating reasonably well, wondering whether the diet they've settled into has a hole in it — being able to see the week laid out against the numbers is the thing most apps can't offer. It was the reason BiteSync was built.

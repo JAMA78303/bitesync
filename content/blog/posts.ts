@@ -19,6 +19,7 @@ export type Post = PostMeta & { slug: string };
  * forgotten — and the type check catches a slug with no file behind it.
  */
 export const POST_SLUGS = [
+  "meal-planners-micronutrient-gaps",
   "thermic-effect-of-protein",
   "meal-planning-reduce-food-waste",
 ] as const;
