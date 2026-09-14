@@ -553,6 +553,9 @@ export function TDEEForm({ defaultValues, onboardingMode = false, onSaved }: Pro
  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
  Saving...
  </>
+ ) : onboardingMode ? (
+ // In the wizard this is the only button that advances; it should say so.
+"Save and continue"
  ) : (
 "Save my targets"
  )}

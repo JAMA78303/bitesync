@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TDEEForm } from "@/components/settings/TDEEForm";
@@ -21,7 +21,7 @@ import {
   clampFirstRunStep,
   firstRunLibraryCount,
 } from "@/lib/onboarding/first-run";
-import { trackFirstRunSkipped } from "@/lib/analytics/events";
+import { trackFirstRunSkipped, trackFirstRunStepViewed } from "@/lib/analytics/events";
 import type { GoalContext } from "@/app/(app)/planner/ai-actions";
 import type { TDEEFormValues } from "@/lib/utils/tdee";
 import { ds } from "@/lib/ui/classes";
@@ -75,6 +75,10 @@ export function FirstRunWizard({ profile, isPro, recipeCount }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [libraryDone, setLibraryDone] = useState(recipeCount > 0);
+
+  useEffect(() => {
+    trackFirstRunStepViewed(step);
+  }, [step]);
 
   const dietary = initialDietaryPreferencesFromProfile(profile);
   const tdeeDefaults: Partial<TDEEFormValues> | undefined = profile?.weight_kg
@@ -186,20 +190,22 @@ export function FirstRunWizard({ profile, isPro, recipeCount }: Props) {
             <div>
               <h2 className="mb-2 text-sm font-semibold text-[var(--text-primary)]">Food preferences</h2>
               <p className="mb-3 text-sm text-[var(--text-muted)]">
-                Used for recipe suggestions and your meal plan.
+                Tap any that apply — they save as you go. Skip this if none do.
               </p>
-              <DietaryPreferencesPicker
-                initialSelected={dietary}
-                submitLabel="Save preferences"
-                onSaved={() => setError(null)}
-              />
+              {/* autoSave: this screen has one call to action, the targets form's
+                  Continue below. A second "Save preferences" button here advanced
+                  nothing, and continuing without pressing it discarded the choice. */}
+              <DietaryPreferencesPicker initialSelected={dietary} autoSave />
             </div>
             <div>
               <h2 className="mb-2 text-sm font-semibold text-[var(--text-primary)]">Calorie &amp; protein targets</h2>
               <p className="mb-3 text-sm text-[var(--text-muted)]">
-                {isPro
-                  ? "Based on your body stats and goal — powers Fill My Library and planning."
-                  : "Set your targets for this session. Pro unlocks saving and editing them anytime in Goals."}
+                {/* Free users were told "Set your targets for this session" as if
+                    nothing would persist. It does — allowFreeFirstRun saves them.
+                    Telling someone their effort won't count is a poor opener for
+                    six body-stat fields. */}
+                Worked out from your body stats and goal, then saved to your profile.
+                Every plan and grocery list is built to hit these.
               </p>
               <TDEEForm
                 defaultValues={tdeeDefaults}

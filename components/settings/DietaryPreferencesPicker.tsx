@@ -12,6 +12,14 @@ type Props = {
  completeOnboarding?: boolean;
  onSaved?: () => void;
  submitLabel?: string;
+ /**
+ * Persist on every tap and render no button. For screens that already have
+ * one call to action: onboarding step 1 used to show this picker's "Save
+ * preferences" above the targets form's own submit, and only the second one
+ * advanced. Tapping the first showed "Preferences saved." and went nowhere;
+ * skipping it and continuing silently discarded the selection.
+ */
+ autoSave?: boolean;
 };
 
 export function DietaryPreferencesPicker({
@@ -19,6 +27,7 @@ export function DietaryPreferencesPicker({
  completeOnboarding = false,
  onSaved,
  submitLabel,
+ autoSave = false,
 }: Props) {
  const [selected, setSelected] = useState<string[]>(initialSelected);
  const [message, setMessage] = useState<string | null>(null);
@@ -35,20 +44,32 @@ export function DietaryPreferencesPicker({
  ?"Saving…"
  :"Save preferences");
 
- function handleSave() {
+ function persist(keys: string[], announce: boolean) {
  setMessage(null);
  setError(null);
  startTransition(async () => {
- const result = await saveDietaryPreferenceKeys(selected, {
+ const result = await saveDietaryPreferenceKeys(keys, {
  completeOnboarding,
  });
  if ("error" in result && result.error) {
  setError(result.error);
  return;
  }
- setMessage("Preferences saved.");
+ // Auto-save would flash "Preferences saved." on every tap; the selected
+ // state of the chip is the confirmation there.
+ if (announce) setMessage("Preferences saved.");
  onSaved?.();
  });
+ }
+
+ function handleSave() {
+ persist(selected, true);
+ }
+
+ function handleToggle(key: string) {
+ const next = toggleDietarySelection(selected, key);
+ setSelected(next);
+ if (autoSave) persist(next, false);
  }
 
  return (
@@ -60,7 +81,7 @@ export function DietaryPreferencesPicker({
  <button
  key={pref.key}
  type="button"
- onClick={() => setSelected((prev) => toggleDietarySelection(prev, pref.key))}
+ onClick={() => handleToggle(pref.key)}
  className={`flex w-full items-center gap-3 rounded-2xl border-2 px-4 py-3.5 text-left transition-all ${
  isSelected
  ?"border-[var(--brand-primary)] bg-[var(--surface-brand-subtle)] border-[var(--brand-primary)]"
@@ -104,6 +125,7 @@ export function DietaryPreferencesPicker({
  <p className="mt-3 text-sm text-[var(--semantic-success-text)]">{message}</p>
  ) : null}
 
+ {autoSave ? null : (
  <button
  type="button"
  onClick={handleSave}
@@ -117,6 +139,7 @@ export function DietaryPreferencesPicker({
  </svg>
  ) : null}
  </button>
+ )}
  </div>
  );
 }
