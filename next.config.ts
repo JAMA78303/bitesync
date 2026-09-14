@@ -17,6 +17,15 @@ const nextConfig: NextConfig = {
 // are not routes here — pageExtensions is deliberately untouched — so a post
 // only becomes a page through app/blog/[slug], which controls metadata,
 // structured data and layout for all of them.
-const withMDX = createMDX({});
+//
+// remark-gfm adds pipe tables, which base MDX (CommonMark) lacks. Without it a
+// comparison table renders as literal text with pipes in it — and comparison
+// tables are the point of comparison posts. Named as a string rather than an
+// import because Turbopack serialises this config and cannot pass a function.
+const withMDX = createMDX({
+  options: {
+    remarkPlugins: ["remark-gfm"],
+  },
+});
 
 export default withMDX(nextConfig);
