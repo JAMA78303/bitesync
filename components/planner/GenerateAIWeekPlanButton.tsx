@@ -5,7 +5,11 @@ import { Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { generateAIWeekPlan, type GoalContext } from "@/app/(app)/planner/ai-actions";
+import {
+  generateAIWeekPlan,
+  generateHeuristicWeekPlan,
+  type GoalContext,
+} from "@/app/(app)/planner/ai-actions";
 
 type Props = {
   isPro: boolean;
@@ -18,7 +22,7 @@ export function GenerateAIWeekPlanButton({ isPro, mealPlanId, goals }: Props) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
-  function runWeekPlan() {
+  function runWeekPlan(mode: "ai" | "standard") {
     if (!isPro) {
       toast({
         title: "Pro feature",
@@ -29,16 +33,19 @@ export function GenerateAIWeekPlanButton({ isPro, mealPlanId, goals }: Props) {
     }
     startTransition(async () => {
       try {
-        const result = await generateAIWeekPlan({ mealPlanId, goals });
+        const result =
+          mode === "standard"
+            ? await generateHeuristicWeekPlan({ mealPlanId, goals })
+            : await generateAIWeekPlan({ mealPlanId, goals });
         if ("error" in result) {
-          toast({ title: "AI week plan failed", description: result.error, variant: "destructive" });
+          toast({ title: "Week plan failed", description: result.error, variant: "destructive" });
           return;
         }
         const src =
           "planSource" in result && result.planSource === "claude" ? "Claude" : "Standard planner";
         const note = "notes" in result && result.notes ? ` ${result.notes}` : "";
         toast({
-          title: "AI weekly plan applied",
+          title: "Weekly plan applied",
           description: `${src}: 7 days, ${result.snackCountPerDay} snack slot(s)/day, ${result.recipePool} recipes.${note}`,
         });
         // The plan still built, so this isn't destructive — but it is the only
@@ -55,23 +62,38 @@ export function GenerateAIWeekPlanButton({ isPro, mealPlanId, goals }: Props) {
         router.refresh();
       } catch (err) {
         const message = err instanceof Error ? err.message : "Something went wrong";
-        toast({ title: "AI week plan failed", description: message, variant: "destructive" });
+        toast({ title: "Week plan failed", description: message, variant: "destructive" });
       }
     });
   }
 
   return (
-    <Button
-      type="button"
-      onClick={runWeekPlan}
-      disabled={isPending}
-      variant="outline"
-      className="h-11 w-full border-[var(--brand-primary)] text-[var(--brand-primary)] hover:bg-[var(--surface-brand-subtle)] md:h-9 md:w-auto md:text-sm"
-    >
-      <Sparkles className="mr-1.5 h-4 w-4 shrink-0 md:mr-2" />
-      <span className="text-center text-2xs font-medium leading-snug sm:text-xs md:text-sm md:truncate">
-        {isPending ? "Planning…" : "AI weekly plan"}
-      </span>
-    </Button>
+    <div className="flex w-full flex-col items-stretch gap-1 md:w-auto md:items-end">
+      <Button
+        type="button"
+        onClick={() => runWeekPlan("ai")}
+        disabled={isPending}
+        variant="outline"
+        className="h-11 w-full border-[var(--brand-primary)] text-[var(--brand-primary)] hover:bg-[var(--surface-brand-subtle)] md:h-9 md:w-auto md:text-sm"
+      >
+        <Sparkles className="mr-1.5 h-4 w-4 shrink-0 md:mr-2" />
+        <span className="text-center text-2xs font-medium leading-snug sm:text-xs md:text-sm md:truncate">
+          {isPending ? "Planning…" : "AI weekly plan"}
+        </span>
+      </Button>
+      {/* The heuristic planner was reachable only through onboarding. Pro users
+          had no way to a plan when Claude was slow or down, and no way to
+          compare the two — which is how neither was ever measured. */}
+      {isPro ? (
+        <button
+          type="button"
+          onClick={() => runWeekPlan("standard")}
+          disabled={isPending}
+          className="text-2xs font-medium text-[var(--text-muted)] hover:text-[var(--text-secondary)] disabled:opacity-60"
+        >
+          Use standard planner instead (instant, no AI)
+        </button>
+      ) : null}
+    </div>
   );
 }
