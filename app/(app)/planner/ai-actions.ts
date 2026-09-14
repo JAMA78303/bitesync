@@ -61,6 +61,7 @@ import {
   suitableForBreakfastSlot,
   suitableForBreakfastSlotRelaxed,
 } from "@/lib/planner/meal-slot-eligibility";
+import { readSnacksPerDay, resolveSnacksPerDay } from "@/lib/planner/snack-preference";
 
 export type GoalContext = {
   calorieTarget: number | null;
@@ -985,7 +986,11 @@ async function generateAIWeekPlanInner(
     })
     .sort((a, b) => (b.protein - a.protein) || (b.calories - a.calories));
 
-  const snackCountPerDay = (input.goals.calorieTarget ?? 0) >= 2200 ? 2 : 1;
+  // A preference now, not a calorie threshold — see lib/planner/snack-preference.
+  const snackCountPerDay = resolveSnacksPerDay(
+    await readSnacksPerDay(supabase, user.id),
+    input.goals.calorieTarget,
+  );
   const selectedDaysFullWeek = [0, 1, 2, 3, 4, 5, 6];
   const profile = await getProfile();
   const dailyCalorieTarget = Math.round(

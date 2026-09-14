@@ -28,6 +28,7 @@ import { MACRO_CAP_MAX_RATIO, proteinFloorForTarget } from "@/lib/planner/plan-c
 import { fetchRecipeNutritionMap } from "@/lib/supabase/recipe-nutrition-query";
 import { normalizeRecipeNutritionEmbed, type RecipeNutritionSummary } from "@/lib/utils/recipe-nutrition";
 import { getMonday, toLocalISO } from "@/lib/utils/dates";
+import { readSnacksPerDay, resolveSnacksPerDay } from "@/lib/planner/snack-preference";
 
 // .env.local is not loaded by tsx; read the two keys we need without a dep.
 function loadEnv(): Record<string, string> {
@@ -95,7 +96,10 @@ async function main() {
   const kcalTarget = Number(profile?.daily_calorie_target ?? 0);
   const proteinTarget = Number(profile?.daily_protein_target ?? 0);
   if (!kcalTarget) throw new Error("User has no calorie target");
-  const snackCountPerDay = kcalTarget >= 2200 ? 2 : 1;
+  // The user's preference, or the planner's fallback rule if unset — the same
+  // resolution the planner itself uses, so the scorer judges against intent.
+  const snackPreference = await readSnacksPerDay(supabase, userId);
+  const snackCountPerDay = resolveSnacksPerDay(snackPreference, kcalTarget);
 
   const { data: plan } = await supabase
     .from("meal_plans")
@@ -239,7 +243,10 @@ async function main() {
   const mainSlots = [...mainUses.values()].reduce((a, b) => a + b, 0);
 
   console.log(`\nWeek ${week} · user ${userId.slice(0, 8)} · library ${library.length} recipes`);
-  console.log(`Targets: ${kcalTarget} kcal (band ${band.min}–${band.max}), ${proteinTarget}g protein (floor ${proteinFloor}), ${snackCountPerDay} snack/day`);
+  console.log(
+    `Targets: ${kcalTarget} kcal (band ${band.min}–${band.max}), ${proteinTarget}g protein (floor ${proteinFloor}), ` +
+      `${snackCountPerDay} snack/day (${snackPreference == null ? "planner default — not a user choice" : "user preference"})`,
+  );
   console.log(`\nDays`);
   for (const l of dayLines) console.log(l);
   console.log(`\nCalories`);
@@ -254,7 +261,13 @@ async function main() {
   console.log(`  Days w/ duplicate: ${daysWithDup}/7`);
   console.log(`\nCoverage`);
   console.log(`  Empty main slots:  ${missingMainSlots}`);
-  console.log(`  Missing snacks:    ${missingSnackSlots}`);
+  // Only a failure when the count is the user's own choice. Against the
+  // fallback rule it is informational: a day in band with fewer snacks than
+  // the rule guessed is a fine day, not a missed one.
+  console.log(
+    `  Unfilled snacks:   ${missingSnackSlots} of ${snackCountPerDay * 7}` +
+      (snackPreference == null ? "  (vs planner default; days in band above are what matter)" : ""),
+  );
   console.log(`\nSlot / snack violations: ${violations.length}`);
   for (const v of violations) console.log(`  • ${v}`);
   console.log("");
