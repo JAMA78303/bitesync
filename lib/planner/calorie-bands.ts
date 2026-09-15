@@ -9,10 +9,6 @@ export const DAILY_CAL_BAND_PCT = 0.07;
 export const DAILY_CAL_BAND_KCAL = 150;
 export const WEEK_AVG_BAND_PCT = 0.05;
 
-/** Max serving scale applied when closing moderate calorie gaps (no oil padding). */
-export const SERVING_SCALE_MIN = 0.85;
-export const SERVING_SCALE_MAX = 1.25;
-
 export function dailyCalorieHalfBand(target: number): number {
   return Math.min(target * DAILY_CAL_BAND_PCT, DAILY_CAL_BAND_KCAL);
 }

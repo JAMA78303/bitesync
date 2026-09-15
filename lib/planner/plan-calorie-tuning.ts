@@ -3,7 +3,6 @@ import {
   formatDailyCalorieBand,
   isWithinDailyCalorieBand,
   isWithinWeekAvgCalorieBand,
-  SERVING_SCALE_MAX,
   weekAvgCalorieBand,
 } from "@/lib/planner/calorie-bands";
 import {
@@ -477,52 +476,6 @@ function swapMainMealForCalories(
   return false;
 }
 
-/**
- * Serving-scale lever: prefer a higher-calorie swap within SERVING_SCALE_MAX × current meal calories
- * when a direct swap cannot close a small gap.
- */
-function tryServingScaleSwap(
-  rows: PlanCalorieRow[],
-  day: number,
-  pool: PlanRecipeMeta[],
-  calById: Map<string, number>,
-  bandMin: number,
-  bandMax: number,
-  allowedRecipeIds: Set<string>,
-): boolean {
-  const mealOrder: PlanCalorieRow["meal_type"][] = ["dinner", "lunch", "breakfast"];
-  const usedOnDay = new Set(rows.filter((r) => r.day_of_week === day && r.recipe_id).map((r) => r.recipe_id));
-  const currentTotal = dayCaloriesFromRows(rows, day, calById);
-  if (currentTotal >= bandMin) return false;
-
-  for (const mealType of mealOrder) {
-    const idx = rows.findIndex((r) => r.day_of_week === day && r.meal_type === mealType);
-    if (idx < 0) continue;
-    const currentId = rows[idx]!.recipe_id;
-    const currentCal = calById.get(currentId) ?? 0;
-    if (currentCal <= 0) continue;
-    const scaledCap = Math.round(currentCal * SERVING_SCALE_MAX);
-
-    const candidates = pool.filter((r) => {
-      if (!allowedRecipeIds.has(r.id)) return false;
-      if (r.id === currentId || usedOnDay.has(r.id)) return false;
-      if (!recipeMatchesPlannerSlot(r.name, r.ingredientNames ?? [], mealType, r.calories)) return false;
-      if (r.calories <= currentCal || r.calories > scaledCap) return false;
-      const newTotal = currentTotal - currentCal + r.calories;
-      return newTotal >= bandMin && newTotal <= bandMax;
-    });
-    if (!candidates.length) continue;
-
-    candidates.sort((a, b) => b.calories - a.calories);
-    const pick = candidates[0]!;
-    rows[idx] = { ...rows[idx]!, recipe_id: pick.id };
-    console.warn(
-      `[tune] day ${day} ${mealType}: serving-scale swap to "${pick.name}" (${Math.round(pick.calories)} kcal)`,
-    );
-    return true;
-  }
-  return false;
-}
 
 /**
  * Raise a day's calories by replacing an existing snack with a larger one.
@@ -531,9 +484,8 @@ function tryServingScaleSwap(
  * then a serving-scale swap, then adding a snack — and `addSnackToCloseGap`
  * can only act when a snack slot is still free. Once the day already has its
  * full complement of snacks, nothing was left: main-meal candidates had
- * already been exhausted, and `tryServingScaleSwap` filters the same pool with
- * strictly tighter conditions, so it cannot succeed where the main swap
- * failed. A day could sit 200+ kcal under target with no move available.
+ * already been exhausted. A day could sit 200+ kcal under target with no move
+ * available.
  *
  * Replaces rather than adds, so the user's snacks-per-day setting is honoured.
  * Each swap strictly increases the day's calories and is capped at `bandMax`,
@@ -1022,19 +974,6 @@ export function tuneDayTowardCalorieBand(opts: TuneDayOptions): void {
           opts.pool,
           opts.calById,
           "up",
-          band.min,
-          band.max,
-          opts.allowedRecipeIds,
-        )
-      ) {
-        continue;
-      }
-      if (
-        tryServingScaleSwap(
-          opts.rows,
-          opts.day,
-          opts.pool,
-          opts.calById,
           band.min,
           band.max,
           opts.allowedRecipeIds,
