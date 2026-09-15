@@ -106,7 +106,11 @@ function describeAiPlannerFailure(err: unknown): string {
   if (status !== undefined && status >= 500) {
     return `Anthropic was unavailable — ${tail} Try again shortly.`;
   }
-  return `AI planning failed — ${tail}`;
+  // No HTTP status means the failure happened on our side of the response —
+  // parsing, validation, an unexpected shape. Say what it was: the generic
+  // line sent three fixes out blind before this carried the actual error.
+  const detail = err instanceof Error ? `${err.name}: ${message.slice(0, 140)}` : message.slice(0, 140);
+  return `AI planning failed (${detail}) — ${tail}`;
 }
 
 type MealPlanInsertRow = {

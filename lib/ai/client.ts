@@ -84,7 +84,17 @@ function parseJsonFromAssistant(raw: string): unknown {
     .replace(/```json/gi, "")
     .replace(/```/g, "")
     .trim();
-  return JSON.parse(clean) as unknown;
+  try {
+    return JSON.parse(clean) as unknown;
+  } catch {
+    // The prompt says "ONLY this JSON", but a model that prefaces it with
+    // "Here is the plan:" or appends a note turns a good answer into a throw.
+    // Take the outermost object before giving up.
+    const start = clean.indexOf("{");
+    const end = clean.lastIndexOf("}");
+    if (start >= 0 && end > start) return JSON.parse(clean.slice(start, end + 1)) as unknown;
+    throw new Error(`Response was not JSON: "${clean.slice(0, 120)}"`);
+  }
 }
 
 /**
@@ -225,7 +235,15 @@ Only use recipe IDs from the library above.`,
       console.warn("[generateMealPlan]", describeEmptyResponse(response));
       return null;
     }
-    const parsed = parseJsonFromAssistant(text) as { plan?: ClaudeMealPlanDay[]; notes?: string };
+    let parsed: { plan?: ClaudeMealPlanDay[]; notes?: string };
+    try {
+      parsed = parseJsonFromAssistant(text) as typeof parsed;
+    } catch (err) {
+      // The first 500 chars of what the model actually said, in the logs,
+      // next to the error — so a parse failure can be read rather than inferred.
+      console.error("[generateMealPlan] unparseable response:", JSON.stringify(text.slice(0, 500)));
+      throw err;
+    }
     if (!parsed?.plan || !Array.isArray(parsed.plan)) {
       console.warn("[generateMealPlan] JSON parsed but carried no plan array; keys:", Object.keys(parsed ?? {}).join(","));
       return null;
