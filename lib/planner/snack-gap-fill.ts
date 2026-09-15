@@ -59,7 +59,15 @@ export async function createPlannerSnackRecipe(
     targetDailyProtein: getDailyProteinTarget(profile) ?? undefined,
     existing: { names: opts?.existingNames ?? [], signatures: [] },
     acceptedInBatch: [],
-    useLlmMethod: true,
+    // Template-only. This runs *inside* the week-plan action, after the plan
+    // is chosen, to top up a library short of snacks — and with the LLM on it
+    // was up to two recipes × two Claude calls × a retrying client, which is
+    // why "Planning…" outlived the planner's own 60s ceiling by minutes. A
+    // snack is two or three ingredients and a couple of steps; the template
+    // engine produces those instantly and free, and verify:snack-generation
+    // exercises exactly this path. LLM polish belongs in Fill My Library,
+    // where the user chose to wait for it.
+    useLlmMethod: false,
     microFocusKey,
   });
 
