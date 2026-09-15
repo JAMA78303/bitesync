@@ -71,6 +71,9 @@ export type GenerateHybridRecipeInput = {
   requireFullLlmRecipe?: boolean;
 };
 
+/** Headroom under SNACK_MAX_CALORIES for the scaler's closest-fit rounding. */
+const SNACK_CEILING_MARGIN = 20;
+
 const MAX_DEDUPE_RETRIES = 16;
 const MAX_FORCE_FILL_ATTEMPTS = 10;
 const MEAL_PROTEIN_FLOOR_RATIO = 0.95;
@@ -289,9 +292,15 @@ async function generateDraftForSlot(
   const flags = dietFlagsForSlot(input.slot, input.hard);
   const fraction = fractionForMealSlot(input.slot.mealSlot);
   const rawTarget = Math.round(input.targetDailyCalories * fraction);
+  // The scaler lands on whichever composition is *closest* to the target, and
+  // treats ±100 kcal as met. For snacks the cap is a ceiling, not a centre:
+  // a target of exactly SNACK_MAX let it settle on 306 and call that fine, and
+  // the planner then refused the snack it had just been given. Aim below the
+  // ceiling by more than the scaler's rounding granularity so "closest" is
+  // still under it.
   const targetMealCalories =
     input.slot.mealSlot === "snack"
-      ? Math.min(SNACK_MAX_CALORIES, Math.max(SNACK_MIN_CALORIES, rawTarget))
+      ? Math.min(SNACK_MAX_CALORIES - SNACK_CEILING_MARGIN, Math.max(SNACK_MIN_CALORIES, rawTarget))
       : rawTarget;
   const targetMealProteinG = input.targetDailyProtein
     ? Math.round(input.targetDailyProtein * fraction)
