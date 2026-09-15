@@ -103,4 +103,24 @@ const afterLunchRemove = entriesAfterRemove(dayWithSnacks, "lunch-d3");
 const totalsNoLunch = sumDayNutritionFromEntries(3, afterLunchRemove);
 assert(Math.round(totalsNoLunch.kcal) === 400, `snacks only: 400 kcal, got ${totalsNoLunch.kcal}`);
 
+// --- skipped entries leave the totals but stay in the list ---
+// Today, the planner's totals row and the nutrition page all sum through this
+// function, so this is the assertion that keeps their numbers identical.
+const skippedLunch = sampleEntry({ id: "lunch-skip", day_of_week: 4, meal_type: "lunch", skipped_at: "2026-09-15T12:00:00Z" });
+const eatenDinner = sampleEntry({ id: "dinner-eaten", day_of_week: 4, meal_type: "dinner", eaten_at: "2026-09-15T19:00:00Z" });
+const plannedSnack = sampleEntry({
+  id: "snack-planned",
+  day_of_week: 4,
+  meal_type: "snack",
+  recipe: { id: "r-snack", name: "Apple", recipe_nutrition: { calories: 95, protein_g: 0, carbs_g: 25, fat_g: 0 } },
+});
+const dayWithSkip = [skippedLunch, eatenDinner, plannedSnack];
+const totalsWithSkip = sumDayNutritionFromEntries(4, dayWithSkip);
+assert(
+  Math.round(totalsWithSkip.kcal) === 520 + 95,
+  `skipped lunch excluded, eaten dinner and planned snack counted: expected 615, got ${totalsWithSkip.kcal}`,
+);
+assert(Math.round(totalsWithSkip.protein) === 42, `protein should be the eaten dinner only, got ${totalsWithSkip.protein}`);
+assert(dayWithSkip.length === 3, "skipping must not remove the entry from the plan");
+
 console.log("remove-entry.test.ts: ok");

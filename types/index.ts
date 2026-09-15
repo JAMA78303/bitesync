@@ -86,6 +86,10 @@ export type MealPlanEntry = {
   slot_index?: number;
   quick_add_name: string | null;
   quick_add_calories: number | null;
+  /** Set from the Today screen. Present only once the status migration has run. */
+  eaten_at?: string | null;
+  /** Skipped meals stay in the plan but leave every total. See isSkippedEntry. */
+  skipped_at?: string | null;
   recipe?: {
     id: string;
     name: string;
@@ -119,6 +123,16 @@ export type MealPlanEntry = {
 
 export function getEntryName(entry: MealPlanEntry): string {
   return entry.recipe?.name ?? entry.quick_add_name ?? "Meal";
+}
+
+/**
+ * A meal the user recorded as not eaten. It stays in the plan — the row is the
+ * record of what was planned — but contributes nothing to any total, on the
+ * planner, the nutrition page or Today. Those three showed different numbers
+ * for the same day until they all asked this one question.
+ */
+export function isSkippedEntry(entry: Pick<MealPlanEntry, "skipped_at">): boolean {
+  return Boolean(entry.skipped_at);
 }
 
 export function getEntryCalories(entry: MealPlanEntry): number | null {

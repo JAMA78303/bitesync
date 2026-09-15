@@ -16,7 +16,7 @@ import {
  normalizeRecipeNutritionEmbed,
  type RecipeNutritionSummary,
 } from "@/lib/utils/recipe-nutrition";
-import { getEntryCalories, getEntryName } from "@/types";
+import { getEntryCalories, getEntryName, isSkippedEntry } from "@/types";
 import type { MealPlanEntry } from "@/types";
 
 type Props = {
@@ -47,6 +47,9 @@ export function RecipeSlotCard({
  recipe?.recipe_nutrition as RecipeNutritionSummary | RecipeNutritionSummary[] | null | undefined,
  );
  const calories = getEntryCalories(entry);
+ // Recorded as not eaten on Today. Stays in the grid as the record of the
+ // plan, dimmed so it reads as history, and the totals row already omits it.
+ const skipped = isSkippedEntry(entry);
  const protein = nutrition?.protein_g ?? null;
  const carbs = nutrition?.carbs_g ?? 0;
  const fat = nutrition?.fat_g ?? 0;
@@ -140,11 +143,14 @@ export function RecipeSlotCard({
  </span>
  ) : null}
  <p
- className={`min-w-0 w-full break-words line-clamp-2 text-xs font-semibold leading-snug ${ds.tierPrimary}`}
- title={name}
+ className={`min-w-0 w-full break-words line-clamp-2 text-xs font-semibold leading-snug ${ds.tierPrimary} ${
+ skipped ?"line-through" :""
+ }`}
+ title={skipped ? `${name} — skipped` : name}
  >
  {name}
  </p>
+ {skipped ? <p className={`${ds.tierMeta} text-2xs`}>Skipped</p> : null}
  {macroLine}
  {dietWarnings.length > 0 ? (
  <p
@@ -211,7 +217,7 @@ export function RecipeSlotCard({
  );
 
  return (
- <div className="group relative min-w-0">
+ <div className={`group relative min-w-0 ${skipped ?"opacity-50" :""}`}>
  {recipeIdForLink && !isQuickAdd ? (
  <Link
  href={`/recipes/${encodeURIComponent(String(recipeIdForLink))}`}

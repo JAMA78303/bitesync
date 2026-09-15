@@ -10,6 +10,7 @@ import {
 } from "@/lib/nutrition/drv";
 import { aggregateWeeklyMicrosFromPlan } from "@/lib/nutrition/weeklyMicroTotals";
 import { createClient } from "@/lib/supabase/server";
+import { isSkippedEntry } from "@/types";
 
 export type NutrientResult = {
   key: string;
@@ -45,15 +46,31 @@ export async function getWeeklyMicroAnalysis(
 ): Promise<MicroAnalysis | null> {
   const supabase = await createClient();
 
-  const { data: entries } = await supabase
+  // Skipped meals leave the micronutrient analysis too — a week's iron is
+  // what was eaten, not what was scheduled. Same tolerance as everywhere else
+  // for a database that predates the status columns.
+  type EntryRow = { recipe_id: string | null; skipped_at?: string | null };
+  const withStatus = await supabase
     .from("meal_plan_entries")
-    .select("recipe_id")
+    .select("recipe_id, skipped_at")
     .eq("meal_plan_id", mealPlanId)
     .not("recipe_id", "is", null);
+  let entries = withStatus.data as EntryRow[] | null;
+  if (withStatus.error && withStatus.error.message.includes("skipped_at")) {
+    const legacy = await supabase
+      .from("meal_plan_entries")
+      .select("recipe_id")
+      .eq("meal_plan_id", mealPlanId)
+      .not("recipe_id", "is", null);
+    entries = (legacy.data ?? []) as EntryRow[];
+  }
 
   if (!entries?.length) return null;
 
-  const recipeIds = [...new Set(entries.map((e) => e.recipe_id).filter(Boolean).map(String))];
+  const eaten = entries.filter((e) => !isSkippedEntry(e));
+  if (!eaten.length) return null;
+
+  const recipeIds = [...new Set(eaten.map((e) => e.recipe_id).filter(Boolean).map(String))];
   if (!recipeIds.length) return null;
 
   const { data: ingredients } = await supabase
@@ -64,7 +81,7 @@ export async function getWeeklyMicroAnalysis(
   if (!ingredients?.length) return null;
 
   const aggregated = aggregateWeeklyMicrosFromPlan(
-    entries.map((e) => ({ recipe_id: String(e.recipe_id) })),
+    eaten.map((e) => ({ recipe_id: String(e.recipe_id) })),
     ingredients.map((ing) => ({
       recipe_id: String(ing.recipe_id),
       name: String(ing.name ?? ""),

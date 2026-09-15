@@ -111,18 +111,40 @@ export async function getMealPlanForWeek(weekStartDate: string) {
 
 export async function getMealPlanEntries(mealPlanId: string) {
   const supabase = await createClient();
-  const { data, error } = await supabase
+
+  const RECIPE_EMBED = `
+      recipe:recipes (
+        id, name,
+        fits_vegetarian, fits_vegan, fits_gluten_free
+      )`;
+
+  // Both selects are read as the same loose row shape; the type-level parser
+  // would otherwise infer two incompatible ones and refuse the reassignment.
+  type Fetched = { data: unknown[] | null; error: { message: string } | null };
+
+  let { data, error } = (await supabase
     .from("meal_plan_entries")
     .select(
       `
       id, meal_plan_id, recipe_id, day_of_week, meal_type, slot_index, quick_add_name, quick_add_calories,
-      recipe:recipes (
-        id, name,
-        fits_vegetarian, fits_vegan, fits_gluten_free
-      )
+      eaten_at, skipped_at,${RECIPE_EMBED}
     `,
     )
-    .eq("meal_plan_id", mealPlanId);
+    .eq("meal_plan_id", mealPlanId)) as Fetched;
+
+  // Status columns arrive with sql/2026-09-14_meal_entry_status.sql. Before
+  // that runs, ask for the same rows without them — an unmigrated database
+  // should cost the status feature, not the planner.
+  if (error && isMissingStatusColumns(error.message)) {
+    ({ data, error } = (await supabase
+      .from("meal_plan_entries")
+      .select(
+        `
+      id, meal_plan_id, recipe_id, day_of_week, meal_type, slot_index, quick_add_name, quick_add_calories,${RECIPE_EMBED}
+    `,
+      )
+      .eq("meal_plan_id", mealPlanId)) as Fetched);
+  }
 
   if (!error) {
     const enriched = await enrichEntriesWithNutrition(supabase, data as unknown as MealPlanEntry[] | null);
