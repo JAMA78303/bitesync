@@ -3,7 +3,7 @@ import {
   normalizeRecipeNutritionEmbed,
   type RecipeNutritionSummary,
 } from "@/lib/utils/recipe-nutrition";
-import { getEntryCalories, type MealPlanEntry } from "@/types";
+import { getEntryCalories, isSkippedEntry, type MealPlanEntry } from "@/types";
 
 export type DayMacros = {
   dayOfWeek: number;
@@ -27,7 +27,12 @@ function nutritionFromEntry(entry: MealPlanEntry) {
   );
 }
 
-/** Sum macros for all plan entries on a day (includes every snack slot, not just grid slot 0). */
+/**
+ * Sum macros for all plan entries on a day (includes every snack slot, not
+ * just grid slot 0). Skipped entries are left out: this is the one function
+ * behind the planner's totals row, the grid, and the nutrition page's macros,
+ * so excluding them here is what makes those agree with Today.
+ */
 export function sumDayNutritionFromEntries(
   day: number,
   entries: MealPlanEntry[],
@@ -46,7 +51,7 @@ export function sumDayNutritionFromEntries(
   let fibre = 0;
   let sugar = 0;
 
-  for (const entry of entries.filter((e) => e.day_of_week === day)) {
+  for (const entry of entries.filter((e) => e.day_of_week === day && !isSkippedEntry(e))) {
     const n = nutritionFromEntry(entry);
     const cals = getEntryCalories(entry);
     if (cals != null) kcal += cals;
