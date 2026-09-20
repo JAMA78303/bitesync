@@ -12,6 +12,7 @@ import { Reveal } from "@/components/landing/Reveal";
 import { LandingMobileNav } from "@/components/landing/LandingMobileNav";
 import { LandingTrustSignals } from "@/components/landing/LandingTrustSignals";
 import { LandingFeaturePreviews } from "@/components/landing/LandingFeaturePreviews";
+import { LandingTestimonials } from "@/components/landing/LandingTestimonials";
 import {
   FREE_PRICE,
   PRO_ANNUAL_MONTHLY_EQUIVALENT,
@@ -188,6 +189,17 @@ export default async function LandingPage() {
         <section id="features" className="scroll-mt-24 bg-[var(--surface-card)] py-16 sm:py-20">
           <Reveal>
             <LandingFeaturePreviews />
+          </Reveal>
+        </section>
+
+        {/* Proof before price: a stranger has just seen what it does; this is
+            who says it works, before they are asked what it costs. */}
+        <section
+          id="testimonials"
+          className="scroll-mt-24 border-y border-[var(--border-subtle)] bg-[var(--surface-muted)] py-16 sm:py-20"
+        >
+          <Reveal>
+            <LandingTestimonials />
           </Reveal>
         </section>
 
