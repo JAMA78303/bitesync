@@ -143,7 +143,7 @@ export function FirstRunWizard({ profile, isPro, recipeCount }: Props) {
     setError(null);
     startTransition(async () => {
       try {
-        await generateFirstRunWeekAndGrocery({ isPro, goals });
+        await generateFirstRunWeekAndGrocery({ goals });
       } catch (err) {
         if (err && typeof err === "object" && "digest" in err) return;
         setError(err instanceof Error ? err.message : "Could not generate your week.");

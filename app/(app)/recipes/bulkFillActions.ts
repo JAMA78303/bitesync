@@ -125,7 +125,10 @@ export async function generateFillLibrarySlot(payload: {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
-  const existing = await loadExistingLibrarySnapshot(supabase, user.id);
+  const [existing, tier] = await Promise.all([
+    loadExistingLibrarySnapshot(supabase, user.id),
+    getUserTier(),
+  ]);
 
   const draft = await generateHybridRecipeDraft({
     slot: payload.slot,
@@ -134,7 +137,12 @@ export async function generateFillLibrarySlot(payload: {
     targetDailyProtein: payload.dailyProteinTarget,
     existing,
     acceptedInBatch: payload.acceptedDrafts,
-    useLlmMethod: true,
+    // The LLM is Pro. This was `true` for everyone: the tier check in this
+    // file only ever gated the recipe *count*, so free users — including
+    // every new signup at onboarding step 2 — had their library written by
+    // Claude at our cost. The template engine composes the same recipes with
+    // the same computed nutrition; only the written method differs.
+    useLlmMethod: tier === "pro",
   });
 
   if (!draft) {

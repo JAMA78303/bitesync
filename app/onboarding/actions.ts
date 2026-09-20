@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { generateGroceryList } from "@/lib/supabase/grocery";
 import { getProfile } from "@/lib/supabase/profile";
 import { createClient } from "@/lib/supabase/server";
+import { getUserTier } from "@/lib/subscription";
 import { toUserFacingError } from "@/lib/errors/userFacing";
 import { FIRST_RUN_STEP } from "@/lib/onboarding/first-run";
 import { getMonday, toLocalISO } from "@/lib/utils/dates";
@@ -96,12 +97,13 @@ export async function finishOnboardingStep2() {
   return { success: true as const };
 }
 
-export async function generateFirstRunWeekAndGrocery(input: {
-  isPro: boolean;
-  goals: GoalContext;
-}) {
+export async function generateFirstRunWeekAndGrocery(input: { goals: GoalContext }) {
   const { supabase, userId, error } = await requireUserId();
   if (error || !userId) return { error: error ?? "Unauthorized" };
+  // Tier from the server, not the client. The AI planner re-checks it anyway,
+  // so a spoofed flag never reached the LLM — it just failed the first run
+  // with "Upgrade to Pro" instead of building a heuristic week.
+  const isPro = (await getUserTier()) === "pro";
 
   const weekStart = getMonday(new Date());
   const weekStartISO = toLocalISO(weekStart);
@@ -111,7 +113,7 @@ export async function generateFirstRunWeekAndGrocery(input: {
     return { error: mealPlanResult.error ?? "Could not load your planner." };
   }
 
-  if (input.isPro) {
+  if (isPro) {
     const { generateAIWeekPlan } = await import("@/app/(app)/planner/ai-actions");
     const weekResult = await generateAIWeekPlan({ mealPlanId: mealPlan.id, goals: input.goals });
     if ("error" in weekResult && weekResult.error) {
@@ -135,7 +137,7 @@ export async function generateFirstRunWeekAndGrocery(input: {
   revalidatePath("/planner");
   revalidatePath("/grocery");
   redirect(
-    `/grocery?week=${weekStartISO}&plan=${mealPlan.id}&welcome=1${input.isPro ? "&pro=1" : ""}`,
+    `/grocery?week=${weekStartISO}&plan=${mealPlan.id}&welcome=1${isPro ? "&pro=1" : ""}`,
   );
 }
 
