@@ -135,6 +135,7 @@ Combine ingredients into one snack with 3–5 clear method steps (mix, layer, to
 
 Rules:
 - You may make small quantity adjustments and add only basic pantry seasonings (salt, pepper, herbs, a sensible amount of cooking oil).
+- Meat and fish weights are RAW, as bought.
 - Weights for rice, pasta, quinoa, lentils and chickpeas are COOKED weights. Keep those names and quantities exactly as given. In the method say how much DRY to cook to reach that cooked weight (rice and quinoa ≈ one third dry; pasta ≈ half; lentils and chickpeas ≈ two fifths), or say to use pre-cooked or tinned.
 - Cooking oil: at most 1 tbsp per serving. Prefer 1–2 tsp for pan-frying one portion.
 - Do NOT add new major ingredients beyond the list + basic seasonings/oil.
@@ -213,6 +214,7 @@ Do NOT reuse or closely paraphrase these existing recipe titles:
 ${avoid.length ? avoid.map((t) => `- ${t}`).join("\n") : "(none yet)"}
 
 Use UK ingredient names that appear in home cooking (CoFID-style: chicken breast, greek yogurt, oats, brown rice, broccoli, etc.).
+- Meat and fish weights are RAW, as bought.
 - Weights for rice, pasta, quinoa, lentils and chickpeas are COOKED weights. In the method say how much DRY to cook to reach that cooked weight (rice and quinoa ≈ one third dry; pasta ≈ half; lentils and chickpeas ≈ two fifths), or say to use pre-cooked or tinned.
 - Cooking oil: at most 1 tbsp per serving. Prefer 1–2 tsp for pan-frying one portion.
 Every ingredient must appear in the method; the title must match the dish the steps describe.

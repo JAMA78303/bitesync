@@ -20,13 +20,14 @@ function mergeNutritionEntriesUnique(
 
 /** Expanded USDA-style seed data; use normalized lowercase names for matching. */
 const NUTRITION_DB_CORE: NutritionLookupEntry[] = [
+  // Raw, skinless (CoFID light meat raw 118/23/2.8; USDA raw 120/22.5/2.6). Was the cooked figure, 165/31.
   {
     name: "chicken breast",
     per_100g: {
-      calories: 165,
-      protein_g: 31,
+      calories: 120,
+      protein_g: 22.5,
       carbs_g: 0,
-      fat_g: 3.6,
+      fat_g: 2.6,
       fibre_g: 0,
       sugar_g: 0,
       sodium_mg: 74,
@@ -575,26 +576,28 @@ const NUTRITION_DB_CORE: NutritionLookupEntry[] = [
       saturated_fat_g: 0.0,
     },
   },
+  // Raw (CoFID turkey light meat raw). Was the cooked figure, 135/30.
   {
     name: "turkey breast",
     per_100g: {
-      calories: 135,
-      protein_g: 30,
+      calories: 105,
+      protein_g: 24.4,
       carbs_g: 0,
-      fat_g: 1,
+      fat_g: 0.8,
       fibre_g: 0,
       sugar_g: 0,
       sodium_mg: 50,
       saturated_fat_g: 0.3,
     },
   },
+  // Raw, standard (CoFID). 26 g protein was a cooked figure.
   {
     name: "beef mince",
     per_100g: {
-      calories: 250,
-      protein_g: 26,
+      calories: 225,
+      protein_g: 19.7,
       carbs_g: 0,
-      fat_g: 17,
+      fat_g: 16.2,
       fibre_g: 0,
       sugar_g: 0,
       sodium_mg: 72,
