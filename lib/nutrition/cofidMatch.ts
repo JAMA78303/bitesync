@@ -643,13 +643,42 @@ export function pickBestCofidCandidate(
 }
 
 /** Singular/plural variants for DB candidate gathering. */
+/**
+ * Query forms to try as a CoFID name prefix ("Tomatoes, …").
+ *
+ * CoFID names most foods in the plural, so a singular query has to be
+ * pluralised to hit the prefix fetch — and that fetch is the precise one.
+ * This used to append "s" and nothing else: "tomato" became "tomatos", which
+ * matches no row, so the lookup fell through to the broad `%tomato%` net,
+ * capped at 35 rows in alphabetical order. Those 35 are baked beans, chutneys
+ * and curries; "Tomatoes, raw" is row 40-something. Fifteen recipes had fresh
+ * tomato costed as tomato chutney, and "potato" landed on mashed-with-spread
+ * the same way. Real English plurals fix it: -o → -oes, -y → -ies, sibilant
+ * → -es. Both -os and -oes are tried since CoFID has "Avocados" and
+ * "Tomatoes".
+ */
 export function cofidQueryVariants(normalised: string): string[] {
   const base = normalizeCofidQuery(normalised);
+  if (!base) return [];
   const variants = new Set<string>([base]);
-  if (base.endsWith("s") && base.length > 3) {
-    variants.add(base.slice(0, -1));
-  } else if (base.length >= 2) {
-    variants.add(`${base}s`);
+  const words = base.split(" ");
+  const last = words[words.length - 1] ?? "";
+  const withLast = (form: string) => [...words.slice(0, -1), form].join(" ");
+
+  const singular = singularForm(last);
+  if (singular !== last) variants.add(withLast(singular));
+
+  if (last.length >= 2 && singular === last) {
+    if (/[^aeiou]y$/.test(last)) {
+      variants.add(withLast(`${last.slice(0, -1)}ies`));
+    } else if (last.endsWith("o")) {
+      variants.add(withLast(`${last}es`));
+      variants.add(withLast(`${last}s`));
+    } else if (/(s|x|z|ch|sh)$/.test(last)) {
+      variants.add(withLast(`${last}es`));
+    } else {
+      variants.add(withLast(`${last}s`));
+    }
   }
   return [...variants];
 }

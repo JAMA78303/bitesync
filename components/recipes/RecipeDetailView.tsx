@@ -8,6 +8,7 @@ import { parseRecipeSteps } from "@/lib/recipes/parseRecipeSteps";
 import { getDietTag } from "@/lib/ui/dietTags";
 import { getDietTagStyle } from "@/lib/ui/dietTagStyles";
 import { formatIngredientWeightSuffix } from "@/lib/nutrition/convert";
+import { dryWeightFor } from "@/lib/recipes/cookedWeight";
 import { ds } from "@/lib/ui/classes";
 
 type Ingredient = {
@@ -162,6 +163,9 @@ export function RecipeDetailView({
  ingredients.map((ing) => {
  const qty = Math.round(ing.quantity * multiplier * 100) / 100;
  const weightHint = formatIngredientWeightSuffix(qty, ing.unit, ing.name);
+ // "315 g rice" is cooked weight — the nutrition is costed on it — but read
+ // alone it looks like dry. Say so, with the dry amount to start from.
+ const dry = ing.unit ==="g" ? dryWeightFor(ing.name, qty) : null;
  return (
  <div
  key={ing.id}
@@ -171,6 +175,9 @@ export function RecipeDetailView({
  <span className="text-sm text-[var(--text-secondary)]">
  {qty} {ing.unit} {ing.name}
  {weightHint ? <span className="text-[var(--text-muted)]"> {weightHint}</span> : null}
+ {dry != null ? (
+ <span className="text-[var(--text-muted)]"> · cooked weight (≈{dry} g dry)</span>
+ ) : null}
  </span>
  {ing.cofid_matched_by && ing.cofid_matched_by !=="exact" ? (
  <span

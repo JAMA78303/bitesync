@@ -1,4 +1,5 @@
 import {
+  cofidQueryVariants,
   isFatAddedPrepMismatch,
   isRawStapleMismatch,
   pickBestCofidCandidate,
@@ -356,5 +357,27 @@ assertMatch(
   "boiled",
   ["chips", "roast"],
 );
+
+// --- query variants must reach CoFID's plural row names via the prefix fetch ---
+// "tomato" produced only "tomatos", which prefix-matches nothing; the lookup
+// then fell to a 35-row alphabetical net that never reached "Tomatoes, raw",
+// and fifteen recipes costed fresh tomato as tomato chutney.
+function assertVariant(query: string, expected: string) {
+  const v = cofidQueryVariants(query);
+  if (!v.includes(expected)) {
+    throw new Error(`cofidQueryVariants("${query}") should include "${expected}", got ${JSON.stringify(v)}`);
+  }
+}
+assertVariant("tomato", "tomatoes");
+assertVariant("potato", "potatoes");
+assertVariant("avocado", "avocados");
+assertVariant("strawberry", "strawberries");
+assertVariant("cherry", "cherries");
+assertVariant("radish", "radishes");
+assertVariant("carrot", "carrots");
+assertVariant("sweet potato", "sweet potatoes");
+assertVariant("tomatoes", "tomato");
+assertVariant("strawberries", "strawberry");
+assertVariant("cherry tomatoes", "cherry tomato");
 
 console.log("OK: CoFID matcher regression tests passed");

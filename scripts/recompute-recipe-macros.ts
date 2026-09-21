@@ -21,6 +21,8 @@ import { setCofidLookupSupabase } from "@/lib/nutrition/cofidLookup";
 import {
   formatMacroRecomputeReport,
   runMacroRecomputeMigration,
+  type MacroRecomputeReport,
+  type PlannerChangeSnapshot,
 } from "@/lib/recipes/macroRecompute";
 import { createServiceClient } from "@/lib/supabase/service";
 
@@ -49,13 +51,46 @@ async function main() {
   console.log("Starting macro recompute migration…");
   if (args.dryRun) console.log("DRY RUN — no database writes will be performed.\n");
 
-  const report = await runMacroRecomputeMigration({
-    supabase,
-    dryRun: args.dryRun,
-    userId: args.userId,
-    aiEnabled: args.aiEnabled,
-    outlierThreshold: Number.isFinite(args.outlierThreshold) ? args.outlierThreshold : 0.4,
-  });
+  // The migration runs in batches of MACRO_RECOMPUTE_BATCH_SIZE so the admin
+  // page can show progress. This script used to run exactly one batch and
+  // report it as the whole migration — "Recipes scanned: 100, changed: 1" with
+  // 95 never looked at. Loop until the migration says it is done, carrying the
+  // planner snapshots forward so the final batch's planner report covers
+  // every significant change, not just the last five recipes.
+  let offset = 0;
+  let report: Awaited<ReturnType<typeof runMacroRecomputeMigration>> | null = null;
+  const snapshots: PlannerChangeSnapshot[] = [];
+  const merged = { recomputed: 0, unchanged: 0, significantChanges: [] as MacroRecomputeReport["significantChanges"], errors: [] as MacroRecomputeReport["errors"] };
+
+  for (;;) {
+    const batch = await runMacroRecomputeMigration({
+      supabase,
+      dryRun: args.dryRun,
+      userId: args.userId,
+      aiEnabled: args.aiEnabled,
+      outlierThreshold: Number.isFinite(args.outlierThreshold) ? args.outlierThreshold : 0.4,
+      offset,
+      plannerSnapshots: snapshots,
+    });
+    merged.recomputed += batch.recomputed;
+    merged.unchanged += batch.unchanged;
+    merged.significantChanges.push(...batch.significantChanges);
+    merged.errors.push(...batch.errors);
+    snapshots.push(
+      ...batch.significantChanges.map((r) => ({
+        recipeId: r.recipeId,
+        recipeName: r.recipeName,
+        userId: r.userId,
+        oldCalories: r.oldCalories,
+        newCalories: r.newCalories,
+      })),
+    );
+    process.stdout.write(`  batch ${batch.batchOffset}–${batch.nextOffset} of ${batch.totalRecipes}: ${batch.recomputed} changed\n`);
+    report = { ...batch, ...merged };
+    if (!batch.hasMore) break;
+    offset = batch.nextOffset;
+  }
+  if (!report) throw new Error("No recipes to recompute");
 
   const text = formatMacroRecomputeReport(report);
   console.log("\n" + text);
