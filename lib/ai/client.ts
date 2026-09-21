@@ -33,9 +33,19 @@ export type ClaudeMealPlanDay = {
   snack_b?: string | null;
 };
 
+export type PlanLlmTelemetry = {
+  ms: number;
+  model: string;
+  stopReason: string | null;
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+};
+
 export type ClaudeMealPlanResult = {
   plan: ClaudeMealPlanDay[];
   notes?: string;
+  telemetry?: PlanLlmTelemetry;
 };
 
 export type GenerateMealPlanParams = {
@@ -105,13 +115,50 @@ function parseJsonFromAssistant(raw: string): unknown {
  * so the caller can tell the user *why* it fell back instead of silently swapping in
  * the heuristic planner. Swallowing both as `null` hid a misconfigured deployment.
  */
+const PLAN_SLOTS = ["breakfast", "lunch", "dinner", "snack", "snack_b"] as const;
+
+/**
+ * Turn the model's short keys back into recipe ids. A value that is already a
+ * known id is kept (the model occasionally echoes one); anything else — an
+ * invented key, a name, a stray string — becomes null, which the apply step
+ * treats as "no suitable recipe" rather than a crash.
+ */
+export function mapPlanKeysToIds(plan: ClaudeMealPlanDay[], idByKey: Map<string, string>): ClaudeMealPlanDay[] {
+  const knownIds = new Set(idByKey.values());
+  return plan.map((day) => {
+    const out: ClaudeMealPlanDay = { day: day.day };
+    for (const slot of PLAN_SLOTS) {
+      const v = day[slot];
+      if (v == null) {
+        if (slot in day) out[slot] = null;
+        continue;
+      }
+      const key = String(v).trim();
+      out[slot] = idByKey.get(key) ?? idByKey.get(key.toUpperCase()) ?? (knownIds.has(key) ? key : null);
+    }
+    return out;
+  });
+}
+
 export async function generateMealPlan(params: GenerateMealPlanParams): Promise<ClaudeMealPlanResult | null> {
   try {
     const anthropic = getAnthropic();
     const snackExtra =
       params.snackCountPerDay >= 2
-        ? `Each day must also include "snack_b" (recipe id or null) for the second snack slot.`
+        ? `Each day must also include "snack_b" (recipe key or null) for the second snack slot.`
         : `Use only one "snack" field per day (no snack_b).`;
+
+    // Recipes go to the model under short keys and come back the same way.
+    // A UUID is ~25 tokens; 35 of them was over 1,000 tokens of hex before the
+    // model had written a single meal, and the reply was the slow part of the
+    // whole week plan. "R7" is two.
+    const idByKey = new Map<string, string>();
+    const keyById = new Map<string, string>();
+    params.recipes.forEach((r, i) => {
+      const key = `R${i + 1}`;
+      idByKey.set(key, r.id);
+      keyById.set(r.id, key);
+    });
 
     const startedAt = Date.now();
     const response = await anthropic.messages.create(
@@ -124,8 +171,8 @@ export async function generateMealPlan(params: GenerateMealPlanParams): Promise<
         // succeeding in over a minute. Off entirely; the tuner enforces
         // calories and variety afterwards regardless of how the IDs were chosen.
         thinking: { type: "disabled" },
-        // Seven days of JSON is ~600 tokens. Ample, without inviting a long tail.
-        max_tokens: 4000,
+        // Seven days of short keys is ~300 tokens; notes are one sentence.
+        max_tokens: 1500,
         system: `You are a nutrition expert and meal planner for UK users.
 You help users plan healthy weekly meals that hit their personal 
 nutrition targets using ONLY recipes from their own library.
@@ -157,19 +204,17 @@ UK NHS Guidelines:
           role: "user",
           content: `Plan ${params.daysToFill} days of meals using my recipe library.
 
-MY RECIPE LIBRARY:
+MY RECIPE LIBRARY (refer to recipes by their "key"):
 ${JSON.stringify(
   params.recipes.map((r) => ({
-    id: r.id,
+    key: keyById.get(r.id),
     name: r.name,
-    calories: r.calories,
+    kcal: r.calories,
     protein_g: r.protein_g,
     carbs_g: r.carbs_g,
     fat_g: r.fat_g,
     ...(r.ingredients?.length ? { ingredients: r.ingredients } : {}),
   })),
-  null,
-  2,
 )}
 
 MY DAILY TARGETS:
@@ -197,19 +242,18 @@ Return ONLY this JSON structure, no other text:
   "plan": [
     {
       "day": 0,
-      "breakfast": "recipe_id_or_null",
-      "lunch": "recipe_id_or_null",
-      "dinner": "recipe_id_or_null",
-      "snack": "recipe_id_or_null"${params.snackCountPerDay >= 2 ? ',\n      "snack_b": "recipe_id_or_null"' : ""}
+      "breakfast": "R3",
+      "lunch": "R7",
+      "dinner": "R12",
+      "snack": "R20"${params.snackCountPerDay >= 2 ? ',\n      "snack_b": "R21"' : ""}
     }
   ],
-  "notes": "brief explanation"
+  "notes": "one short sentence"
 }
 
 There must be exactly ${params.daysToFill} objects in "plan", with "day" running from 0 to ${params.daysToFill - 1}.
 Day 0 = first day in this planning window (e.g. Monday of the chosen span when the app uses Mon–Sun).
-Use null if no suitable recipe exists for a slot.
-Only use recipe IDs from the library above.`,
+Every slot is a recipe key from the library above (like "R7"), or null if no suitable recipe exists.`,
         },
       ],
       },
@@ -218,17 +262,21 @@ Only use recipe IDs from the library above.`,
       // before the heuristic took over. A plan that is slow once is not going
       // to be fast the second time; fall back instead. 60s is the ceiling for
       // one honest attempt, above the ~10–20s a no-thinking call should take.
-      { timeout: 60_000, maxRetries: 0 },
+      // 40s: a short-key reply should take 5–10s; anything past 40 is a stall.
+      { timeout: 40_000, maxRetries: 0 },
     );
 
     // Elapsed and token counts on every call, success or not. #58 shipped a
     // budget change with no way to see what it did to latency; this is that.
-    console.log("[generateMealPlan]", {
+    const telemetry: PlanLlmTelemetry = {
       ms: Date.now() - startedAt,
-      stop: response.stop_reason,
-      in: response.usage.input_tokens,
-      out: response.usage.output_tokens,
-    });
+      model: response.model,
+      stopReason: response.stop_reason,
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
+      cacheReadTokens: response.usage.cache_read_input_tokens ?? 0,
+    };
+    console.log("[generateMealPlan]", telemetry);
 
     const text = firstTextBlock(response.content);
     if (!text) {
@@ -248,7 +296,7 @@ Only use recipe IDs from the library above.`,
       console.warn("[generateMealPlan] JSON parsed but carried no plan array; keys:", Object.keys(parsed ?? {}).join(","));
       return null;
     }
-    return { plan: parsed.plan, notes: parsed.notes };
+    return { plan: mapPlanKeysToIds(parsed.plan, idByKey), notes: parsed.notes, telemetry };
   } catch (err) {
     console.error("Claude meal plan generation failed:", err);
     throw err;

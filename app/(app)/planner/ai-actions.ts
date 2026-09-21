@@ -62,6 +62,7 @@ import {
   suitableForBreakfastSlotRelaxed,
 } from "@/lib/planner/meal-slot-eligibility";
 import { readSnacksPerDay, resolveSnacksPerDay } from "@/lib/planner/snack-preference";
+import { describeError, recordPlanRun, type PlanRunTrace } from "@/lib/planner/plan-run-log";
 
 export type GoalContext = {
   calorieTarget: number | null;
@@ -905,27 +906,55 @@ function dietaryFlagsFromProfile(profile: Awaited<ReturnType<typeof getProfile>>
 }
 
 export async function generateAIWeekPlan(input: GenerateAIWeekPlanInput) {
-  try {
-    return await generateAIWeekPlanInner(input);
-  } catch (err) {
-    console.error("[generateAIWeekPlan] unexpected failure:", err);
-    return { error: FRIENDLY_WEEK_PLAN_FAIL };
-  }
+  return runWeekPlan(input, "ai", undefined);
 }
 
 /** Heuristic week fill — available on free tier (e.g. first-run onboarding). */
 export async function generateHeuristicWeekPlan(input: GenerateAIWeekPlanInput) {
+  return runWeekPlan(input, "heuristic", { skipProCheck: true, heuristicOnly: true });
+}
+
+/**
+ * Runs the planner and records the run — outcome, phase timings, tokens,
+ * error — whatever path it took. The outermost catch used to swallow the
+ * error into a generic "Couldn't generate your week plan": that was the one
+ * path left with no detail, and it is the path an empty week points at.
+ */
+async function runWeekPlan(
+  input: GenerateAIWeekPlanInput,
+  requested: "ai" | "heuristic",
+  options?: { skipProCheck?: boolean; heuristicOnly?: boolean },
+) {
+  const trace: PlanRunTrace = { requested, mealPlanId: input.mealPlanId, startedAt: Date.now() };
+  let result: Awaited<ReturnType<typeof generateAIWeekPlanInner>>;
   try {
-    return await generateAIWeekPlanInner(input, { skipProCheck: true, heuristicOnly: true });
+    result = await generateAIWeekPlanInner(input, options, trace);
+    if ("error" in result && result.error) {
+      trace.outcome = "error";
+      trace.error = trace.error ?? result.error;
+    }
   } catch (err) {
-    console.error("[generateHeuristicWeekPlan] unexpected failure:", err);
-    return { error: FRIENDLY_WEEK_PLAN_FAIL };
+    console.error(`[${requested === "ai" ? "generateAIWeekPlan" : "generateHeuristicWeekPlan"}] unexpected failure:`, err);
+    trace.outcome = "error";
+    trace.error = describeError(err);
+    result = { error: `${FRIENDLY_WEEK_PLAN_FAIL} (${trace.error.slice(0, 160)})` };
   }
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) await recordPlanRun(supabase, user.id, trace);
+  } catch (err) {
+    console.warn("[plan_runs] not recorded:", describeError(err));
+  }
+  return result;
 }
 
 async function generateAIWeekPlanInner(
   input: GenerateAIWeekPlanInput,
-  options?: { skipProCheck?: boolean; heuristicOnly?: boolean },
+  options: { skipProCheck?: boolean; heuristicOnly?: boolean } | undefined,
+  trace: PlanRunTrace,
 ) {
   const tier = await getUserTier();
   if (!options?.skipProCheck && tier !== "pro") {
@@ -1041,6 +1070,7 @@ async function generateAIWeekPlanInner(
   let aiFallbackNotice: string | undefined;
 
   if (!options?.heuristicOnly && tier === "pro" && isAnthropicMealAiEnabled()) {
+    const claudeStarted = Date.now();
     try {
       const aiPlan = await generateMealPlan({
         recipes: formattedRecipes,
@@ -1054,7 +1084,16 @@ async function generateAIWeekPlanInner(
         allergies: input.goals.allergens ?? [],
         microPriorityFoods,
       });
+      trace.claudeMs = Date.now() - claudeStarted;
+      if (aiPlan?.telemetry) {
+        trace.model = aiPlan.telemetry.model;
+        trace.inputTokens = aiPlan.telemetry.inputTokens;
+        trace.outputTokens = aiPlan.telemetry.outputTokens;
+        trace.cacheReadTokens = aiPlan.telemetry.cacheReadTokens;
+        trace.stopReason = aiPlan.telemetry.stopReason;
+      }
       if (aiPlan?.plan?.length) {
+        const applyStarted = Date.now();
         const applied = await replacePlanDaysWithClaudePlan(
           supabase,
           user.id,
@@ -1069,6 +1108,7 @@ async function generateAIWeekPlanInner(
           dailyProteinTarget,
           goalBias,
         );
+        trace.applyMs = Date.now() - applyStarted;
         if ("success" in applied && applied.success) {
           claudeSucceeded = true;
           claudeNotes = aiPlan.notes;
@@ -1085,6 +1125,8 @@ async function generateAIWeekPlanInner(
           "The AI planner didn't return a usable plan, so your standard planner built this week instead.";
       }
     } catch (err) {
+      trace.claudeMs = trace.claudeMs ?? Date.now() - claudeStarted;
+      trace.error = describeError(err);
       console.warn("[generateAIWeekPlan] Claude planning failed, using heuristic:", err);
       aiFallbackNotice = describeAiPlannerFailure(err);
     }
@@ -1412,6 +1454,10 @@ async function generateAIWeekPlanInner(
       return { error: persisted.error };
     }
   }
+
+  trace.outcome = claudeSucceeded ? "claude" : options?.heuristicOnly ? "heuristic" : "heuristic_fallback";
+  trace.recipePool = withNutrition.length;
+  trace.fallbackNotice = aiFallbackNotice;
 
   revalidatePath("/planner");
   return {
