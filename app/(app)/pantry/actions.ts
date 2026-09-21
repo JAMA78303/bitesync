@@ -17,7 +17,9 @@ import {
   removePantryItem,
   seedPantryStaples,
   togglePantryRunningLow,
+  setPantryItemAmount,
 } from "@/lib/supabase/pantry";
+import { toBasePantryAmount } from "@/lib/pantry/units";
 import { getProfile } from "@/lib/supabase/profile";
 import { createClient } from "@/lib/supabase/server";
 import type { ActionResult } from "@/types";
@@ -92,8 +94,9 @@ export async function addPantryItemsFromText(raw: string): Promise<ActionResult<
     if (existing.has(item.name.toLowerCase())) continue;
     const result = await addPantryItem({
       name: item.name,
-      quantity: item.quantity,
-      unit: item.unit ?? "",
+      ...(item.quantity != null
+        ? (toBasePantryAmount(item.quantity, item.unit ?? "") ?? { quantity: item.quantity, unit: item.unit ?? "" })
+        : { quantity: item.quantity, unit: item.unit ?? "" }),
     });
     if (!result.error) {
       added += 1;
@@ -123,6 +126,26 @@ export async function setPantryRunningLow(
   runningLow: boolean,
 ): Promise<ActionResult> {
   const result = await togglePantryRunningLow(itemId, runningLow);
+  if (result.error) return { error: result.error };
+  return { success: true };
+}
+
+/**
+ * The pantry row said "Add a quantity to subtract it from your grocery list"
+ * and offered no way to. Amounts land in base units so the subtraction works.
+ */
+export async function setPantryItemQuantity(
+  itemId: string,
+  quantity: number | null,
+  unit: string,
+): Promise<ActionResult> {
+  if (quantity == null) {
+    const cleared = await setPantryItemAmount(itemId, null, "");
+    return cleared.error ? { error: cleared.error } : { success: true };
+  }
+  const base = toBasePantryAmount(quantity, unit);
+  if (!base) return { error: "Enter an amount above zero." };
+  const result = await setPantryItemAmount(itemId, base.quantity, base.unit);
   if (result.error) return { error: result.error };
   return { success: true };
 }

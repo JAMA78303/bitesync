@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { MealMatchSuggestions } from "@/components/matching/MealMatchSuggestions";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { PantryAmountEditor } from "@/components/pantry/PantryAmountEditor";
 import {
  addPantryItemsFromText,
  addPantryStaple,
@@ -14,7 +15,6 @@ import {
  suggestMealsFromPantry,
 } from "@/app/(app)/pantry/actions";
 import { PANTRY_STAPLES, type PantryItemRow } from "@/lib/pantry/constants";
-import { isStorePantryStaple } from "@/lib/pantry/staples";
 import { ds } from "@/lib/ui/classes";
 
 type Props = {
@@ -75,13 +75,14 @@ export function PantryPageClient({ items }: Props) {
  <div id="pantry-quick-add" className={`${ds.card} ${ds.cardPadding} space-y-3`}>
  <h2 className="text-sm font-bold text-[var(--text-primary)]">Quick add</h2>
  <p className="text-xs text-[var(--text-muted)]">
- Type what you have — comma-separated works: chicken, rice, broccoli, eggs
+ Type what you have, comma-separated. Amounts are optional but let the grocery list
+ subtract what you already own: 1kg rice, 6 eggs, 500ml milk, chicken
  </p>
  <textarea
  value={bulkText}
  onChange={(e) => setBulkText(e.target.value)}
  rows={2}
- placeholder="chicken, rice, broccoli, eggs…"
+ placeholder="1kg rice, 6 eggs, 500ml milk, chicken…"
  className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]"
  />
  <div className="flex flex-wrap gap-2">
@@ -138,19 +139,15 @@ export function PantryPageClient({ items }: Props) {
  key={item.id}
  className="flex items-center justify-between gap-2 rounded-xl border border-[var(--border-subtle)] px-3 py-2"
  >
- <div className="min-w-0">
+ <div className="min-w-0 flex-1">
  <p className="truncate text-sm font-medium text-[var(--text-primary)]">{item.name}</p>
- {item.quantity != null && item.unit ? (
- <p className="text-xs text-[var(--text-muted)]">
- {item.quantity} {item.unit}
- </p>
- ) : isStorePantryStaple(item.name) ? (
- <p className="text-xs text-[var(--text-muted)]">Staple — kept off your grocery list</p>
- ) : (
- <p className="text-xs text-[var(--text-muted)]">
- Add a quantity to subtract it from your grocery list
- </p>
- )}
+ <PantryAmountEditor
+ itemId={item.id}
+ name={item.name}
+ quantity={item.quantity}
+ unit={item.unit}
+ onSaved={refresh}
+ />
  </div>
  <div className="flex shrink-0 items-center gap-2">
  <button
