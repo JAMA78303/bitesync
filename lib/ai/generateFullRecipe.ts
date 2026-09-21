@@ -9,6 +9,7 @@ import type { GoalMealSlot } from "@/lib/ai/goal-matched-recipe";
 import { CLAUDE_MEAL_PLAN_MODEL } from "@/lib/ai/client";
 import { stepsMentionUnlistedIngredients } from "@/lib/recipes/stepIngredientAlignment";
 import { validateRecipeCoherence } from "@/lib/recipes/recipeCoherence";
+import { isCookingOil, MAX_OIL_PER_SERVING } from "@/lib/recipes/cookedWeight";
 
 export type GeneratedFullRecipe = {
   title: string;
@@ -63,6 +64,17 @@ export function validateGeneratedFullRecipe(
     .map(normalizeIngredient)
     .filter((x): x is RecipeIngredientInput => x != null);
   if (!title || steps.length < 1 || ingredients.length < 1) return null;
+  // The prompt asks for at most 1 tbsp of oil per serving; enforce it. One
+  // generated bowl carried 2 tbsp for one person — 250 kcal, a third of the
+  // meal — and the nutrition dutifully counted it. Clamping keeps the recipe
+  // and drops the excess; nutrition is computed from the clamped list.
+  const servings = Math.max(1, Math.round(Number(o.servings) || 1));
+  for (const ing of ingredients) {
+    if (!isCookingOil(ing.name)) continue;
+    const unit = ing.unit.toLowerCase() as keyof typeof MAX_OIL_PER_SERVING;
+    const cap = MAX_OIL_PER_SERVING[unit];
+    if (cap != null && ing.quantity > cap * servings) ing.quantity = cap * servings;
+  }
   if (stepsMentionUnlistedIngredients(steps, ingredients)) return null;
   if (!validateRecipeCoherence({ name: title, steps, ingredients }).ok) return null;
 
@@ -74,7 +86,7 @@ export function validateGeneratedFullRecipe(
   return {
     title,
     description,
-    servings: Math.max(1, Math.round(Number(o.servings) || 1)),
+    servings,
     total_time_mins: Math.max(5, Math.round(Number(o.total_time_mins) || 20)),
     ingredients,
     steps,
@@ -123,6 +135,8 @@ Combine ingredients into one snack with 3–5 clear method steps (mix, layer, to
 
 Rules:
 - You may make small quantity adjustments and add only basic pantry seasonings (salt, pepper, herbs, a sensible amount of cooking oil).
+- Weights for rice, pasta, quinoa, lentils and chickpeas are COOKED weights. Keep those names and quantities exactly as given. In the method say how much DRY to cook to reach that cooked weight (rice and quinoa ≈ one third dry; pasta ≈ half; lentils and chickpeas ≈ two fifths), or say to use pre-cooked or tinned.
+- Cooking oil: at most 1 tbsp per serving. Prefer 1–2 tsp for pan-frying one portion.
 - Do NOT add new major ingredients beyond the list + basic seasonings/oil.
 - Every method step must ONLY reference ingredients in your returned ingredients list (if there are no eggs, do not mention eggs).
 - EVERY ingredient in your list must appear in at least one method step — no orphan ingredients.
@@ -199,6 +213,8 @@ Do NOT reuse or closely paraphrase these existing recipe titles:
 ${avoid.length ? avoid.map((t) => `- ${t}`).join("\n") : "(none yet)"}
 
 Use UK ingredient names that appear in home cooking (CoFID-style: chicken breast, greek yogurt, oats, brown rice, broccoli, etc.).
+- Weights for rice, pasta, quinoa, lentils and chickpeas are COOKED weights. In the method say how much DRY to cook to reach that cooked weight (rice and quinoa ≈ one third dry; pasta ≈ half; lentils and chickpeas ≈ two fifths), or say to use pre-cooked or tinned.
+- Cooking oil: at most 1 tbsp per serving. Prefer 1–2 tsp for pan-frying one portion.
 Every ingredient must appear in the method; the title must match the dish the steps describe.
 Return ONLY this JSON:
 {"title":"...","description":"one line","servings":1,"total_time_mins":25,"ingredients":[{"name":"...","quantity":130,"unit":"g"}],"steps":["step 1","step 2"]}`,
