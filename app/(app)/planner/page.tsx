@@ -20,6 +20,13 @@ import { MEAL_TYPES } from "@/types";
 type Props = { searchParams: Promise<{ week?: string }> };
 
 export const dynamic = "force-dynamic";
+// The AI week plan is a server action posted to this page, so it runs under
+// this page's function time limit. Vercel's default is 10–15 s on non-Fluid
+// plans — less than one Claude call. Every AI plan attempt that ran past it
+// was killed mid-flight: no toast, no fallback, no log row, an empty week.
+// 60 s is accepted on every plan and is above the planner's worst case
+// (40 s Claude ceiling plus a few seconds to apply).
+export const maxDuration = 60;
 
 export default async function PlannerPage({ searchParams }: Props) {
  const supabase = await createClient();
