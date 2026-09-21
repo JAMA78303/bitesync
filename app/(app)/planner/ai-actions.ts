@@ -62,7 +62,7 @@ import {
   suitableForBreakfastSlotRelaxed,
 } from "@/lib/planner/meal-slot-eligibility";
 import { readSnacksPerDay, resolveSnacksPerDay } from "@/lib/planner/snack-preference";
-import { describeError, recordPlanRun, type PlanRunTrace } from "@/lib/planner/plan-run-log";
+import { describeError, markPlanRunPhase, recordPlanRun, startPlanRun, type PlanRunTrace } from "@/lib/planner/plan-run-log";
 
 export type GoalContext = {
   calorieTarget: number | null;
@@ -966,6 +966,7 @@ async function generateAIWeekPlanInner(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
+  await startPlanRun(supabase, user.id, trace);
 
   const { data: plan } = await supabase
     .from("meal_plans")
@@ -975,6 +976,7 @@ async function generateAIWeekPlanInner(
     .single();
   if (!plan) return { error: "Meal plan not found" };
 
+  await markPlanRunPhase(supabase, trace, "load-recipes");
   const { data: recipes, error: recipesError } = await supabase
     .from("recipes")
     .select("id,name,fits_vegetarian,fits_vegan,fits_gluten_free")
@@ -988,6 +990,7 @@ async function generateAIWeekPlanInner(
     return { error: "Add at least one recipe to your library before generating a plan." };
   }
 
+  await markPlanRunPhase(supabase, trace, "load-nutrition");
   const nutritionMap = await fetchRecipeNutritionMap(
     supabase,
     allRecipes.map((r) => r.id),
@@ -1037,6 +1040,7 @@ async function generateAIWeekPlanInner(
   let snackMicroPriorities: MicroPriority[] = DEFAULT_SNACK_MICRO_PRIORITIES;
   const sex = profile?.sex === "male" || profile?.sex === "female" ? (profile.sex as Sex) : null;
   if (sex && plan.week_start_date) {
+    await markPlanRunPhase(supabase, trace, "micro-analysis");
     const microAnalysis = await getWeeklyMicroAnalysis(input.mealPlanId, plan.week_start_date, sex);
     if (microAnalysis) {
       snackMicroPriorities = microPrioritiesFromDeficiencies(microAnalysis.must_hit);
@@ -1071,6 +1075,7 @@ async function generateAIWeekPlanInner(
 
   if (!options?.heuristicOnly && tier === "pro" && isAnthropicMealAiEnabled()) {
     const claudeStarted = Date.now();
+    await markPlanRunPhase(supabase, trace, "claude");
     try {
       const aiPlan = await generateMealPlan({
         recipes: formattedRecipes,
@@ -1094,6 +1099,7 @@ async function generateAIWeekPlanInner(
       }
       if (aiPlan?.plan?.length) {
         const applyStarted = Date.now();
+        await markPlanRunPhase(supabase, trace, "apply-claude");
         const applied = await replacePlanDaysWithClaudePlan(
           supabase,
           user.id,
@@ -1133,6 +1139,7 @@ async function generateAIWeekPlanInner(
   }
 
   if (!claudeSucceeded) {
+    await markPlanRunPhase(supabase, trace, "heuristic");
     const pool = withNutrition as RecipeWithNutrition[];
     const usedCount = new Map<string, number>();
     const rows: MealPlanInsertRow[] = [];
@@ -1441,6 +1448,7 @@ async function generateAIWeekPlanInner(
       heuristicWarning = heuristicWarning ? `${heuristicWarning} ${varietyNotice}` : varietyNotice;
     }
 
+    await markPlanRunPhase(supabase, trace, "persist");
     const persisted = await persistWeeklyMealPlanRows(
       supabase,
       input.mealPlanId,
