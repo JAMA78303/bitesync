@@ -167,6 +167,7 @@ function orderedFillableTemplates(opts: GoalMatchedRecipeOptions): MealTemplate[
     vegan: opts.vegan,
     vegetarian: opts.vegetarian,
     glutenFree: opts.glutenFree,
+    dairyFree: opts.dairyFree,
   })
     .filter((t) => templateIsFillable(t, opts))
     .filter((t) => !excluded.has(t.id.toLowerCase()));

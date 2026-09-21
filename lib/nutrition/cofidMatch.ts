@@ -1,3 +1,4 @@
+import { asksForNonDairy, isDairyIngredient } from "@/lib/dietary/dairy";
 export type CoFIDMatchKind = "exact" | "fulltext" | "partial";
 
 export type CofidCandidate = {
@@ -438,7 +439,6 @@ const PLANT_MILK_QUERY_PATTERN =
   /\b(oat|almond|soy|soya|rice|cashew|hazelnut|hemp|pea|coconut)\s*(milk|drink)\b/;
 
 /** CoFID rows that are actually a liquid: "… drink", "Milk, …", "beverage". */
-const LIQUID_FOOD_PATTERN = /\b(drink|milk|beverage|alternative to milk)\b/;
 /** The plant the drink is made from, as it appears in a CoFID row. */
 const PLANT_FOOD_PATTERN = /\b(oat|oats|almond|almonds|soy|soya|rice|cashew|hazelnut|hemp|pea|coconut|plant)\b/;
 
@@ -456,10 +456,31 @@ export function isPlantMilkMismatch(query: string, foodName: string): boolean {
   const q = normalizeCofidQuery(query);
   if (!PLANT_MILK_QUERY_PATTERN.test(q)) return false;
   const f = normalizeForMatch(foodName);
-  const isLiquid = LIQUID_FOOD_PATTERN.test(f);
+  // A plant drink row is one CoFID labels as such ("Milk, soya, non-dairy
+  // alternative to milk, …"). Testing for the words "milk" and "oats" anywhere
+  // in the name accepted "Porridge oats, cooked, made up with semi-skimmed
+  // milk" for oat milk — porridge, at two and a half times the calories.
+  // CoFID carries only soya drinks; for oat or almond the right answer is no
+  // row at all, and the local table has them.
+  const isPlantDrinkRow =
+    /\bnon-dairy\b/.test(f) ||
+    /\balternative to (milk|yogurt|yoghurt)\b/.test(f) ||
+    // A row *named* as the drink ("Oat drink, unsweetened"), should CoFID add them.
+    /^(oat|almond|soya|soy|rice|cashew|hazelnut|hemp|pea|coconut)\s+(drink|milk)\b/.test(f);
   const isPlant = PLANT_FOOD_PATTERN.test(f);
-  // Correct only when the row is both the right plant and an actual drink.
-  return !(isLiquid && isPlant);
+  return !(isPlantDrinkRow && isPlant);
+}
+
+/**
+ * "Dairy-free cottage cheese" must never take a cheese row's numbers. The
+ * engine once let Claude rename cottage cheese to a dairy-free alternative for
+ * a dairy-free user; the matcher then found "Cheese, Caerphilly" — 375
+ * kcal/100 g for a soft plant cheese. There is no plant cheese in CoFID, so
+ * the correct result is no match, and the caller estimates instead.
+ */
+export function isDairyFreeMismatch(query: string, foodName: string): boolean {
+  if (!asksForNonDairy(query)) return false;
+  return isDairyIngredient(foodName);
 }
 
 /** Score how well a CoFID row matches the user's ingredient name (higher = better). */
@@ -476,6 +497,7 @@ export function scoreCofidMatch(
   // Dairy rows share the word "milk" with every plant drink and would otherwise
   // outrank the correct plant row. Push them below any real candidate.
   if (isPlantMilkMismatch(query, foodName)) return -Infinity;
+  if (isDairyFreeMismatch(query, foodName)) return -Infinity;
 
   // Chip/roast rows for a plain staple stay selectable (CoFID may offer nothing
   // else) but must lose to any boiled/plain sibling.
