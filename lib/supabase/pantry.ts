@@ -133,6 +133,31 @@ export async function togglePantryRunningLow(
   return {};
 }
 
+/** Set or clear the amount on hand. Null quantity clears it. */
+export async function setPantryItemAmount(
+  itemId: string,
+  quantity: number | null,
+  unit: string,
+): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const { error } = await supabase
+    .from("pantry_items")
+    .update({ quantity, unit, updated_at: new Date().toISOString() })
+    .eq("id", itemId)
+    .eq("user_id", user.id);
+
+  if (error) return { error: toUserFacingError(error, "pantry", "pantryDb") };
+
+  revalidatePath("/pantry");
+  revalidatePath("/grocery");
+  return {};
+}
+
 export async function seedPantryStaples(): Promise<{ error?: string; added?: number }> {
   const supabase = await createClient();
   const {
