@@ -12,6 +12,7 @@ import {
   isBreadcrumbCompositeMismatch,
   isFatAddedPrepMismatch,
   isMinceMismatch,
+  isDairyFreeMismatch,
   isPlantMilkMismatch,
   isRawStapleMismatch,
   isSpaghettiSquashMismatch,
@@ -139,6 +140,9 @@ function shouldPreferLocalOverCofidMismatch(
   // Plant drinks must never take dairy milk's numbers — wrong macros, and it
   // models a vegan ingredient as an animal product.
   if (isPlantMilkMismatch(query, name)) {
+    return true;
+  }
+  if (isDairyFreeMismatch(query, name)) {
     return true;
   }
   // A plain staple must not take a chip/roast row's cooking fat, nor a raw

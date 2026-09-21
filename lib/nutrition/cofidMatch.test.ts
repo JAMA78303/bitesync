@@ -381,3 +381,20 @@ assertVariant("strawberries", "strawberry");
 assertVariant("cherry tomatoes", "cherry tomato");
 
 console.log("OK: CoFID matcher regression tests passed");
+
+// --- dairy-free and plant-milk queries must never take a dairy row ---
+import { isDairyFreeMismatch, isPlantMilkMismatch } from "@/lib/nutrition/cofidMatch";
+{
+  const bad = (q: string, f: string, fn: (a: string, b: string) => boolean, expect: boolean) => {
+    if (fn(q, f) !== expect) throw new Error(`${fn.name}("${q}", "${f}") should be ${expect}`);
+  };
+  bad("dairy-free cottage cheese alternative", "Cheese, Caerphilly", isDairyFreeMismatch, true);
+  bad("vegan cheese", "Cheese, Cheddar, average", isDairyFreeMismatch, true);
+  bad("dairy-free yoghurt", "Yogurt, soya, non-dairy alternative to yogurt, fruit, fortified", isDairyFreeMismatch, false);
+  bad("cottage cheese", "Cheese, cottage, plain", isDairyFreeMismatch, false);
+  // Oat milk is not porridge, however many of the words match.
+  bad("oat milk", "Porridge oats, unfortified, cooked, made up with semi-skimmed milk", isPlantMilkMismatch, true);
+  bad("soya milk", "Milk, soya, non-dairy alternative to milk, unsweetened, fortified", isPlantMilkMismatch, false);
+  bad("oat milk", "Milk, semi-skimmed, pasteurised, average", isPlantMilkMismatch, true);
+}
+console.log("OK: dairy-free / plant-milk guards");

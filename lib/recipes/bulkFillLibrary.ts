@@ -16,6 +16,7 @@ export type HardDietConstraints = {
   vegan: boolean;
   vegetarian: boolean;
   glutenFree: boolean;
+  dairyFree: boolean;
   dietaryPreferences: string[];
 };
 
@@ -95,6 +96,7 @@ export function hardConstraintsFromPreferences(prefs: string[]): HardDietConstra
     vegan: flags.followsVegan,
     vegetarian: flags.followsVegetarian,
     glutenFree: flags.followsGlutenFree,
+    dairyFree: flags.dairyFree,
     dietaryPreferences: prefs,
   };
 }
@@ -164,6 +166,13 @@ export function planBulkFillBatch(
 }
 
 export function dietFlagsForSlot(
+  slot: BulkFillSlotPlan,
+  hard: HardDietConstraints,
+): { vegan: boolean; vegetarian: boolean; glutenFree: boolean; dairyFree: boolean; proteinAxis?: ProteinAxis } {
+  return { ...dietFlagsForSlotBase(slot, hard), dairyFree: hard.dairyFree };
+}
+
+function dietFlagsForSlotBase(
   slot: BulkFillSlotPlan,
   hard: HardDietConstraints,
 ): { vegan: boolean; vegetarian: boolean; glutenFree: boolean; proteinAxis?: ProteinAxis } {

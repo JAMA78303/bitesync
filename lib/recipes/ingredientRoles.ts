@@ -11,6 +11,7 @@
  */
 
 import type { ProteinAxis } from "@/lib/ai/goal-matched-recipe";
+import { isDairyIngredient } from "@/lib/dietary/dairy";
 
 export type IngredientRole =
   | "protein"
@@ -44,6 +45,7 @@ export type DietFilter = {
   vegan?: boolean;
   vegetarian?: boolean;
   glutenFree?: boolean;
+  dairyFree?: boolean;
 };
 
 const OMNI: DietCompat = { vegan: false, vegetarian: false, glutenFree: true };
@@ -167,6 +169,8 @@ export function dietAllows(d: IngredientDef, filter: DietFilter): boolean {
   if (filter.glutenFree && !d.diet.glutenFree) return false;
   if (filter.vegan && !d.diet.vegan) return false;
   if (filter.vegetarian && !filter.vegan && !d.diet.vegetarian) return false;
+  // By name, not role: oat and almond milk fill the "dairy" slot and are not dairy.
+  if (filter.dairyFree && isDairyIngredient(d.name)) return false;
   return true;
 }
 

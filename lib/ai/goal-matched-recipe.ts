@@ -73,6 +73,7 @@ export type GoalMatchedRecipeOptions = {
   vegan: boolean;
   vegetarian: boolean;
   glutenFree: boolean;
+  dairyFree?: boolean;
   /** Changes template choice so drafts are not identical every time (e.g. Date.now() from client). */
   variantSeed: number;
   /** Soft batch mix: bias omnivore templates toward meat or fish mains. */
@@ -314,6 +315,7 @@ export function buildCuratedMicroSnack(opts: {
   vegan: boolean;
   vegetarian: boolean;
   glutenFree: boolean;
+  dairyFree?: boolean;
   variantSeed: number;
 }): { name: string; ingredients: RecipeIngredientInput[] } | null {
   const key = opts.microFocusKey?.trim();
@@ -323,6 +325,7 @@ export function buildCuratedMicroSnack(opts: {
     vegan: opts.vegan,
     vegetarian: opts.vegetarian,
     glutenFree: opts.glutenFree,
+    dairyFree: opts.dairyFree,
   });
   if (!combos.length) return null;
 

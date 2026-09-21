@@ -352,7 +352,7 @@ export const MEAL_TEMPLATES: MealTemplate[] = [
 /** Templates valid for a meal type under the given diet (+ gluten-free) constraints. */
 export function templatesFor(
   mealSlot: GoalMealSlot,
-  filter: { vegan?: boolean; vegetarian?: boolean; glutenFree?: boolean },
+  filter: { vegan?: boolean; vegetarian?: boolean; glutenFree?: boolean; dairyFree?: boolean },
 ): MealTemplate[] {
   return MEAL_TEMPLATES.filter((t) => {
     if (!t.mealTypes.includes(mealSlot)) return false;

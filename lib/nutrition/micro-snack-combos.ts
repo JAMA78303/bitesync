@@ -11,6 +11,8 @@
  * macro/micro lookup resolves.
  */
 
+import { isDairyIngredient } from "@/lib/dietary/dairy";
+
 export type MicroSnackIngredient = { name: string; quantity: number; unit: string };
 
 export type MicroSnackCombo = {
@@ -299,6 +301,7 @@ export type MicroSnackDietFilter = {
   vegan: boolean;
   vegetarian: boolean;
   glutenFree: boolean;
+  dairyFree?: boolean;
 };
 
 /** Combos for a nutrient that fit the user's dietary constraints. */
@@ -311,6 +314,7 @@ export function microSnackCombosFor(
     if (diet.vegan && combo.animal) return false;
     if (diet.vegetarian && combo.meatOrFish) return false;
     if (diet.glutenFree && combo.gluten) return false;
+    if (diet.dairyFree && combo.ingredients.some((i) => isDairyIngredient(i.name))) return false;
     return true;
   });
 }

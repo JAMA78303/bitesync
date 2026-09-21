@@ -29,6 +29,7 @@ async function main() {
     vegan: false,
     vegetarian: false,
     glutenFree: false,
+    dairyFree: false,
     dietaryPreferences: [] as string[],
   };
 
