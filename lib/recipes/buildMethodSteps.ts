@@ -2,7 +2,7 @@ import type { RecipeIngredientInput } from "@/lib/nutrition/calculate";
 import type { GoalMealSlot } from "@/lib/ai/goal-matched-recipe";
 import { mealLabel } from "@/lib/ai/goal-matched-recipe";
 import { orphanIngredients } from "@/lib/recipes/recipeCoherence";
-import { dryWeightFor } from "@/lib/recipes/cookedWeight";
+import { cookedWeightFor } from "@/lib/recipes/cookedWeight";
 
 function titleCase(name: string): string {
   return name
@@ -293,12 +293,11 @@ export function buildMethodStepsFromIngredients(
     /rice|oats|pasta|quinoa|potato|sweet potato|bread|tortilla/i.test(i.name),
   );
   if (carbs) {
-    // Cooked-weight staples say how much dry to start from. "Cook Rice (315g)"
-    // read as 315 g dry — three times the portion the nutrition was costed on.
-    const dry = carbs.unit === "g" ? dryWeightFor(carbs.name, carbs.quantity) : null;
+    // Grain quantities are dry, as bought; say what that becomes on the plate.
+    const cooked = carbs.unit === "g" ? cookedWeightFor(carbs.name, carbs.quantity) : null;
     steps.push(
-      dry != null
-        ? `Cook about ${dry}g dry ${titleCase(carbs.name)} according to pack instructions — you need ${formatQty(carbs)} cooked.`
+      cooked != null
+        ? `Cook ${formatQty(carbs)} ${titleCase(carbs.name)} according to pack instructions (about ${cooked}g once cooked).`
         : `Cook ${titleCase(carbs.name)} (${formatQty(carbs)}) according to pack instructions or until done.`,
     );
   }
