@@ -136,7 +136,7 @@ Combine ingredients into one snack with 3–5 clear method steps (mix, layer, to
 Rules:
 - You may make small quantity adjustments and add only basic pantry seasonings (salt, pepper, herbs, a sensible amount of cooking oil).
 - Meat and fish weights are RAW, as bought.
-- Weights for rice, pasta, quinoa, lentils and chickpeas are COOKED weights. Keep those names and quantities exactly as given. In the method say how much DRY to cook to reach that cooked weight (rice and quinoa ≈ one third dry; pasta ≈ half; lentils and chickpeas ≈ two fifths), or say to use pre-cooked or tinned.
+- Rice, pasta, quinoa, couscous and oats are DRY weights, as bought. Lentils, chickpeas and beans are the drained weight from a tin, or cooked weight. Keep ingredient names and quantities exactly as given.
 - Cooking oil: at most 1 tbsp per serving. Prefer 1–2 tsp for pan-frying one portion.
 - Do NOT add new major ingredients beyond the list + basic seasonings/oil.
 - Every method step must ONLY reference ingredients in your returned ingredients list (if there are no eggs, do not mention eggs).
@@ -215,7 +215,7 @@ ${avoid.length ? avoid.map((t) => `- ${t}`).join("\n") : "(none yet)"}
 
 Use UK ingredient names that appear in home cooking (CoFID-style: chicken breast, greek yogurt, oats, brown rice, broccoli, etc.).
 - Meat and fish weights are RAW, as bought.
-- Weights for rice, pasta, quinoa, lentils and chickpeas are COOKED weights. In the method say how much DRY to cook to reach that cooked weight (rice and quinoa ≈ one third dry; pasta ≈ half; lentils and chickpeas ≈ two fifths), or say to use pre-cooked or tinned.
+- Rice, pasta, quinoa, couscous and oats are DRY weights, as bought. Lentils, chickpeas and beans are the drained weight from a tin, or cooked weight. Keep quantities on that basis.
 - Cooking oil: at most 1 tbsp per serving. Prefer 1–2 tsp for pan-frying one portion.
 Every ingredient must appear in the method; the title must match the dish the steps describe.
 Return ONLY this JSON:

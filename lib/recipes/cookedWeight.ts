@@ -1,48 +1,56 @@
 /**
- * Which generated-recipe staples are expressed as COOKED weight.
+ * Weight basis for staples in generated recipes — what a bare quantity means.
  *
- * The template engine costs rice, pasta, quinoa, lentils and chickpeas at
- * their cooked per-100 g values (rice 130 kcal, pasta 158, quinoa 120 …), and
- * the CoFID matcher steers a bare "rice" to a boiled row for the same reason.
- * The numbers are right. The label was not: a recipe said "315 g rice" and
- * its method said "rinse, then cook in double the water" — dry-rice
- * instructions — so anyone following it would weigh 315 g dry and eat three
- * times the calories the app had counted.
+ * Everything is costed as bought. For meat, fish, vegetables and grains that
+ * is the obvious thing: "95 g rice" is 95 g from the packet, "140 g chicken"
+ * is the raw weight on the scales. Pulses are the exception, because they are
+ * bought in a tin: "240 g chickpeas" is the drained tin — cooked weight — and
+ * the engine costs it on the canned / boiled row. That is the one basis a
+ * cook might not expect, so it is the one that gets a label.
  *
- * The ingredient name has to stay bare for matching ("cooked rice" sends the
- * matcher to a vegetable curry, "cooked quinoa" to raw quinoa). So the cooked
- * basis is stated everywhere the quantity reaches a person instead: the
- * template method, the LLM prompt, and the ingredient row on screen.
+ * Grains used to be the labelled exception instead ("315 g rice · cooked
+ * weight"). The nutrition was right and the label made it honest, but every
+ * recipe and every app's recipe builder says dry, so the engine now does too.
  */
 
-type Staple = { pattern: RegExp; dryFactor: number };
-
-/** Cooked ÷ dry weight, rounded to what a home cook will actually measure. */
-const STAPLES: Staple[] = [
-  { pattern: /\b(brown |white |basmati |wholegrain )?rice\b/i, dryFactor: 3 },
-  { pattern: /\bquinoa\b/i, dryFactor: 3 },
-  { pattern: /\b(wholewheat |wholemeal )?pasta\b/i, dryFactor: 2.25 },
-  { pattern: /\blentils?\b/i, dryFactor: 2.5 },
-  { pattern: /\bchickpeas?\b/i, dryFactor: 2.2 },
+/** Cooked ÷ dry weight for grains, from CoFID raw and boiled energy per 100 g. */
+const GRAIN_DRY_FACTORS: Array<{ pattern: RegExp; factor: number }> = [
+  { pattern: /\bbrown rice\b/i, factor: 2.7 },
+  { pattern: /\b(white |basmati |wholegrain |long grain )?rice\b/i, factor: 2.85 },
+  { pattern: /\bquinoa\b/i, factor: 2.6 },
+  { pattern: /\b(wholewheat |wholemeal )?pasta\b/i, factor: 2.3 },
+  { pattern: /\b(spaghetti|penne|fusilli|macaroni|linguine|tagliatelle)\b/i, factor: 2.3 },
+  { pattern: /\bcouscous\b/i, factor: 2.05 },
+  { pattern: /\bbulgur\b/i, factor: 2.5 },
 ];
 
-const EXCLUDE = /\b(cakes?|flour|noodles?|milk|vinegar|paper|dry|dried|uncooked|raw)\b/i;
+const NOT_A_GRAIN_PORTION = /\b(cakes?|flour|noodles?|milk|vinegar|paper|pudding|cooked|boiled)\b/i;
 
-function stapleFor(name: string): Staple | null {
-  if (EXCLUDE.test(name)) return null;
-  return STAPLES.find((s) => s.pattern.test(name)) ?? null;
+/** How much a dry grain quantity becomes once cooked, to the nearest 5 g. */
+export function cookedWeightFor(name: string, dryGrams: number): number | null {
+  if (NOT_A_GRAIN_PORTION.test(name)) return null;
+  const g = GRAIN_DRY_FACTORS.find((s) => s.pattern.test(name));
+  if (!g || !Number.isFinite(dryGrams) || dryGrams <= 0) return null;
+  return Math.max(5, Math.round((dryGrams * g.factor) / 5) * 5);
 }
 
-/** True when a gram quantity of this ingredient means cooked weight. */
-export function isCookedWeightStaple(name: string): boolean {
-  return stapleFor(name) !== null;
-}
-
-/** Dry grams to cook to end up with `cookedGrams`, to the nearest 5 g. */
+/** The inverse — used once, to convert recipes stored in cooked grams. */
 export function dryWeightFor(name: string, cookedGrams: number): number | null {
-  const s = stapleFor(name);
-  if (!s || !Number.isFinite(cookedGrams) || cookedGrams <= 0) return null;
-  return Math.max(5, Math.round(cookedGrams / s.dryFactor / 5) * 5);
+  if (NOT_A_GRAIN_PORTION.test(name)) return null;
+  const g = GRAIN_DRY_FACTORS.find((s) => s.pattern.test(name));
+  if (!g || !Number.isFinite(cookedGrams) || cookedGrams <= 0) return null;
+  return Math.max(5, Math.round(cookedGrams / g.factor / 5) * 5);
+}
+
+/** True for a grain the engine expresses as dry weight. */
+export function isDryWeightGrain(name: string): boolean {
+  return !NOT_A_GRAIN_PORTION.test(name) && GRAIN_DRY_FACTORS.some((s) => s.pattern.test(name));
+}
+
+/** Pulses: a gram quantity means the drained tin — cooked weight. */
+export function isCookedWeightStaple(name: string): boolean {
+  if (/\b(dry|dried|uncooked|raw|flour)\b/i.test(name)) return false;
+  return /\b(lentils?|chickpeas?|chick peas?|kidney beans?|black beans?|cannellini|butter beans?|haricot|borlotti|pinto|edamame)\b/i.test(name);
 }
 
 /** Cooking oil is Claude's to add; this is the most it may add per serving. */

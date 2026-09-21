@@ -280,11 +280,12 @@ export const MICRO_DB: Record<string, MicroEntry> = {
   "chicken thigh": {
     vitamin_a_mcg: 18, vitamin_c_mg: 0, vitamin_d_mcg: 0.2, vitamin_b12_mcg: 0.4, folate_mcg: 7, iron_mg: 1.0, calcium_mg: 12, zinc_mg: 2.0, magnesium_mg: 24, potassium_mg: 310, selenium_mcg: 22, iodine_mcg: 3, saturated_fat_g: 3, salt_g: 0.2, sugar_g: 0,
   },
+  // Rice micros are per 100 g DRY (scaled ×2.7 / ×2.85 from the cooked values they were).
   "brown rice": {
-    vitamin_a_mcg: 0, vitamin_c_mg: 0, vitamin_d_mcg: 0, vitamin_b12_mcg: 0, folate_mcg: 9, iron_mg: 0.8, calcium_mg: 10, zinc_mg: 1.1, magnesium_mg: 44, potassium_mg: 79, selenium_mcg: 14, iodine_mcg: 1, saturated_fat_g: 0.2, salt_g: 0, sugar_g: 0,
+    vitamin_a_mcg: 0, vitamin_c_mg: 0, vitamin_d_mcg: 0, vitamin_b12_mcg: 0, folate_mcg: 24.3, iron_mg: 2.2, calcium_mg: 27, zinc_mg: 3, magnesium_mg: 118.8, potassium_mg: 213.3, selenium_mcg: 37.8, iodine_mcg: 2.7, saturated_fat_g: 0.5, salt_g: 0, sugar_g: 0,
   },
   "white rice": {
-    vitamin_a_mcg: 0, vitamin_c_mg: 0, vitamin_d_mcg: 0, vitamin_b12_mcg: 0, folate_mcg: 4, iron_mg: 0.2, calcium_mg: 9, zinc_mg: 0.5, magnesium_mg: 12, potassium_mg: 29, selenium_mcg: 9, iodine_mcg: 1, saturated_fat_g: 0.1, salt_g: 0, sugar_g: 0,
+    vitamin_a_mcg: 0, vitamin_c_mg: 0, vitamin_d_mcg: 0, vitamin_b12_mcg: 0, folate_mcg: 11.4, iron_mg: 0.6, calcium_mg: 25.7, zinc_mg: 1.4, magnesium_mg: 34.2, potassium_mg: 82.7, selenium_mcg: 25.7, iodine_mcg: 2.9, saturated_fat_g: 0.3, salt_g: 0, sugar_g: 0,
   },
   pasta: {
     vitamin_a_mcg: 0, vitamin_c_mg: 0, vitamin_d_mcg: 0, vitamin_b12_mcg: 0, folate_mcg: 18, iron_mg: 1.3, calcium_mg: 7, zinc_mg: 0.8, magnesium_mg: 18, potassium_mg: 58, selenium_mcg: 26, iodine_mcg: 2, saturated_fat_g: 0.2, salt_g: 0, sugar_g: 0.6,

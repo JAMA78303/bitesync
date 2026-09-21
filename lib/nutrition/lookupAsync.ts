@@ -8,7 +8,7 @@ import {
 } from "@/lib/nutrition/cofidLookup";
 import {
   isRawDryStapleForm,
-  isStapleGrainPulseQuery,
+  isStaplePulseQuery,
   isBreadcrumbCompositeMismatch,
   isFatAddedPrepMismatch,
   isMinceMismatch,
@@ -104,7 +104,7 @@ function shouldPreferLocalCookedStaple(
 ): boolean {
   if (!localEntry || isIncomplete(localEntry)) return false;
   if (queryRequestsRawDry(query)) return false;
-  if (!isStapleGrainPulseQuery(query)) return false;
+  if (!isStaplePulseQuery(query)) return false;
   if (!isRawDryStapleForm(cofid.food_name)) return false;
 
   const localCarbs = localEntry.per_100g.carbs_g;

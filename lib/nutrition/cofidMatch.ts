@@ -9,6 +9,8 @@ export type CofidCandidate = {
 };
 
 const PROCESSED_MODIFIERS = [
+  // "Rice, white, pudding, raw" is a variety for desserts, not the rice you cook.
+  "pudding",
   "frozen",
   "canned",
   "tinned",
@@ -228,8 +230,26 @@ const DENSE_PREP_PATTERN =
   /\b(roast|roasted|fried|deep[- ]?fried|chips|crisps|saut[eé]ed|saut[eé]|batter|battered|breaded|in crumbs|in oil|crisped|crispy)\b/;
 
 /** Staple grains/pulses where raw/dry is ~2–3× denser than the cooked form users mean. */
-const STAPLE_GRAIN_PULSE_PATTERN =
-  /\b(rice|pasta|quinoa|couscous|bulgur|oats?|porridge|lentils?|chickpeas?|chick\s*peas?|barley|farro|freekeh|semolina|noodles?|spaghetti|macaroni|penne|fusilli)\b/i;
+// ---------------------------------------------------------------------------
+// Staples come in two as-bought forms, and the bare name means the form you
+// buy:
+//
+//   Grains and pasta are bought dry. "95 g rice" is 95 g from the packet, and
+//   is costed on the raw row — the convention of every recipe and every app's
+//   recipe builder. For a week these were costed on the boiled row instead,
+//   with a "cooked weight" label to make that honest; now the label is gone
+//   because the number is what the scales say.
+//
+//   Pulses are bought in a tin, cooked and drained. "240 g chickpeas" is the
+//   drained tin, and is costed on the canned / boiled row. Costing that on the
+//   dried row would triple it — the calorie-dense trap the pulse steering
+//   exists to prevent.
+//
+// A query that names its own form ("cooked rice", "dried lentils") gets it.
+// ---------------------------------------------------------------------------
+const DRY_GRAIN_QUERY_PATTERN =
+  /\b(rice|pasta|quinoa|couscous|bulgur|oats?|porridge oats|barley|farro|freekeh|semolina|noodles?|spaghetti|macaroni|penne|fusilli|linguine|tagliatelle|orzo)\b/i;
+const COOKED_QUERY_PATTERN = /\b(cooked|boiled|steamed|leftover|pre-?cooked|microwave|ready)\b/i;
 const PASTA_SHAPE_PATTERN =
   /\b(spaghetti|tagliatelle|penne|fusilli|macaroni|linguine|fettuccine|pasta)\b/i;
 const MINCE_QUERY_PATTERN = /\b(mince|minced)\b/i;
@@ -246,11 +266,19 @@ export function queryRequestsRawDry(query: string): boolean {
   return RAW_DRY_PREP_PATTERN.test(normalizeCofidQuery(query));
 }
 
-/** True when the user entered a bare staple grain/pulse name (not "raw quinoa"). */
-export function isStapleGrainPulseQuery(query: string): boolean {
+/** A bare pulse name ("lentils", "chickpeas"): means the tin, costed cooked. */
+export function isStaplePulseQuery(query: string): boolean {
   const q = normalizeCofidQuery(query);
   if (!q || queryRequestsRawDry(q)) return false;
-  return STAPLE_GRAIN_PULSE_PATTERN.test(q) || STAPLE_PULSE_PATTERN.test(q);
+  return STAPLE_PULSE_PATTERN.test(q);
+}
+
+/** A bare grain or pasta name ("rice", "pasta", "oats"): means the packet, costed dry. */
+export function isDryGrainQuery(query: string): boolean {
+  const q = normalizeCofidQuery(query);
+  if (!q || COOKED_QUERY_PATTERN.test(q)) return false;
+  if (/\b(rice cakes?|rice flour|rice paper|rice milk|rice pudding|oat milk|oatcakes?)\b/.test(q)) return false;
+  return DRY_GRAIN_QUERY_PATTERN.test(q);
 }
 
 /** CoFID row is a cooked/boiled/canned-ready form (not raw/dry). */
@@ -277,12 +305,27 @@ function stapleFoodMatchesQuery(foodName: string, query: string): boolean {
 }
 
 /** Raw-vs-cooked scoring nudge for staple grains/pulses (class rule, not per-food). */
-function stapleGrainPulseAdjustment(query: string, normalisedFood: string): number {
-  if (!isStapleGrainPulseQuery(query)) return 0;
-  let adj = 0;
-  if (isRawDryStapleForm(normalisedFood)) adj -= 150;
-  if (isCookedStapleForm(normalisedFood)) adj += 100;
-  return adj;
+function staplePrepAdjustment(query: string, normalisedFood: string): number {
+  if (isStaplePulseQuery(query)) {
+    let adj = 0;
+    if (isRawDryStapleForm(normalisedFood)) adj -= 150;
+    if (isCookedStapleForm(normalisedFood)) adj += 100;
+    return adj;
+  }
+  if (isDryGrainQuery(query)) {
+    let adj = 0;
+    if (isRawDryStapleForm(normalisedFood)) adj += 150;
+    if (isCookedStapleForm(normalisedFood)) adj -= 150;
+    return adj;
+  }
+  // "cooked rice", "leftover pasta": the user has said which form they mean.
+  if (DRY_GRAIN_QUERY_PATTERN.test(normalizeCofidQuery(query)) && COOKED_QUERY_PATTERN.test(query)) {
+    let adj = 0;
+    if (isRawDryStapleForm(normalisedFood)) adj -= 150;
+    if (isCookedStapleForm(normalisedFood)) adj += 150;
+    return adj;
+  }
+  return 0;
 }
 
 /**
@@ -301,9 +344,9 @@ function sameFoodPrepAdjustment(query: string, normalisedFood: string): number {
   for (const modifier of PROCESSED_MODIFIERS) {
     if (normalisedFood.includes(modifier) && !query.includes(modifier)) adj -= 40;
   }
-  // Prefer the plain cooked form when one exists.
-  if (isCookedStapleForm(normalisedFood)) adj += 60;
-  adj += stapleGrainPulseAdjustment(query, normalisedFood);
+  // Prefer the plain cooked form when one exists — except for grains, bought dry.
+  if (isCookedStapleForm(normalisedFood) && !isDryGrainQuery(query)) adj += 60;
+  adj += staplePrepAdjustment(query, normalisedFood);
   return adj;
 }
 
@@ -487,7 +530,7 @@ function rawMeatAdjustment(query: string, foodName: string): number {
 export function isFatAddedPrepMismatch(query: string, foodName: string): boolean {
   const q = normalizeCofidQuery(query);
   if (!q || FAT_ADDED_QUERY_PATTERN.test(q)) return false;
-  if (!isStapleGrainPulseQuery(q) && !/\b(potato|potatoes)\b/.test(q)) return false;
+  if (!isStaplePulseQuery(q) && !isDryGrainQuery(q) && !/\b(potato|potatoes)\b/.test(q)) return false;
   return FAT_ADDED_PREP_PATTERN.test(normalizeForMatch(foodName));
 }
 
@@ -497,7 +540,7 @@ export function isFatAddedPrepMismatch(query: string, foodName: string): boolean
  * case where CoFID offers no cooked form at all, where raw grain is ~3x denser.
  */
 export function isRawStapleMismatch(query: string, foodName: string): boolean {
-  if (!isStapleGrainPulseQuery(query)) return false;
+  if (!isStaplePulseQuery(query)) return false;
   return isRawDryStapleForm(foodName);
 }
 
@@ -650,7 +693,7 @@ export function scoreCofidMatch(
     if (prep && f.includes(prep)) score += 35;
   }
 
-  score += stapleGrainPulseAdjustment(q, f);
+  score += staplePrepAdjustment(q, f);
   score += minceQueryAdjustment(q, f);
   score += pastaQueryAdjustment(q, foodName);
   score += breadcrumbQueryAdjustment(q, foodName);
@@ -688,7 +731,7 @@ export function pickBestCofidCandidate(
   // among candidates, switch to the best-scored cooked form (density-gap class fix).
   if (
     best &&
-    isStapleGrainPulseQuery(query) &&
+    isStaplePulseQuery(query) &&
     isRawDryStapleForm(best.food_name)
   ) {
     let bestCooked: CofidCandidate | null = null;

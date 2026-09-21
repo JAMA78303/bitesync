@@ -109,7 +109,23 @@ const riceCandidates: CofidCandidate[] = [
   { food_code: "11-865", food_name: "Rice, white, pudding, raw", food_group: "AC", matchKind: "partial" },
   { food_code: "11-869", food_name: "Rice, brown, wholegrain, boiled in unsalted water", food_group: "AC", matchKind: "partial" },
 ];
-assertMatch("rice", riceCandidates, "rice, white, long grain", ["pudding"]);
+// Grains are bought dry and costed dry; the boiled rows lose to a raw one.
+assertMatch(
+  "rice",
+  [...riceCandidates, { food_code: "11-860", food_name: "Rice, white, basmati, raw", food_group: "AC", matchKind: "partial" }],
+  "basmati, raw",
+  ["pudding", "boiled"],
+);
+// A raw pudding-rice row is still dry rice — the right basis — and beats boiled
+// when it is the only raw row; the variety just loses to basmati when both exist.
+assertMatch("rice", riceCandidates, "raw", ["boiled"]);
+// Asking for cooked rice gets cooked rice.
+assertMatch(
+  "cooked rice",
+  [...riceCandidates, { food_code: "11-860", food_name: "Rice, white, basmati, raw", food_group: "AC", matchKind: "partial" }],
+  "boiled",
+  ["raw", "pudding"],
+);
 
 // potato → boiled, NOT chips/roast (same-primary prep tie-break; manual-meal inflation bug)
 const potatoCandidates: CofidCandidate[] = [
@@ -132,20 +148,20 @@ const pastaCandidates: CofidCandidate[] = [
   { food_code: "11-900", food_name: "Pasta, white, dried, raw", food_group: "AC", matchKind: "partial" },
   { food_code: "11-901", food_name: "Pasta, white, fresh, boiled in unsalted water", food_group: "AC", matchKind: "partial" },
 ];
-assertMatch("pasta", pastaCandidates, "boiled", ["dried"]);
+assertMatch("pasta", pastaCandidates, "dried, raw", ["boiled"]);
 
-// quinoa → penalise raw when cooked variant exists; only-raw falls through to local DB
+// quinoa → raw is the as-bought form
 const quinoaCandidates: CofidCandidate[] = [
   { food_code: "14-843", food_name: "Quinoa, raw", food_group: "GA", matchKind: "partial" },
 ];
 assertMatch("quinoa", quinoaCandidates, "quinoa", ["bread"]);
 
-// couscous → cooked, NOT raw (class rule)
+// couscous → dry, as bought
 const couscousCandidates: CofidCandidate[] = [
   { food_code: "11-901", food_name: "Couscous, plain, raw", food_group: "AT", matchKind: "partial" },
   { food_code: "11-902", food_name: "Couscous, plain, cooked", food_group: "AT", matchKind: "partial" },
 ];
-assertMatch("couscous", couscousCandidates, "cooked", ["raw"]);
+assertMatch("couscous", couscousCandidates, "raw", ["cooked"]);
 
 // lentils → boiled, NOT dried raw
 const lentilCandidates: CofidCandidate[] = [
@@ -319,12 +335,21 @@ for (const [query, food] of [
     throw new Error(`"${query}" vs "${food}" should be a fat-added mismatch`);
   }
 }
+// The raw-staple veto is for pulses (the tin); grains are bought dry.
+for (const [query, food] of [
+  ["lentils", "Lentils, red, split, dried, raw"],
+  ["chickpeas", "Chick peas, whole, dried, raw"],
+] as const) {
+  if (!isRawStapleMismatch(query, food)) {
+    throw new Error(`"${query}" vs "${food}" should be a raw-staple mismatch`);
+  }
+}
 for (const [query, food] of [
   ["quinoa", "Quinoa, raw"],
   ["pasta", "Pasta, white, dried, raw"],
 ] as const) {
-  if (!isRawStapleMismatch(query, food)) {
-    throw new Error(`"${query}" vs "${food}" should be a raw-staple mismatch`);
+  if (isRawStapleMismatch(query, food)) {
+    throw new Error(`"${query}" vs "${food}" is a dry grain, not a raw-staple mismatch`);
   }
 }
 // Asking for the preparation explicitly must still resolve to it.
