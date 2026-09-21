@@ -398,3 +398,47 @@ import { isDairyFreeMismatch, isPlantMilkMismatch } from "@/lib/nutrition/cofidM
   bad("oat milk", "Milk, semi-skimmed, pasteurised, average", isPlantMilkMismatch, true);
 }
 console.log("OK: dairy-free / plant-milk guards");
+
+// --- meat and fish are costed raw, as bought ---
+import { isBareMeatOrFishQuery, isCookedMeatRow } from "@/lib/nutrition/cofidMatch";
+{
+  const chickenRows: CofidCandidate[] = [
+    { food_code: "C1", food_name: "Chicken, breast, grilled without skin, meat only", food_group: "MC", matchKind: "partial" },
+    { food_code: "C2", food_name: "Chicken, corn-fed, raw, light meat only", food_group: "MC", matchKind: "partial" },
+    { food_code: "C3", food_name: "Chicken, skin, raw", food_group: "MC", matchKind: "partial" },
+  ];
+  assertMatch("chicken breast", chickenRows, "raw, light meat", ["grilled", "skin, raw"]);
+
+  const minceRows: CofidCandidate[] = [
+    { food_code: "M1", food_name: "Beef, mince, microwaved", food_group: "MA", matchKind: "partial" },
+    { food_code: "M2", food_name: "Beef, mince, stewed", food_group: "MA", matchKind: "partial" },
+    { food_code: "M3", food_name: "Beef, mince, raw", food_group: "MA", matchKind: "partial" },
+    { food_code: "M4", food_name: "Beef, mince, raw, extra lean", food_group: "MA", matchKind: "partial" },
+  ];
+  assertMatch("beef mince", minceRows, "beef, mince, raw", ["microwaved", "stewed", "extra lean"]);
+
+  const baconRows: CofidCandidate[] = [
+    { food_code: "B1", food_name: "Bacon, fat only, average, cooked", food_group: "MA", matchKind: "partial" },
+    { food_code: "B2", food_name: "Bacon rashers, back, raw", food_group: "MA", matchKind: "partial" },
+  ];
+  assertMatch("bacon", baconRows, "back, raw", ["fat only"]);
+
+  // A query that names its preparation gets that preparation.
+  const tunaRows: CofidCandidate[] = [
+    { food_code: "T1", food_name: "Tuna, raw", food_group: "JC", matchKind: "partial" },
+    { food_code: "T2", food_name: "Tuna, canned in brine, drained", food_group: "JC", matchKind: "partial" },
+  ];
+  assertMatch("tuna canned", tunaRows, "canned in brine", ["tuna, raw"]);
+  assertMatch("smoked mackerel", [
+    { food_code: "K1", food_name: "Mackerel, flesh only, raw", food_group: "JC", matchKind: "partial" },
+    { food_code: "K2", food_name: "Mackerel, flesh only, smoked", food_group: "JC", matchKind: "partial" },
+  ], "smoked", ["raw"]);
+
+  if (!isBareMeatOrFishQuery("chicken breast") || isBareMeatOrFishQuery("smoked mackerel") || isBareMeatOrFishQuery("rice")) {
+    throw new Error("isBareMeatOrFishQuery");
+  }
+  if (!isCookedMeatRow("Chicken, breast, grilled without skin, meat only") || isCookedMeatRow("Prawns, king, purchased cooked") || isCookedMeatRow("Beef, mince, raw")) {
+    throw new Error("isCookedMeatRow");
+  }
+}
+console.log("OK: meat and fish costed raw");

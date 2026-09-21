@@ -12,6 +12,8 @@ import {
   isBreadcrumbCompositeMismatch,
   isFatAddedPrepMismatch,
   isMinceMismatch,
+  isBareMeatOrFishQuery,
+  isCookedMeatRow,
   isDairyFreeMismatch,
   isPlantMilkMismatch,
   isRawStapleMismatch,
@@ -21,6 +23,9 @@ import {
 import { lookupNutrition } from "@/lib/nutrition/lookup";
 import type { NutritionLookupEntry } from "@/types";
 import { estimateNutritionWithAI } from "@/lib/nutrition/estimateWithAI";
+
+/** Cooked weight ÷ raw weight for lean meat and poultry; see lookupNutritionAsync. */
+const RAW_TO_COOKED_YIELD = 0.75;
 
 export type NutritionLookupSource = "cofid" | "local" | "ai_estimated";
 
@@ -175,7 +180,17 @@ export async function lookupNutritionAsync(
 
   const cofid = await lookupCoFID(trimmed);
   if (cofid) {
-    const scaled = scaleNutrition(cofid, grams);
+    // Meat and fish are costed raw, as bought. When CoFID offers no raw row for
+    // a bare meat name (there is no "Chicken, breast, raw"), the best match is
+    // a cooked one — and costing 140 g raw on a cooked row overstates by the
+    // water cooking removed. Apply the standard cooking yield so the figure
+    // is what those 140 g become on the plate. 0.75 is the usual dietetic
+    // factor for grilled or pan-cooked lean meat and poultry.
+    const costGrams =
+      isBareMeatOrFishQuery(trimmed) && isCookedMeatRow(cofid.food_name)
+        ? grams * RAW_TO_COOKED_YIELD
+        : grams;
+    const scaled = scaleNutrition(cofid, costGrams);
     const macros = cofidMacrosFromScaled(scaled);
     if (
       macros.calories > 0 ||

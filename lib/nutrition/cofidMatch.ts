@@ -417,6 +417,73 @@ const FAT_ADDED_QUERY_PATTERN =
  * not catch it — but it carries ~14g more fat and ~300 more kcal per portion than
  * the boiled potato the recipe actually calls for.
  */
+// ---------------------------------------------------------------------------
+// Meat and fish: costed raw, as bought.
+//
+// A recipe's "140 g chicken breast" is the 140 g on the scales and the 140 g on
+// the grocery list. Cooking removes water, not nutrients, so raw weight on a
+// raw row is the correct as-eaten figure; raw weight on a cooked row overstates
+// it by the water that left — ~30% on protein for chicken, which is the number
+// this app is built around. The matcher had no view on this: pork and lamb
+// mince went raw, beef mince went to "microwaved", chicken breast to "grilled",
+// chicken thigh to "casseroled, meat and skin", cod to "poached in milk and
+// butter", and bacon to "fat only, cooked" at 692 kcal/100 g.
+//
+// The rule: a bare meat or fish name — one that does not ask for a preparation
+// itself — prefers a raw row and shrinks from a cooked one. "Purchased cooked",
+// canned, smoked and cured rows are as-bought forms and are left alone; a
+// query that names its own prep ("smoked mackerel", "tuna canned") is not bare.
+// ---------------------------------------------------------------------------
+
+const MEAT_FISH_QUERY_PATTERN =
+  /\b(chicken|turkey|beef|steak|pork|lamb|mince|salmon|cod|haddock|tuna|prawns?|mackerel|trout|sea ?bass|sardines?|bacon|sausages?|gammon|duck|venison|fillets?|thighs?|breasts?|drumsticks?|wings?|chops?|loin|ham)\b/;
+
+/** A query that names its own preparation is asking for that form. */
+const QUERY_NAMES_PREP_PATTERN =
+  /\b(raw|cooked|grilled|roast|roasted|fried|smoked|canned|tinned|cured|dried|poached|boiled|baked|stewed|casseroled|barbecued|steamed|jerky|purchased cooked|pre-?cooked|leftover)\b/;
+
+const ROW_COOKED_PREP_PATTERN =
+  /\b(grilled|roasted|roast|fried|stewed|casseroled|microwaved|poached|boiled|baked|barbecued|steamed|stir-fried|braised|cooked)\b/;
+
+/** As-bought forms that are not "raw" but are what the shopper picks up. */
+const ROW_AS_BOUGHT_PATTERN = /\b(purchased cooked|canned|tinned|smoked|cured|salted)\b/;
+
+/** Rows for a part nobody buys as "chicken": the skin, the fat, the bones. */
+const ROW_PART_ONLY_PATTERN = /\b(skin|fat|bone|bones|carcass|giblets|offal|trimmings)\b/;
+/** …unless the row is the meat itself, described with or without those parts. */
+const ROW_IS_MEAT_PATTERN =
+  /\b(meat|flesh|lean|without skin|rashers?|breasts?|thighs?|drumsticks?|wings?|fillets?|steaks?|chops?|mince|loin)\b/;
+const ROW_WEIGHED_WITH_PATTERN = /\bweighed with (bone|bones|shell|shells|skin|stone|stones)\b/;
+
+function isPartOnlyRow(f: string): boolean {
+  if (ROW_WEIGHED_WITH_PATTERN.test(f)) return true;
+  return ROW_PART_ONLY_PATTERN.test(f) && !ROW_IS_MEAT_PATTERN.test(f);
+}
+
+export function isBareMeatOrFishQuery(query: string): boolean {
+  const q = normalizeCofidQuery(query);
+  return MEAT_FISH_QUERY_PATTERN.test(q) && !QUERY_NAMES_PREP_PATTERN.test(q);
+}
+
+/** True when the row is a cooked preparation rather than raw or as-bought. */
+export function isCookedMeatRow(foodName: string): boolean {
+  const f = normalizeForMatch(foodName);
+  if (ROW_AS_BOUGHT_PATTERN.test(f)) return false;
+  return ROW_COOKED_PREP_PATTERN.test(f);
+}
+
+function rawMeatAdjustment(query: string, foodName: string): number {
+  if (!isBareMeatOrFishQuery(query)) return 0;
+  const f = normalizeForMatch(foodName);
+  // Nobody who writes "bacon" or "chicken" means the fat or the skin on its own,
+  // and a same-name row starts 9000 up — only a veto stops it.
+  if (isPartOnlyRow(f)) return -Infinity;
+  // "grilled from raw" is a cooked row that happens to say raw.
+  if (/\braw\b/.test(f) && !/\bfrom raw\b/.test(f)) return 200;
+  if (isCookedMeatRow(foodName)) return -200;
+  return 0;
+}
+
 export function isFatAddedPrepMismatch(query: string, foodName: string): boolean {
   const q = normalizeCofidQuery(query);
   if (!q || FAT_ADDED_QUERY_PATTERN.test(q)) return false;
@@ -512,7 +579,9 @@ export function scoreCofidMatch(
     // without differentiation they all tie and the winner is just DB return order,
     // which lets "potato" resolve to "chips, fried" or "roast" and inflate macros.
     // Keep a strong base, then nudge toward the plain cooked form the user means.
-    return 9000 + sameFoodPrepAdjustment(q, f) - fatAddedPenalty;
+    // Meat and fish still prefer raw here — single-word queries ("bacon", "cod")
+    // take this branch, and it is where cod found "poached in milk and butter".
+    return 9000 + sameFoodPrepAdjustment(q, f) - fatAddedPenalty + rawMeatAdjustment(q, foodName);
   }
 
   let score = matchKindBonus(matchKind);
@@ -586,6 +655,7 @@ export function scoreCofidMatch(
   score += pastaQueryAdjustment(q, foodName);
   score += breadcrumbQueryAdjustment(q, foodName);
   score += mushroomQueryAdjustment(q, foodName);
+  score += rawMeatAdjustment(q, foodName);
   score += plainOilQueryAdjustment(q, foodName);
 
   return score;
