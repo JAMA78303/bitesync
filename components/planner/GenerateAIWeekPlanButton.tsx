@@ -83,15 +83,20 @@ export function GenerateAIWeekPlanButton({ isPro, mealPlanId, goals }: Props) {
       </Button>
       {/* The heuristic planner was reachable only through onboarding. Pro users
           had no way to a plan when Claude was slow or down, and no way to
-          compare the two — which is how neither was ever measured. */}
+          compare the two — which is how neither was ever measured.
+
+          It sat directly under the AI button as a full-width tap target and
+          was mis-tapped: two buttons that rebuild the whole week, a few pixels
+          apart. Now a short, self-sized link, pushed down and right, with its
+          own generous tap padding so the gap is real on a phone. */}
       {isPro ? (
         <button
           type="button"
           onClick={() => runWeekPlan("standard")}
           disabled={isPending}
-          className="text-2xs font-medium text-[var(--text-muted)] hover:text-[var(--text-secondary)] disabled:opacity-60"
+          className="mt-2 self-end px-2 py-1.5 text-2xs font-medium text-[var(--text-muted)] underline-offset-2 hover:text-[var(--text-secondary)] hover:underline disabled:opacity-60"
         >
-          Use standard planner instead (instant, no AI)
+          Plan without AI
         </button>
       ) : null}
     </div>

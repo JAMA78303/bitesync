@@ -185,7 +185,7 @@ CRITICAL RULES:
 - EVERY day must fill EVERY snack slot with a snack-sized recipe (100–350 kcal). Plan mains smaller so snacks fit inside the calorie band — do not return null snacks unless the library has no snack-sized recipes at all
 - Maximise protein where possible
 - Favour recipes whose ingredients cover the listed micronutrient-priority foods; spread them across the week
-- Vary meals across the week
+- Vary meals across the week: use as many different recipes as the calorie and protein targets allow, and never use one recipe more than twice in the week. Reach for a recipe a second time only when no other recipe in the library fits that slot's calories — measured against the standard planner, this is where an AI week loses ground.
 - Return ONLY valid JSON, no explanation, no markdown
 
 MEAL SLOT RULES (mandatory):

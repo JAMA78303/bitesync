@@ -43,6 +43,16 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
+      # tsc is not a build. A "use server" file may only export async Server
+      # Actions, and exporting a sync helper from one passed tsc, lint and every
+      # test suite while failing the production build — shipped to main and took
+      # the deployment down. Only next build catches that class of error.
+      - name: Production build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
+
       - name: Plan calorie band verification
         run: npx tsx scripts/verify-plan-calorie-bands.ts
 
