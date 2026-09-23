@@ -63,6 +63,7 @@ import {
 } from "@/lib/planner/meal-slot-eligibility";
 import { readSnacksPerDay, resolveSnacksPerDay } from "@/lib/planner/snack-preference";
 import { describeError, markPlanRunPhase, recordPlanRun, startPlanRun, type PlanRunTrace } from "@/lib/planner/plan-run-log";
+import { fixMisplacedBreakfastRecipesForDay } from "@/lib/planner/breakfast-slot-fix";
 
 export type GoalContext = {
   calorieTarget: number | null;
@@ -356,61 +357,6 @@ type RecipeWithNutrition = RecipeRow & {
   ingredientNames: string[];
 };
 
-/**
- * Move a breakfast dish Claude put in a main slot into the breakfast slot.
- *
- * This looped forever whenever a day held two breakfast dishes — say porridge
- * at breakfast and overnight oats at lunch. The swap moved the oats to
- * breakfast and the porridge to lunch; the next pass saw the porridge in a
- * main slot and swapped them straight back. A library with eight porridge,
- * oats and egg recipes makes that pairing near-certain, and it is the whole
- * failure: a CPU-bound loop stamps no phase, runs no catch, reaches no
- * heuristic fallback, and is killed by the platform, leaving an empty week
- * and "an unexpected response was received from the server".
- *
- * A swap only helps when the breakfast slot holds something that is *not* a
- * breakfast dish. When both are, there is nothing to gain by exchanging them;
- * leave the day to enforceAiMealSlotSeparation, which swaps against the pool
- * rather than within the day. The iteration cap is belt and braces: every
- * pass must remove one misplaced dish, so it can never legitimately run
- * longer than the day has rows.
- */
-export function fixMisplacedBreakfastRecipesForDay(
-  rows: MealPlanInsertRow[],
-  day: number,
-  pool: RecipeWithNutrition[],
-): void {
-  const meta = new Map(pool.map((r) => [r.id, r]));
-  const isBreakfastDish = (recipeId: string): boolean => {
-    const m = meta.get(recipeId);
-    return shouldOccupyBreakfastSlot(m?.name ?? "", m?.ingredientNames ?? []);
-  };
-
-  for (let guard = 0; guard <= rows.length; guard += 1) {
-    const bfIdx = rows.findIndex((r) => r.day_of_week === day && r.meal_type === "breakfast");
-    const misIdx = rows.findIndex(
-      (r) => r.day_of_week === day && r.meal_type !== "breakfast" && isBreakfastDish(r.recipe_id),
-    );
-    if (misIdx < 0) return;
-
-    if (bfIdx < 0) {
-      rows[misIdx] = {
-        ...rows[misIdx]!,
-        meal_type: "breakfast",
-        slot_index: 0,
-      };
-      continue;
-    }
-
-    // Swapping two breakfast dishes changes nothing and comes straight back.
-    if (isBreakfastDish(rows[bfIdx]!.recipe_id)) return;
-
-    const temp = rows[bfIdx]!.recipe_id;
-    rows[bfIdx] = { ...rows[bfIdx]!, recipe_id: rows[misIdx]!.recipe_id };
-    rows[misIdx] = { ...rows[misIdx]!, recipe_id: temp };
-  }
-  console.warn(`[planner] breakfast fix hit its iteration cap on day ${day}`);
-}
 
 /** Fix Claude mis-placements and fill missing breakfast rows when the library has suitable recipes. */
 function sanitizeAiPlanBreakfastSlots(
