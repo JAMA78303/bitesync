@@ -1,17 +1,21 @@
-import { fixMisplacedBreakfastRecipesForDay } from "@/app/(app)/planner/ai-actions";
+import {
+  fixMisplacedBreakfastRecipesForDay,
+  type BreakfastFixRecipe,
+  type BreakfastFixRow,
+} from "@/lib/planner/breakfast-slot-fix";
 
 function assert(cond: boolean, msg: string): void {
   if (!cond) throw new Error(msg);
 }
-type Row = Parameters<typeof fixMisplacedBreakfastRecipesForDay>[0][number];
+type Row = BreakfastFixRow & { meal_plan_id: string };
 const pool = [
-  { id: "oats", name: "Banana Overnight Oats", calories: 400, protein: 20, carbs_g: 0, fat_g: 0, ingredientNames: ["oats"], fits_vegetarian: null, fits_vegan: null, fits_gluten_free: null },
-  { id: "porridge", name: "Orange Porridge", calories: 420, protein: 18, carbs_g: 0, fat_g: 0, ingredientNames: ["oats"], fits_vegetarian: null, fits_vegan: null, fits_gluten_free: null },
-  { id: "curry", name: "Chicken Curry With Rice", calories: 700, protein: 45, carbs_g: 0, fat_g: 0, ingredientNames: ["chicken breast"], fits_vegetarian: null, fits_vegan: null, fits_gluten_free: null },
-] as Parameters<typeof fixMisplacedBreakfastRecipesForDay>[2];
+  { id: "oats", name: "Banana Overnight Oats", ingredientNames: ["oats"] },
+  { id: "porridge", name: "Orange Porridge", ingredientNames: ["oats"] },
+  { id: "curry", name: "Chicken Curry With Rice", ingredientNames: ["chicken breast"] },
+] satisfies BreakfastFixRecipe[];
 
 const row = (recipe_id: string, meal_type: Row["meal_type"]): Row => ({
-  meal_plan_id: "p", recipe_id, day_of_week: 0, meal_type, slot_index: 0, quick_add_name: null, quick_add_calories: null,
+  meal_plan_id: "p", recipe_id, day_of_week: 0, meal_type, slot_index: 0,
 });
 
 // The hang: two breakfast dishes on one day, one of them in a main slot.
