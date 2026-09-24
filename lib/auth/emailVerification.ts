@@ -33,6 +33,52 @@ export function isDuplicateSignUpResponse(data: SignUpLikeResponse | null | unde
   return false;
 }
 
+type AuthLikeError = { message?: string; code?: string; status?: number };
+
+/**
+ * Supabase creates the user *before* it sends the confirmation email, so when
+ * the send fails the account already exists. Telling that person to "check
+ * your details and try again" (the old message) sent them round a loop: the
+ * retry either resent the email a minute late or said the account already
+ * existed. They need to hear that the account is made and the email is late.
+ */
+export function isConfirmationEmailSendError(error: AuthLikeError | null | undefined): boolean {
+  if (!error) return false;
+  if (error.code === "over_email_send_rate_limit" || error.code === "email_address_not_authorized") return true;
+  return /sending confirmation|send.*email|email rate limit|smtp/i.test(error.message ?? "");
+}
+
+/**
+ * Signup failures the person can fix themselves, with Supabase's own wording
+ * kept — "Password should be at least 8 characters" beats "check your details".
+ */
+export function signupErrorMessage(error: AuthLikeError): string | null {
+  if (error.code === "weak_password") {
+    return error.message || "That password is too weak — use at least 8 characters.";
+  }
+  if (error.code === "email_address_invalid" || /invalid.*email|email.*invalid/i.test(error.message ?? "")) {
+    return "That email address doesn't look right — check it and try again.";
+  }
+  if (error.code === "over_request_rate_limit" || error.status === 429) {
+    return "Too many attempts in a short time — wait a minute, then try again.";
+  }
+  if (error.code === "signup_disabled") {
+    return "New sign-ups are paused right now. Please try again later.";
+  }
+  return null;
+}
+
+/**
+ * The confirmation link came back with a ?code=, which Supabase only issues
+ * after it has verified the email. If exchanging that code for a session then
+ * fails — most often because the link was opened in a different browser or
+ * email app from the one used to sign up, so the PKCE verifier cookie is not
+ * there — the email is nonetheless confirmed. The person needs to log in, not
+ * be told "we couldn't confirm your email" and sent to request a new link
+ * that cannot help them.
+ */
+export const CONFIRMED_LOG_IN_MESSAGE = "Your email is confirmed. Log in to get started.";
+
 export function confirmationCallbackUrl(next = "/onboarding"): string {
   const appUrl =
     process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { signUp } from "@/app/(auth)/signup/actions";
+import { AuthSubmitButton } from "@/components/shared/AuthSubmitButton";
 import { ds } from "@/lib/ui/classes";
 
 export default async function SignupPage({
@@ -47,9 +48,11 @@ export default async function SignupPage({
  className={ds.input}
  />
  </div>
- <button type="submit" className={`${ds.primaryBtn} mt-2 w-full py-4`}>
- Create account →
- </button>
+ <AuthSubmitButton
+ label="Create account →"
+ pendingLabel="Creating your account…"
+ className={`${ds.primaryBtn} mt-2 w-full py-4 disabled:cursor-not-allowed disabled:opacity-60`}
+ />
  </form>
  ) : null}
  </AuthLayout>

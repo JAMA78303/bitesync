@@ -113,6 +113,14 @@ export async function GET(request: NextRequest) {
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
+      console.warn("[auth/callback] code exchange failed:", error.code, error.message);
+      // Supabase only issues a ?code= after verifying the email, so the email
+      // is confirmed — the session just couldn't be made here (usually the link
+      // was opened in another browser or email app). Send them to log in. A
+      // password-reset link is the exception: it needs the session to proceed.
+      if (!isRecovery) {
+        return redirect("/login?confirmed=1");
+      }
       return redirectVerify(error.message);
     }
     return postAuthRedirect();
@@ -134,7 +142,9 @@ export async function GET(request: NextRequest) {
     return postAuthRedirect();
   }
 
-  return redirectVerify("Invalid confirmation link");
+  const providerError =
+    requestUrl.searchParams.get("error_description") ?? requestUrl.searchParams.get("error");
+  return redirectVerify(providerError ?? "Invalid confirmation link");
 }
 
 function publicOrigin(request: NextRequest): string {
