@@ -1,7 +1,7 @@
 "use client";
 
-import { useTransition } from "react";
-import { Sparkles } from "lucide-react";
+import { useState, useTransition } from "react";
+import { CalendarDays, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
@@ -20,6 +20,9 @@ type Props = {
 export function GenerateAIWeekPlanButton({ isPro, mealPlanId, goals }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  // Which planner is running, so "Planning…" shows on the button that was
+  // tapped rather than always on the AI one.
+  const [running, setRunning] = useState<"ai" | "standard" | null>(null);
   const { toast } = useToast();
 
   function runWeekPlan(mode: "ai" | "standard") {
@@ -31,6 +34,7 @@ export function GenerateAIWeekPlanButton({ isPro, mealPlanId, goals }: Props) {
       });
       return;
     }
+    setRunning(mode);
     startTransition(async () => {
       try {
         const result =
@@ -63,41 +67,48 @@ export function GenerateAIWeekPlanButton({ isPro, mealPlanId, goals }: Props) {
       } catch (err) {
         const message = err instanceof Error ? err.message : "Something went wrong";
         toast({ title: "Week plan failed", description: message, variant: "destructive" });
+      } finally {
+        setRunning(null);
       }
     });
   }
 
+  // Both planners as a matched pair: same height, same shape, side by side
+  // — AI filled as the recommended default, the other outlined —
+  // with a real gap. "Plan without AI" was first a full-width button stacked
+  // an inch under the AI one (mis-tapped), then a small grey text link (read
+  // as an afterthought). Two equal buttons with distinct icons and labels is
+  // the standard pattern for sibling actions and separates them by position,
+  // not by making one hard to see. flex-wrap rather than a breakpoint: side by
+  // side wherever both labels fit (every current phone from 360 px up), each
+  // full width and stacked with a 12 px gap on the narrowest screens, never
+  // truncated or pushed off the edge.
+  const buttonBase = "h-11 flex-1 gap-2 whitespace-nowrap px-4 text-sm md:h-10 md:flex-none";
   return (
-    <div className="flex w-full flex-col items-stretch gap-1 md:w-auto md:items-end">
+    <div className="flex w-full flex-wrap items-stretch gap-3 md:w-auto md:flex-nowrap md:justify-end">
       <Button
         type="button"
         onClick={() => runWeekPlan("ai")}
         disabled={isPending}
-        variant="outline"
-        className="h-11 w-full border-[var(--brand-primary)] text-[var(--brand-primary)] hover:bg-[var(--surface-brand-subtle)] md:h-9 md:w-auto md:text-sm"
+        className={`${buttonBase} bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] hover:bg-[var(--btn-primary-hover)]`}
       >
-        <Sparkles className="mr-1.5 h-4 w-4 shrink-0 md:mr-2" />
-        <span className="text-center text-2xs font-medium leading-snug sm:text-xs md:text-sm md:truncate">
-          {isPending ? "Planning…" : "AI weekly plan"}
-        </span>
+        <Sparkles className="h-4 w-4 shrink-0" aria-hidden />
+        {running === "ai" ? "Planning…" : "AI weekly plan"}
       </Button>
       {/* The heuristic planner was reachable only through onboarding. Pro users
           had no way to a plan when Claude was slow or down, and no way to
-          compare the two — which is how neither was ever measured.
-
-          It sat directly under the AI button as a full-width tap target and
-          was mis-tapped: two buttons that rebuild the whole week, a few pixels
-          apart. Now a short, self-sized link, pushed down and right, with its
-          own generous tap padding so the gap is real on a phone. */}
+          compare the two — which is how neither was ever measured. */}
       {isPro ? (
-        <button
+        <Button
           type="button"
           onClick={() => runWeekPlan("standard")}
           disabled={isPending}
-          className="mt-2 self-end px-2 py-1.5 text-2xs font-medium text-[var(--text-muted)] underline-offset-2 hover:text-[var(--text-secondary)] hover:underline disabled:opacity-60"
+          variant="outline"
+          className={buttonBase}
         >
-          Plan without AI
-        </button>
+          <CalendarDays className="h-4 w-4 shrink-0" aria-hidden />
+          {running === "standard" ? "Planning…" : "Plan without AI"}
+        </Button>
       ) : null}
     </div>
   );
