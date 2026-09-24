@@ -5,7 +5,9 @@ import {
   EXISTING_ACCOUNT_MESSAGE,
   isAuthUserAlreadyRegisteredError,
   isDuplicateSignUpResponse,
+  isConfirmationEmailSendError,
   isEmailConfirmed,
+  signupErrorMessage,
   VERIFY_EMAIL_PATH,
 } from "@/lib/auth/emailVerification";
 import { toUserFacingError } from "@/lib/errors/userFacing";
@@ -37,7 +39,20 @@ export async function signUp(formData: FormData) {
     if (isAuthUserAlreadyRegisteredError(error)) {
       redirect(`/login?error=${encodeURIComponent(EXISTING_ACCOUNT_MESSAGE)}`);
     }
-    redirect(`/signup?error=${encodeURIComponent(toUserFacingError(error, "auth", "signup"))}`);
+    // The account exists; only the email failed. Send them to the page with a
+    // Resend button and say exactly that.
+    if (isConfirmationEmailSendError(error)) {
+      console.error("[signUp] account created but confirmation email failed:", error.code, error.message);
+      const params = new URLSearchParams({
+        email,
+        error:
+          "Your account is created, but the confirmation email didn't send. Wait a minute, then tap Resend below.",
+      });
+      redirect(`${VERIFY_EMAIL_PATH}?${params}`);
+    }
+    console.error("[signUp] failed:", error.code, error.status, error.message);
+    const message = signupErrorMessage(error) ?? toUserFacingError(error, "auth", "signup");
+    redirect(`/signup?error=${encodeURIComponent(message)}`);
   }
 
   if (isDuplicateSignUpResponse(data)) {
