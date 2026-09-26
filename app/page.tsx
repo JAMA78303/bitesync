@@ -230,8 +230,8 @@ export default async function LandingPage() {
                 </Link>
               </article>
               <article className="relative rounded-2xl bg-[var(--brand-primary)] p-6 text-[var(--text-on-brand)] shadow-lg">
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-amber-400 px-3 py-1 text-xs font-bold text-amber-900">
-                  MOST POPULAR
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full border border-[var(--brand-primary)] bg-[var(--surface-card)] px-3 py-1 text-xs font-semibold text-[var(--brand-primary)]">
+                  Recommended
                 </span>
                 <h3 className="mb-1 font-bold">Pro</h3>
                 <p className="text-3xl font-bold">
@@ -274,8 +274,8 @@ export default async function LandingPage() {
               <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--surface-brand-subtle)]">
                 <Shield className="h-6 w-6 text-[var(--brand-primary)]" aria-hidden />
               </span>
-              <h3 className="mb-1 text-sm font-semibold text-[var(--text-primary)]">Evidence-based targets</h3>
-              <p className="text-xs leading-relaxed text-[var(--text-muted)]">
+              <h3 className="mb-1 text-base font-semibold text-[var(--text-primary)]">Evidence-based targets</h3>
+              <p className="text-sm leading-relaxed text-[var(--text-muted)]">
                 TDEE and macro goals grounded in established nutrition science.
               </p>
             </article>
@@ -283,8 +283,8 @@ export default async function LandingPage() {
               <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--surface-brand-subtle)]">
                 <Stethoscope className="h-6 w-6 text-[var(--brand-primary)]" aria-hidden />
               </span>
-              <h3 className="mb-1 text-sm font-semibold text-[var(--text-primary)]">Built by a dietitian</h3>
-              <p className="text-xs leading-relaxed text-[var(--text-muted)]">
+              <h3 className="mb-1 text-base font-semibold text-[var(--text-primary)]">Built by a dietitian</h3>
+              <p className="text-sm leading-relaxed text-[var(--text-muted)]">
                 Designed by a registered dietitian, not assembled from a calorie database.
               </p>
             </article>
@@ -292,8 +292,8 @@ export default async function LandingPage() {
               <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--surface-brand-subtle)]">
                 <Utensils className="h-6 w-6 text-[var(--brand-primary)]" aria-hidden />
               </span>
-              <h3 className="mb-1 text-sm font-semibold text-[var(--text-primary)]">Your data stays yours</h3>
-              <p className="text-xs leading-relaxed text-[var(--text-muted)]">
+              <h3 className="mb-1 text-base font-semibold text-[var(--text-primary)]">Your data stays yours</h3>
+              <p className="text-sm leading-relaxed text-[var(--text-muted)]">
                 Recipes and plans are private to your account. Payments via Stripe.
               </p>
             </article>
