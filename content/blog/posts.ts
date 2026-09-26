@@ -22,6 +22,7 @@ export const POST_SLUGS = [
   "meal-planners-micronutrient-gaps",
   "thermic-effect-of-protein",
   "meal-planning-reduce-food-waste",
+  "raw-or-cooked-weight",
 ] as const;
 
 export type PostSlug = (typeof POST_SLUGS)[number];
