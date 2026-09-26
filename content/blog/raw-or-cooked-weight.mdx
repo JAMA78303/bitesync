@@ -4,16 +4,16 @@ export const meta = {
     "Weigh food and log it in the same state. Rice triples in weight when cooked and chicken loses about 30%, so mixing raw and cooked figures can put your numbers out by a factor of three.",
   category: "Nutrition science",
   datePublished: "2026-09-26",
-  dateModified: "2026-09-26",
+  dateModified: "2026-09-27",
 };
 
 **Weigh your food and log it in the same state it was in when you weighed it.** Raw weight goes with a raw nutrition entry; cooked weight goes with a cooked one. Mix them and the numbers can be out by a factor of three — 75 g of dry rice logged against a "boiled rice" entry records a third of the calories you actually ate.
 
 That single rule fixes most tracking errors. The rest of this guide explains why it matters, gives the conversion figures for common foods, and covers the cases where it gets awkward.
 
-## Why the weight changes but the calories don't
+## Why the weight changes but the nutrition figures don't
 
-Cooking mostly moves water. Rice and pasta absorb it and get heavier; meat and fish lose it and get lighter. The energy and protein in the food barely change — they're just spread across more, or fewer, grams.
+Cooking mostly moves water. Rice and pasta absorb it and get heavier; meat and fish lose it and get lighter. What's *in* the food barely changes — the same energy and protein, spread across more, or fewer, grams. (How much of it your body absorbs is a separate question, covered at the end.)
 
 So "100 g of rice" is two very different amounts of food depending on whether it's dry or cooked. The UK's official food composition data (CoFID, the dataset behind McCance and Widdowson's) lists both:
 
@@ -79,7 +79,11 @@ Nutrition comes from the UK CoFID data shown above, matched ingredient by ingred
 Before, dry, if you can. It's what the packet's nutrition label refers to, and it doesn't change with cooking time.
 
 **Does cooking change the calories in food?**
-Barely. It changes the weight, because water is absorbed or lost. The main exceptions are fat that drips off meat as it cooks and oil you add to the pan — count the oil separately.
+Not the calories on the label. Those are based on what the food contains, and a portion gets the same figure whether you weigh it raw or cooked, provided you use the matching entry.
+
+It does change how much of that energy your body gets out. Heat breaks down starch and protein, making them easier to digest. In a 2011 study in *PNAS*, mice fed cooked meat and cooked sweet potato gained more weight than mice fed the same foods raw, with no difference in how much they ate or how active they were ([Carmody, Weintraub and Wrangham, 2011](https://doi.org/10.1073/pnas.1112128108)).
+
+No food table or nutrition label adjusts for this — CoFID doesn't, and neither does any tracking app — so it doesn't change how you should weigh and log. It is one reason tracked calories are a good estimate rather than an exact measure. Oil you add to the pan is separate: count it on its own.
 
 **Why do two apps give different numbers for the same meal?**
 Usually because one is using a raw entry and the other a cooked one. Check which state each entry refers to.
