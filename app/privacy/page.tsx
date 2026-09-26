@@ -20,6 +20,7 @@ const SECTIONS = [
       "Account information: your email address and authentication credentials when you sign up.",
       "Profile and health-related inputs you choose to provide: body stats (weight, height, age, sex), activity level, nutrition goals, dietary preferences, and any recipes or meal plans you create.",
       "Usage data: how you use the app (e.g. pages visited, features used) to improve the product.",
+      "How you heard about BiteSync, if you choose to tell us when you sign up — used only to understand which channels bring people to the app.",
       "Payment information: billing is handled by Stripe. We store Stripe customer and subscription IDs, not full card numbers.",
     ],
   },

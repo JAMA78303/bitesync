@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { signUp } from "@/app/(auth)/signup/actions";
 import { AuthSubmitButton } from "@/components/shared/AuthSubmitButton";
+import { HEARD_FROM_OPTIONS } from "@/lib/auth/heardFrom";
 import { ds } from "@/lib/ui/classes";
 
 export default async function SignupPage({
@@ -47,6 +48,19 @@ export default async function SignupPage({
  autoComplete="new-password"
  className={ds.input}
  />
+ </div>
+ <div>
+ <label htmlFor="heard_from" className="mb-1.5 block text-xs font-semibold text-[var(--text-muted)]">
+ How did you hear about BiteSync? <span className="font-normal">(optional)</span>
+ </label>
+ <select id="heard_from" name="heard_from" defaultValue="" className={ds.input}>
+ <option value="">Choose one</option>
+ {HEARD_FROM_OPTIONS.map((o) => (
+ <option key={o.value} value={o.value}>
+ {o.label}
+ </option>
+ ))}
+ </select>
  </div>
  <AuthSubmitButton
  label="Create account →"
