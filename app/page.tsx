@@ -23,6 +23,7 @@ import { JsonLd } from "@/components/shared/JsonLd";
 import { faqPageSchema, softwareApplicationSchema } from "@/lib/seo/structuredData";
 import { FAQ_ITEMS } from "@/components/landing/LandingFaq";
 import { loadAllPosts } from "@/content/blog/posts";
+import { FOUNDER } from "@/lib/founder";
 
 const LandingDemoFlow = dynamic(
   () => import("@/components/landing/LandingDemoFlow").then((m) => ({ default: m.LandingDemoFlow })),
@@ -56,6 +57,7 @@ const NAV_LINKS = [
   { href: "#pricing", label: "Pricing" },
   { href: "#faq", label: "FAQ" },
   { href: "#blog", label: "Blog" },
+  { href: "/about", label: "About" },
 ] as const;
 
 // Only what the product enforces. Targets moved to Free on 14 September, and
@@ -285,7 +287,10 @@ export default async function LandingPage() {
               </span>
               <h3 className="mb-1 text-base font-semibold text-[var(--text-primary)]">Built by a dietitian</h3>
               <p className="text-sm leading-relaxed text-[var(--text-muted)]">
-                Designed by a registered dietitian, not assembled from a calorie database.
+                Designed by {FOUNDER.name}, a registered dietitian, not assembled from a calorie database.{" "}
+                <Link href={FOUNDER.path} className="font-medium whitespace-nowrap text-[var(--text-link)] hover:underline">
+                  Why I built it
+                </Link>
               </p>
             </article>
             <article className="text-center">

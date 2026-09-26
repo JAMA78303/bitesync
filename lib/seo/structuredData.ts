@@ -17,6 +17,8 @@ import {
  * retrieval half, which is the half that can be engineered.
  */
 
+import { FOUNDER } from "@/lib/founder";
+
 const BASE = "https://bitesync.io";
 
 /** Facts stated on the page. Nothing here may claim more than the page shows. */
@@ -37,12 +39,7 @@ export function softwareApplicationSchema() {
       "@type": "Organization",
       name: "BiteSync",
       url: BASE,
-      // A named person with a verifiable registration would be materially
-      // stronger here than an organisation — see the note in the PR.
-      employee: {
-        "@type": "Person",
-        jobTitle: "Registered Dietitian",
-      },
+      founder: founderPersonSchema(),
     },
     featureList: [
       "TDEE-based calorie and protein targets",
@@ -85,6 +82,7 @@ export function blogPostingSchema(post: {
   description: string;
   datePublished: string;
   dateModified: string;
+  reviewedBy?: "founder";
 }) {
   return {
     "@context": "https://schema.org",
@@ -97,6 +95,38 @@ export function blogPostingSchema(post: {
     mainEntityOfPage: `${BASE}/blog/${post.slug}`,
     author: { "@type": "Organization", name: "BiteSync", url: BASE },
     publisher: { "@type": "Organization", name: "BiteSync", url: BASE },
+    // reviewedBy is a WebPage property, so it rides on the page node rather
+    // than the BlogPosting itself.
+    ...(post.reviewedBy === "founder"
+      ? {
+          mainEntityOfPage: {
+            "@type": "WebPage",
+            "@id": `${BASE}/blog/${post.slug}`,
+            reviewedBy: founderPersonSchema(),
+          },
+        }
+      : {}),
+  };
+}
+
+/** The founder as a schema.org Person, linked to the page that explains who they are. */
+export function founderPersonSchema() {
+  return {
+    "@type": "Person",
+    name: FOUNDER.name,
+    jobTitle: FOUNDER.credential,
+    url: `${BASE}${FOUNDER.path}`,
+    worksFor: { "@type": "Organization", name: "BiteSync", url: BASE },
+  };
+}
+
+export function aboutPageSchema() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    url: `${BASE}${FOUNDER.path}`,
+    name: "Why I built BiteSync",
+    mainEntity: founderPersonSchema(),
   };
 }
 

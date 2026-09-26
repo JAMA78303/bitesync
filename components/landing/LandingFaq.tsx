@@ -3,6 +3,7 @@
  * page renders. Search and answer engines discard (and Google penalises) markup
  * describing content a visitor cannot see, so these must not be allowed to drift.
  */
+import { FOUNDER } from "@/lib/founder";
 export const FAQ_ITEMS = [
  {
  q:"Does BiteSync work on my phone?",
@@ -30,7 +31,7 @@ export const FAQ_ITEMS = [
  },
  {
  q:"Who built BiteSync?",
- a:"A registered dietitian. The targets, portion logic and micronutrient analysis come from clinical practice rather than from whatever a calorie-counting app happened to do first.",
+ a: `${FOUNDER.name}, a registered dietitian, who built it to give people working towards a nutrition goal the structure to reach it. The targets, portion logic and micronutrient analysis come from clinical practice rather than from whatever a calorie-counting app happened to do first.`,
  },
  {
  q:"What happens when I reach the 10 recipe limit on Free?",
