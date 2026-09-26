@@ -46,7 +46,7 @@ export function LandingFaq() {
  return (
  <section id="faq" className="mx-auto max-w-4xl scroll-mt-24 px-4 py-20">
  <div className="mb-8 text-center">
- <h2 className="mb-2 text-2xl font-bold text-[var(--text-primary)] sm:text-3xl">Questions answered</h2>
+ <h2 className="mb-2 text-2xl font-bold text-[var(--text-primary)] sm:text-3xl text-balance">Questions answered</h2>
  <p className="text-sm text-[var(--text-muted)]">Everything you need to know before you get started.</p>
  </div>
  <div className="space-y-3">

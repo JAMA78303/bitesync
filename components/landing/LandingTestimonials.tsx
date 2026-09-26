@@ -27,7 +27,7 @@ export function LandingTestimonials() {
 
   return (
     <div className="mx-auto max-w-6xl px-4">
-      <h2 className="mb-8 text-center text-2xl font-bold text-[var(--text-primary)] sm:text-3xl">
+      <h2 className="mb-8 text-center text-2xl font-bold text-[var(--text-primary)] sm:text-3xl text-balance">
         From people using it
       </h2>
       {/* flex-wrap + max-w so one quote sits centred and three sit in a row,

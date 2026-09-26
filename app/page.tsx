@@ -11,7 +11,7 @@ import { Logo } from "@/components/shared/Logo";
 import { Reveal } from "@/components/landing/Reveal";
 import { LandingMobileNav } from "@/components/landing/LandingMobileNav";
 import { LandingTrustSignals } from "@/components/landing/LandingTrustSignals";
-import { LandingFeaturePreviews } from "@/components/landing/LandingFeaturePreviews";
+import { LandingFeatureGrid } from "@/components/landing/LandingFeatureGrid";
 import { LandingTestimonials } from "@/components/landing/LandingTestimonials";
 import {
   FREE_PRICE,
@@ -23,16 +23,6 @@ import { JsonLd } from "@/components/shared/JsonLd";
 import { faqPageSchema, softwareApplicationSchema } from "@/lib/seo/structuredData";
 import { FAQ_ITEMS } from "@/components/landing/LandingFaq";
 import { loadAllPosts } from "@/content/blog/posts";
-
-// LandingFeaturePreviews is imported statically, unlike the sections below.
-// It is the page's primary interactive element — nine clickable cards driving a
-// preview panel — and code-splitting it put its JavaScript in a chunk that
-// arrives after the HTML has painted. In that window the cards look clickable
-// and do nothing; and if the chunk fails outright (a page cached across a
-// deploy, referencing assets the new build replaced) the section stays painted
-// but permanently dead, with no error and nothing else on the page affected.
-// That is exactly the report that prompted this. Shipping it with the main
-// bundle costs ~10 KB and removes both failure modes.
 
 const LandingDemoFlow = dynamic(
   () => import("@/components/landing/LandingDemoFlow").then((m) => ({ default: m.LandingDemoFlow })),
@@ -55,7 +45,7 @@ const MockPlanner = dynamic(
     })),
   {
     loading: () => (
-      <div className="relative z-10 hidden h-[320px] w-[280px] sm:block" aria-hidden />
+      <div className="relative z-10 mx-auto h-[320px] w-full max-w-[280px]" aria-hidden />
     ),
   },
 );
@@ -63,28 +53,29 @@ const MockPlanner = dynamic(
 const NAV_LINKS = [
   { href: "#how-it-works", label: "How it works" },
   { href: "#features", label: "Features" },
-  { href: "#privacy-trust", label: "Privacy" },
   { href: "#pricing", label: "Pricing" },
   { href: "#faq", label: "FAQ" },
   { href: "#blog", label: "Blog" },
 ] as const;
 
+// Only what the product enforces. Targets moved to Free on 14 September, and
+// no history limit exists in the code, so "2 weeks of history" / "Unlimited
+// history" described a difference nobody would ever experience.
 const FREE_FEATURES = [
-  "Up to 10 recipes",
-  "Recipe import from URL",
+  "Personal calorie & protein targets",
   "Weekly meal planner",
+  "Calorie & protein tracking",
   "Grocery list generation",
-  "Today dashboard",
-  "Basic macro tracking",
-  "2 weeks of history",
+  "Recipe import from URL",
+  "Up to 10 recipes",
 ] as const;
 
 const PRO_FEATURES = [
+  "Everything in Free",
   "Unlimited recipes",
-  "Full nutrition (macros + micros)",
-  "TDEE calculator + targets",
   "AI weekly meal plans",
-  "Unlimited history",
+  "AI-written recipes",
+  "All macros + micronutrient analysis",
   "Priority support",
 ] as const;
 
@@ -168,17 +159,32 @@ export default async function LandingPage() {
               Start planning for free
               <ChevronRight className="h-4 w-4" aria-hidden />
             </Link>
-            <LandingTrustSignals variant="hero" />
+            {/* One line. There were three stacked lines of small print here —
+                privacy, a policy link with account deletion, then "evidence-based
+                · free" — and the phone mockup below was hidden on phones, so a
+                mobile visitor saw text and fine print and no product. */}
             <p className="mt-4 text-xs text-[var(--text-on-brand-subtle)]">
-              Evidence-based nutrition targets · Free to start — no card needed
+              Free to start · No card needed ·{" "}
+              <Link href="/privacy" className="underline underline-offset-2 hover:text-[var(--text-on-brand)]">
+                Private by default
+              </Link>
             </p>
-            <div className="mt-10 hidden justify-center sm:flex">
-              <div className="relative z-10 drop-shadow-2xl">
+            <div className="mt-10 flex justify-center">
+              <div className="relative z-10 w-full max-w-[300px] drop-shadow-2xl sm:max-w-[410px]">
                 <MockPlanner />
               </div>
             </div>
           </div>
         </header>
+
+        {/* Straight after the hero while there is one quote: on its own band
+            further down, a single card read as sparse. Backgrounds from here
+            alternate white / grey so sections don't run together. */}
+        <section id="testimonials" className="scroll-mt-24 bg-[var(--surface-card)] py-12 sm:py-16">
+          <Reveal>
+            <LandingTestimonials />
+          </Reveal>
+        </section>
 
         <section id="how-it-works" className="scroll-mt-24 bg-[var(--surface-muted)] py-16 sm:py-20">
           <Reveal>
@@ -188,18 +194,7 @@ export default async function LandingPage() {
 
         <section id="features" className="scroll-mt-24 bg-[var(--surface-card)] py-16 sm:py-20">
           <Reveal>
-            <LandingFeaturePreviews />
-          </Reveal>
-        </section>
-
-        {/* Proof before price: a stranger has just seen what it does; this is
-            who says it works, before they are asked what it costs. */}
-        <section
-          id="testimonials"
-          className="scroll-mt-24 border-y border-[var(--border-subtle)] bg-[var(--surface-muted)] py-16 sm:py-20"
-        >
-          <Reveal>
-            <LandingTestimonials />
+            <LandingFeatureGrid />
           </Reveal>
         </section>
 
@@ -207,7 +202,7 @@ export default async function LandingPage() {
           <div className="mx-auto max-w-6xl px-4">
             <Reveal>
               <div className="mb-12 text-center">
-                <h2 className="mb-3 text-2xl font-bold text-[var(--text-primary)] sm:text-3xl">
+                <h2 className="mb-3 text-2xl font-bold text-[var(--text-primary)] sm:text-3xl text-balance">
                   Simple, honest pricing
                 </h2>
                 <p className="text-sm text-[var(--text-muted)]">Start free. Upgrade when you want the full picture.</p>
@@ -270,8 +265,9 @@ export default async function LandingPage() {
           </div>
         </section>
 
-        <LandingTrustSignals />
-
+        {/* A four-paragraph "Privacy & security" section sat here, on top of
+            privacy lines in the hero, this row and the closing call to action.
+            The detail lives on /privacy and in the FAQ ("Is my data private?"). */}
         <section className="border-y border-[var(--border-subtle)] bg-[var(--surface-card)] py-12">
           <div className="mx-auto grid max-w-4xl grid-cols-1 gap-8 px-4 sm:grid-cols-3">
             <article className="text-center">
@@ -304,21 +300,25 @@ export default async function LandingPage() {
           </div>
         </section>
 
-        <LandingFaq />
+        <div className="bg-[var(--surface-muted)]">
+          <LandingFaq />
+        </div>
 
         <section id="blog" className="scroll-mt-24 bg-[var(--surface-card)] py-16 sm:py-20">
           <div className="mx-auto max-w-6xl px-4">
             <div className="mb-10 text-center">
-              <h2 className="text-2xl font-bold text-[var(--text-primary)] sm:text-3xl">From the BiteSync blog</h2>
+              <h2 className="text-2xl font-bold text-[var(--text-primary)] sm:text-3xl text-balance">From the BiteSync blog</h2>
               <p className="mt-2 text-sm text-[var(--text-muted)]">
                 Nutrition science and practical planning tips from the BiteSync team.
               </p>
             </div>
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+            {/* A swipeable row on phones, where three stacked cards ran to a
+                screen and a half; a three-column grid from tablet up. */}
+            <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-3 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden">
               {featuredPosts.map((post) => (
                 <article
                   key={post.slug}
-                  className="group flex flex-col rounded-2xl border border-[var(--border-default)] bg-[var(--surface-card)] p-5 transition-shadow hover:shadow-md"
+                  className="group flex w-[82%] shrink-0 snap-center flex-col rounded-2xl border border-[var(--border-default)] bg-[var(--surface-card)] p-5 transition-shadow hover:shadow-md sm:w-auto"
                 >
                   <p className="text-xs font-medium text-[var(--text-link)]">{post.category}</p>
                   <h3 className="mt-2 text-base font-semibold text-[var(--text-primary)] group-hover:text-[var(--text-link)]">
@@ -326,10 +326,11 @@ export default async function LandingPage() {
                   </h3>
                   <p className="mt-2 flex-1 text-sm leading-relaxed text-[var(--text-muted)]">{post.description}</p>
                   <Link
-                    href="/signup"
+                    href={`/blog/${post.slug}`}
                     className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-[var(--text-link)] hover:underline"
+                    aria-label={`Read: ${post.title}`}
                   >
-                    Try BiteSync free
+                    Read article
                     <ChevronRight className="h-3 w-3" aria-hidden />
                   </Link>
                 </article>
@@ -355,7 +356,7 @@ export default async function LandingPage() {
           />
           <Reveal>
             <div className="relative z-10 mx-auto max-w-2xl">
-              <h2 className="mb-4 text-2xl font-bold sm:text-3xl">Hit your macros without the spreadsheet</h2>
+              <h2 className="mb-4 text-2xl font-bold sm:text-3xl text-balance">Hit your macros without the spreadsheet</h2>
               <p className="mb-8 text-sm text-[var(--text-on-brand-muted)] sm:text-base">
                 Plan your week, shop once, and track every day — free to start, no credit card required.
               </p>
@@ -366,7 +367,7 @@ export default async function LandingPage() {
                 Get started free
                 <ChevronRight className="h-4 w-4" aria-hidden />
               </Link>
-              <LandingTrustSignals variant="cta" />
+              <LandingTrustSignals />
             </div>
           </Reveal>
         </section>
