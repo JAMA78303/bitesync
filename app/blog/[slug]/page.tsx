@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Logo } from "@/components/shared/Logo";
 import { JsonLd } from "@/components/shared/JsonLd";
+import { FOUNDER, FOUNDER_BYLINE } from "@/lib/founder";
 import { blogPostingSchema } from "@/lib/seo/structuredData";
 import { isPostSlug, loadPost, POST_SLUGS } from "@/content/blog/posts";
 
@@ -62,6 +63,14 @@ export default async function BlogPostPage({ params }: Props) {
             <>
               {" · Updated "}
               <time dateTime={meta.dateModified}>{formatDate(meta.dateModified)}</time>
+            </>
+          ) : null}
+          {meta.reviewedBy === "founder" ? (
+            <>
+              {" · Reviewed by "}
+              <Link href={FOUNDER.path} className="font-medium text-[var(--text-link)] hover:underline">
+                {FOUNDER_BYLINE}
+              </Link>
             </>
           ) : null}
         </p>

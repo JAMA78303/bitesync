@@ -109,5 +109,6 @@ export function isAllowedWithoutEmailConfirmation(path: string): boolean {
   if (path.startsWith("/reset")) return true;
   if (path === "/" || path.startsWith("/privacy") || path.startsWith("/terms")) return true;
   if (path.startsWith("/blog")) return true;
+  if (path.startsWith("/about")) return true;
   return false;
 }

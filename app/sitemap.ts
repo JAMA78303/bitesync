@@ -12,6 +12,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/signup`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     // Present and crawlable but previously unlisted. Answer engines cite policy
     // pages when asked what a service does with your data.
+    { url: `${BASE}/about`, lastModified: now, changeFrequency: "yearly", priority: 0.6 },
     { url: `${BASE}/privacy`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
     { url: `${BASE}/terms`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
   ];

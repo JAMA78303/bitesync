@@ -8,6 +8,12 @@ export type PostMeta = {
   /** ISO date. Answer engines weight recency; keep dateModified honest. */
   datePublished: string;
   dateModified: string;
+  /**
+   * Set only on posts the founder actually read and approved before
+   * publishing. Shown as "Reviewed by …" and in the page's structured data;
+   * never inferred.
+   */
+  reviewedBy?: "founder";
 };
 
 export type Post = PostMeta & { slug: string };

@@ -1,4 +1,5 @@
 import { FAQ_ITEMS } from "@/components/landing/LandingFaq";
+import { FOUNDER, FOUNDER_BYLINE } from "@/lib/founder";
 import { loadAllPosts } from "@/content/blog/posts";
 import { PRO_ANNUAL_PRICE, PRO_MONTHLY_PRICE } from "@/lib/stripe/pricing";
 
@@ -25,8 +26,8 @@ export async function GET() {
     "",
     "> Weekly meal planner that builds a week to your calorie and macro targets, calculates " +
       "nutrition from your ingredients, and generates one merged grocery list. Includes " +
-      "micronutrient analysis against published dietary reference values. Designed by a " +
-      "registered dietitian.",
+      "micronutrient analysis against published dietary reference values. Built by " +
+      `${FOUNDER_BYLINE} (${BASE}${FOUNDER.path}).`,
     "",
     "Web app — works in any browser on iOS, Android and desktop; no install. " +
       `Free tier available. Pro is ${PRO_MONTHLY_PRICE}/month or ${PRO_ANNUAL_PRICE}/year, billed in GBP.`,
@@ -53,6 +54,7 @@ export async function GET() {
     "## Pages",
     "",
     `- [Home](${BASE}/)`,
+    `- [Why I built BiteSync — ${FOUNDER_BYLINE}](${BASE}${FOUNDER.path})`,
     `- [Blog](${BASE}/blog)`,
     `- [Privacy](${BASE}/privacy)`,
     `- [Terms](${BASE}/terms)`,
