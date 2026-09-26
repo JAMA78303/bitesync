@@ -27,20 +27,20 @@ export function LandingTestimonials() {
 
   return (
     <div className="mx-auto max-w-6xl px-4">
-      <h2 className="mb-8 text-center text-2xl font-bold text-[var(--text-primary)] sm:text-3xl text-balance">
+      <h2 className="mb-6 text-center text-xs font-semibold tracking-wider text-[var(--text-link)] uppercase">
         From people using it
       </h2>
       {/* flex-wrap + max-w so one quote sits centred and three sit in a row,
           without a grid that leaves gaps at in-between counts. */}
       <ul className="flex flex-wrap justify-center gap-6">
         {TESTIMONIALS.map((t) => (
-          <li key={t.name + t.quote.slice(0, 24)} className="w-full max-w-xl">
-            <figure className="h-full rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 sm:p-8">
-              <Quote className="mb-4 h-6 w-6 text-[var(--brand-primary)]" aria-hidden />
-              <blockquote className="text-base leading-relaxed text-[var(--text-primary)] sm:text-lg">
+          <li key={t.name + t.quote.slice(0, 24)} className="w-full max-w-2xl">
+            <figure className="h-full text-center">
+              <Quote className="mx-auto mb-4 h-7 w-7 text-[var(--brand-primary)] opacity-60" aria-hidden />
+              <blockquote className="text-lg leading-relaxed font-medium text-balance text-[var(--text-primary)] sm:text-2xl sm:leading-snug">
                 {t.quote}
               </blockquote>
-              <figcaption className="mt-4 text-sm font-semibold text-[var(--text-secondary)]">
+              <figcaption className="mt-5 text-sm font-semibold text-[var(--text-secondary)]">
                 — {t.name}
                 {t.context ? (
                   <span className="font-normal text-[var(--text-muted)]">, {t.context}</span>

@@ -64,7 +64,7 @@ export function LandingFeatureGrid() {
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--surface-brand-subtle)]">
                 <Icon className="h-5 w-5 text-[var(--brand-primary)]" aria-hidden />
               </span>
-              <h3 className="text-sm font-semibold text-[var(--text-primary)]">
+              <h3 className="text-base font-semibold text-[var(--text-primary)]">
                 {title}
                 {isPro ? (
                   <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 align-middle text-2xs font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">

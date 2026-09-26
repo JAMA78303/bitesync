@@ -50,7 +50,7 @@ export function LandingDemoFlow() {
     <div className="mx-auto max-w-6xl px-4">
       <div className="mb-12 text-center">
         <h2 className="mb-3 text-2xl font-bold text-[var(--text-primary)] sm:text-3xl text-balance">
-          From plan to plate — in four steps
+          From plan to plate — in four steps
         </h2>
         <p className="mx-auto max-w-xl text-sm text-[var(--text-muted)] sm:text-base">
           Set your macro targets once. BiteSync connects planning, shopping, daily tracking, and

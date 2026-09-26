@@ -71,8 +71,12 @@ html {
   --text-secondary: #374151;
   --text-muted: #6b7280;
   --text-on-brand: #ffffff;
-  --text-on-brand-muted: rgba(255, 255, 255, 0.78);
-  --text-on-brand-subtle: rgba(255, 255, 255, 0.6);
+  /* WCAG AA on every stop of the brand gradients (#4a7a50 lightest): white at
+     0.78 / 0.6 measured 3.8 : 1 / 2.9 : 1 there, and 0.6 failed even on the
+     mid green (4.0 : 1) for 12 px text. 0.92 / 0.85 give 4.5+ / 6.1 on the
+     mid green; hierarchy on green comes from size and weight, not fading. */
+  --text-on-brand-muted: rgba(255, 255, 255, 0.92);
+  --text-on-brand-subtle: rgba(255, 255, 255, 0.85);
 
   /* Buttons — green = action */
   --btn-primary-bg: var(--brand-action);

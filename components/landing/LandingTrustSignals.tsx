@@ -13,7 +13,7 @@ export function LandingTrustSignals() {
     <p className="mt-5 text-xs text-[var(--text-on-brand-subtle)]">
       <Lock className="mr-1 inline h-3.5 w-3.5 opacity-90" aria-hidden />
       Private by default — no ads, data never sold.{" "}
-      <Link href="/privacy" className="font-medium underline underline-offset-2 hover:text-[var(--text-on-brand)]">
+      <Link href="/privacy" className="font-medium whitespace-nowrap underline underline-offset-2 hover:text-[var(--text-on-brand)]">
         Privacy policy
       </Link>
     </p>
