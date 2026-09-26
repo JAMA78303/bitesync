@@ -1,0 +1,30 @@
+name: IndexNow
+
+# When public content changes on main, tell Bing (ChatGPT's search index) and
+# the other IndexNow engines to re-crawl. Waits for Vercel's production deploy
+# so the engines fetch the new version, not the old one.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "content/blog/**"
+      - "app/page.tsx"
+      - "app/blog/**"
+      - "components/landing/**"
+      - "app/llms.txt/**"
+  workflow_dispatch:
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Wait for the production deploy
+        run: sleep 240
+      - name: Submit sitemap URLs
+        run: npx tsx scripts/indexnow.ts
