@@ -1,0 +1,88 @@
+export const meta = {
+  title: "Raw or cooked weight? How to weigh rice, pasta and chicken for accurate macros",
+  description:
+    "Weigh food and log it in the same state. Rice triples in weight when cooked and chicken loses about 30%, so mixing raw and cooked figures can put your numbers out by a factor of three.",
+  category: "Nutrition science",
+  datePublished: "2026-09-26",
+  dateModified: "2026-09-26",
+};
+
+**Weigh your food and log it in the same state it was in when you weighed it.** Raw weight goes with a raw nutrition entry; cooked weight goes with a cooked one. Mix them and the numbers can be out by a factor of three — 75 g of dry rice logged against a "boiled rice" entry records a third of the calories you actually ate.
+
+That single rule fixes most tracking errors. The rest of this guide explains why it matters, gives the conversion figures for common foods, and covers the cases where it gets awkward.
+
+## Why the weight changes but the calories don't
+
+Cooking mostly moves water. Rice and pasta absorb it and get heavier; meat and fish lose it and get lighter. The energy and protein in the food barely change — they're just spread across more, or fewer, grams.
+
+So "100 g of rice" is two very different amounts of food depending on whether it's dry or cooked. The UK's official food composition data (CoFID, the dataset behind McCance and Widdowson's) lists both:
+
+| Food | Dry or raw, per 100 g | Cooked, per 100 g | 100 g dry or raw becomes about |
+|---|---|---|---|
+| White basmati rice | 351 kcal, 84 g carbs | 117 kcal, 27 g carbs (boiled) | 300 g cooked |
+| Brown basmati rice | 355 kcal, 78 g carbs | 131 kcal, 29 g carbs (boiled) | 270 g cooked |
+| White dried pasta | 343 kcal, 76 g carbs | 169 kcal, 37 g carbs (boiled) | 200 g cooked |
+| Wholewheat spaghetti | 329 kcal, 68 g carbs | 134 kcal, 28 g carbs (boiled) | 250 g cooked |
+| Couscous | 364 kcal, 79 g carbs | 178 kcal, 38 g carbs | 200 g cooked |
+| Red lentils, split | 311 kcal, 26 g protein | 102 kcal, 8 g protein (boiled) | 300 g cooked |
+| Chicken | 108 kcal, 22 g protein (raw) | 148 kcal, 32 g protein (grilled breast) | 70 g cooked |
+| Salmon, farmed | 217 kcal, 20 g protein (raw) | 232 kcal, 25 g protein (baked) | 80 g cooked |
+
+The last column is the one that catches people out: grains and pulses roughly double or triple, while meat and fish shrink by a fifth to a third.
+
+## Two worked examples
+
+**Rice.** You weigh out 75 g of dry white basmati. That's 263 kcal and 63 g of carbohydrate, and it cooks to about 225 g.
+
+- Log 75 g against a *boiled* rice entry and you record **88 kcal** — a third of what you ate.
+- Weigh the 225 g after cooking but log it against a *dry* rice entry and you record **790 kcal** — three times what you ate.
+
+**Chicken.** You weigh 150 g of raw chicken breast. That's about 33 g of protein, and it cooks down to roughly 105 g.
+
+- Log 150 g against a *grilled* chicken entry and you record **48 g of protein** — over 40% more than you ate.
+
+The chicken error is the more dangerous of the two for anyone working to a protein target. It overstates, so a plan that looks like it hits 140 g of protein a day might really deliver closer to 100 g.
+
+## Should you weigh raw or cooked?
+
+Either works if you're consistent. For cooking at home, **raw (or dry) is usually easier and more accurate**, for three reasons:
+
+1. **It's what the packet and the recipe give you.** Nutrition labels on dry rice, pasta and raw meat are per 100 g as sold.
+2. **It doesn't depend on how you cooked it.** Cooked weight varies with how long you boil, how much you drain, and how well done the meat is. Dry weight doesn't.
+3. **It matches your shopping list.** The 500 g of chicken on the list is the 500 g on the scales.
+
+Weigh cooked when you don't have a choice — leftovers, a portion from a shared pot, or eating out — and use a cooked entry.
+
+## Batch cooking: the one calculation worth knowing
+
+If you cook rice or pasta for the week, weigh it dry, then weigh the whole batch once it's cooked. Divide to get your own conversion.
+
+Say 300 g of dry rice becomes 900 g cooked. Your 250 g serving of cooked rice is 250 ÷ 900 × 300 = **83 g of dry rice** — log that against the dry entry. This is more accurate than any published factor, because it's based on your pan and your cooking time.
+
+## Tinned beans and lentils
+
+Tinned pulses are already cooked. The weight that matters is the **drained** weight (it's printed on the tin), and it goes with a cooked or canned entry — not the dried one, which would roughly triple the calories.
+
+## How BiteSync handles it
+
+BiteSync's recipes follow the same rule, so you don't have to think about it:
+
+- **Grains and pasta are listed dry**, as on the packet, and costed against raw reference values. The method tells you roughly what that becomes once cooked — "Cook 95 g rice (about 285 g once cooked)".
+- **Meat and fish are listed raw**, as you buy them.
+- **Tinned pulses are the drained weight** and are labelled as cooked weight on the recipe, because that's the one exception.
+
+Nutrition comes from the UK CoFID data shown above, matched ingredient by ingredient.
+
+## Quick answers
+
+**Should I weigh rice before or after cooking?**
+Before, dry, if you can. It's what the packet's nutrition label refers to, and it doesn't change with cooking time.
+
+**Does cooking change the calories in food?**
+Barely. It changes the weight, because water is absorbed or lost. The main exceptions are fat that drips off meat as it cooks and oil you add to the pan — count the oil separately.
+
+**Why do two apps give different numbers for the same meal?**
+Usually because one is using a raw entry and the other a cooked one. Check which state each entry refers to.
+
+**What about cooked chicken from a packet?**
+That's sold cooked, so weigh it as it comes and use a cooked entry.
