@@ -21,8 +21,11 @@ for (const n of ["lentils", "chickpeas", "kidney beans", "cannellini beans"]) {
 assert(!isCookedWeightStaple("dried lentils"), "an explicitly dried pulse is not cooked weight");
 
 // 95 g dry rice is about 270 g cooked; the inverse converts the old cooked-gram rows.
-assert(cookedWeightFor("rice", 95) === 270, `95 g dry rice → 270 g cooked, got ${cookedWeightFor("rice", 95)}`);
-assert(dryWeightFor("rice", 315) === 110, `315 g cooked rice → 110 g dry, got ${dryWeightFor("rice", 315)}`);
+// Factors are CoFID raw ÷ boiled energy per 100 g: white basmati 351 / 117 = 3.0.
+assert(cookedWeightFor("rice", 95) === 285, `95 g dry rice → 285 g cooked, got ${cookedWeightFor("rice", 95)}`);
+assert(dryWeightFor("rice", 315) === 105, `315 g cooked rice → 105 g dry, got ${dryWeightFor("rice", 315)}`);
+assert(cookedWeightFor("pasta", 100) === 200, `white pasta doubles (343 / 169), got ${cookedWeightFor("pasta", 100)}`);
+assert(cookedWeightFor("wholewheat pasta", 100) === 250, `wholewheat pasta ×2.5 (329 / 134), got ${cookedWeightFor("wholewheat pasta", 100)}`);
 assert(dryWeightFor("brown rice", 285) === 105, `285 g cooked brown rice → 105 g dry, got ${dryWeightFor("brown rice", 285)}`);
 assert(cookedWeightFor("chicken breast", 140) === null, "meat has no grain conversion");
 
@@ -36,7 +39,7 @@ const steps = buildMethodStepsFromIngredients(
   "dinner",
 );
 const carbStep = steps.find((s) => /rice/i.test(s)) ?? "";
-assert(/Cook 95g Rice/.test(carbStep) && /about 270g once cooked/.test(carbStep), `carb step should state dry and cooked, got: "${carbStep}"`);
+assert(/Cook 95g Rice/.test(carbStep) && /about 285g once cooked/.test(carbStep), `carb step should state dry and cooked, got: "${carbStep}"`);
 
 // Claude's oil is capped at 1 tbsp per serving; the recipe is kept.
 const validated = validateGeneratedFullRecipe(

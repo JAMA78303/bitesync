@@ -13,14 +13,23 @@
  * recipe and every app's recipe builder says dry, so the engine now does too.
  */
 
-/** Cooked ÷ dry weight for grains, from CoFID raw and boiled energy per 100 g. */
+/**
+ * Cooked ÷ dry weight for grains: CoFID raw energy per 100 g ÷ boiled energy
+ * per 100 g, which is the water gained. First match wins, so the specific
+ * rows (brown rice, wholewheat pasta) come before the general ones.
+ *
+ *   white basmati rice   351 / 117 = 3.0    brown basmati   355 / 131 = 2.7
+ *   white dried pasta    343 / 169 = 2.0    wholewheat      329 / 134 = 2.5
+ *   couscous             364 / 178 = 2.0    quinoa (USDA, no CoFID cooked row) 2.6
+ */
 const GRAIN_DRY_FACTORS: Array<{ pattern: RegExp; factor: number }> = [
   { pattern: /\bbrown rice\b/i, factor: 2.7 },
-  { pattern: /\b(white |basmati |wholegrain |long grain )?rice\b/i, factor: 2.85 },
+  { pattern: /\b(white |basmati |wholegrain |long grain )?rice\b/i, factor: 3.0 },
   { pattern: /\bquinoa\b/i, factor: 2.6 },
-  { pattern: /\b(wholewheat |wholemeal )?pasta\b/i, factor: 2.3 },
-  { pattern: /\b(spaghetti|penne|fusilli|macaroni|linguine|tagliatelle)\b/i, factor: 2.3 },
-  { pattern: /\bcouscous\b/i, factor: 2.05 },
+  { pattern: /\b(wholewheat|wholemeal) (pasta|spaghetti|penne|fusilli)\b/i, factor: 2.5 },
+  { pattern: /\bpasta\b/i, factor: 2.0 },
+  { pattern: /\b(spaghetti|penne|fusilli|macaroni|linguine|tagliatelle)\b/i, factor: 2.0 },
+  { pattern: /\bcouscous\b/i, factor: 2.0 },
   { pattern: /\bbulgur\b/i, factor: 2.5 },
 ];
 
