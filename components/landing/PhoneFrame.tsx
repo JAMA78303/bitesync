@@ -11,8 +11,14 @@ type Props = {
 export function PhoneFrame({ children, className ="", label, innerWidthPx = 390 }: Props) {
  const bezel = 10;
  const outerWidth = innerWidthPx + bezel * 2;
+ // w-full is what makes max-w-full below mean "no wider than the space you're
+ // given". Without it the wrapper shrink-wrapped the 410 px frame, so
+ // max-w-full resolved to 410: the phone hung off both sides of a 375 px
+ // screen (and the page scrolled sideways), and on desktop four of them in
+ // 260 px columns overlapped and wrapped into a lopsided 3 + 1. The screens
+ // inside are fluid, so the frame can shrink and they reflow.
  return (
- <div className={`flex flex-col items-center ${className}`}>
+ <div className={`flex w-full flex-col items-center ${className}`}>
  <div
  role={label ?"img" : undefined}
  aria-label={label}
