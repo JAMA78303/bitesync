@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TDEEForm } from "@/components/settings/TDEEForm";
@@ -46,7 +46,12 @@ type Props = {
   profile: ProfileSlice | null;
   isPro: boolean;
   recipeCount: number;
+  /** First few recipe names, oldest first, for the step 2 summary. */
+  recipePreview?: string[];
 };
+
+const busyNoteClass =
+  "rounded-xl bg-[var(--surface-brand-subtle)] px-3 py-2 text-sm text-[var(--text-secondary)]";
 
 function ProgressDots({ step }: { step: 1 | 2 | 3 }) {
   return (
@@ -63,7 +68,7 @@ function ProgressDots({ step }: { step: 1 | 2 | 3 }) {
   );
 }
 
-export function FirstRunWizard({ profile, isPro, recipeCount }: Props) {
+export function FirstRunWizard({ profile, isPro, recipeCount, recipePreview = [] }: Props) {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(() => {
     const s = clampFirstRunStep(profile?.onboarding_step);
@@ -74,7 +79,16 @@ export function FirstRunWizard({ profile, isPro, recipeCount }: Props) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [showImport, setShowImport] = useState(false);
-  const [libraryDone, setLibraryDone] = useState(recipeCount > 0);
+  const [showMoreRecipes, setShowMoreRecipes] = useState(false);
+  const [libraryCount, setLibraryCount] = useState(recipeCount);
+  // Finishing step 1 revalidates the page, which usually remounts this wizard
+  // (its key is the saved step) — recipePreview covers that case.
+  const [starterNames, setStarterNames] = useState<string[]>(recipePreview);
+  // Both of these now take a few seconds (starter recipes, and for skip a
+  // planned week), so say what is happening rather than just greying out.
+  // The ref stops a second tap from starting a second seed.
+  const [busy, setBusy] = useState<"step1" | "skip" | null>(null);
+  const busyRef = useRef(false);
 
   useEffect(() => {
     trackFirstRunStepViewed(step);
@@ -100,8 +114,22 @@ export function FirstRunWizard({ profile, isPro, recipeCount }: Props) {
     followsGlutenFree: profile?.follows_gluten_free ?? false,
   };
 
-  function handleSkip() {
+  function runBusy(kind: "step1" | "skip", work: () => Promise<void>) {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    setBusy(kind);
     startTransition(async () => {
+      try {
+        await work();
+      } finally {
+        busyRef.current = false;
+        setBusy(null);
+      }
+    });
+  }
+
+  function handleSkip() {
+    runBusy("skip", async () => {
       trackFirstRunSkipped(step);
       const result = await skipFirstRun(step);
       if ("error" in result && result.error) {
@@ -114,11 +142,15 @@ export function FirstRunWizard({ profile, isPro, recipeCount }: Props) {
   }
 
   function onStep1Complete() {
-    startTransition(async () => {
+    runBusy("step1", async () => {
       const result = await finishOnboardingStep1();
       if ("error" in result && result.error) {
         setError(result.error);
         return;
+      }
+      if ("starter" in result && result.starter?.seeded) {
+        setLibraryCount((n) => n + result.starter.seeded);
+        setStarterNames(result.starter.names);
       }
       setStep(2);
       setError(null);
@@ -132,7 +164,6 @@ export function FirstRunWizard({ profile, isPro, recipeCount }: Props) {
         setError(result.error);
         return;
       }
-      setLibraryDone(true);
       setStep(3);
       setError(null);
       router.refresh();
@@ -166,22 +197,28 @@ export function FirstRunWizard({ profile, isPro, recipeCount }: Props) {
               Step {step} of 3
             </p>
             <h1 className="mt-1 text-2xl font-bold text-[var(--text-primary)]">
-              {FIRST_RUN_STEP_LABELS[step]}
+              {step === 2 && libraryCount > 0 ? "Your starter recipes" : FIRST_RUN_STEP_LABELS[step]}
             </h1>
           </div>
           <button
             type="button"
             onClick={handleSkip}
             disabled={isPending}
-            className="text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+            className="shrink-0 whitespace-nowrap text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
           >
-            Skip for now
+            {busy === "skip" ? "Setting up…" : "Skip for now"}
           </button>
         </div>
 
         {error ? (
           <p className="mb-4 rounded-xl bg-[var(--semantic-error-bg)] px-3 py-2 text-sm text-[var(--semantic-error-text)]">
             {error}
+          </p>
+        ) : null}
+
+        {busy === "skip" ? (
+          <p role="status" className={`mb-4 ${busyNoteClass}`}>
+            Adding starter recipes and planning your week — a few seconds…
           </p>
         ) : null}
 
@@ -212,11 +249,90 @@ export function FirstRunWizard({ profile, isPro, recipeCount }: Props) {
                 onboardingMode
                 onSaved={onStep1Complete}
               />
+              {/* Under the button just pressed — on a phone the top of this
+                  form is a screen away by now. */}
+              {busy === "step1" ? (
+                <p role="status" className={`mt-3 ${busyNoteClass}`}>
+                  Adding starter recipes sized to your targets…
+                </p>
+              ) : null}
             </div>
           </div>
         ) : null}
 
-        {step === 2 ? (
+        {step === 2 && libraryCount > 0 ? (
+          <div className="space-y-4">
+            <div className={`rounded-2xl px-4 py-3 text-sm ${ds.successCallout}`}>
+              <p className="font-semibold">
+                {libraryCount} recipe{libraryCount === 1 ? " is" : "s are"} ready in your library
+              </p>
+              <p className="mt-1 text-xs leading-relaxed">
+                Sized to your calorie and protein targets and your food preferences. Edit, swap or remove
+                any of them later in Recipes.
+              </p>
+              {starterNames.length ? (
+                <ul className="mt-2 space-y-0.5 text-xs">
+                  {starterNames.slice(0, 4).map((name) => (
+                    <li key={name}>• {name}</li>
+                  ))}
+                  {libraryCount > Math.min(starterNames.length, 4) ? (
+                    <li>and {libraryCount - Math.min(starterNames.length, 4)} more</li>
+                  ) : null}
+                </ul>
+              ) : null}
+            </div>
+            <Button type="button" onClick={onLibraryComplete} disabled={isPending} className="w-full">
+              Continue with {libraryCount} recipe{libraryCount === 1 ? "" : "s"}
+            </Button>
+            {/* Free starter sets fill the 10-recipe cap, so there is nothing more
+                to add on free. On Pro the AI generator is an optional extra now,
+                not the only way past this step. */}
+            {isPro ? (
+              showMoreRecipes ? (
+                <div className="rounded-2xl border border-[var(--border-default)] p-4">
+                  <FillMyLibraryModal
+                    embedded
+                    onComplete={onLibraryComplete}
+                    onClose={() => setShowMoreRecipes(false)}
+                  />
+                </div>
+              ) : (
+                <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-sm">
+                  <button
+                    type="button"
+                    onClick={() => setShowMoreRecipes(true)}
+                    className="font-medium text-[var(--brand-primary)] underline underline-offset-2"
+                  >
+                    Add more, written by AI
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowImport(true)}
+                    className="font-medium text-[var(--brand-primary)] underline underline-offset-2"
+                  >
+                    Import one from a URL
+                  </button>
+                </div>
+              )
+            ) : (
+              <p className="text-center text-xs text-[var(--text-muted)]">
+                Free plan: up to 10 recipes. Pro adds unlimited library + AI weekly plans.
+              </p>
+            )}
+            {showImport ? (
+              <ImportRecipeModal
+                embedded
+                onClose={() => setShowImport(false)}
+                onImport={async () => {
+                  setShowImport(false);
+                  onLibraryComplete();
+                }}
+              />
+            ) : null}
+          </div>
+        ) : null}
+
+        {step === 2 && libraryCount === 0 ? (
           <div className="space-y-4">
             <p className="text-sm text-[var(--text-muted)]">
               Add recipes sized to your diet — or import one you already love from a URL.
@@ -234,11 +350,6 @@ export function FirstRunWizard({ profile, isPro, recipeCount }: Props) {
               <Button type="button" variant="outline" onClick={() => setShowImport(true)} className="flex-1">
                 Import from URL instead
               </Button>
-              {libraryDone || recipeCount > 0 ? (
-                <Button type="button" onClick={onLibraryComplete} disabled={isPending} className="flex-1">
-                  Continue with {Math.max(recipeCount, 1)} recipe{recipeCount === 1 ? "" : "s"}
-                </Button>
-              ) : null}
             </div>
             {showImport ? (
               <ImportRecipeModal

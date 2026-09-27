@@ -24,13 +24,17 @@ export default async function OnboardingPage() {
   } = await supabase.auth.getUser();
 
   let recipeCount = 0;
+  let recipePreview: string[] = [];
   if (user) {
-    const { count } = await supabase
+    const { data, count } = await supabase
       .from("recipes")
-      .select("id", { count: "exact", head: true })
+      .select("name", { count: "exact" })
       .eq("user_id", user.id)
-      .is("archived_at", null);
+      .is("archived_at", null)
+      .order("created_at", { ascending: true })
+      .limit(4);
     recipeCount = count ?? 0;
+    recipePreview = (data ?? []).map((r) => r.name);
   }
 
   const step = clampFirstRunStep(profile?.onboarding_step);
@@ -41,6 +45,7 @@ export default async function OnboardingPage() {
       profile={profile}
       isPro={isProSubscriptionStatus(profile?.subscription_status)}
       recipeCount={recipeCount}
+      recipePreview={recipePreview}
       key={resumeStep}
     />
   );
