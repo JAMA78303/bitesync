@@ -11,12 +11,14 @@ import {
   VERIFY_EMAIL_PATH,
 } from "@/lib/auth/emailVerification";
 import { toUserFacingError } from "@/lib/errors/userFacing";
+import { parseHeardFrom } from "@/lib/auth/heardFrom";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 export async function signUp(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const heardFrom = parseHeardFrom(formData.get("heard_from"));
 
   if (!email || !password) {
     redirect("/signup?error=Email%20and%20password%20are%20required");
@@ -32,6 +34,7 @@ export async function signUp(formData: FormData) {
     password,
     options: {
       emailRedirectTo: confirmationCallbackUrl(),
+      ...(heardFrom ? { data: { heard_from: heardFrom } } : {}),
     },
   });
 
