@@ -2,8 +2,9 @@
  * Status-based colour logic for macro targets (Today goals card + Nutrition view).
  *
  * Each nutrient has an explicit "good direction":
- * - kcal, fat, carbs: land near target — under is amber, over is red
+ * - kcal, carbs: land near target — under is amber, over is red
  * - protein, fibre: at least target — meeting/exceeding is green, under is amber
+ * - fat: a ceiling on its share of the day's calories, not a gram target (below)
  */
 
 export type GoalMetric = "kcal" | "protein" | "fibre" | "fat" | "carbs";
@@ -36,6 +37,18 @@ const OVER_MODERATE_MAX = 1.15;
  */
 const MINIMUM_ON_TRACK_RATIO = 0.95;
 
+/**
+ * Fat is flagged only when it goes above 35% of the day's calories — the UK
+ * dietary reference value — not against the gram split in the user's targets.
+ * With calories and protein on target, fat and carbs are what is left of the
+ * day, and they trade against each other: a real AI-planned day at 2263 kcal
+ * and 140 g protein, both on track, showed 90 g fat against 74 g as "Well over
+ * target" in red. That day is 36% fat, so it now reads amber, "Over 35% of
+ * calories". Fat under its gram split is not flagged at all.
+ */
+const FAT_MAX_ENERGY_SHARE = 0.35;
+const KCAL_PER_G_FAT = 9;
+
 export const GOAL_STATUS_COLORS = {
   "on-track": "var(--brand-primary)",
   under: "var(--traffic-amber)",
@@ -50,15 +63,16 @@ export const GOAL_STATUS_TEXT_CLASS: Record<GoalStatusKind, string> = {
   "over-high": "text-[var(--traffic-red)]",
 };
 
-function buildStatus(kind: GoalStatusKind): GoalStatus {
+function buildStatus(kind: GoalStatusKind, labelOverride?: string): GoalStatus {
   const label =
-    kind === "on-track"
+    labelOverride ??
+    (kind === "on-track"
       ? "On track"
       : kind === "under"
         ? "↓ Below target"
         : kind === "over-moderate"
           ? "↑ Over target"
-          : "↑ Well over target";
+          : "↑ Well over target");
   return {
     kind,
     label,
@@ -79,8 +93,28 @@ function minimumTargetStatus(ratio: number): GoalStatus {
   return buildStatus("under");
 }
 
-/** Shared status for calorie ring, macro bars, and nutrition dashboard. */
-export function getGoalStatus(metric: GoalMetric, value: number, target: number): GoalStatus {
+function fatShareStatus(fatG: number, kcal: number): GoalStatus {
+  if (!(kcal > 0)) return buildStatus("on-track");
+  return (fatG * KCAL_PER_G_FAT) / kcal > FAT_MAX_ENERGY_SHARE
+    ? buildStatus("over-moderate", "↑ Over 35% of calories")
+    : buildStatus("on-track");
+}
+
+/**
+ * Shared status for calorie ring, macro bars, and nutrition dashboard.
+ * Pass the same day's calories as `context.kcal` for fat; without them fat
+ * falls back to the near-target rule.
+ */
+export function getGoalStatus(
+  metric: GoalMetric,
+  value: number,
+  target: number,
+  context?: { kcal?: number },
+): GoalStatus {
+  if (metric === "fat" && context?.kcal !== undefined && Number.isFinite(value)) {
+    return fatShareStatus(value, context.kcal);
+  }
+
   if (!Number.isFinite(value) || !Number.isFinite(target) || target <= 0) {
     return buildStatus("under");
   }

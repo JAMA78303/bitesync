@@ -138,7 +138,7 @@ export function NutritionDashboard({
 
  <div className={`space-y-3 ${ds.sectionGap}`}>
  {macros.map((m) => {
- const status = getGoalStatus(m.metric, m.value, m.target);
+ const status = getGoalStatus(m.metric, m.value, m.target, { kcal: day?.kcal ?? 0 });
  const safeTarget = m.target > 0 ? m.target : 1;
  return (
  <div key={m.label} className={`${ds.card} ${ds.cardPadding}`}>
