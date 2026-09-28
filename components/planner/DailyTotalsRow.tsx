@@ -2,6 +2,7 @@ import {
   dailyCalorieBand,
 } from "@/lib/planner/calorie-bands";
 import { ds } from "@/lib/ui/classes";
+import { getGoalStatus } from "@/lib/today/goal-status";
 import { sumDayNutritionFromEntries } from "@/lib/planner/weekly-macros";
 import type { MealPlanEntry } from "@/types";
 
@@ -11,7 +12,7 @@ type Props = {
  dailyProteinTarget?: number | null;
 };
 
-function getBarColour(actual: number, target: number): string {
+function getCalorieBarColour(actual: number, target: number): string {
  if (!target) return "bg-[var(--surface-muted)]";
  const { min, max } = dailyCalorieBand(target);
  if (actual >= min && actual <= max) return "bg-[var(--btn-primary-bg)]";
@@ -23,6 +24,18 @@ function getBarColour(actual: number, target: number): string {
  const pct = (actual / target) * 100;
  if (pct < 70) return ds.trafficRed;
  return ds.trafficAmber;
+}
+
+/**
+ * Protein is a minimum, as it is on Today: 95% of target or more is on track,
+ * however far over. This bar used the calorie rule, so 168 g against a 142 g
+ * target showed red here while Today called the same day "On track".
+ */
+function getProteinBarColour(actual: number, target: number): string {
+ if (!target) return "bg-[var(--surface-muted)]";
+ return getGoalStatus("protein", actual, target).kind === "on-track"
+  ? "bg-[var(--btn-primary-bg)]"
+  : ds.trafficAmber;
 }
 
 export function DailyTotalsRow({ entries, dailyCalorieTarget, dailyProteinTarget }: Props) {
@@ -56,13 +69,13 @@ export function DailyTotalsRow({ entries, dailyCalorieTarget, dailyProteinTarget
  <div className="mt-1 w-full space-y-0.5">
  <div className="h-1 overflow-hidden rounded-full bg-[var(--surface-muted)]">
  <div
- className={`h-full rounded-full transition-all duration-300 ${getBarColour(calories, dailyCalorieTarget!)}`}
+ className={`h-full rounded-full transition-all duration-300 ${getCalorieBarColour(calories, dailyCalorieTarget!)}`}
  style={{ width: `${calRatio > 1 ? 100 : calPct}%` }}
  />
  </div>
  <div className="h-1 overflow-hidden rounded-full bg-[var(--surface-muted)]">
  <div
- className={`h-full rounded-full transition-all duration-300 ${getBarColour(protein, dailyProteinTarget!)}`}
+ className={`h-full rounded-full transition-all duration-300 ${getProteinBarColour(protein, dailyProteinTarget!)}`}
  style={{ width: `${proRatio > 1 ? 100 : proPct}%` }}
  />
  </div>
