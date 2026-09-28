@@ -78,7 +78,7 @@ export function TodayDashboard({
  <div className="grid grid-cols-2 gap-x-3 gap-y-4">
  <MacroBar metric="protein" label="Protein" value={totals.protein} target={targets.protein} unit="g" />
  <MacroBar metric="fibre" label="Fibre" value={totals.fibre} target={targets.fibre} unit="g" />
- <MacroBar metric="fat" label="Fat" value={totals.fat} target={targets.fat} unit="g" />
+ <MacroBar metric="fat" label="Fat" value={totals.fat} target={targets.fat} unit="g" kcal={totals.kcal} />
  <MacroBar metric="carbs" label="Carbs" value={totals.carbs} target={targets.carbs} unit="g" />
  </div>
  {/* On mobile /goals sits behind the "More" sheet, so the targets driving every

@@ -6,12 +6,14 @@ type Props = {
  value: number;
  target: number;
  unit: string;
+ /** The same day's calories — fat is judged as a share of them. */
+ kcal?: number;
 };
 
-export function MacroBar({ metric, label, value, target, unit }: Props) {
+export function MacroBar({ metric, label, value, target, unit, kcal }: Props) {
  const safeTarget = target > 0 ? target : 1;
  const progress = Math.min(value / safeTarget, 1);
- const status = getGoalStatus(metric, value, target);
+ const status = getGoalStatus(metric, value, target, { kcal });
 
  return (
  <div className="min-w-0 overflow-hidden">
