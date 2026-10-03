@@ -35,6 +35,9 @@ export default async function AdminLayout({
  <Link href="/admin/macro-recompute" className="text-[var(--text-on-brand-muted)] hover:text-[var(--text-on-brand)]">
  Macro recompute
  </Link>
+ <Link href="/admin/ai-visits" className="text-[var(--text-on-brand-muted)] hover:text-[var(--text-on-brand)]">
+ AI visits
+ </Link>
  <Link href="/planner" className="text-[var(--text-on-brand-muted)] hover:text-[var(--text-on-brand)]">
  ← App
  </Link>

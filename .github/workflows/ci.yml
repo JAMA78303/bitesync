@@ -66,6 +66,9 @@ jobs:
       - name: Auth regression tests
         run: npm run test:auth
 
+      - name: Analytics regression tests
+        run: npm run test:analytics
+
       # Unmatched foods contribute zero to the weekly analysis rather than
       # reporting as unknown, so a coverage gap reads as a deficiency. Renaming
       # "buckwheat groats" to "buckwheat" broke this and nothing caught it.

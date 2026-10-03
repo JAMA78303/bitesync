@@ -1,5 +1,7 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { identifyCrawler } from "@/lib/analytics/aiCrawlers";
+import { recordCrawlerVisit } from "@/lib/analytics/recordCrawlerVisit";
 import {
   isAllowedWithoutEmailConfirmation,
   isEmailConfirmed,
@@ -56,9 +58,16 @@ async function getOnboardingFlags(
   };
 }
 
-export async function proxy(request: NextRequest) {
-  const { user, response } = await updateSession(request);
+export async function proxy(request: NextRequest, event: NextFetchEvent) {
   const path = request.nextUrl.pathname;
+
+  // Record AI assistants and search engines reading the site — in the
+  // background, so the page is not held up. See lib/analytics/aiCrawlers.ts.
+  const userAgent = request.headers.get("user-agent") ?? "";
+  const crawler = identifyCrawler(userAgent);
+  if (crawler) event.waitUntil(recordCrawlerVisit(crawler, path, userAgent));
+
+  const { user, response } = await updateSession(request);
 
   if ((PROTECTED_ROUTES.some((route) => path.startsWith(route)) || path.startsWith(ONBOARDING_ROUTE)) && !user) {
     return NextResponse.redirect(new URL(`/login?next=${path}`, request.url));
