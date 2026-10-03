@@ -4,6 +4,7 @@
  * describing content a visitor cannot see, so these must not be allowed to drift.
  */
 import { FOUNDER } from "@/lib/founder";
+import { SUPPORT_EMAIL } from "@/lib/support";
 export const FAQ_ITEMS = [
  {
  q:"Does BiteSync work on my phone?",
@@ -24,6 +25,10 @@ export const FAQ_ITEMS = [
  {
  q:"Can I cancel my Pro subscription?",
  a:"Yes. Pro renews automatically each month or year until you cancel. Cancel anytime from settings and keep access until the end of the period you've paid for.",
+ },
+ {
+ q:"How do I get help?",
+ a: `Email ${SUPPORT_EMAIL} — it goes straight to ${FOUNDER.name}, who built BiteSync. You can also send feedback from Settings in the app.`,
  },
  {
  q:"Can I use BiteSync outside the UK?",

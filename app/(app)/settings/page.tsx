@@ -9,6 +9,7 @@ import { reconcileBillingSubscriptionFromStripe } from "@/lib/stripe/reconcile-b
 import { getProfile } from "@/lib/supabase/profile";
 import { createClient } from "@/lib/supabase/server";
 import { ds } from "@/lib/ui/classes";
+import { SUPPORT_EMAIL, supportMailto } from "@/lib/support";
 
 export const dynamic ="force-dynamic";
 
@@ -18,6 +19,17 @@ const SETTINGS_GROUPS = [
  items: [
  { icon:"💳", label:"Billing & subscription", href:"/billing" },
  { icon:"🔒", label:"Change password", href:"/reset" },
+ ],
+ },
+ {
+ title:"Help",
+ items: [
+ {
+ icon:"✉️",
+ label:`Contact support · ${SUPPORT_EMAIL}`,
+ href: supportMailto(),
+ external: true,
+ },
  ],
  },
  {
