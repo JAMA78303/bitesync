@@ -61,7 +61,7 @@ export function PaywallModal({ open, onClose, reason }: Props) {
  </div>
 
  <p className="mt-3 text-xs text-[var(--text-on-brand-muted)]">
- Cancel anytime - Secure payment by Stripe
+ Renews automatically every month until you cancel · Cancel anytime · Secure payment by Stripe
  </p>
  </div>
  </DialogContent>

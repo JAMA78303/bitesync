@@ -342,8 +342,11 @@ export function BillingClient({
  : `Upgrade — ${billing ==="monthly" ? `${PRO_MONTHLY_PRICE}/mo` : `${PRO_ANNUAL_PRICE}/yr`}`}
  </Button>
 
+ {/* Say it renews before they pay, not only that they can cancel — UK
+ consumer rules expect automatic renewal to be clear up front. */}
  <p className="mt-3 text-center text-xs text-[var(--text-on-brand-muted)]">
- Cancel anytime · Secure checkout with Stripe
+ Renews automatically every {billing ==="monthly" ?"month" :"year"} until you cancel · Cancel anytime ·
+ Secure checkout with Stripe
  </p>
  </div>
  </div>
