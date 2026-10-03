@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TDEEForm } from "@/components/settings/TDEEForm";
@@ -22,6 +22,8 @@ import {
   firstRunLibraryCount,
 } from "@/lib/onboarding/first-run";
 import { trackFirstRunSkipped, trackFirstRunStepViewed } from "@/lib/analytics/events";
+import { firstRunWeeks } from "@/lib/onboarding/firstWeeks";
+import { toLocalISO } from "@/lib/utils/dates";
 import type { GoalContext } from "@/app/(app)/planner/ai-actions";
 import type { TDEEFormValues } from "@/lib/utils/tdee";
 import { ds } from "@/lib/ui/classes";
@@ -49,6 +51,31 @@ type Props = {
   /** First few recipe names, oldest first, for the step 2 summary. */
   recipePreview?: string[];
 };
+
+const subscribeNever = () => () => {};
+
+/**
+ * The browser's date, or null while rendering on the server. The server runs
+ * on UTC and the user may not, so anything that depends on "today" is read
+ * here after hydration rather than baked into the server HTML.
+ */
+function useLocalDateISO(): string | null {
+  return useSyncExternalStore(subscribeNever, () => toLocalISO(new Date()), () => null);
+}
+
+/** Thursday to Sunday the first plan is next week plus the rest of this one — say so. */
+function lateWeekNoteFor(localISO: string | null): string | null {
+  if (!localISO) return null;
+  const today = new Date(`${localISO}T12:00:00`);
+  const weeks = firstRunWeeks(today);
+  if (!weeks.nextWeekStart) return null;
+  const weekday = today.toLocaleDateString("en-GB", { weekday: "long" });
+  const monday = new Date(`${weeks.nextWeekStart}T12:00:00`).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+  });
+  return `It’s ${weekday}, so your plan is for next week, starting Monday ${monday}. We’ll fill the rest of this week too, so you’ve got meals in the meantime.`;
+}
 
 const busyNoteClass =
   "rounded-xl bg-[var(--surface-brand-subtle)] px-3 py-2 text-sm text-[var(--text-secondary)]";
@@ -89,6 +116,7 @@ export function FirstRunWizard({ profile, isPro, recipeCount, recipePreview = []
   // The ref stops a second tap from starting a second seed.
   const [busy, setBusy] = useState<"step1" | "skip" | null>(null);
   const busyRef = useRef(false);
+  const lateWeekNote = lateWeekNoteFor(useLocalDateISO());
 
   useEffect(() => {
     trackFirstRunStepViewed(step);
@@ -131,7 +159,7 @@ export function FirstRunWizard({ profile, isPro, recipeCount, recipePreview = []
   function handleSkip() {
     runBusy("skip", async () => {
       trackFirstRunSkipped(step);
-      const result = await skipFirstRun(step);
+      const result = await skipFirstRun(step, toLocalISO(new Date()));
       if ("error" in result && result.error) {
         setError(result.error);
         return;
@@ -174,7 +202,7 @@ export function FirstRunWizard({ profile, isPro, recipeCount, recipePreview = []
     setError(null);
     startTransition(async () => {
       try {
-        await generateFirstRunWeekAndGrocery({ goals });
+        await generateFirstRunWeekAndGrocery({ goals, localDate: toLocalISO(new Date()) });
       } catch (err) {
         if (err && typeof err === "object" && "digest" in err) return;
         setError(err instanceof Error ? err.message : "Could not generate your week.");
@@ -376,6 +404,7 @@ export function FirstRunWizard({ profile, isPro, recipeCount, recipePreview = []
                 ? "We’ll generate a full week from your library and build your grocery list."
                 : "We’ll fill your week from your library using smart matching, then build your grocery list. Pro adds one-tap AI weekly plans."}
             </p>
+            {lateWeekNote ? <p className="text-sm text-[var(--text-secondary)]">{lateWeekNote}</p> : null}
             <Button
               type="button"
               onClick={onGenerateWeek}
