@@ -23,7 +23,7 @@ export const FAQ_ITEMS = [
  },
  {
  q:"Can I cancel my Pro subscription?",
- a:"Yes. Cancel anytime from settings and keep access until the current billing period ends.",
+ a:"Yes. Pro renews automatically each month or year until you cancel. Cancel anytime from settings and keep access until the end of the period you've paid for.",
  },
  {
  q:"Can I use BiteSync outside the UK?",

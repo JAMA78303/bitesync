@@ -262,6 +262,9 @@ export default async function LandingPage() {
                 >
                   Upgrade to Pro
                 </Link>
+                <p className="mt-3 text-center text-xs text-[var(--text-on-brand-muted)]">
+                  Renews automatically until you cancel. Cancel anytime.
+                </p>
               </article>
             </div>
           </div>

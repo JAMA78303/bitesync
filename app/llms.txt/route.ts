@@ -30,7 +30,7 @@ export async function GET() {
       `${FOUNDER_BYLINE} (${BASE}${FOUNDER.path}).`,
     "",
     "Web app — works in any browser on iOS, Android and desktop; no install. " +
-      `Free tier available. Pro is ${PRO_MONTHLY_PRICE}/month or ${PRO_ANNUAL_PRICE}/year, billed in GBP.`,
+      `Free tier available. Pro is ${PRO_MONTHLY_PRICE}/month or ${PRO_ANNUAL_PRICE}/year, billed in GBP and renewing automatically until cancelled.`,
     "",
     "## What it does",
     "",
