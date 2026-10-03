@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ds } from "@/lib/ui/classes";
+import { SUPPORT_EMAIL, supportMailto } from "@/lib/support";
 import {
  PRO_ANNUAL_MONTHLY_EQUIVALENT,
  PRO_ANNUAL_PRICE,
@@ -381,6 +382,16 @@ export function BillingClient({
  )}
  </div>
  )}
+
+ <p className="text-center text-xs text-[var(--text-muted)]">
+ Questions about billing or a payment?{" "}
+ <a
+ href={supportMailto("BiteSync billing")}
+ className="font-medium text-[var(--text-link)] underline underline-offset-2"
+ >
+ {SUPPORT_EMAIL}
+ </a>
+ </p>
  </section>
  );
 }

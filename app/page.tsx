@@ -24,6 +24,7 @@ import { faqPageSchema, softwareApplicationSchema } from "@/lib/seo/structuredDa
 import { FAQ_ITEMS } from "@/components/landing/LandingFaq";
 import { loadAllPosts } from "@/content/blog/posts";
 import { FOUNDER } from "@/lib/founder";
+import { SUPPORT_EMAIL, supportMailto } from "@/lib/support";
 
 const LandingDemoFlow = dynamic(
   () => import("@/components/landing/LandingDemoFlow").then((m) => ({ default: m.LandingDemoFlow })),
@@ -409,6 +410,10 @@ export default async function LandingPage() {
             <Link href="/terms" className="hover:underline">
               Terms
             </Link>
+            {" · "}
+            <a href={supportMailto()} className="whitespace-nowrap hover:underline">
+              Help: {SUPPORT_EMAIL}
+            </a>
           </p>
         </div>
       </footer>
