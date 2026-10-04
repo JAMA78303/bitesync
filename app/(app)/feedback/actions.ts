@@ -2,6 +2,8 @@
 
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { sendFeedbackAlert } from "@/lib/feedback/alert";
 import { createClient } from "@/lib/supabase/server";
 import { toUserFacingError } from "@/lib/errors/userFacing";
 import packageJson from "@/package.json";
@@ -37,6 +39,17 @@ export async function submitFeedback(input: {
   if (error) {
     return { error: toUserFacingError(error, "profile", "submitFeedback") };
   }
+
+  // After the response, so a slow or failed email never holds up the form.
+  after(() =>
+    sendFeedbackAlert({
+      message: trimmed,
+      expected: input.expected?.trim() || null,
+      screen: input.screen,
+      userEmail: user.email ?? null,
+      appVersion: packageJson.version,
+    }),
+  );
 
   revalidatePath("/settings");
   return { success: true as const };
