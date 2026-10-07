@@ -337,7 +337,10 @@ export default async function LandingPage() {
                   <Link
                     href={`/blog/${post.slug}`}
                     className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-[var(--text-link)] hover:underline"
-                    aria-label={`Read: ${post.title}`}
+                    // Starts with the visible words, so a voice-control user can say
+                    // "click Read article" (WCAG 2.5.3); the title keeps the three
+                    // links distinguishable for screen readers.
+                    aria-label={`Read article: ${post.title}`}
                   >
                     Read article
                     <ChevronRight className="h-3 w-3" aria-hidden />
