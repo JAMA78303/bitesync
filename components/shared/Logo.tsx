@@ -19,6 +19,9 @@ const ICON_WIDTH = 448;
 const ICON_HEIGHT = 456;
 /** public/bitesync-wordmark-dark.png: the logo's lettering, trimmed to the letters. */
 const WORDMARK_ASPECT = 949 / 249;
+// The "-sm" files are the same artwork made to 3x the largest size shown
+// (the originals are 1450px wide and ~380 KB, which held up the page on
+// phones). The originals stay as the source for scripts/write-brand-icons.mjs.
 
 const LOCKUP_ASPECT = LOCKUP_WIDTH / LOCKUP_HEIGHT;
 
@@ -45,7 +48,7 @@ function IconTile({ px, lazy }: { px: number; lazy: boolean }) {
    style={{ width: tile, height: tile, borderRadius: Math.round(tile * 0.24) }}
   >
    <Image
-    src="/bitesync-icon.png"
+    src="/bitesync-icon-sm.png"
     alt=""
     aria-hidden
     width={iconW}
@@ -80,7 +83,7 @@ export function Logo({ size ="md", variant ="full", href ="/planner", className,
    <>
     {onDark ? null : (
      <Image
-      src="/bitesync-icon.png"
+      src="/bitesync-icon-sm.png"
       alt="BiteSync"
       width={px}
       height={px}
@@ -105,7 +108,7 @@ export function Logo({ size ="md", variant ="full", href ="/planner", className,
    <>
     {onDark ? null : (
      <Image
-      src="/bitesync-logo-full.png"
+      src="/bitesync-logo-full-sm.png"
       alt="BiteSync"
       width={lockupW}
       height={h}
@@ -118,7 +121,7 @@ export function Logo({ size ="md", variant ="full", href ="/planner", className,
     <span className={`${darkShow} items-center`} style={{ gap: Math.round(h * 0.2) }}>
      <IconTile px={h} lazy={lazyDark} />
      <Image
-      src="/bitesync-wordmark-dark.png"
+      src="/bitesync-wordmark-dark-sm.png"
       alt="BiteSync"
       width={wordW}
       height={wordH}
