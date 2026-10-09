@@ -97,7 +97,7 @@ export function PantryAmountEditor({ itemId, name, quantity, unit, onSaved }: Pr
       <button
         type="submit"
         disabled={isPending}
-        className="rounded-lg bg-[var(--brand-action)] px-2.5 py-1 text-2xs font-semibold text-[var(--text-on-brand)] disabled:opacity-50"
+        className="rounded-lg bg-[var(--btn-primary-bg)] px-2.5 py-1 text-2xs font-semibold text-[var(--btn-primary-text)] disabled:opacity-50"
       >
         {isPending ? "Saving…" : "Save"}
       </button>

@@ -19,13 +19,13 @@ export function MacroBar({ metric, label, value, target, unit, kcal }: Props) {
  <div className="min-w-0 overflow-hidden">
  <p className="text-xs font-medium text-[var(--text-muted)]">{label}</p>
  <p className="mt-0.5 truncate text-xs text-[var(--text-muted)]">
- <span className="font-semibold text-[var(--text-secondary)]">{Math.round(value)}</span>
+ <span className="font-display text-sm font-extrabold text-[var(--text-primary)]">{Math.round(value)}</span>
  {" / "}
  {target}
  {unit}
  </p>
  <p className={`text-2xs font-medium leading-tight ${status.textClassName}`}>{status.label}</p>
- <div className="mb-0 mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--surface-muted)]">
+ <div className="mb-0 mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--surface-brand-subtle)]">
  <div
  className="h-full rounded-full transition-all duration-500"
  style={{

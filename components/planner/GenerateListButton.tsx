@@ -31,8 +31,8 @@ export function GenerateListButton({
  variant={onGradient ?"outline" :"default"}
  className={
  onGradient
- ?"h-9 w-full border-[var(--surface-overlay)] bg-[var(--surface-card)] text-sm font-medium !text-[var(--brand-primary)] hover:!bg-[var(--surface-overlay)]/90 disabled:opacity-50 sm:w-auto dark:!text-[var(--brand-primary)] dark:hover:!bg-[var(--surface-overlay)]/90"
- :"h-9 bg-[var(--brand-primary)] text-sm text-[var(--btn-primary-text)] hover:bg-[var(--btn-primary-hover)]"
+ ?"h-11 w-full border-[var(--accent-lime)] !bg-[var(--accent-lime)] text-sm !text-[var(--on-lime)] shadow-[0_8px_22px_rgba(0,0,0,0.14)] hover:brightness-95 disabled:opacity-50 sm:w-auto"
+ :"h-9 bg-[var(--btn-primary-bg)] text-sm text-[var(--btn-primary-text)] hover:bg-[var(--btn-primary-hover)]"
  }
  >
  <ShoppingCart className="mr-2 h-4 w-4" />

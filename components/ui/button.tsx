@@ -21,11 +21,11 @@ export function Button({
  ?"border border-[var(--border-default)] bg-[var(--surface-card)] text-[var(--text-secondary)] hover:bg-[var(--surface-muted)]"
  : variant ==="ghost"
  ?"bg-transparent text-[var(--text-secondary)] hover:bg-[var(--btn-secondary-hover)]"
- :"bg-[var(--brand-sage)] text-[var(--btn-primary-text)] hover:opacity-95";
+ :"bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] hover:bg-[var(--btn-primary-hover)]";
  const sizeClasses =
  size ==="icon" ?"h-9 w-9 p-0" : size ==="sm" ?"h-8 px-3 text-sm" :"h-10 px-4 text-sm";
  const combinedClassName =
- `inline-flex items-center justify-center rounded-md font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${variantClasses} ${sizeClasses} ${className}`.trim();
+ `inline-flex items-center justify-center rounded-xl font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${variantClasses} ${sizeClasses} ${className}`.trim();
 
  if (asChild) {
  const child = Children.only(children);

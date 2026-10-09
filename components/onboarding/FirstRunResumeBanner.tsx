@@ -24,7 +24,7 @@ export function FirstRunResumeBanner({ show, step }: Props) {
         </p>
         <Link
           href="/onboarding"
-          className="inline-flex shrink-0 items-center justify-center rounded-xl bg-[var(--brand-primary)] px-4 py-2 text-sm font-semibold text-[var(--btn-primary-text)]"
+          className="inline-flex shrink-0 items-center justify-center rounded-xl bg-[var(--btn-primary-bg)] px-4 py-2 text-sm font-semibold text-[var(--btn-primary-text)]"
         >
           Continue setup
         </Link>

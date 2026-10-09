@@ -39,12 +39,12 @@ export function AddSlotButton({ day, mealType, dayLabel, mealPlanId, slotIndex =
  type="button"
  onClick={() => setMode("quickadd")}
  aria-label={`Add ${mealType} for ${dayLabel}`}
- className="flex h-full min-h-[64px] w-full items-center justify-center rounded-lg border-2 border-dashed border-[var(--border-default)] text-[var(--text-on-brand-muted)] transition-all duration-150 hover:border-[var(--brand-primary)] hover:bg-[var(--surface-brand-subtle)] hover:text-[var(--brand-primary)] dark:hover:border-[var(--brand-primary)] dark:hover:bg-[var(--surface-brand-subtle)]"
+ className="flex h-full min-h-[64px] w-full items-center justify-center gap-2 rounded-[14px] border-[1.5px] border-dashed border-[var(--border-default)] text-sm font-semibold text-[var(--text-muted)] transition-all duration-150 hover:border-[var(--brand-primary)] hover:bg-[var(--surface-brand-subtle)] hover:text-[var(--brand-primary)] dark:hover:border-[var(--brand-primary)] dark:hover:bg-[var(--surface-brand-subtle)]"
  >
  <Plus className="h-4 w-4" />
  </button>
 
- <div className="absolute inset-0 z-10 hidden flex-col divide-y divide-slate-100 overflow-hidden rounded-lg border border-[var(--border-default)] bg-[var(--surface-card)] shadow-sm group-hover:flex dark:divide-gray-800">
+ <div className="absolute inset-0 z-10 hidden flex-col divide-y divide-[var(--border-subtle)] overflow-hidden rounded-[14px] border border-[var(--border-default)] bg-[var(--surface-card)] shadow-sm group-hover:flex dark:divide-gray-800">
  <button
  type="button"
  onClick={() => setMode("quickadd")}

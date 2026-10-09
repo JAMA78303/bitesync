@@ -1,422 +1,558 @@
 import Link from "next/link";
+import { Newsreader } from "next/font/google";
 import {
+  ArrowRight,
+  BarChart3,
+  CalendarDays,
   Check,
-  ChevronRight,
-  Stethoscope,
-  Shield,
-  Utensils,
+  CircleDollarSign,
+  ClipboardList,
+  Link2,
+  Lock,
+  Package,
+  ShieldCheck,
+  ShoppingBasket,
+  Sparkles,
+  Target,
+  X,
 } from "lucide-react";
-import dynamic from "next/dynamic";
 import { Logo } from "@/components/shared/Logo";
-import { Reveal } from "@/components/landing/Reveal";
-import { LandingMobileNav } from "@/components/landing/LandingMobileNav";
-import { LandingTrustSignals } from "@/components/landing/LandingTrustSignals";
-import { LandingFeatureGrid } from "@/components/landing/LandingFeatureGrid";
-import { LandingTestimonials } from "@/components/landing/LandingTestimonials";
-import {
-  FREE_PRICE,
-  PRO_ANNUAL_MONTHLY_EQUIVALENT,
-  PRO_ANNUAL_PRICE,
-  PRO_MONTHLY_PRICE,
-} from "@/lib/stripe/pricing";
 import { JsonLd } from "@/components/shared/JsonLd";
-import { faqPageSchema, softwareApplicationSchema } from "@/lib/seo/structuredData";
+import { HomeDemo } from "@/components/landing/home/HomeDemo";
+import { HomeFaq } from "@/components/landing/home/HomeFaq";
+import { HomeNav, type HomeNavLink } from "@/components/landing/home/HomeNav";
+import { HomePricing } from "@/components/landing/home/HomePricing";
+import { HomeReveal } from "@/components/landing/home/HomeReveal";
 import { FAQ_ITEMS } from "@/components/landing/LandingFaq";
+import { TESTIMONIALS } from "@/components/landing/LandingTestimonials";
+import { faqPageSchema, softwareApplicationSchema } from "@/lib/seo/structuredData";
 import { loadAllPosts } from "@/content/blog/posts";
-import { FOUNDER } from "@/lib/founder";
+import { FOUNDER, FOUNDER_BYLINE } from "@/lib/founder";
 import { SUPPORT_EMAIL, supportMailto } from "@/lib/support";
+import "./home.css";
 
-const LandingDemoFlow = dynamic(
-  () => import("@/components/landing/LandingDemoFlow").then((m) => ({ default: m.LandingDemoFlow })),
-  {
-    loading: () => (
-      <div className="mx-auto h-80 max-w-6xl animate-pulse rounded-2xl bg-[var(--surface-muted)]" aria-hidden />
-    ),
-  },
-);
+/** Only the headline's italic phrase uses it. */
+const newsreader = Newsreader({
+  variable: "--font-newsreader",
+  subsets: ["latin"],
+  style: ["italic"],
+  weight: ["500"],
+  display: "swap",
+});
 
-const LandingFaq = dynamic(
-  () => import("@/components/landing/LandingFaq").then((m) => ({ default: m.LandingFaq })),
-  { loading: () => <div className="h-48" aria-hidden /> },
-);
-
-const MockPlanner = dynamic(
-  () =>
-    import("@/components/landing/LandingPhoneMockups").then((m) => ({
-      default: m.MockPlanner,
-    })),
-  {
-    loading: () => (
-      <div className="relative z-10 mx-auto h-[320px] w-full max-w-[280px]" aria-hidden />
-    ),
-  },
-);
-
-const NAV_LINKS = [
+const NAV_LINKS: readonly HomeNavLink[] = [
   { href: "#how-it-works", label: "How it works" },
   { href: "#features", label: "Features" },
   { href: "#pricing", label: "Pricing" },
   { href: "#faq", label: "FAQ" },
   { href: "#blog", label: "Blog" },
   { href: "/about", label: "About" },
-] as const;
-
-// Only what the product enforces. Targets moved to Free on 14 September, and
-// no history limit exists in the code, so "2 weeks of history" / "Unlimited
-// history" described a difference nobody would ever experience.
-const FREE_FEATURES = [
-  "Personal calorie & protein targets",
-  "Weekly meal planner",
-  "Calorie & protein tracking",
-  "Grocery list generation",
-  "Recipe import from URL",
-  "Up to 10 recipes",
-] as const;
-
-const PRO_FEATURES = [
-  "Everything in Free",
-  "Unlimited recipes",
-  "AI weekly meal plans",
-  "AI-written recipes",
-  "All macros + micronutrient analysis",
-  "Priority support",
-] as const;
+];
 
 /** The landing strip shows the newest few; the full list lives at /blog. */
 const FEATURED_POST_COUNT = 3;
 
+function formatPostDate(iso: string): string {
+  return new Date(`${iso}T00:00:00`).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+/** The example card in the hero. Illustrative figures, described for screen readers as an example. */
+function HeroPlannerExample() {
+  return (
+    <div
+      className="mock-wrap"
+      role="img"
+      aria-label="Example of a planned week in BiteSync: Wednesday at 1,690 of 1,850 calories, with lunch and dinner planned"
+    >
+      <div className="mock-float mock-float--top" aria-hidden>
+        <span className="mock-float-icon">
+          <Target className="h-[17px] w-[17px]" />
+        </span>
+        <span>
+          <b>On track</b>
+          <small>Daily targets balanced</small>
+        </span>
+      </div>
+      <div className="mock" aria-hidden>
+        <div className="mock-head">
+          <div>
+            <span className="mock-eyebrow">WEEKLY PLAN</span>
+            <h3>May 12–18</h3>
+          </div>
+          <span className="mock-action">
+            <CalendarDays className="h-[18px] w-[18px]" />
+          </span>
+        </div>
+        <div className="mock-days">
+          {[
+            ["M", 12],
+            ["T", 13],
+            ["W", 14],
+            ["T", 15],
+            ["F", 16],
+            ["S", 17],
+            ["S", 18],
+          ].map(([d, n]) => (
+            <span key={n} className={`mock-day${n === 14 ? " on" : ""}`}>
+              <span>{d}</span>
+              <b>{n}</b>
+            </span>
+          ))}
+        </div>
+        <div className="mock-goal">
+          <div className="mock-goal-copy">
+            <span>Wednesday&apos;s goal</span>
+            <b>
+              1,690 <small>/ 1,850 kcal</small>
+            </b>
+          </div>
+          <div className="mock-ring">
+            <span>91%</span>
+          </div>
+        </div>
+        <div className="mock-macros">
+          <span>
+            <i />
+            Protein <b>112g</b>
+          </span>
+          <span>
+            <i className="carbs" />
+            Carbs <b>148g</b>
+          </span>
+          <span>
+            <i className="fat" />
+            Fat <b>54g</b>
+          </span>
+        </div>
+        <div className="mock-label">
+          <span>Today&apos;s meals</span>
+          <span>2 planned</span>
+        </div>
+        {[
+          { type: "LUNCH", name: "Chicken quinoa bowl", info: "485 kcal · 42g protein", warm: false },
+          { type: "DINNER", name: "Pesto pasta primavera", info: "620 kcal · 28g protein", warm: true },
+        ].map((m) => (
+          <div key={m.name} className="mock-meal">
+            <div className={`mock-art${m.warm ? " warm" : ""}`}>
+              {m.warm ? <Package className="h-[19px] w-[19px]" /> : <Sparkles className="h-[19px] w-[19px]" />}
+            </div>
+            <div className="mock-meal-copy">
+              <small>{m.type}</small>
+              <b>{m.name}</b>
+              <span>{m.info}</span>
+            </div>
+            <span className="mock-check">
+              <Check className="h-3.5 w-3.5" />
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="mock-float mock-float--bottom" aria-hidden>
+        <span className="mock-float-icon warm">
+          <ShoppingBasket className="h-[17px] w-[17px]" />
+        </span>
+        <span>
+          <b>Grocery list ready</b>
+          <small>One list from your week</small>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+const PROOF = [
+  { Icon: ShieldCheck, title: "Built by a dietitian", detail: "Targets and portions from clinical practice" },
+  { Icon: BarChart3, title: "UK food data", detail: "Nutrition from CoFID, the UK's official tables" },
+  { Icon: Lock, title: "Private by default", detail: "No ads, data never sold" },
+  { Icon: CircleDollarSign, title: "Free to start", detail: "No card needed" },
+] as const;
+
+const COMPARE_BEFORE = [
+  "Work out what to eat, every day",
+  "Find out you're short on protein at 9pm",
+  "A shopping trip for each recipe",
+  "Calories only — gaps in iron or vitamin D go unseen",
+] as const;
+
+const COMPARE_AFTER = [
+  "The whole week decided in one go",
+  "Every day sized to your protein and calories before you start",
+  "One merged list for the week",
+  "Micronutrient gaps flagged across the week",
+] as const;
+
+const FEATURES = [
+  {
+    Icon: Target,
+    title: "Personal calorie & protein targets",
+    body: "Worked out from your weight, activity and whether you want to lose, maintain or build.",
+  },
+  {
+    Icon: Sparkles,
+    title: "AI weekly meal plans",
+    body: "Fill the whole week from your own recipes in seconds, sized to your calorie and protein targets.",
+    pro: true,
+  },
+  {
+    Icon: ClipboardList,
+    title: "Automatic nutrition",
+    body: "Calories, protein, carbs, fat and fibre calculated from your ingredients, using UK food data.",
+  },
+  {
+    Icon: Package,
+    title: "Pantry-aware shopping",
+    body: "Tell it what's in the cupboard and the grocery list skips it — buy less, waste less.",
+  },
+  {
+    Icon: Link2,
+    title: "Recipe import",
+    body: "Paste a link from a recipe site and get the ingredients and nutrition in seconds.",
+  },
+] as const;
+
 export default async function LandingPage() {
-  // Was a third hand-maintained copy of the post metadata, complete with a
-  // "4 min read" on a three-paragraph post. Now the same registry as the
-  // routes and sitemap, so publishing a post surfaces it here automatically.
+  // Same registry as the blog routes and sitemap, so publishing a post
+  // surfaces it here automatically.
   const featuredPosts = (await loadAllPosts()).slice(0, FEATURED_POST_COUNT);
+  const quote = TESTIMONIALS[0];
 
   return (
-    <div className="min-h-screen bg-[var(--surface-page)]">
+    <div className={`lp ${newsreader.variable}`}>
       <JsonLd data={softwareApplicationSchema()} />
       <JsonLd data={faqPageSchema(FAQ_ITEMS)} />
-      <nav className="sticky top-0 z-50 border-b border-[var(--border-subtle)]/80 bg-[var(--surface-overlay)]/90 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
-          <Logo size="sm" href="/" />
-          <div className="hidden items-center gap-6 md:flex">
-            {NAV_LINKS.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                className="text-sm text-[var(--text-secondary)] transition-colors hover:text-[var(--text-link)]"
-              >
-                {link.label}
-              </a>
-            ))}
-          </div>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/login"
-              className="hidden rounded-lg px-3 py-2 text-sm text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] sm:block"
-            >
-              Sign in
-            </Link>
-            <Link
-              href="/signup"
-              className="rounded-lg bg-[var(--btn-primary-bg)] px-4 py-2 text-sm font-medium text-[var(--btn-primary-text)] transition-colors hover:bg-[var(--btn-primary-hover)]"
-            >
-              Get started free
-            </Link>
-            <LandingMobileNav links={NAV_LINKS} />
-          </div>
-        </div>
-      </nav>
+      <HomeNav links={NAV_LINKS} />
 
       <main id="main-content">
-        <header className="relative overflow-hidden bg-[image:var(--hero-gradient)] px-4 pt-14 pb-10 text-center text-[var(--text-on-brand)] sm:pt-20 sm:pb-28">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 opacity-[0.04]"
-            style={{
-              backgroundImage:
-                "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E\")",
-              backgroundSize: "200px 200px",
-            }}
-          />
-          <div
-            aria-hidden
-            className="hero-glow pointer-events-none absolute -top-32 -left-24 h-96 w-96 rounded-full bg-[var(--brand-sage-accent)]/25 blur-3xl"
-          />
-          <div
-            aria-hidden
-            className="hero-glow pointer-events-none absolute -right-24 top-1/3 h-80 w-80 rounded-full bg-[var(--header-stat-accent)]/15 blur-3xl"
-            style={{ animationDelay: "-7s" }}
-          />
-          <div className="relative z-10 mx-auto max-w-3xl">
-            <h1 className="mb-4 text-4xl leading-tight font-bold tracking-tight sm:text-5xl lg:text-6xl">
-              Your week of meals, planned to your macros.
-            </h1>
-            <p className="mx-auto mb-8 max-w-xl text-base leading-relaxed text-[var(--text-on-brand-muted)] sm:text-lg">
-              Plan your week, hit your protein, calorie, and micronutrient targets, and get one grocery
-              list — automatically.
-            </p>
-            <Link
-              href="/signup"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--surface-card)] px-6 py-3 text-sm font-semibold text-[var(--text-link)] shadow-lg transition-all hover:-translate-y-0.5 hover:bg-[var(--surface-brand-subtle)] hover:shadow-xl sm:w-auto"
-            >
-              Start planning for free
-              <ChevronRight className="h-4 w-4" aria-hidden />
-            </Link>
-            {/* One line. There were three stacked lines of small print here —
-                privacy, a policy link with account deletion, then "evidence-based
-                · free" — and the phone mockup below was hidden on phones, so a
-                mobile visitor saw text and fine print and no product. */}
-            <p className="mt-4 text-xs text-[var(--text-on-brand-subtle)]">
-              Free to start · No card needed ·{" "}
-              <Link href="/privacy" className="underline underline-offset-2 hover:text-[var(--text-on-brand)]">
-                Private by default
-              </Link>
-            </p>
-            <div className="mt-10 flex justify-center">
-              <div className="relative z-10 w-full max-w-[300px] drop-shadow-2xl sm:max-w-[410px]">
-                <MockPlanner />
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* Straight after the hero while there is one quote: on its own band
-            further down, a single card read as sparse. Backgrounds from here
-            alternate white / grey so sections don't run together. */}
-        <section id="testimonials" className="scroll-mt-24 bg-[var(--surface-card)] py-12 sm:py-16">
-          <Reveal>
-            <LandingTestimonials />
-          </Reveal>
-        </section>
-
-        <section id="how-it-works" className="scroll-mt-24 bg-[var(--surface-muted)] py-16 sm:py-20">
-          <Reveal>
-            <LandingDemoFlow />
-          </Reveal>
-        </section>
-
-        <section id="features" className="scroll-mt-24 bg-[var(--surface-card)] py-16 sm:py-20">
-          <Reveal>
-            <LandingFeatureGrid />
-          </Reveal>
-        </section>
-
-        <section id="pricing" className="scroll-mt-24 bg-[var(--surface-muted)] py-16 sm:py-20">
-          <div className="mx-auto max-w-6xl px-4">
-            <Reveal>
-              <div className="mb-12 text-center">
-                <h2 className="mb-3 text-2xl font-bold text-[var(--text-primary)] sm:text-3xl text-balance">
-                  Simple, honest pricing
-                </h2>
-                <p className="text-sm text-[var(--text-muted)]">Start free. Upgrade when you want the full picture.</p>
-              </div>
-            </Reveal>
-            <div className="mx-auto grid max-w-3xl grid-cols-1 gap-6 sm:grid-cols-2">
-              <article className="rounded-2xl border border-[var(--border-default)] bg-[var(--surface-card)] p-6">
-                <h3 className="mb-1 font-bold text-[var(--text-primary)]">Free</h3>
-                <p className="text-3xl font-bold text-[var(--text-primary)]">
-                  {FREE_PRICE} <span className="text-sm font-normal text-[var(--text-muted)]">forever</span>
-                </p>
-                <ul className="mb-8 mt-6 space-y-3">
-                  {FREE_FEATURES.map((item) => (
-                    <li key={item} className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                      <Check className="h-4 w-4 shrink-0 text-[var(--text-link)]" aria-hidden />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href="/signup"
-                  className="block w-full rounded-xl border border-[var(--border-default)] py-2.5 text-center text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-muted)]"
-                >
-                  Get started free
+        <section className="hero">
+          <div className="hero-dot hero-dot--one" aria-hidden />
+          <div className="hero-dot hero-dot--two" aria-hidden />
+          <div className="hero-dot hero-dot--three" aria-hidden />
+          <div className="wrap hero-grid">
+            <div className="hero-copy">
+              <h1>
+                A week of meals,
+                <br />
+                <em>planned to your macros.</em>
+              </h1>
+              <p className="hero-lead">
+                Bring your recipes, nutrition targets and grocery list together — so eating well takes less
+                thinking.
+              </p>
+              <div className="hero-actions">
+                <Link className="btn btn-primary" href="/signup">
+                  Plan my week free <ArrowRight className="h-[18px] w-[18px]" aria-hidden />
                 </Link>
-              </article>
-              <article className="relative rounded-2xl bg-[var(--brand-primary)] p-6 text-[var(--text-on-brand)] shadow-lg">
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full border border-[var(--brand-primary)] bg-[var(--surface-card)] px-3 py-1 text-xs font-semibold text-[var(--brand-primary)]">
-                  Recommended
+                <a className="hero-text-link" href="#how-it-works">
+                  See how it works <span aria-hidden>↓</span>
+                </a>
+              </div>
+              <div className="hero-trust">
+                <span className="seal" aria-hidden>
+                  RD
                 </span>
-                <h3 className="mb-1 font-bold">Pro</h3>
-                <p className="text-3xl font-bold">
-                  {PRO_MONTHLY_PRICE}
-                  <span className="text-base font-normal text-[var(--text-on-brand-muted)]">/month</span>
-                </p>
-                <div className="mt-2 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-                  <span className="rounded-full bg-amber-300 px-2 py-0.5 text-2xs font-semibold text-amber-950">
-                    SAVE 30%
-                  </span>
-                  <span className="text-xs text-[var(--text-on-brand-muted)]">
-                    {PRO_ANNUAL_PRICE}/year · works out to {PRO_ANNUAL_MONTHLY_EQUIVALENT}/mo
-                  </span>
+                <span>
+                  <b>Built by a registered dietitian</b>
+                  <small>
+                    Free to start · No card needed ·{" "}
+                    <Link href="/privacy">Private by default</Link>
+                  </small>
+                </span>
+              </div>
+            </div>
+            <HeroPlannerExample />
+          </div>
+        </section>
+
+        <section className="proof" aria-label="Why BiteSync">
+          <div className="wrap">
+            {PROOF.map(({ Icon, title, detail }) => (
+              <div key={title} className="proof-item">
+                <Icon className="h-[22px] w-[22px]" aria-hidden />
+                <div>
+                  <strong>{title}</strong>
+                  <small>{detail}</small>
                 </div>
-                <ul className="mb-8 mt-6 space-y-3">
-                  {PRO_FEATURES.map((item) => (
-                    <li key={item} className="flex items-center gap-2 text-sm text-[var(--text-on-brand)]">
-                      <Check className="h-4 w-4 shrink-0 text-[var(--text-on-brand-muted)]" aria-hidden />
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="block" id="how-it-works">
+          <div className="wrap">
+            <div className="split-head lp-reveal">
+              <div>
+                <p className="kicker">How it works</p>
+                <h2 className="h2">From plan to plate in four steps</h2>
+              </div>
+              <p className="body">
+                Set your targets once. BiteSync connects planning, shopping, daily tracking and micronutrient
+                analysis — the full picture, not just calories.
+              </p>
+            </div>
+            <HomeDemo />
+          </div>
+        </section>
+
+        <section className="metrics band" aria-label="BiteSync in numbers">
+          <div className="wrap">
+            <div className="metric">
+              <b>2,886</b>
+              <span>UK foods with official nutrition data</span>
+            </div>
+            <div className="metric">
+              <b>12</b>
+              <span>vitamins &amp; minerals checked against UK reference values</span>
+            </div>
+            <div className="metric">
+              <b>7 days</b>
+              <span>planned in one go, to your targets</span>
+            </div>
+            <div className="metric">
+              <b>£0</b>
+              <span>to start — no card needed</span>
+            </div>
+          </div>
+        </section>
+
+        <section className="block" id="features">
+          <div className="wrap">
+            <div className="center-head lp-reveal">
+              <p className="kicker">Features</p>
+              <h2 className="h2">Built for people with a nutrition goal</h2>
+              <p className="body">Everything else you need to plan, shop and eat to your targets.</p>
+            </div>
+            <div className="features lp-reveal">
+              <article className="feature feature--wide">
+                <div>
+                  <span className="f-ico" aria-hidden>
+                    <BarChart3 className="h-5 w-5" />
+                  </span>
+                  <h3>
+                    See what your week is missing <span className="pro-chip">PRO</span>
+                  </h3>
+                  <p>
+                    Iron, iodine, vitamin D and nine more, checked across the whole week against UK reference
+                    values. Something no calorie counter shows you.
+                  </p>
+                </div>
+                <div className="mini-chart" aria-hidden>
+                  <div>
+                    <i className="low" style={{ height: 72 }} />
+                    Iron
+                  </div>
+                  <div>
+                    <i className="low" style={{ height: 64 }} />
+                    Iodine
+                  </div>
+                  <div>
+                    <i className="low" style={{ height: 38 }} />
+                    Vit D
+                  </div>
+                  <div>
+                    <i style={{ height: 96 }} />
+                    Calcium
+                  </div>
+                </div>
+              </article>
+              {FEATURES.map(({ Icon, title, body, ...rest }) => (
+                <article key={title} className="feature">
+                  <span className="f-ico" aria-hidden>
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <h3>
+                    {title}
+                    {"pro" in rest && rest.pro ? <span className="pro-chip">PRO</span> : null}
+                  </h3>
+                  <p>{body}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="block block--flush" id="story">
+          <div className="wrap">
+            <div className="story lp-reveal">
+              <div className="story-copy">
+                <p className="kicker">Why I built it</p>
+                <h2 className="h2">Knowing your goal isn&apos;t the hard part</h2>
+                <p>
+                  As a dietitian, there&apos;s one problem I see more than any other. People know the goal they
+                  want to reach, but not the steps that get them there. Planning meals in advance closes that gap —
+                  you can see your intake before you eat it, track it as you go, and change it while there&apos;s
+                  still time.
+                </p>
+                <p>
+                  <Link href={FOUNDER.path}>Read why I built BiteSync →</Link>
+                </p>
+                <div className="signoff">
+                  <span className="seal" aria-hidden>
+                    RD
+                  </span>
+                  <div>
+                    <b>{FOUNDER.name}</b>
+                    <span>{FOUNDER.credential}, founder of BiteSync</span>
+                  </div>
+                </div>
+              </div>
+              {quote ? (
+                <div>
+                  <p className="quote-label">From people using it</p>
+                  <figure className="quote-card">
+                    <blockquote>“{quote.quote}”</blockquote>
+                    <figcaption>
+                      <span className="avatar" aria-hidden>
+                        {quote.name.charAt(0)}
+                      </span>
+                      {quote.name}
+                      {quote.context ? `, ${quote.context}` : null}
+                    </figcaption>
+                  </figure>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </section>
+
+        <section className="block block--flush">
+          <div className="wrap">
+            <div className="center-head lp-reveal">
+              <p className="kicker">The difference</p>
+              <h2 className="h2">A plan, not another log</h2>
+            </div>
+            <div className="compare lp-reveal">
+              <div className="compare-card compare-card--before">
+                <h3>Counting as you go</h3>
+                <ul>
+                  {COMPARE_BEFORE.map((item) => (
+                    <li key={item}>
+                      <span className="compare-ico" aria-hidden>
+                        <X className="h-3.5 w-3.5" strokeWidth={2.5} />
+                      </span>
                       {item}
                     </li>
                   ))}
                 </ul>
-                <Link
-                  href="/signup"
-                  className="block w-full rounded-xl bg-[var(--surface-card)] py-2.5 text-center text-sm font-semibold text-[var(--text-link)] hover:bg-[var(--surface-brand-subtle)]"
-                >
-                  Upgrade to Pro
-                </Link>
-                <p className="mt-3 text-center text-xs text-[var(--text-on-brand-muted)]">
-                  Renews automatically until you cancel. Cancel anytime.
-                </p>
-              </article>
+              </div>
+              <div className="compare-card compare-card--after">
+                <h3>Planning with BiteSync</h3>
+                <ul>
+                  {COMPARE_AFTER.map((item) => (
+                    <li key={item}>
+                      <span className="compare-ico" aria-hidden>
+                        <Check className="h-3.5 w-3.5" strokeWidth={2.75} />
+                      </span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* A four-paragraph "Privacy & security" section sat here, on top of
-            privacy lines in the hero, this row and the closing call to action.
-            The detail lives on /privacy and in the FAQ ("Is my data private?"). */}
-        <section className="border-y border-[var(--border-subtle)] bg-[var(--surface-card)] py-12">
-          <div className="mx-auto grid max-w-4xl grid-cols-1 gap-8 px-4 sm:grid-cols-3">
-            <article className="text-center">
-              <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--surface-brand-subtle)]">
-                <Shield className="h-6 w-6 text-[var(--brand-primary)]" aria-hidden />
-              </span>
-              <h3 className="mb-1 text-base font-semibold text-[var(--text-primary)]">Evidence-based targets</h3>
-              <p className="text-sm leading-relaxed text-[var(--text-muted)]">
-                TDEE and macro goals grounded in established nutrition science.
+        <section className="block band" id="pricing">
+          <HomePricing />
+        </section>
+
+        <section className="block" id="faq">
+          <div className="wrap faq">
+            <div className="faq-head">
+              <p className="kicker">FAQ</p>
+              <h2 className="h2">Questions, answered</h2>
+              <p className="body" style={{ marginTop: 16 }}>
+                Something else? Email <a href={supportMailto()}>{SUPPORT_EMAIL}</a>.
               </p>
-            </article>
-            <article className="text-center">
-              <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--surface-brand-subtle)]">
-                <Stethoscope className="h-6 w-6 text-[var(--brand-primary)]" aria-hidden />
-              </span>
-              <h3 className="mb-1 text-base font-semibold text-[var(--text-primary)]">Built by a dietitian</h3>
-              <p className="text-sm leading-relaxed text-[var(--text-muted)]">
-                Designed by {FOUNDER.name}, a registered dietitian, not assembled from a calorie database.{" "}
-                <Link href={FOUNDER.path} className="font-medium whitespace-nowrap text-[var(--text-link)] hover:underline">
-                  Why I built it
-                </Link>
-              </p>
-            </article>
-            <article className="text-center">
-              <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--surface-brand-subtle)]">
-                <Utensils className="h-6 w-6 text-[var(--brand-primary)]" aria-hidden />
-              </span>
-              <h3 className="mb-1 text-base font-semibold text-[var(--text-primary)]">Your data stays yours</h3>
-              <p className="text-sm leading-relaxed text-[var(--text-muted)]">
-                Recipes and plans are private to your account. Payments via Stripe.
-              </p>
-            </article>
+            </div>
+            <HomeFaq />
           </div>
         </section>
 
-        <div className="bg-[var(--surface-muted)]">
-          <LandingFaq />
-        </div>
-
-        <section id="blog" className="scroll-mt-24 bg-[var(--surface-card)] py-16 sm:py-20">
-          <div className="mx-auto max-w-6xl px-4">
-            <div className="mb-10 text-center">
-              <h2 className="text-2xl font-bold text-[var(--text-primary)] sm:text-3xl text-balance">From the BiteSync blog</h2>
-              <p className="mt-2 text-sm text-[var(--text-muted)]">
-                Nutrition science and practical planning tips from the BiteSync team.
-              </p>
+        {/* The homepage's links are how search engines and AI assistants reach the articles. */}
+        <section className="block band" id="blog">
+          <div className="wrap">
+            <div className="split-head lp-reveal">
+              <div>
+                <p className="kicker">From the blog</p>
+                <h2 className="h2">Nutrition science, made practical</h2>
+              </div>
+              <p className="body">Evidence-based articles on planning, portions and the nutrients most apps miss.</p>
             </div>
-            {/* A swipeable row on phones, where three stacked cards ran to a
-                screen and a half; a three-column grid from tablet up. */}
-            <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-3 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden">
+            <div className="posts lp-reveal">
               {featuredPosts.map((post) => (
-                <article
-                  key={post.slug}
-                  className="group flex w-[82%] shrink-0 snap-center flex-col rounded-2xl border border-[var(--border-default)] bg-[var(--surface-card)] p-5 transition-shadow hover:shadow-md sm:w-auto"
-                >
-                  <p className="text-xs font-medium text-[var(--text-link)]">{post.category}</p>
-                  <h3 className="mt-2 text-base font-semibold text-[var(--text-primary)] group-hover:text-[var(--text-link)]">
+                <article key={post.slug} className="post">
+                  <p className="post-cat">{post.category}</p>
+                  <h3>
                     <Link href={`/blog/${post.slug}`}>{post.title}</Link>
                   </h3>
-                  <p className="mt-2 flex-1 text-sm leading-relaxed text-[var(--text-muted)]">{post.description}</p>
-                  <Link
-                    href={`/blog/${post.slug}`}
-                    className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-[var(--text-link)] hover:underline"
-                    aria-label={`Read: ${post.title}`}
-                  >
-                    Read article
-                    <ChevronRight className="h-3 w-3" aria-hidden />
+                  <p className="post-desc">{post.description}</p>
+                  <p className="post-meta">
+                    <time dateTime={post.datePublished}>{formatPostDate(post.datePublished)}</time>
+                    {post.reviewedBy === "founder" ? ` · Reviewed by ${FOUNDER_BYLINE}` : null}
+                  </p>
+                  {/* Starts with the visible words, so a voice-control user can say
+                      "click Read article" (WCAG 2.5.3); the title keeps the three
+                      links distinguishable for screen readers. */}
+                  <Link className="post-more" href={`/blog/${post.slug}`} aria-label={`Read article: ${post.title}`}>
+                    Read article →
                   </Link>
                 </article>
               ))}
             </div>
             {/* The index is how a crawler finds posts that aren't featured here. */}
-            <p className="mt-8 text-center">
-              <Link
-                href="/blog"
-                className="inline-flex items-center gap-1 text-sm font-medium text-[var(--text-link)] hover:underline"
-              >
-                All posts
-                <ChevronRight className="h-4 w-4" aria-hidden />
+            <p className="all-posts">
+              <Link className="btn btn-outline btn-sm" href="/blog">
+                All posts →
               </Link>
             </p>
           </div>
         </section>
 
-        <section className="relative overflow-hidden bg-[image:var(--hero-gradient)] px-4 py-16 text-center text-[var(--text-on-brand)] sm:py-20">
-          <div
-            aria-hidden
-            className="hero-glow pointer-events-none absolute -top-24 left-1/4 h-72 w-72 rounded-full bg-[var(--brand-sage-accent)]/20 blur-3xl"
-          />
-          <Reveal>
-            <div className="relative z-10 mx-auto max-w-2xl">
-              <h2 className="mb-4 text-2xl font-bold sm:text-3xl text-balance">Hit your macros without the spreadsheet</h2>
-              <p className="mb-8 text-sm text-[var(--text-on-brand-muted)] sm:text-base">
-                Plan your week, shop once, and track every day — free to start, no credit card required.
-              </p>
-              <Link
-                href="/signup"
-                className="inline-flex items-center gap-2 rounded-xl bg-[var(--surface-card)] px-8 py-3 text-sm font-semibold text-[var(--text-link)] shadow-lg transition-all hover:-translate-y-0.5 hover:bg-[var(--surface-brand-subtle)] hover:shadow-xl"
-              >
-                Get started free
-                <ChevronRight className="h-4 w-4" aria-hidden />
+        <section className="block block--last">
+          <div className="wrap">
+            <div className="cta lp-reveal">
+              <h2 className="h2">Hit your macros without the spreadsheet</h2>
+              <p>Plan your week, shop once and track every day — free to start, no credit card required.</p>
+              <Link className="btn btn-light" href="/signup">
+                Get started free <ArrowRight className="h-[18px] w-[18px]" aria-hidden />
               </Link>
-              <LandingTrustSignals />
+              <p className="small-print">
+                Private by default — no ads, data never sold. <Link href="/privacy">Privacy policy</Link>
+              </p>
             </div>
-          </Reveal>
+          </div>
         </section>
       </main>
 
-      <footer className="border-t border-[var(--border-subtle)] bg-[var(--surface-muted)] py-10">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-4">
-          <div className="flex w-full flex-col items-center justify-between gap-6 sm:flex-row">
+      <footer className="footer">
+        <div className="wrap">
+          <div className="footer-top">
             <Logo size="sm" href="/" />
-            <nav className="flex flex-wrap items-center justify-center gap-6">
+            <nav aria-label="Footer">
               {NAV_LINKS.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  className="text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
-                >
+                <a key={link.href} href={link.href}>
                   {link.label}
                 </a>
               ))}
-              <Link href="/login" className="text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)]">
-                Sign in
-              </Link>
+              <Link href="/login">Sign in</Link>
             </nav>
           </div>
-          <p className="text-center text-xs text-[var(--text-muted)]">
-            © {new Date().getFullYear()} BiteSync ·{" "}
-            <Link href="/privacy" className="font-medium hover:underline">
-              Privacy policy
-            </Link>
-            {" · "}
-            <Link href="/terms" className="hover:underline">
-              Terms
-            </Link>
-            {" · "}
-            <a href={supportMailto()} className="whitespace-nowrap hover:underline">
-              Help: {SUPPORT_EMAIL}
-            </a>
-          </p>
+          <div className="footer-bottom">
+            <span>© {new Date().getFullYear()} BiteSync</span>
+            <span className="flex flex-wrap gap-x-5 gap-y-2">
+              <Link href="/privacy">Privacy policy</Link>
+              <Link href="/terms">Terms</Link>
+              <a href={supportMailto()}>Help: {SUPPORT_EMAIL}</a>
+            </span>
+          </div>
         </div>
       </footer>
+
+      <HomeReveal />
     </div>
   );
 }

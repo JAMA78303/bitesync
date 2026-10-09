@@ -12,6 +12,8 @@ type Props = {
  quantity: number;
  unit: string;
  is_checked: boolean;
+ /** A row inside a list card (the grocery page) rather than a card of its own. */
+ inList?: boolean;
 };
 
 export function GroceryItem({
@@ -20,6 +22,7 @@ export function GroceryItem({
  quantity,
  unit,
  is_checked,
+ inList = false,
 }: Props) {
  const [checked, setChecked] = useState(is_checked);
  const [isPending, startTransition] = useTransition();
@@ -61,7 +64,11 @@ export function GroceryItem({
 
   return (
  <div
- className={`flex items-center gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3.5 shadow-sm transition-opacity ${
+ className={`flex items-center gap-3 transition-opacity ${
+ inList
+ ? "px-4 py-3 md:px-5"
+ : "rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3.5 shadow-sm"
+ } ${
  checked ?"opacity-40" :""
  } ${isPending ?"opacity-50" :""}`}
  >
@@ -71,11 +78,11 @@ export function GroceryItem({
  disabled={isPending}
  aria-pressed={checked}
  aria-label={`${checked ?"Uncheck" :"Check"} ${name}`}
- className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border-2 transition-all ${
- checked ?"border-[var(--brand-primary)] bg-[var(--brand-primary)]" :"border-[var(--border-default)]"
+ className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md border-2 transition-all ${
+ checked ?"border-[var(--btn-primary-bg)] bg-[var(--btn-primary-bg)]" :"border-[var(--border-default)]"
  }`}
  >
- {checked ? <Check className="h-3 w-3 text-[var(--text-on-brand)]" strokeWidth={3} /> : null}
+ {checked ? <Check className="h-3 w-3 text-[var(--btn-primary-text)]" strokeWidth={3} /> : null}
  </button>
 
  <button
@@ -85,7 +92,7 @@ export function GroceryItem({
  className="min-w-0 flex-1 text-left"
  >
  <p
- className={`truncate text-sm font-medium ${
+ className={`line-clamp-2 text-sm font-medium ${
  checked ?"line-through text-[var(--text-muted)]" :"text-[var(--text-primary)]"
  }`}
  >

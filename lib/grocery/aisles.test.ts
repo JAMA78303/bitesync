@@ -1,0 +1,122 @@
+import assert from "node:assert/strict";
+import { aisleFor, groupByAisle } from "./aisles";
+
+const expect: Record<string, string> = {
+  // Names seen in real recipes
+  "almond milk": "protein",
+  almonds: "nuts",
+  apple: "produce",
+  avocado: "produce",
+  banana: "produce",
+  "beef mince": "protein",
+  "black pepper": "cupboard",
+  blueberries: "produce",
+  broccoli: "produce",
+  "brown rice": "carbs",
+  buckwheat: "carbs",
+  carrot: "produce",
+  cashews: "nuts",
+  "chia seeds": "nuts",
+  "chicken breast": "protein",
+  chickpeas: "pulses",
+  cod: "protein",
+  "cooking oil": "cupboard",
+  "cottage cheese": "protein",
+  courgette: "produce",
+  cucumber: "produce",
+  "dried herbs": "cupboard",
+  egg: "protein",
+  "feta cheese": "protein",
+  "greek yogurt": "protein",
+  "green beans": "produce",
+  "ground cinnamon": "cupboard",
+  honey: "cupboard",
+  "jasmine rice cooked": "carbs",
+  kale: "produce",
+  lentils: "pulses",
+  milk: "protein",
+  "mixed herbs": "cupboard",
+  mushroom: "produce",
+  "oat milk": "protein",
+  oats: "carbs",
+  "olive oil": "cupboard",
+  onion: "produce",
+  orange: "produce",
+  "peanut butter": "nuts",
+  peas: "produce",
+  pepper: "produce",
+  "pitted dates": "produce",
+  "porridge oats": "carbs",
+  potato: "carbs",
+  "pumpkin seeds": "nuts",
+  quinoa: "carbs",
+  "red pepper": "produce",
+  rice: "carbs",
+  "rice cakes": "carbs",
+  salmon: "protein",
+  salt: "cupboard",
+  shrimp: "protein",
+  spinach: "produce",
+  strawberries: "produce",
+  "sweet potato": "produce",
+  tofu: "protein",
+  tomato: "produce",
+  "turkey breast": "protein",
+  walnuts: "nuts",
+  "wholemeal bread": "carbs",
+  // The tricky ones
+  "garlic powder": "cupboard",
+  garlic: "produce",
+  "chicken stock": "cupboard",
+  "fish sauce": "cupboard",
+  "soy sauce": "cupboard",
+  "kidney beans": "pulses",
+  "black beans": "pulses",
+  "baked beans": "pulses",
+  "butter beans": "pulses",
+  butter: "protein",
+  "dried red lentils": "pulses",
+  "ground beef": "protein",
+  "egg noodles": "carbs",
+  "rice vinegar": "cupboard",
+  "sesame oil": "cupboard",
+  "coconut milk": "cupboard",
+  "chopped tomatoes": "cupboard",
+  "tomato puree": "cupboard",
+  "lemon juice": "cupboard",
+  lemon: "produce",
+  "fresh coriander": "produce",
+  "chilli flakes": "cupboard",
+  "red chilli": "produce",
+  hummus: "pulses",
+  "sweetcorn": "produce",
+  "spring onions": "produce",
+  "tinned tuna": "protein",
+  water: "other",
+  "": "other",
+};
+
+for (const [name, aisle] of Object.entries(expect)) {
+  assert.equal(aisleFor(name), aisle, `"${name}" should be ${aisle}, got ${aisleFor(name)}`);
+}
+
+// Case and spacing don't matter.
+assert.equal(aisleFor("  Chicken   Breast "), "protein");
+
+// Groups come back in aisle order, empty ones left out, original order kept within a group.
+const grouped = groupByAisle([
+  { name: "olive oil" },
+  { name: "spinach" },
+  { name: "chicken breast" },
+  { name: "banana" },
+]);
+assert.deepEqual(
+  grouped.map((g) => [g.id, g.items.map((i) => i.name)]),
+  [
+    ["produce", ["spinach", "banana"]],
+    ["protein", ["chicken breast"]],
+    ["cupboard", ["olive oil"]],
+  ],
+);
+
+console.log("grocery aisles tests passed");

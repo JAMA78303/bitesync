@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { ChefHat, Heart } from "lucide-react";
+import { ChefHat, Heart, Link2, Search, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const ImportRecipeModal = dynamic(
@@ -226,41 +226,64 @@ export function RecipesPageClient({
 
  return (
  <div className={ds.mobilePage}>
- <div className={ds.gradientHeader}>
- <div className="mb-4 flex items-center justify-between gap-2">
- <h1 className={ds.pageTitle}>My Recipes</h1>
+ <div className={`${ds.gradientHeader} flex flex-col gap-5 md:flex-row md:items-center md:justify-between`}>
+ <div className="min-w-0">
+ <span className={ds.kicker}>{showArchived ? "OUT OF YOUR PLANNER" : "YOUR LIBRARY"}</span>
+ <h1 className={`mb-1.5 ${ds.pageTitle}`}>{showArchived ? "Archived recipes" : "My Recipes"}</h1>
+ <p className={ds.pageSubtitle}>
+ {showArchived
+ ? "Restore any of these from its page."
+ : `${recipeCount} ${recipeCount === 1 ? "recipe" : "recipes"} saved and ready to plan`}
+ </p>
  <Link
  href={showArchived ?"/recipes" :"/recipes?view=archived"}
- className="rounded-full bg-[var(--surface-overlay)]/20 px-3 py-1 text-xs font-medium text-[var(--btn-primary-text)] backdrop-blur-sm"
+ className="mt-3 inline-flex min-h-8 items-center rounded-full border border-white/25 bg-white/10 px-3 text-xs font-semibold text-[var(--text-on-header)] hover:border-white/50"
  >
- {showArchived ?"Active" :"Archived"}
+ {showArchived ?"← Back to my recipes" :"View archived"}
  </Link>
  </div>
+ {!showArchived ? (
+ <div className="flex w-full shrink-0 gap-2.5 md:w-auto">
+ <button
+ type="button"
+ onClick={() => setShowImport(true)}
+ disabled={isPending}
+ className={`${ds.heroGhostBtn} flex-1 md:flex-none`}
+ >
+ <Link2 className="h-4 w-4" aria-hidden />
+ Import<span className="hidden sm:inline">&nbsp;from URL</span>
+ </button>
+ <Link href="/recipes/new" className={`${ds.heroPrimaryBtn} flex-1 md:flex-none`}>
+ + Add recipe
+ </Link>
+ </div>
+ ) : null}
+ </div>
 
- <div className={ds.headerSearchWrap}>
- <svg className="h-4 w-4 shrink-0 text-[var(--text-on-brand)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
- <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
- </svg>
+ <div className={`${ds.mobileGutter} ${ds.overlap} ${ds.pageContent} space-y-4`}>
+ <div className="space-y-3">
+ <label className="flex min-h-12 items-center gap-2.5 rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] px-4 shadow-[var(--card-shadow)] focus-within:border-[var(--brand-action)]">
+ <Search className="h-4 w-4 shrink-0 text-[var(--text-muted)]" aria-hidden />
+ <span className="sr-only">Search recipes</span>
  <input
  type="search"
  value={search}
  onChange={(e) => setSearch(e.target.value)}
- placeholder="Search recipes..."
- data-force-light
- className="flex-1 bg-transparent text-sm text-[var(--btn-primary-text)] outline-none placeholder:text-[var(--text-on-brand-muted)]"
+ placeholder="Search recipes…"
+ className="min-w-0 flex-1 bg-transparent py-3 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]"
  />
- </div>
-
- <div className="scrollbar-hide mt-3 flex gap-2 overflow-x-auto pb-1">
+ </label>
+ <div className="scrollbar-hide -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
  {FILTER_TAGS.map((tag) => (
  <button
  key={tag}
  type="button"
  onClick={() => setActiveFilter(tag)}
- className={`flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+ aria-pressed={activeFilter === tag}
+ className={`min-h-10 flex-shrink-0 rounded-xl border px-3.5 text-sm font-semibold transition-colors ${
  activeFilter === tag
- ?"bg-[var(--surface-card)] text-[var(--brand-primary)] shadow-sm"
- :"border border-[var(--surface-overlay)]/65 bg-[var(--surface-overlay)]/45 text-[var(--text-on-brand)] shadow-sm hover:bg-[var(--surface-overlay)]/55"
+ ?"border-[var(--btn-primary-bg)] bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)]"
+ :"border-[var(--border-default)] bg-[var(--surface-card)] text-[var(--text-secondary)] hover:border-[var(--brand-primary)]"
  }`}
  >
  {tag}
@@ -270,50 +293,38 @@ export function RecipesPageClient({
  type="button"
  onClick={() => setActiveFilter("Favourites")}
  aria-pressed={activeFilter ==="Favourites"}
- className={`flex flex-shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+ className={`flex min-h-10 flex-shrink-0 items-center gap-1.5 rounded-xl border px-3.5 text-sm font-semibold transition-colors ${
  activeFilter ==="Favourites"
- ?"bg-[var(--surface-card)] text-[var(--brand-primary)] shadow-sm"
- :"border border-[var(--surface-overlay)]/65 bg-[var(--surface-overlay)]/45 text-[var(--text-on-brand)] shadow-sm hover:bg-[var(--surface-overlay)]/55"
+ ?"border-[var(--btn-primary-bg)] bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)]"
+ :"border-[var(--border-default)] bg-[var(--surface-card)] text-[var(--text-secondary)] hover:border-[var(--brand-primary)]"
  }`}
  >
  <Heart
- className={`h-3.5 w-3.5 ${
- activeFilter ==="Favourites" ?"fill-[var(--traffic-red)] text-[var(--traffic-red)]" :"text-[var(--text-on-brand)]"
- }`}
+ className={`h-3.5 w-3.5 ${activeFilter ==="Favourites" ?"fill-[var(--traffic-red)] text-[var(--traffic-red)]" :""}`}
  strokeWidth={2}
+ aria-hidden
  />
  Favourites
  </button>
  </div>
  </div>
 
- <div className={`${ds.mobileGutter} ${ds.overlap} ${ds.pageContent} space-y-4`}>
  {!showArchived ? (
  <div className="space-y-3">
- <div className="flex gap-3">
- <Link href="/recipes/new" className={`${ds.card} flex-1 py-3 text-center ${ds.cardTitle}`}>
- <span className="text-[var(--brand-primary)]">+ </span>
- Add recipe
- </Link>
- <button
- type="button"
- onClick={() => setShowImport(true)}
- disabled={isPending}
- className={`${ds.card} flex-1 py-3 text-center ${ds.cardTitle} disabled:opacity-60`}
- >
- <span className="text-[var(--brand-primary)]">🔗 </span>
- Import URL
- </button>
- </div>
  <button
  type="button"
  onClick={() => setShowFillLibrary(true)}
  disabled={isPending || !canFillLibrary}
  title={fillLibraryBlockedMessage ?? undefined}
- className={`${ds.card} w-full py-3 text-center ${ds.cardTitle} disabled:cursor-not-allowed disabled:opacity-60`}
+ className={`${ds.card} flex w-full items-center gap-3 p-4 text-left transition-colors hover:border-[var(--brand-primary)] disabled:cursor-not-allowed disabled:opacity-60`}
  >
- <span className="text-[var(--brand-primary)]">✨ </span>
- Fill my library
+ <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--surface-brand-subtle)] text-[var(--brand-primary)]">
+ <Sparkles className="h-5 w-5" aria-hidden />
+ </span>
+ <span className="min-w-0 flex-1">
+ <span className={`block ${ds.cardTitle}`}>Fill my library</span>
+ <span className="block text-xs text-[var(--text-muted)]">Recipes matched to your targets and diet</span>
+ </span>
  </button>
  {!canFillLibrary && fillLibraryBlockedMessage ? (
  <p className="text-center text-xs text-[var(--semantic-warn-text)]">{fillLibraryBlockedMessage}</p>
@@ -383,7 +394,7 @@ export function RecipesPageClient({
  </div>
  ) : null}
 
- <div className="space-y-3">
+ <div className={filtered.length === 0 ? "space-y-3" : "grid gap-3 md:grid-cols-2 xl:grid-cols-3"}>
  {filtered.length === 0 ? (
  listRecipes.length === 0 && !showArchived ? (
  <EmptyState

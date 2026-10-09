@@ -131,7 +131,7 @@ export function RecipeSlotCard({
  const cardInner =
  variant ==="grid" ? (
  <div
- className={`card-soft flex min-h-[88px] min-w-0 w-full flex-col rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-2 pr-7 ${
+ className={`card-soft flex min-h-[88px] min-w-0 w-full flex-col rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] p-2 pr-7 ${
  isPending ?"opacity-50" :""
  }`}
  >
@@ -163,7 +163,7 @@ export function RecipeSlotCard({
  </div>
  ) : (
  <div
- className={`card-soft flex items-start gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3 ${
+ className={`card-soft flex items-start gap-3 rounded-[14px] border border-[var(--border-default)] bg-[var(--surface-card)] p-3.5 transition-colors hover:border-[var(--brand-primary)] ${
  isPending ?"opacity-50" :""
  }`}
  >
@@ -204,7 +204,7 @@ export function RecipeSlotCard({
 
  {!isQuickAdd ? (
  <svg
- className="mt-1 h-4 w-4 flex-shrink-0 text-[var(--text-muted)]"
+ className="h-4 w-4 flex-shrink-0 self-center text-[var(--text-muted)]"
  fill="none"
  viewBox="0 0 24 24"
  stroke="currentColor"

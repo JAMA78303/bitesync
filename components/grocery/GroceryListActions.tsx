@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Share2, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import { DaySelectorModal } from "@/components/planner/DaySelectorModal";
 import { useToast } from "@/components/ui/use-toast";
 import {
@@ -17,20 +16,46 @@ import {
 } from "@/components/ui/alert-dialog";
 import { deleteGroceryList } from "@/lib/supabase/grocery-actions";
 import type { MealType } from "@/types";
+import { ds } from "@/lib/ui/classes";
 
 type Props = {
  mealPlanId: string;
  weekStart: string;
  filledDays: number[];
  filledMealTypes: MealType[];
+ /** Plain-text list of what's still to buy; no Share button when there's nothing. */
+ shareText?: string | null;
 };
 
-export function GroceryListActions({ mealPlanId, weekStart, filledDays, filledMealTypes }: Props) {
+export function GroceryListActions({ mealPlanId, weekStart, filledDays, filledMealTypes, shareText }: Props) {
  const [showSelector, setShowSelector] = useState(false);
  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
  const [isPending, startTransition] = useTransition();
  const { toast } = useToast();
  const router = useRouter();
+
+ /**
+ * The phone's share sheet where there is one (WhatsApp, Messages, Notes…);
+ * otherwise copy, so it can be pasted anywhere. Cancelling the sheet is not
+ * an error.
+ */
+ async function handleShare() {
+ if (!shareText) return;
+ if (typeof navigator.share === "function") {
+ try {
+ await navigator.share({ title: "Grocery list", text: shareText });
+ return;
+ } catch (err) {
+ if (err instanceof DOMException && err.name === "AbortError") return;
+ }
+ }
+ try {
+ await navigator.clipboard.writeText(shareText);
+ toast({ title: "Grocery list copied", description: "Paste it into a message, a note or an email." });
+ } catch {
+ toast({ title: "Couldn't share the list", description: "Your browser blocked it. Try again.", variant: "destructive" });
+ }
+ }
 
  function handleDelete() {
  startTransition(async () => {
@@ -47,15 +72,21 @@ export function GroceryListActions({ mealPlanId, weekStart, filledDays, filledMe
 
  return (
  <>
- <div className="flex items-center gap-2">
- <Button type="button" variant="outline" className="h-8 text-xs" onClick={() => setShowSelector(true)}>
- <Pencil className="mr-1.5 h-3.5 w-3.5" />
+ <div className="flex flex-wrap items-center gap-2.5">
+ {shareText ? (
+ <button type="button" className={`${ds.heroPrimaryBtn} w-full sm:w-auto`} onClick={() => void handleShare()}>
+ <Share2 className="h-4 w-4" aria-hidden />
+ Share list
+ </button>
+ ) : null}
+ <button type="button" className={`${ds.heroGhostBtn} flex-1 sm:flex-none`} onClick={() => setShowSelector(true)}>
+ <Pencil className="h-3.5 w-3.5" aria-hidden />
  Edit list
- </Button>
- <Button type="button" variant="outline" className="h-8 text-xs text-[var(--semantic-error-text)]" onClick={() => setShowDeleteConfirm(true)}>
- <Trash2 className="mr-1.5 h-3.5 w-3.5" />
- Delete
- </Button>
+ </button>
+ <button type="button" className={`${ds.heroGhostBtn} flex-1 sm:flex-none`} onClick={() => setShowDeleteConfirm(true)}>
+ <Trash2 className="h-3.5 w-3.5" aria-hidden />
+ Delete list
+ </button>
  </div>
 
  <DaySelectorModal

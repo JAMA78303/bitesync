@@ -40,11 +40,12 @@ export default async function TargetsGoalsPage() {
  return (
  <div className={`${ds.mobilePage} ${ds.pageContent}`}>
  <div className={ds.gradientHeaderCompact}>
- <Link href="/goals" className={`mb-2 inline-block text-sm font-medium ${ds.pageSubtitle}`}>
+ <Link href="/goals" className={`mb-3 inline-flex min-h-8 items-center text-sm font-semibold ${ds.pageSubtitle} hover:text-[var(--text-on-header)]`}>
  ← Nutrition &amp; goals
  </Link>
- <h1 className={ds.pageTitle}>Calorie &amp; macro targets</h1>
- <p className={`mt-0.5 ${ds.pageSubtitle}`}>Based on your body stats and goal</p>
+ <span className={ds.kicker}>YOUR DAILY GOAL</span>
+ <h1 className={`mb-1.5 ${ds.pageTitle}`}>Calorie &amp; macro targets</h1>
+ <p className={ds.pageSubtitle}>Based on your body stats and goal</p>
  </div>
  <div className={`${ds.mobileGutter} ${ds.overlap} space-y-4 pt-2`}>
  <div className={`${ds.card} ${ds.cardPadding}`}>

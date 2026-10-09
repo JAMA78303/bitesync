@@ -108,24 +108,29 @@ export function BillingClient({
  }
 
  return (
- <section className="mx-auto max-w-2xl space-y-6 px-0 pb-24 sm:px-1 md:pb-8">
- <header className="space-y-1">
- <h1 className="text-2xl font-semibold text-[var(--text-primary)]">Billing</h1>
- <p className="text-sm text-[var(--text-muted)]">
- Subscription, Pro benefits, and what&apos;s next
- </p>
+ <div className={ds.pageContent}>
+ <header className={`${ds.gradientHeader} flex flex-col gap-4 md:flex-row md:items-center md:justify-between`}>
+ <div>
+ <span className={ds.kicker}>YOUR PLAN</span>
+ <h1 className={`mb-1.5 ${ds.pageTitle}`}>Billing</h1>
+ <p className={ds.pageSubtitle}>Subscription, Pro benefits, and what&apos;s next</p>
+ </div>
+ <span className="inline-flex self-start rounded-full bg-[var(--accent-lime)] px-3.5 py-2 font-display text-xs font-bold uppercase tracking-[0.06em] text-[var(--on-lime)] md:self-center">
+ {isPro ? "Pro · active" : "Free plan"}
+ </span>
  </header>
+ <section className={`${ds.mobileGutter} mx-auto max-w-2xl space-y-6`}>
 
  {/* Pro AI tools — visible to everyone (solid bg: Tailwind v4 uses bg-linear-* not bg-gradient-*) */}
- <div className="rounded-2xl border border-dashed border-[var(--semantic-warn-border)] bg-[var(--semantic-warn-bg)] p-5 shadow-sm ring-1 ring-[var(--semantic-warn-border)]/50">
+ <div className="rounded-[20px] border border-[var(--border-default)] bg-[var(--surface-brand-subtle)] p-5 md:p-6">
  <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
- <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--brand-sage)] text-[var(--text-on-brand)] shadow-sm">
+ <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--green-deep)] text-[var(--accent-lime)] shadow-sm">
  <Sparkles className="h-6 w-6" aria-hidden />
  </div>
  <div className="min-w-0 flex-1 space-y-2">
  <div className="flex flex-wrap items-center gap-2">
- <p className="font-semibold text-[var(--text-primary)]">AI-assisted planning</p>
- <span className="rounded-full bg-amber-200/90 px-2 py-0.5 text-2xs font-semibold uppercase tracking-wide text-amber-950 dark:bg-amber-800/80 dark:text-amber-50">
+ <p className="font-display text-base font-extrabold tracking-[-0.01em] text-[var(--text-primary)]">AI-assisted planning</p>
+ <span className="rounded-full bg-[var(--accent-lime)] px-2 py-0.5 text-2xs font-bold uppercase tracking-wide text-[var(--on-lime)]">
  Pro · beta
  </span>
  </div>
@@ -393,5 +398,6 @@ export function BillingClient({
  </a>
  </p>
  </section>
+ </div>
  );
 }

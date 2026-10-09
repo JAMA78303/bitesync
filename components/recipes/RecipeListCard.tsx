@@ -66,7 +66,7 @@ export function RecipeListCard({
  }
 
  return (
- <div className={`${ds.card} ${ds.cardPadding} relative flex items-center gap-3`}>
+ <div className={`${ds.card} ${ds.cardPadding} relative flex items-center gap-3 transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-[var(--brand-primary)]`}>
  <Link
  href={`/recipes/${recipe.id}`}
  className="flex min-w-0 flex-1 items-center gap-3 transition-shadow hover:opacity-95"
@@ -81,7 +81,7 @@ export function RecipeListCard({
  {dietTag}
  </span>
  ) : null}
- <p className={`${ds.cardTitle} truncate`}>{recipe.name}</p>
+ <p className={`${ds.cardTitle} line-clamp-2`}>{recipe.name}</p>
  <div className="mt-1.5 flex flex-wrap items-center gap-3">
  {recipe.kcal != null ? (
  <span className="flex items-baseline gap-1">

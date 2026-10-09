@@ -70,8 +70,9 @@ export function NutritionDashboard({
  return (
  <div className={ds.mobilePage}>
  <header className={ds.gradientHeader}>
- <h1 className={`${ds.pageTitle} mb-1`}>Nutrition</h1>
- <p className={`mb-4 ${ds.pageSubtitle}`}>Weekly averages vs your daily targets</p>
+ <span className={ds.kicker}>THE FULL PICTURE</span>
+ <h1 className={`${ds.pageTitle} mb-1.5`}>Weekly Nutrition</h1>
+ <p className={`mb-5 ${ds.pageSubtitle}`}>Weekly averages vs your daily targets</p>
  <div className="mb-4">{weekNav}</div>
  <p className={`mb-2 text-2xs font-semibold uppercase tracking-wider ${ds.headerStatLabel}`}>
  Weekly average
@@ -120,7 +121,7 @@ export function NutritionDashboard({
  onClick={() => setSelectedDay(d.dateISO)}
  className={`flex-1 rounded-xl py-2 text-center transition-all ${
  selectedDay === d.dateISO
- ?"bg-[var(--brand-action)] text-[var(--text-on-brand)]"
+ ?"bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)]"
  :"text-[var(--text-muted)] hover:bg-[var(--surface-muted)]"
  }`}
  >

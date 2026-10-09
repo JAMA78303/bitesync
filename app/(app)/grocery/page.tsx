@@ -11,6 +11,8 @@ import { ManualGroceryAdd } from "@/components/grocery/ManualGroceryAdd";
 import { GroceryListActions } from "@/components/grocery/GroceryListActions";
 import { MEAL_TYPES } from "@/types";
 import { ds } from "@/lib/ui/classes";
+import { groupByAisle } from "@/lib/grocery/aisles";
+import { groceryShareText } from "@/lib/grocery/shareText";
 
 type Props = {
  searchParams: Promise<{ week?: string; plan?: string }>;
@@ -76,12 +78,14 @@ export default async function GroceryPage({ searchParams }: Props) {
  const filledDays = Array.from(new Set((entries ?? []).map((entry) => entry.day_of_week))).sort((a, b) => a - b);
  const mealTypeSet = new Set((entries ?? []).map((entry) => entry.meal_type));
  const filledMealTypes = MEAL_TYPES.filter((mealType) => mealTypeSet.has(mealType));
+ const toBuy = groceryItems.filter((item) => !item.is_checked);
  const headerActions = (
  <GroceryListActions
  mealPlanId={mealPlanId}
  weekStart={weekStartISO}
  filledDays={filledDays}
  filledMealTypes={filledMealTypes}
+ shareText={toBuy.length ? groceryShareText(subtitle, toBuy) : null}
  />
  );
 
@@ -104,12 +108,24 @@ export default async function GroceryPage({ searchParams }: Props) {
  <div className={`${ds.mobilePage} ${ds.pageContent}`}>
  <GroceryHeader subtitle={subtitle} total={total} checked={checked} actions={headerActions} />
  {allDone ? (
- <div className={`-mt-2 ${ds.mobileGutter}`}>
+ <div className={`mb-3 ${ds.mobileGutter}`}>
  <GroceryDoneState />
  </div>
  ) : null}
  <div className={`${ds.mobileGutter} ${ds.overlap} space-y-2`}>
- {uncheckedItems.map((item) => (
+ {uncheckedItems.length > 0 ? (
+ <div className={`${ds.card} overflow-hidden`}>
+ {/* Grouped by food group, which is also roughly how a supermarket is laid out. */}
+ {groupByAisle(uncheckedItems).map((group) => (
+ <section key={group.id} aria-label={group.label} className="border-t border-[var(--border-subtle)] first:border-t-0">
+ <h2 className="flex items-baseline justify-between px-4 pb-1.5 pt-4 font-display text-[11px] font-extrabold uppercase tracking-[0.1em] text-[var(--brand-primary)] md:px-5">
+ {group.label}
+ <span className="font-sans text-[11px] font-semibold normal-case tracking-normal text-[var(--text-muted)]">
+ {group.items.length} {group.items.length === 1 ? "item" : "items"}
+ </span>
+ </h2>
+ <div className="divide-y divide-[var(--border-subtle)]">
+ {group.items.map((item) => (
  <GroceryItem
  key={item.id}
  id={item.id}
@@ -117,15 +133,20 @@ export default async function GroceryPage({ searchParams }: Props) {
  quantity={item.quantity}
  unit={item.unit}
  is_checked={false}
+ inList
  />
  ))}
+ </div>
+ </section>
+ ))}
+ </div>
+ ) : null}
  {checkedItems.length > 0 ? (
  <>
- <div className="pb-1 pt-4">
- <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">
+ <div className={`${ds.card} mt-4 divide-y divide-[var(--border-subtle)] overflow-hidden`}>
+ <p className="px-4 pb-2 pt-4 font-display text-[11px] font-extrabold uppercase tracking-[0.1em] text-[var(--text-muted)] md:px-5">
  In your basket ({checkedItems.length})
  </p>
- </div>
  {checkedItems.map((item) => (
  <GroceryItem
  key={item.id}
@@ -134,8 +155,10 @@ export default async function GroceryPage({ searchParams }: Props) {
  quantity={item.quantity}
  unit={item.unit}
  is_checked={true}
+ inList
  />
  ))}
+ </div>
             <LeftoverSuggestionsPanel mealPlanId={mealPlanId} checkedCount={checkedItems.length} />
  </>
  ) : null}

@@ -6,6 +6,19 @@ import {
  toggleDietarySelection,
 } from "@/lib/dietary/constants";
 import { saveDietaryPreferenceKeys } from "@/lib/supabase/profile-actions";
+import { Beef, Fish, Leaf, MilkOff, MoonStar, Sprout, Utensils, WheatOff, type LucideIcon } from "lucide-react";
+
+/** Line icons in place of the emoji in DIETARY_PREFERENCE_OPTIONS. */
+const DIET_ICONS: Record<string, LucideIcon> = {
+ no_preference: Utensils,
+ vegetarian: Leaf,
+ vegan: Sprout,
+ pescatarian: Fish,
+ meat_eater: Beef,
+ gluten_free: WheatOff,
+ dairy_free: MilkOff,
+ halal: MoonStar,
+};
 
 type Props = {
  initialSelected: string[];
@@ -88,7 +101,17 @@ export function DietaryPreferencesPicker({
  :"border-[var(--border-subtle)] bg-[var(--surface-card)] hover:border-[var(--border-default)]"
  }`}
  >
- <span className="w-7 text-center text-xl">{pref.icon}</span>
+ <span
+ className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+ isSelected ?"bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)]" :"bg-[var(--surface-brand-subtle)] text-[var(--brand-primary)]"
+ }`}
+ aria-hidden
+ >
+ {(() => {
+ const Icon = DIET_ICONS[pref.key] ?? Utensils;
+ return <Icon className="h-[18px] w-[18px]" strokeWidth={1.8} />;
+ })()}
+ </span>
  <span
  className={`flex-1 text-sm font-medium ${
  isSelected ?"text-[var(--brand-primary)]" :"text-[var(--text-secondary)]"
@@ -99,12 +122,12 @@ export function DietaryPreferencesPicker({
  <div
  className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 ${
  isSelected
- ?"border-[var(--brand-primary)] bg-[var(--brand-primary)] border-[var(--brand-primary)]"
+ ?"border-[var(--btn-primary-bg)] bg-[var(--btn-primary-bg)]"
  :"border-[var(--border-default)]"
  }`}
  >
  {isSelected ? (
- <svg className="h-3 w-3 text-[var(--text-on-brand)]" fill="none" viewBox="0 0 12 12" aria-hidden>
+ <svg className="h-3 w-3 text-[var(--btn-primary-text)]" fill="none" viewBox="0 0 12 12" aria-hidden>
  <path
  d="M10 3L5 8.5 2 5.5"
  stroke="currentColor"
@@ -130,7 +153,7 @@ export function DietaryPreferencesPicker({
  type="button"
  onClick={handleSave}
  disabled={isPending || (completeOnboarding && selected.length === 0)}
- className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[var(--brand-primary)] px-6 text-sm font-medium text-[var(--btn-primary-text)] transition-opacity hover:bg-[var(--btn-primary-hover)] disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-[var(--brand-primary)]"
+ className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[var(--btn-primary-bg)] px-6 text-sm font-medium text-[var(--btn-primary-text)] transition-opacity hover:bg-[var(--btn-primary-hover)] disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-[var(--brand-primary)]"
  >
  {buttonLabel}
  {completeOnboarding ? (

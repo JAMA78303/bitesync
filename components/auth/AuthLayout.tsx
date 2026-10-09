@@ -16,7 +16,9 @@ export function AuthLayout({ children, mode, error, success }: Props) {
  return (
  <div className="flex min-h-screen flex-col bg-gradient-to-b from-[var(--header-from)] to-[var(--header-to)]">
  <div className="flex flex-col items-center justify-center px-4 pt-20 pb-8">
- <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--surface-card)] shadow-lg">
+ {/* A light tile in both themes, like an app icon: the icon's navy needs a
+     light background, and the artwork stays exactly as designed. */}
+ <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#fffdf8] shadow-lg">
  <BiteSyncLogoMark className="h-8 w-8" />
  </div>
  <h1 className="text-2xl font-extrabold text-[var(--text-on-brand)]">BiteSync</h1>
