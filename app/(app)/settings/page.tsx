@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { CreditCard, FileText, KeyRound, Mail, ShieldCheck, Target } from "lucide-react";
+import { RowIcon } from "@/components/ui/RowIcon";
 import { logout } from "@/app/(app)/settings/actions";
 import { DeleteAccountSection } from "@/components/settings/DeleteAccountSection";
 import { SettingsThemeRow } from "@/components/settings/SettingsThemeRow";
@@ -17,15 +19,15 @@ const SETTINGS_GROUPS = [
  {
  title:"Account",
  items: [
- { icon:"💳", label:"Billing & subscription", href:"/billing" },
- { icon:"🔒", label:"Change password", href:"/reset" },
+ { icon: CreditCard, label:"Billing & subscription", href:"/billing" },
+ { icon: KeyRound, label:"Change password", href:"/reset" },
  ],
  },
  {
  title:"Help",
  items: [
  {
- icon:"✉️",
+ icon: Mail,
  label:`Contact support · ${SUPPORT_EMAIL}`,
  href: supportMailto(),
  external: true,
@@ -35,8 +37,8 @@ const SETTINGS_GROUPS = [
  {
  title:"About",
  items: [
- { icon:"📋", label:"Privacy policy", href:"/privacy" },
- { icon:"📄", label:"Terms of service", href:"/terms" },
+ { icon: ShieldCheck, label:"Privacy policy", href:"/privacy" },
+ { icon: FileText, label:"Terms of service", href:"/terms" },
  ],
  },
 ] as const;
@@ -75,21 +77,22 @@ export default async function SettingsPage() {
 
  return (
  <div className={ds.mobilePage}>
- <div className={`${ds.gradientHeader} pb-10`}>
- <h1 className={ds.pageTitle}>Settings</h1>
- <p className={`mt-0.5 ${ds.pageSubtitle}`}>{email}</p>
+ <div className={ds.gradientHeader}>
+ <span className={ds.kicker}>YOUR ACCOUNT</span>
+ <h1 className={`mb-1.5 ${ds.pageTitle}`}>Settings</h1>
+ <p className={ds.pageSubtitle}>Profile, preferences, billing and support.</p>
  </div>
 
- <div className={`${ds.mobileGutter} -mt-6 space-y-4 ${ds.pageContent}`}>
+ <div className={`${ds.mobileGutter} space-y-4 ${ds.pageContent}`}>
  <div className={`${ds.card} mb-4 flex items-center gap-4 ${ds.cardPadding}`}>
- <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-[var(--brand-primary)] text-xl font-bold text-[var(--text-on-brand)]">
+ <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[var(--green-deep)] font-display text-xl font-bold text-white dark:bg-[var(--accent-lime)] dark:text-[var(--on-lime)]">
  {initial}
  </div>
  <div className="min-w-0 flex-1">
  <p className="truncate text-sm font-bold text-[var(--text-primary)]">{email}</p>
  <span
  className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
- isPro ?"bg-[var(--brand-primary)] text-[var(--text-on-brand)]" :"bg-[var(--surface-muted)] text-[var(--text-muted)]"
+ isPro ?"bg-[var(--accent-lime)] text-[var(--on-lime)]" :"bg-[var(--surface-brand-subtle)] text-[var(--brand-primary)]"
  }`}
  >
  {isPro ?"✦ Pro" :"Free plan"}
@@ -110,9 +113,9 @@ export default async function SettingsPage() {
  href="/goals"
  className={`${ds.card} flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-[var(--surface-muted)] `}
  >
- <span className="w-7 text-center text-lg">🎯</span>
+ <RowIcon Icon={Target} />
  <span className="flex-1">
- <span className="block text-sm font-medium text-[var(--text-secondary)]">Nutrition &amp; goals</span>
+ <span className="block text-sm font-semibold text-[var(--text-primary)]">Nutrition &amp; goals</span>
  <span className="text-xs text-[var(--text-muted)]">Dietary preferences and calorie targets</span>
  </span>
  <Chevron />
@@ -136,8 +139,8 @@ export default async function SettingsPage() {
  href={item.href}
  className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-[var(--surface-muted)]"
  >
- <span className="w-7 text-center text-lg">{item.icon}</span>
- <span className="flex-1 text-sm font-medium text-[var(--text-secondary)]">
+ <RowIcon Icon={item.icon} />
+ <span className="flex-1 text-sm font-semibold text-[var(--text-primary)]">
  {item.label}
  </span>
  <Chevron />
@@ -147,15 +150,15 @@ export default async function SettingsPage() {
  href={item.href}
  className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-[var(--surface-muted)]"
  >
- <span className="w-7 text-center text-lg">{item.icon}</span>
- <span className="flex-1 text-sm font-medium text-[var(--text-secondary)]">
+ <RowIcon Icon={item.icon} />
+ <span className="flex-1 text-sm font-semibold text-[var(--text-primary)]">
  {item.label}
  </span>
  <Chevron />
  </Link>
  )}
  {i < group.items.length - 1 ? (
- <div className="ml-14 h-px bg-[var(--surface-muted)]" />
+ <div className="ml-[68px] h-px bg-[var(--border-subtle)]" />
  ) : null}
  </div>
  ))}

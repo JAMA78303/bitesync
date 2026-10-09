@@ -5,14 +5,13 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
  CalendarDays,
- ChefHat,
+ Leaf,
  Home,
- MoreHorizontal,
- ShoppingCart,
+ Package,
+ ShoppingBasket,
  BarChart2,
  Target,
 } from "lucide-react";
-import { MobileNavMoreSheet } from "@/components/shared/MobileNavMoreSheet";
 
 /**
  * Goals was behind the "More" sheet, so changing a calorie or protein target
@@ -24,17 +23,20 @@ import { MobileNavMoreSheet } from "@/components/shared/MobileNavMoreSheet";
  * minimum touch target, and the 48px row height is unchanged. "Nutrition" is
  * the one label too wide to survive that at 10px, so it becomes "Stats" —
  * shortening a label is a smaller cost than burying a screen.
+ *
+ * Pantry was then the one screen left behind "More" (with Settings), and
+ * people couldn't find it. It now takes More's place, next to Grocery, which
+ * it feeds. Settings needs no tab: it's the account button in the top bar.
  */
 const PRIMARY_ITEMS = [
- { href:"/today", label:"Home", Icon: Home },
+ { href:"/today", label:"Today", Icon: Home },
  { href:"/planner", label:"Plan", Icon: CalendarDays },
- { href:"/recipes", label:"Recipes", Icon: ChefHat },
- { href:"/grocery", label:"Grocery", Icon: ShoppingCart },
+ { href:"/recipes", label:"Recipes", Icon: Leaf },
+ { href:"/grocery", label:"Grocery", Icon: ShoppingBasket },
+ { href:"/pantry", label:"Pantry", Icon: Package },
  { href:"/nutrition", label:"Stats", Icon: BarChart2 },
  { href:"/goals", label:"Goals", Icon: Target },
 ] as const;
-
-const MORE_PATHS = ["/pantry","/settings"];
 
 /** Focus on one of these opens the on-screen keyboard. */
 function opensKeyboard(target: EventTarget | null): boolean {
@@ -75,72 +77,30 @@ function useKeyboardOpen(): boolean {
 
 export function BottomNav() {
  const pathname = usePathname();
- const [moreOpen, setMoreOpen] = useState(false);
  const keyboardOpen = useKeyboardOpen();
- const moreActive = MORE_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+
+ if (keyboardOpen) return null;
 
  return (
- <>
- {!moreOpen && !keyboardOpen ? (
- <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:hidden">
- <nav
- className="pointer-events-auto grid w-full max-w-md grid-cols-7 gap-0.5 rounded-2xl bg-[var(--nav-bar-bg)] px-1.5 py-1.5 shadow-2xl shadow-black/25"
- aria-label="Main navigation"
- >
+ <div className="app-mobile-nav-wrap">
+ <nav className="app-mobile-nav" aria-label="Main navigation">
  {PRIMARY_ITEMS.map(({ href, label, Icon }) => {
  const isActive = pathname === href || pathname.startsWith(`${href}/`);
 
  return (
  <Link
  key={href}
-              href={href}
-                prefetch
-                aria-current={isActive ? "page" : undefined}
-                className={`flex min-h-[48px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1.5 transition-all duration-200 active:scale-95 ${
- isActive ?"bg-[var(--surface-overlay)]/15" :"hover:bg-[var(--surface-overlay)]/8"
- }`}
+ href={href}
+ prefetch
+ aria-current={isActive ? "page" : undefined}
+ className="app-mobile-nav-item"
  >
- <Icon
- className={`h-5 w-5 shrink-0 transition-colors ${isActive ?"text-[var(--text-on-header)]" :"text-[var(--text-on-header-muted)]"}`}
- strokeWidth={isActive ? 2.5 : 1.8}
- />
- <span
- className={`max-w-full truncate text-2xs font-medium leading-tight ${
- isActive ?"text-[var(--text-on-header)]" :"text-[var(--text-on-header-muted)]"
- }`}
- >
- {label}
- </span>
+ <Icon className="h-5 w-5 shrink-0" strokeWidth={isActive ? 2.2 : 1.8} aria-hidden />
+ <small>{label}</small>
  </Link>
  );
  })}
-
- <button
- type="button"
- onClick={() => setMoreOpen(true)}
- className={`flex min-h-[48px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1.5 transition-all duration-200 ${
- moreActive ?"bg-[var(--surface-overlay)]/15" :"hover:bg-[var(--surface-overlay)]/8"
- }`}
- aria-expanded={moreOpen}
- aria-haspopup="dialog"
- aria-label="More destinations"
- >
- <MoreHorizontal
- className={`h-5 w-5 shrink-0 ${moreActive ?"text-[var(--text-on-header)]" :"text-[var(--text-on-header-muted)]"}`}
- strokeWidth={moreActive ? 2.5 : 1.8}
- />
- <span
- className={`text-2xs font-medium leading-tight ${
- moreActive ?"text-[var(--text-on-header)]" :"text-[var(--text-on-header-muted)]"
- }`}
- >
- More
- </span>
- </button>
  </nav>
  </div>
- ) : null}
- <MobileNavMoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} />
- </>
  );
 }

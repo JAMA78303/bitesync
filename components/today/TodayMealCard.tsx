@@ -5,6 +5,7 @@ import { MealThumbnail } from "@/components/ui/MealThumbnail";
 import { TodayMealActions } from "@/components/today/TodayMealActions";
 import { ds } from "@/lib/ui/classes";
 import type { TodayMeal } from "@/lib/planner/today";
+import { MEAL_LABELS } from "@/types";
 
 type Props = {
  meal: TodayMeal;
@@ -24,7 +25,7 @@ export function TodayMealCard({ meal, dietaryPreferences = [] }: Props) {
 
  return (
  <div
- className={`flex items-start gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3 transition-opacity ${
+ className={`flex items-start gap-3 rounded-[18px] border border-[var(--border-default)] bg-[var(--surface-card)] p-4 transition-[opacity,transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:shadow-[var(--card-shadow)] ${
  skipped ?"opacity-50" :""
  }`}
  >
@@ -36,7 +37,10 @@ export function TodayMealCard({ meal, dietaryPreferences = [] }: Props) {
  />
 
  <div className="min-w-0 flex-1">
- <p className={`truncate ${ds.cardTitle} ${skipped ?"line-through" :""}`}>{name}</p>
+ <p className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[var(--brand-primary)]">
+ {MEAL_LABELS[meal.mealType]}
+ </p>
+ <p className={`line-clamp-2 ${ds.cardTitle} ${skipped ?"line-through" :""}`}>{name}</p>
  {skipped ? <p className={`mb-1 ${ds.tierMeta}`}>Skipped — not counted today</p> : null}
  {meal.servingLabel ? (
  <p className={`mb-1.5 ${ds.tierMeta}`}>{meal.servingLabel}</p>

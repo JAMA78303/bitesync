@@ -20,8 +20,8 @@ export default function SampleWeekPage() {
         <Link href="/onboarding" className={`mb-2 inline-block text-sm font-medium ${ds.pageSubtitle}`}>
           ← Setup guide
         </Link>
-        <p className={`mb-1 text-xs font-semibold uppercase tracking-wide ${ds.pageSubtitle}`}>Sample</p>
-        <h1 className={ds.pageTitle}>A week at its best</h1>
+        <span className={ds.kicker}>SAMPLE WEEK</span>
+        <h1 className={`mb-1.5 ${ds.pageTitle}`}>A week at its best</h1>
         <p className={`mt-1 max-w-md ${ds.pageSubtitle}`}>
           Varied meals, on-target macros, one grocery list — this is what BiteSync looks like when your week is
           planned.

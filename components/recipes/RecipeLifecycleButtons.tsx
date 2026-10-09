@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { Archive, Loader2, Trash2 } from "lucide-react";
 import { archiveRecipe, deleteRecipe } from "@/app/(app)/recipes/actions";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/use-toast";
@@ -55,18 +56,20 @@ export function RecipeLifecycleButtons({ recipeId }: Props) {
  onClick={() => void runAction("archive")}
  disabled={busy}
  aria-label="Archive recipe"
- className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--border-default)] text-lg text-[var(--text-muted)] hover:text-[var(--semantic-warn-text)] disabled:opacity-50"
+ title="Archive recipe"
+ className="flex h-11 w-11 items-center justify-center rounded-xl border border-[var(--border-default)] text-[var(--text-muted)] transition-colors hover:border-[var(--brand-primary)] hover:text-[var(--text-primary)] disabled:opacity-50"
  >
- {busy && action ==="archive" ?"…" :"📦"}
+ {busy && action ==="archive" ? <Loader2 className="h-[18px] w-[18px] animate-spin" aria-hidden /> : <Archive className="h-[18px] w-[18px]" strokeWidth={1.8} aria-hidden />}
  </button>
  <button
  type="button"
  onClick={() => void runAction("delete")}
  disabled={busy}
  aria-label="Delete recipe"
- className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--border-default)] text-lg text-[var(--text-muted)] hover:text-[var(--semantic-error-text)] disabled:opacity-50"
+ title="Delete recipe"
+ className="flex h-11 w-11 items-center justify-center rounded-xl border border-[var(--border-default)] text-[var(--text-muted)] transition-colors hover:border-[var(--semantic-error-border)] hover:text-[var(--semantic-error-text)] disabled:opacity-50"
  >
- {busy && action ==="delete" ?"…" :"🗑️"}
+ {busy && action ==="delete" ? <Loader2 className="h-[18px] w-[18px] animate-spin" aria-hidden /> : <Trash2 className="h-[18px] w-[18px]" strokeWidth={1.8} aria-hidden />}
  </button>
  </div>
  );

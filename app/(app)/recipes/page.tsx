@@ -87,6 +87,10 @@ export default async function RecipesPage({ searchParams }: Props) {
  fat: Math.round(n?.fat_g ?? 0),
  imageUrl: r.image_url ?? null,
  isFavourite: Boolean(r.is_favourite),
+ // The Vegetarian and Vegan tabs filter on these. They were selected above
+ // but never passed on, so both tabs were always empty.
+ fitsVegetarian: r.fits_vegetarian === true,
+ fitsVegan: r.fits_vegan === true,
  };
  });
 

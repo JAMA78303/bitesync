@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Leaf, Settings, Target } from "lucide-react";
+import { RowIcon } from "@/components/ui/RowIcon";
 import { getProfile } from "@/lib/supabase/profile";
 import { deriveNutritionTargets, hasCompleteTdeeProfile } from "@/lib/utils/nutrition-targets";
 import { ds } from "@/lib/ui/classes";
@@ -7,13 +9,13 @@ export const dynamic ="force-dynamic";
 
 const GOALS_ITEMS = [
  {
- icon:"🌿",
+ icon: Leaf,
  label:"Dietary preferences",
  desc:"Vegetarian, vegan, gluten-free — used for AI meal plans",
  href:"/goals/dietary",
  },
  {
- icon:"🎯",
+ icon: Target,
  label:"Calorie & macro targets",
  desc:"Body stats, activity, and daily goals from TDEE",
  href:"/goals/targets",
@@ -27,36 +29,37 @@ export default async function GoalsPage() {
  return (
  <div className={ds.mobilePage}>
  <div className={ds.gradientHeader}>
- <h1 className={ds.pageTitle}>Nutrition &amp; goals</h1>
- <p className={`mt-0.5 ${ds.pageSubtitle}`}>
+ <span className={ds.kicker}>PERSONALISED TO YOU</span>
+ <h1 className={`mb-1.5 ${ds.pageTitle}`}>Nutrition &amp; goals</h1>
+ <p className={ds.pageSubtitle}>
  Diet preferences and daily targets that power your planner and macros
  </p>
  {hasCompleteTdeeProfile(profile) ? (
- <p className={`mt-3 rounded-xl ${ds.headerStatCard} text-xs text-[var(--text-on-header)]`}>
+ <p className="mt-4 inline-flex rounded-full bg-[var(--accent-lime)] px-3.5 py-2 font-display text-xs font-bold text-[var(--on-lime)]">
  Current target: {targets.kcal} kcal · {targets.protein}g protein / day
  </p>
  ) : null}
  </div>
 
- <div className={`${ds.mobileGutter} -mt-6 space-y-4 ${ds.pageContent}`}>
+ <div className={`${ds.mobileGutter} space-y-4 ${ds.pageContent}`}>
  <div className={`${ds.card} overflow-hidden`}>
  {GOALS_ITEMS.map((item, i) => (
  <div key={item.href}>
  <Link
  href={item.href}
- className="flex items-start gap-3 px-4 py-4 transition-colors hover:bg-[var(--surface-muted)]"
+ className="flex items-center gap-3 px-4 py-4 transition-colors hover:bg-[var(--surface-muted)]"
  >
- <span className="w-7 text-center text-lg">{item.icon}</span>
+ <RowIcon Icon={item.icon} />
  <span className="min-w-0 flex-1">
  <span className="flex items-center gap-2">
- <span className="text-sm font-medium text-[var(--text-secondary)]">{item.label}</span>
+ <span className="text-sm font-semibold text-[var(--text-primary)]">{item.label}</span>
  </span>
  <span className="mt-0.5 block text-xs text-[var(--text-muted)]">{item.desc}</span>
  </span>
  <Chevron />
  </Link>
  {i < GOALS_ITEMS.length - 1 ? (
- <div className="ml-14 h-px bg-[var(--surface-muted)]" />
+ <div className="ml-[68px] h-px bg-[var(--border-subtle)]" />
  ) : null}
  </div>
  ))}
@@ -64,9 +67,10 @@ export default async function GoalsPage() {
 
  <Link
  href="/settings"
- className={`${ds.card} flex items-center justify-between px-4 py-3.5 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-muted)] `}
+ className={`${ds.card} flex items-center gap-3 px-4 py-3.5 text-sm transition-colors hover:bg-[var(--surface-muted)] `}
  >
- <span>Account &amp; app settings</span>
+ <RowIcon Icon={Settings} />
+ <span className="flex-1 font-semibold text-[var(--text-primary)]">Account &amp; app settings</span>
  <Chevron />
  </Link>
  </div>

@@ -17,64 +17,69 @@ html {
 :root,
 :root[data-theme="light"] {
   color-scheme: light;
-  --background: #f9fafb;
-  --foreground: #111827;
-  --brand-primary: #3a5a40;
-  --brand-mid: #4a7a50;
-  --brand-light-bg: #f0f7f0;
+  /* Redesign palette (Figma, Oct 2026). The names below are the app's existing
+     semantic tokens, so every screen picks the palette up without edits. */
+  --background: #f7f5ee;
+  --foreground: #102e2b;
+  --brand-primary: #0a7a58;
+  --brand-mid: #0b6a50;
+  --brand-light-bg: #e8f5ec;
   --brand-sage-accent: #7ab87a;
-  --brand-dark: #2d4a32;
-  --brand-sage: #3a5a40;
+  --brand-dark: #075c46;
+  --brand-sage: #0a7a58;
   --brand-amber: #d97706;
-  --text-link: #2d4a32;
+  --text-link: #075c46;
 
-  /* Role split: slate navy = structure, green = action */
-  --brand-navy: #0f172a;
+  /* Deep green = structure, green = action, lime = highlight on deep green */
+  --brand-navy: #102e2b;
   --brand-navy-mid: #1e293b;
   --brand-navy-soft: #334155;
-  --brand-navy-subtle: #f1f5f9;
-  --brand-action: #3a5a40;
-  --brand-action-hover: #2d4a32;
-  --brand-action-mid: #4a7a50;
-  --brand-action-subtle: #f0f7f0;
+  --brand-navy-subtle: #e8f5ec;
+  --brand-action: #0a7a58;
+  --brand-action-hover: #075c46;
+  --brand-action-mid: #0b6a50;
+  --brand-action-subtle: #e8f5ec;
   --surface-action-subtle: var(--brand-action-subtle);
+  --green-deep: #083e35;
+  --accent-lime: #dff36e;
+  --on-lime: #083e35;
 
   /* Meal thumbnail tints by type */
-  --meal-tint-breakfast-bg: #fff7ed;
-  --meal-tint-breakfast-icon: #c2410c;
-  --meal-tint-lunch-bg: #eff6ff;
-  --meal-tint-lunch-icon: #1d4ed8;
-  --meal-tint-dinner-bg: #fef2f2;
-  --meal-tint-dinner-icon: #b45309;
-  --meal-tint-snack-bg: #f0fdf4;
-  --meal-tint-snack-icon: #15803d;
+  --meal-tint-breakfast-bg: #f0edf8;
+  --meal-tint-breakfast-icon: #6a5d9e;
+  --meal-tint-lunch-bg: #e3f2e8;
+  --meal-tint-lunch-icon: #0a7a58;
+  --meal-tint-dinner-bg: #fff0e2;
+  --meal-tint-dinner-icon: #a95c1f;
+  --meal-tint-snack-bg: #e8f2ec;
+  --meal-tint-snack-icon: #3b6e5d;
   --meal-tint-default-bg: var(--surface-action-subtle);
   --meal-tint-default-icon: var(--brand-action);
 
-  /* Surfaces */
-  --surface-page: #f8faf8;
-  --surface-card: #ffffff;
-  --surface-muted: #f9fafb;
-  --surface-elevated: #ffffff;
-  --surface-input: #ffffff;
-  --surface-info: #f8fafc;
-  --surface-brand-subtle: #f0f7f0;
+  /* Surfaces. Warm ivory rather than white on mint: page #f7f5ee, cards a
+     warm off-white that still lifts off it. Greens are unchanged. */
+  --surface-page: #f7f5ee;
+  --surface-card: #fffdf8;
+  --surface-muted: #f3f1e8;
+  --surface-elevated: #fffdf8;
+  --surface-input: #fffdf8;
+  --surface-info: #f3f1e8;
+  --surface-brand-subtle: #e8f5ec;
   --surface-overlay: #ffffff;
-  --logo-lockup-bg: transparent;
+  --card-shadow: 0 14px 36px rgba(14, 60, 49, 0.06);
 
   /* Borders */
-  --border-default: #e5e7eb;
-  --border-subtle: #f3f4f6;
+  --border-default: #e2e0d5;
+  --border-subtle: #ebe8de;
 
-  /* Text */
-  --text-primary: #111827;
-  --text-secondary: #374151;
-  --text-muted: #6b7280;
+  /* Text. Muted is a shade darker than the design's #71817e, which is
+     4.0 : 1 on white; #5f6f6c is 5.3 : 1 there and 4.7 : 1 on the mint tint. */
+  --text-primary: #102e2b;
+  --text-secondary: #536763;
+  --text-muted: #5f6f6c;
   --text-on-brand: #ffffff;
-  /* WCAG AA on every stop of the brand gradients (#4a7a50 lightest): white at
-     0.78 / 0.6 measured 3.8 : 1 / 2.9 : 1 there, and 0.6 failed even on the
-     mid green (4.0 : 1) for 12 px text. 0.92 / 0.85 give 4.5+ / 6.1 on the
-     mid green; hierarchy on green comes from size and weight, not fading. */
+  /* WCAG AA on every stop of the brand gradients; hierarchy on green comes
+     from size and weight, not fading. */
   --text-on-brand-muted: rgba(255, 255, 255, 0.92);
   --text-on-brand-subtle: rgba(255, 255, 255, 0.85);
 
@@ -82,19 +87,20 @@ html {
   --btn-primary-bg: var(--brand-action);
   --btn-primary-hover: var(--brand-action-hover);
   --btn-primary-text: #ffffff;
-  --btn-secondary-bg: #ffffff;
-  --btn-secondary-hover: #f9fafb;
-  --btn-secondary-text: #374151;
-  --btn-secondary-border: #e5e7eb;
+  --btn-secondary-bg: #fffdf8;
+  --btn-secondary-hover: #f3f1e8;
+  --btn-secondary-text: #3d524e;
+  --btn-secondary-border: #dbe6df;
 
-  /* App chrome */
-  --header-from: #3a5a40;
-  --header-to: #4a7a50;
+  /* App chrome. Header copy at 0.85 white is 5.2 : 1 on the lighter end of
+     the gradient (the design's 0.68 is 3.9 : 1 for 12 px text). */
+  --header-from: #083e35;
+  --header-to: #0b6a50;
   --text-on-header: #ffffff;
-  --text-on-header-muted: rgba(255, 255, 255, 0.72);
-  --text-on-header-subtle: rgba(255, 255, 255, 0.55);
-  --header-stat-bg: rgba(255, 255, 255, 0.16);
-  --header-stat-accent: #bbf7d0;
+  --text-on-header-muted: rgba(255, 255, 255, 0.85);
+  --text-on-header-subtle: rgba(255, 255, 255, 0.78);
+  --header-stat-bg: rgba(255, 255, 255, 0.1);
+  --header-stat-accent: #dff36e;
   --header-stat-warn: #fde68a;
   --semantic-success-bg: #ecfdf5;
   --semantic-success-border: #a7f3d0;
@@ -111,8 +117,9 @@ html {
   --traffic-green: #22c55e;
   --traffic-amber: #fbbf24;
   --traffic-red: #ef4444;
-  --nav-bar-bg: var(--brand-navy);
-  --admin-nav-bg: var(--brand-navy);
+  --nav-bar-bg: #071a2b;
+  --sidebar-bg: #083e35;
+  --admin-nav-bg: #083e35;
   --hero-gradient: radial-gradient(ellipse at top left, #4a7a50 0%, #3a5a40 40%, #2d4a33 100%);
   --landing-section-muted: #f8fafc;
   --landing-accent-surface: #f5f9f5;
@@ -127,69 +134,73 @@ html {
 :root.dark,
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --background: #0b1220;
-  --foreground: #e5e7eb;
+  --background: #0d2923;
+  --foreground: #edf8f3;
 
-  /* Brand surfaces stay dark green; links use lighter accent for contrast on dark bg */
-  --brand-primary: var(--brand-action);
-  --text-link: #86efac;
+  /* Green as text needs to be lighter than green as a fill on these surfaces */
+  --brand-primary: #3cc596;
+  --text-link: #3cc596;
 
-  --brand-navy: #020617;
-  --brand-navy-mid: #0f172a;
-  --brand-navy-soft: #1e293b;
-  --brand-navy-subtle: #111827;
-  --brand-action: #4a7a50;
-  --brand-action-hover: #3a5a40;
-  --brand-action-mid: #6db876;
-  --brand-action-subtle: #1a2e1d;
+  --brand-navy: #061f1a;
+  --brand-navy-mid: #0d2923;
+  --brand-navy-soft: #163e33;
+  --brand-navy-subtle: #14342c;
+  /* Fills lighten on hover in dark, and carry deep-green text: white on
+     #20aa7e is 2.95 : 1, #061f1a on it is 5.8 : 1. */
+  --brand-action: #20aa7e;
+  --brand-action-hover: #2bbb8c;
+  --brand-action-mid: #3cc596;
+  --brand-action-subtle: #163e33;
   --surface-action-subtle: var(--brand-action-subtle);
+  --green-deep: #061f1a;
 
-  --meal-tint-breakfast-bg: rgba(120, 53, 15, 0.22);
-  --meal-tint-breakfast-icon: #fdba74;
-  --meal-tint-lunch-bg: rgba(30, 58, 138, 0.22);
-  --meal-tint-lunch-icon: #93c5fd;
-  --meal-tint-dinner-bg: rgba(127, 29, 29, 0.22);
-  --meal-tint-dinner-icon: #fca5a5;
-  --meal-tint-snack-bg: rgba(20, 83, 45, 0.22);
-  --meal-tint-snack-icon: #86efac;
+  --meal-tint-breakfast-bg: #2a2540;
+  --meal-tint-breakfast-icon: #c4b8ee;
+  --meal-tint-lunch-bg: #163e33;
+  --meal-tint-lunch-icon: #3cc596;
+  --meal-tint-dinner-bg: #3a2a1c;
+  --meal-tint-dinner-icon: #f0b07a;
+  --meal-tint-snack-bg: #14342c;
+  --meal-tint-snack-icon: #8fd0b4;
   --meal-tint-default-bg: var(--surface-action-subtle);
   --meal-tint-default-icon: var(--brand-action-mid);
 
-  --surface-page: #0b1220;
-  --surface-card: #111827;
-  --surface-muted: #0f172a;
-  --surface-elevated: #1f2937;
-  --surface-input: #0f172a;
-  --surface-info: #1f2937;
-  --surface-brand-subtle: #1a2e1d;
+  --surface-page: #0d2923;
+  --surface-card: #102c25;
+  --surface-muted: #0d2923;
+  --surface-elevated: #14342c;
+  --surface-input: #0d2923;
+  --surface-info: #14342c;
+  --surface-brand-subtle: #163e33;
   --surface-overlay: #000000;
-  --logo-lockup-bg: #ffffff;
+  --card-shadow: 0 14px 36px rgba(0, 0, 0, 0.22);
 
-  --border-default: #334155;
-  --border-subtle: #1f2937;
+  --border-default: #28483e;
+  --border-subtle: #23443a;
 
-  --text-primary: #f3f4f6;
-  --text-secondary: #e5e7eb;
-  --text-muted: #9ca3af;
+  /* #8da59c rather than the guide's #839b92, which is 3.99 : 1 on the mint tint */
+  --text-primary: #edf8f3;
+  --text-secondary: #b4c8c0;
+  --text-muted: #8da59c;
   --text-on-brand: #f9fafb;
-  --text-on-brand-muted: rgba(249, 250, 251, 0.78);
-  --text-on-brand-subtle: rgba(249, 250, 251, 0.58);
+  --text-on-brand-muted: rgba(249, 250, 251, 0.85);
+  --text-on-brand-subtle: rgba(249, 250, 251, 0.78);
 
   --btn-primary-bg: var(--brand-action);
   --btn-primary-hover: var(--brand-action-hover);
-  --btn-primary-text: #ffffff;
-  --btn-secondary-bg: #1f2937;
-  --btn-secondary-hover: #273247;
-  --btn-secondary-text: #d1d5db;
-  --btn-secondary-border: #374151;
+  --btn-primary-text: #061f1a;
+  --btn-secondary-bg: #14342c;
+  --btn-secondary-hover: #163e33;
+  --btn-secondary-text: #d6e6df;
+  --btn-secondary-border: #28483e;
 
-  --header-from: #152318;
-  --header-to: #243d28;
+  --header-from: #061f1a;
+  --header-to: #0b6a50;
   --text-on-header: #f9fafb;
-  --text-on-header-muted: rgba(249, 250, 251, 0.78);
-  --text-on-header-subtle: rgba(249, 250, 251, 0.58);
-  --header-stat-bg: rgba(255, 255, 255, 0.1);
-  --header-stat-accent: #86efac;
+  --text-on-header-muted: rgba(249, 250, 251, 0.85);
+  --text-on-header-subtle: rgba(249, 250, 251, 0.78);
+  --header-stat-bg: rgba(255, 255, 255, 0.08);
+  --header-stat-accent: #dff36e;
   --header-stat-warn: #fcd34d;
   --semantic-success-bg: rgba(6, 78, 59, 0.35);
   --semantic-success-border: rgba(16, 185, 129, 0.45);
@@ -206,8 +217,9 @@ html {
   --traffic-green: #4ade80;
   --traffic-amber: #fbbf24;
   --traffic-red: #f87171;
-  --nav-bar-bg: var(--brand-navy);
-  --admin-nav-bg: var(--brand-navy);
+  --nav-bar-bg: #071a2b;
+  --sidebar-bg: #061f1a;
+  --admin-nav-bg: #061f1a;
   --hero-gradient: radial-gradient(ellipse at top left, #243d28 0%, #1a2e1d 40%, #0f1a12 100%);
   --landing-section-muted: #111827;
   --landing-accent-surface: #0b1220;
@@ -221,7 +233,8 @@ html {
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-dmsans);
+  --font-display: var(--font-manrope);
 
   /* Type scale — 7 sizes, 3 weights */
   --font-size-2xs: 0.625rem; /* 10px */
@@ -252,7 +265,13 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+  font-family: var(--font-dmsans), Arial, Helvetica, sans-serif;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-manrope), var(--font-dmsans), sans-serif;
 }
 
 /* Keyboard focus — visible on all interactive elements */
@@ -365,13 +384,13 @@ select.theme-aware-select {
 }
 
 .meal-section {
-  padding: 0 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 }
 
 .meal-type-label {
+  font-family: var(--font-manrope), sans-serif;
   font-size: 0.7rem;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -437,8 +456,385 @@ select.theme-aware-select {
   padding-right: max(1rem, env(safe-area-inset-right));
 }
 
-.app-header-safe-top {
-  padding-top: max(3.5rem, calc(env(safe-area-inset-top) + 2rem));
+/* On desktop the shell pads the content column, so page sections line up with
+   the edges of the page header card. */
+@media (min-width: 768px) {
+  .app-mobile-gutter {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
+/* ─── App shell (redesign) ──────────────────────────────────────────────── */
+
+.app-frame {
+  display: flex;
+  min-height: 100vh;
+  color: var(--text-primary);
+  background:
+    radial-gradient(circle at 92% 5%, rgba(223, 243, 110, 0.12), transparent 23%),
+    var(--surface-page);
+}
+:root[data-theme="dark"] .app-frame {
+  background:
+    radial-gradient(circle at 92% 5%, rgba(223, 243, 110, 0.05), transparent 23%),
+    var(--surface-page);
+}
+
+.app-sidebar {
+  position: sticky;
+  top: 0;
+  display: none;
+  width: 240px;
+  height: 100vh;
+  flex-shrink: 0;
+  flex-direction: column;
+  overflow-y: auto;
+  color: #fff;
+  background:
+    radial-gradient(circle at 20% 4%, rgba(223, 243, 110, 0.08), transparent 22%),
+    var(--sidebar-bg);
+}
+@media (min-width: 768px) {
+  .app-sidebar {
+    display: flex;
+  }
+}
+.app-sidebar-logo {
+  padding: 22px 20px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.app-sidebar-nav {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  padding: 16px 12px;
+}
+.app-nav-item {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 11px;
+  padding: 0 12px;
+  color: rgba(255, 255, 255, 0.72);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: color 0.2s, background-color 0.2s;
+}
+.app-nav-item:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.07);
+}
+.app-nav-item[aria-current="page"] {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.13);
+}
+.app-nav-item[aria-current="page"] svg {
+  color: var(--accent-lime);
+}
+.app-sidebar-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 12px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.app-pro-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 14px;
+  color: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(223, 243, 110, 0.2);
+  border-radius: 12px;
+  background: rgba(223, 243, 110, 0.1);
+}
+.app-pro-card > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--accent-lime);
+}
+.app-pro-card > div {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+.app-pro-card b {
+  color: #fff;
+  font-size: 13px;
+}
+.app-pro-card small {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 12px;
+  line-height: 1.35;
+}
+.app-pro-btn {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px 0;
+  color: var(--on-lime);
+  border-radius: 8px;
+  background: var(--accent-lime);
+  font: 700 12px var(--font-manrope), sans-serif;
+  text-align: center;
+}
+
+.app-main {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.app-topbar {
+  position: sticky;
+  z-index: 30;
+  top: 0;
+  display: flex;
+  height: calc(64px + env(safe-area-inset-top));
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  padding: env(safe-area-inset-top) max(14px, env(safe-area-inset-right)) 0 max(14px, env(safe-area-inset-left));
+  border-bottom: 1px solid var(--border-default);
+  /* Nearly solid: at 88% the text scrolling underneath ghosted behind the logo. */
+  background: color-mix(in srgb, var(--surface-card) 96%, transparent);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+@media (min-width: 768px) {
+  .app-topbar {
+    height: 68px;
+    padding: 0 36px;
+  }
+}
+.app-topbar-title {
+  display: none;
+  color: var(--text-primary);
+  font: 700 15px var(--font-manrope), sans-serif;
+}
+@media (min-width: 768px) {
+  .app-topbar-title {
+    display: block;
+  }
+  .app-topbar-brand {
+    display: none;
+  }
+}
+.app-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.app-icon-btn {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  color: var(--text-muted);
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  background: var(--surface-card);
+  transition: color 0.2s, border-color 0.2s;
+}
+.app-icon-btn:hover {
+  color: var(--brand-primary);
+}
+.app-avatar {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  color: #fff;
+  border-radius: 50%;
+  background: var(--green-deep);
+  font: 700 13px var(--font-manrope), sans-serif;
+  text-transform: uppercase;
+}
+:root[data-theme="dark"] .app-avatar {
+  color: var(--on-lime);
+  background: var(--accent-lime);
+}
+
+.app-content {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+@media (min-width: 768px) {
+  .app-content {
+    padding: 34px 40px 64px;
+  }
+}
+
+/* Light/dark switch (homepage nav + app top bar) */
+.theme-switch {
+  position: relative;
+  display: inline-flex;
+  width: 68px;
+  height: 36px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  border: 1px solid var(--border-default);
+  border-radius: 999px;
+  background: var(--surface-muted);
+  box-shadow: inset 0 1px 2px rgba(14, 60, 49, 0.08);
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.3s;
+}
+.theme-switch:hover {
+  border-color: var(--brand-primary);
+}
+.theme-switch-icon {
+  width: 14px;
+  height: 14px;
+  color: var(--text-muted);
+}
+.theme-switch-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  color: var(--brand-primary);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow:
+    0 1px 2px rgba(14, 60, 49, 0.12),
+    0 4px 10px rgba(14, 60, 49, 0.14);
+  transition:
+    transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+    background-color 0.3s,
+    color 0.3s;
+}
+.theme-switch-knob svg {
+  width: 15px;
+  height: 15px;
+}
+.theme-switch[data-dark="true"] .theme-switch-knob {
+  color: var(--on-lime);
+  background: var(--accent-lime);
+  box-shadow:
+    0 0 0 4px rgba(223, 243, 110, 0.12),
+    0 4px 12px rgba(0, 0, 0, 0.35);
+  transform: translateX(32px);
+}
+
+/* Floating tab bar (mobile) */
+.app-mobile-nav-wrap {
+  position: fixed;
+  z-index: 50;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  justify-content: center;
+  padding: 0 max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom))
+    max(10px, env(safe-area-inset-left));
+  pointer-events: none;
+}
+@media (min-width: 768px) {
+  .app-mobile-nav-wrap {
+    display: none;
+  }
+}
+.app-mobile-nav {
+  display: grid;
+  width: 100%;
+  max-width: 460px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+  padding: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 22px;
+  background: var(--nav-bar-bg);
+  box-shadow: 0 18px 45px rgba(5, 19, 33, 0.32);
+  pointer-events: auto;
+}
+.app-mobile-nav-item {
+  display: flex;
+  min-width: 0;
+  min-height: 52px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 1px;
+  color: rgba(255, 255, 255, 0.7);
+  border-radius: 15px;
+  transition: background-color 0.2s, color 0.2s, transform 0.15s;
+}
+.app-mobile-nav-item:active {
+  transform: scale(0.95);
+}
+.app-mobile-nav-item small {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app-mobile-nav-item[aria-current="page"],
+.app-mobile-nav-item[data-active="true"] {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+}
+.app-mobile-nav-item[aria-current="page"] svg,
+.app-mobile-nav-item[data-active="true"] svg {
+  color: var(--accent-lime);
+}
+
+/* Page header card: deep green, a lime glow top right and a faint ring
+   bottom right. Drawn with backgrounds rather than an overflow-hidden
+   pseudo-element, so menus opened from header controls are never clipped. */
+.app-hero {
+  position: relative;
+  margin: 14px max(1rem, env(safe-area-inset-right)) 20px max(1rem, env(safe-area-inset-left));
+  padding: 26px 22px 24px;
+  color: var(--text-on-header);
+  border-radius: 20px;
+  background:
+    radial-gradient(
+      ellipse 150px 100px at calc(100% - 20px) calc(100% + 45px),
+      transparent calc(100% - 1.5px),
+      rgba(255, 255, 255, 0.12) calc(100% - 1px),
+      transparent 100%
+    ),
+    radial-gradient(circle at 88% 20%, rgba(223, 243, 110, 0.18), transparent 25%),
+    linear-gradient(125deg, var(--header-from), var(--header-to));
+  box-shadow: 0 20px 45px rgba(8, 62, 53, 0.14);
+}
+.app-hero--compact {
+  padding-top: 22px;
+  padding-bottom: 22px;
+}
+:root[data-theme="dark"] .app-hero {
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.3);
+}
+@media (min-width: 768px) {
+  .app-hero {
+    min-height: 152px;
+    margin: 0 0 30px;
+    padding: 32px 34px;
+    border-radius: 24px;
+  }
+  .app-hero--compact {
+    min-height: 0;
+    padding: 26px 30px;
+  }
 }
 
 .text-2xs {

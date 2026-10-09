@@ -10,8 +10,9 @@ export default async function PantryPage() {
  return (
  <div className={`${ds.mobilePage} ${ds.pageContent}`}>
  <div className={ds.gradientHeader}>
- <h1 className={ds.pageTitle}>Pantry</h1>
- <p className={`mt-0.5 ${ds.pageSubtitle}`}>Cook from what you already have at home</p>
+ <span className={ds.kicker}>WASTE LESS</span>
+ <h1 className={`mb-1.5 ${ds.pageTitle}`}>Your Pantry</h1>
+ <p className={ds.pageSubtitle}>Cook from what you already have at home</p>
  </div>
 
  <div className={`${ds.mobileGutter} ${ds.overlap}`}>

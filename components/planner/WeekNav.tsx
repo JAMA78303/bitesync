@@ -17,13 +17,13 @@ export function WeekNav({ weekStart, onGradient = false, weekLabel }: Props) {
  }
 
  const navBtnClass = onGradient
- ?"h-8 w-8 shrink-0 border-[var(--surface-overlay)]/25 bg-[var(--surface-overlay)]/15 text-[var(--text-on-header)] hover:bg-[var(--surface-overlay)]/25"
+ ?"h-10 w-10 shrink-0 !border-white/25 !bg-white/10 !text-[var(--text-on-header)] hover:!border-white/50 hover:!bg-white/15"
  :"h-8 w-8 shrink-0 bg-[var(--surface-card)]";
  const labelClass = onGradient
- ?"min-w-0 flex-1 text-center text-xs font-medium text-[var(--text-on-header)] sm:flex-none sm:text-sm"
+ ?"min-w-0 flex-1 text-center text-sm font-semibold text-[var(--text-on-header)] sm:flex-none"
  :"min-w-0 flex-1 text-center text-xs font-medium text-[var(--text-secondary)] sm:flex-none sm:text-sm";
  const todayClass = onGradient
- ?"ml-1 text-xs text-[var(--text-on-header-muted)] hover:bg-[var(--surface-overlay)]/10 hover:text-[var(--text-on-header)]"
+ ?"ml-1 h-10 !text-xs !text-[var(--text-on-header)] underline-offset-2 hover:!bg-white/10 hover:underline"
  :"ml-1 text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)]";
 
  return (

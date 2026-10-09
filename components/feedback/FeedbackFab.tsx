@@ -47,7 +47,7 @@ export function FeedbackFab() {
           setSent(false);
           setError(null);
         }}
-        className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] right-4 z-40 flex items-center gap-1.5 rounded-full border border-[var(--border-default)] bg-[var(--surface-card)] px-3 py-2 text-xs font-semibold text-[var(--text-secondary)] shadow-lg hover:bg-[var(--surface-muted)] md:bottom-6"
+        className="fixed bottom-[calc(5.75rem+env(safe-area-inset-bottom))] right-4 z-40 flex items-center gap-1.5 rounded-full border border-[var(--border-default)] bg-[var(--surface-card)] px-3 py-2 text-xs font-semibold text-[var(--text-secondary)] shadow-lg hover:bg-[var(--surface-muted)] md:bottom-6"
         aria-label="Send feedback"
       >
         <MessageSquare className="h-4 w-4" />

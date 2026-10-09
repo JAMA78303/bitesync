@@ -8,6 +8,8 @@ import { RecipeSlotCard } from "@/components/planner/RecipeSlotCard";
 import { AddSlotButton } from "@/components/planner/AddSlotButton";
 import { ClearWeekButton } from "@/components/planner/ClearWeekButton";
 import { DailyTotalsRow } from "@/components/planner/DailyTotalsRow";
+import { CalorieRing } from "@/components/today/CalorieRing";
+import { getGoalStatus } from "@/lib/today/goal-status";
 import { RecipePickerModal } from "@/components/planner/RecipePickerModal";
 import type { ProfileDietPrefs } from "@/lib/utils/diet";
 import { sumDayNutritionFromEntries } from "@/lib/planner/weekly-macros";
@@ -122,20 +124,20 @@ export function PlannerGrid({
  </div>
  ) : null}
  <div
- className={`${forceMobileLayout ? "hidden" : "hidden sm:block"} overflow-x-auto rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)]`}
+ className={`${forceMobileLayout ? "hidden" : "hidden sm:block"} overflow-x-auto rounded-[20px] border border-[var(--border-default)] bg-[var(--surface-card)] shadow-[var(--card-shadow)]`}
  >
  <div className="grid min-w-[980px] grid-cols-[120px_repeat(7,minmax(112px,1fr))]">
  <div className="border-b border-[var(--border-default)] p-2" />
  {Array.from({ length: 7 }, (_, day) => (
  <div key={`head-${day}`} className="border-b border-l border-[var(--border-default)] p-2 text-center">
- <p className="text-xs font-medium text-[var(--text-muted)]">{DAY_LABELS[day]}</p>
- <p className="text-sm font-semibold text-[var(--text-primary)]">{formatDayWithOrdinal(weekDates[day].getDate())}</p>
+ <p className="text-[11px] font-bold tracking-[0.04em] text-[var(--text-muted)]">{DAY_LABELS[day]}</p>
+ <p className="font-display text-base font-extrabold tracking-[-0.02em] text-[var(--text-primary)]">{formatDayWithOrdinal(weekDates[day].getDate())}</p>
  </div>
  ))}
 
  {MEAL_TYPES.map((mealType) => (
  <Fragment key={mealType}>
- <div className="border-b border-[var(--border-default)] p-2 text-xs font-semibold uppercase text-[var(--text-muted)]">
+ <div className="border-b border-[var(--border-default)] p-3 font-display text-[11px] font-extrabold uppercase tracking-[0.08em] text-[var(--text-muted)]">
  {MEAL_LABELS[mealType]}
  </div>
  {Array.from({ length: 7 }, (_, day) => {
@@ -276,22 +278,44 @@ function PlannerGridMobileInline({
 
  return (
  <div className={forceMobileLayout ? "space-y-3" : "space-y-3 sm:hidden"}>
- <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-1">
- {Array.from({ length: 7 }, (_, day) => (
+ <div className="scrollbar-hide -mr-4 flex gap-2 overflow-x-auto pb-2 pr-4">
+ {Array.from({ length: 7 }, (_, day) => {
+ const dayKcal = sumDayNutritionFromEntries(day, entries).kcal;
+ const active = activeDay === day;
+ const fill = dailyCalorieTarget ? Math.min(dayKcal / dailyCalorieTarget, 1) : dayKcal > 0 ? 1 : 0;
+ return (
  <button
  key={day}
  type="button"
  onClick={() => setActiveDay(day)}
- className={`flex min-w-[48px] flex-col items-center rounded-2xl px-1 py-2 transition-all ${
- activeDay === day
- ?"bg-[var(--brand-primary)] text-[var(--text-on-brand)] shadow-sm"
- :"text-[var(--text-secondary)] hover:bg-[var(--btn-secondary-hover)]"
+ aria-pressed={active}
+ className={`flex min-w-[68px] flex-col items-center gap-1.5 rounded-[14px] border px-2 pb-2.5 pt-3 transition-[background-color,border-color,box-shadow] ${
+ active
+ ?"border-[var(--btn-primary-bg)] bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] shadow-[0_8px_22px_rgba(10,122,88,0.22)]"
+ :"border-[var(--border-default)] bg-[var(--surface-card)] text-[var(--text-primary)] hover:border-[var(--brand-primary)]"
  }`}
  >
- <span className="text-xs font-medium">{DAY_LABELS[day]}</span>
- <span className="text-lg font-bold">{formatDayWithOrdinal(weekDates[day].getDate())}</span>
+ <span className={`text-[11px] font-bold tracking-[0.04em] ${active ? "opacity-80" : "text-[var(--text-muted)]"}`}>
+ {DAY_LABELS[day]}
+ </span>
+ <span className="font-display text-lg font-extrabold leading-none tracking-[-0.03em]">
+ {formatDayWithOrdinal(weekDates[day].getDate())}
+ </span>
+ <span
+ className={`h-[3px] w-full overflow-hidden rounded-full ${active ? "bg-white/25" : "bg-[var(--border-default)]"}`}
+ aria-hidden
+ >
+ <span
+ className={`block h-full rounded-full ${active ? "bg-[var(--accent-lime)]" : "bg-[var(--brand-action)]"}`}
+ style={{ width: `${fill * 100}%` }}
+ />
+ </span>
+ <span className={`text-[10px] ${active ? "opacity-80" : "text-[var(--text-muted)]"}`}>
+ {dayKcal > 0 ? `${Math.round(dayKcal).toLocaleString("en-GB")} kcal` : "—"}
+ </span>
  </button>
- ))}
+ );
+ })}
  </div>
 
  <div className="space-y-3">
@@ -350,7 +374,7 @@ function PlannerGridMobileInline({
  );
  })}
 
- <div className="rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] p-3">
+ <div className="rounded-[18px] border border-[var(--border-default)] bg-[var(--surface-card)] p-5 shadow-[var(--card-shadow)]">
  {(() => {
  const dayEntries = entries.filter((e) => e.day_of_week === activeDay);
  const { kcal: cal, protein: pro, carbs, fat, fibre, sugar } = sumDayNutritionFromEntries(
@@ -358,40 +382,48 @@ function PlannerGridMobileInline({
  entries,
  );
  if (dayEntries.length === 0) return <p className="text-sm text-[var(--text-muted)]">No meals planned</p>;
+ const status = hasTargets ? getGoalStatus("kcal", cal, dailyCalorieTarget!) : null;
  return (
- <div className="grid grid-cols-2 gap-3 text-sm">
- <div>
- <p className="text-xs text-[var(--text-muted)]">Calories</p>
- <p className="font-medium text-[var(--text-primary)]">{Math.round(cal)} kcal</p>
- </div>
- <div>
- <p className="text-xs text-[var(--text-muted)]">Protein</p>
- <p className="font-medium text-[var(--text-primary)]">{Math.round(pro)}g</p>
- </div>
- <div>
- <p className="text-xs text-[var(--text-muted)]">Carbs</p>
- <p className="font-medium text-[var(--text-primary)]">{Math.round(carbs)}g</p>
- </div>
- <div>
- <p className="text-xs text-[var(--text-muted)]">Fat</p>
- <p className="font-medium text-[var(--text-primary)]">{Math.round(fat)}g</p>
- </div>
- <div>
- <p className="text-xs text-[var(--text-muted)]">Fibre</p>
- <p className="font-medium text-[var(--text-primary)]">{Math.round(fibre)}g</p>
- </div>
- <div>
- <p className="text-xs text-[var(--text-muted)]">Sugar</p>
- <p className="font-medium text-[var(--text-primary)]">{Math.round(sugar)}g</p>
- </div>
- {hasTargets ? (
- <div className="col-span-2">
- <p className="mt-1 text-xs text-[var(--text-muted)]">
- Target: {dailyCalorieTarget} kcal · {dailyProteinTarget}g P
- </p>
- </div>
+ <>
+ <div className="mb-4 flex items-center justify-between gap-3">
+ <span className="font-display text-[11px] font-extrabold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+ {DAY_LABELS[activeDay]} total
+ </span>
+ {status ? (
+ <span className={`rounded-full bg-[var(--surface-brand-subtle)] px-2.5 py-1 text-[11px] font-bold ${status.textClassName}`}>
+ {status.label}
+ </span>
  ) : null}
  </div>
+ <div className="mb-4 flex items-center gap-4">
+ {hasTargets ? <CalorieRing consumed={cal} target={dailyCalorieTarget!} size={76} /> : null}
+ <div>
+ <p className="font-display text-[28px] font-extrabold leading-none tracking-[-0.04em] text-[var(--text-primary)]">
+ {Math.round(cal).toLocaleString("en-GB")}
+ </p>
+ <p className="mt-1 text-xs text-[var(--text-muted)]">
+ {hasTargets ? `of ${dailyCalorieTarget!.toLocaleString("en-GB")} kcal` : "kcal"}
+ </p>
+ </div>
+ </div>
+ <div className="grid grid-cols-3 gap-3 border-t border-[var(--border-subtle)] pt-4 text-sm">
+ {[
+ ["Protein", pro, hasTargets ? dailyProteinTarget : null],
+ ["Carbs", carbs, null],
+ ["Fat", fat, null],
+ ["Fibre", fibre, null],
+ ["Sugar", sugar, null],
+ ].map(([label, value, target]) => (
+ <div key={String(label)}>
+ <p className="text-xs text-[var(--text-muted)]">{label}</p>
+ <p className="font-display font-extrabold text-[var(--text-primary)]">
+ {Math.round(Number(value))}g
+ {target ? <span className="text-xs font-medium text-[var(--text-muted)]"> / {target}g</span> : null}
+ </p>
+ </div>
+ ))}
+ </div>
+ </>
  );
  })()}
  </div>

@@ -1,14 +1,23 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { DM_Sans, Manrope } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Analytics } from "@vercel/analytics/next";
 import { ThemeSync } from "@/components/shared/ThemeSync";
 import "./globals.css";
 
-const inter = Inter({
- variable:"--font-inter",
+/** Body text. */
+const dmSans = DM_Sans({
+ variable: "--font-dmsans",
  subsets: ["latin"],
- display:"swap",
+ display: "swap",
+});
+
+/** Headings and figures. */
+const manrope = Manrope({
+ variable: "--font-manrope",
+ subsets: ["latin"],
+ weight: ["500", "600", "700", "800"],
+ display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -65,7 +74,7 @@ export default function RootLayout({
  children: React.ReactNode;
 }>) {
  return (
- <html lang="en" suppressHydrationWarning className={`${inter.variable} ${inter.className} h-full antialiased`}>
+ <html lang="en" suppressHydrationWarning className={`${dmSans.variable} ${manrope.variable} ${dmSans.className} h-full antialiased`}>
  <head>
  <script
  dangerouslySetInnerHTML={{

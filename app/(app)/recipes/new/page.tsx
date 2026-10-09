@@ -1,8 +1,10 @@
+import Link from "next/link";
 import { RecipeForm } from "@/components/recipes/RecipeForm";
 import { RecipeLimitReached } from "@/components/recipes/RecipeLimitReached";
 import { getProfile } from "@/lib/supabase/profile";
 import { getDailyCalorieTarget, getDailyProteinTarget } from "@/lib/utils/nutrition-targets";
 import { canCreateRecipe, getRecipeCount } from "@/lib/subscription";
+import { ds } from "@/lib/ui/classes";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +13,11 @@ export default async function NewRecipePage() {
  const count = await getRecipeCount();
 
  if (!allowed) {
- return <RecipeLimitReached count={count} />;
+ return (
+ <div className={`${ds.mobileGutter} py-4 md:py-0`}>
+ <RecipeLimitReached count={count} />
+ </div>
+ );
  }
 
  const profile = await getProfile();
@@ -24,14 +30,22 @@ export default async function NewRecipePage() {
  : null;
 
  return (
- <section className="space-y-4">
- <div>
- <h1 className="text-2xl font-semibold text-[var(--text-primary)]">New Recipe</h1>
- <p className="text-[var(--text-secondary)]">
+ <div className={`${ds.mobilePage} ${ds.pageContent}`}>
+ <header className={`${ds.gradientHeader} flex flex-col gap-4 md:flex-row md:items-center md:justify-between`}>
+ <div className="min-w-0">
+ <span className={ds.kicker}>YOUR LIBRARY</span>
+ <h1 className={`mb-1.5 ${ds.pageTitle}`}>New recipe</h1>
+ <p className={ds.pageSubtitle}>
  Build your ingredient list and BiteSync will estimate macro and micro totals live.
  </p>
  </div>
+ <Link href="/recipes" className={`${ds.heroGhostBtn} shrink-0 self-start md:self-center`}>
+ ← Back to recipes
+ </Link>
+ </header>
+ <div className={ds.mobileGutter}>
  <RecipeForm profileTargets={profileTargets} />
- </section>
+ </div>
+ </div>
  );
 }

@@ -62,6 +62,7 @@ export default async function PlannerPage({ searchParams }: Props) {
  return (
  <div className={ds.mobilePage}>
  <div className={ds.gradientHeader}>
+ <span className={ds.kicker}>YOUR WEEK IN SYNC</span>
  <h1 className={ds.pageTitle}>Weekly Plan</h1>
  </div>
  <div className={`${ds.mobileGutter} ${ds.overlap} space-y-3 ${ds.pageContent}`}>
@@ -143,9 +144,10 @@ export default async function PlannerPage({ searchParams }: Props) {
  return (
  <div className={ds.mobilePage}>
  <div className={ds.gradientHeader}>
- <h1 className={`mb-1 ${ds.pageTitle}`}>Weekly Plan</h1>
+ <span className={ds.kicker}>YOUR WEEK IN SYNC</span>
+ <h1 className={`mb-1.5 ${ds.pageTitle}`}>Weekly Plan</h1>
  <p className={ds.pageSubtitle}>Plan your meals, generate your list</p>
- <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+ <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
  <WeekNav weekStart={weekStart} onGradient />
  <GenerateListButton
  mealPlanId={mealPlan.id}

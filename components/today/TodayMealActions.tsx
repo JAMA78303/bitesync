@@ -68,7 +68,7 @@ export function TodayMealActions({ entryId, status, mealName }: Props) {
         disabled={isPending}
         aria-label={`Mark ${mealName} as not eaten yet`}
         aria-pressed
-        className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--brand-action)] text-[var(--text-on-brand)] transition-transform active:scale-95 disabled:opacity-60"
+        className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] transition-transform active:scale-95 disabled:opacity-60"
       >
         {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" strokeWidth={2.5} />}
       </button>
@@ -99,7 +99,8 @@ export function TodayMealActions({ entryId, status, mealName }: Props) {
           Undo skip
         </button>
       ) : status === "planned" && !replacing ? (
-        <div className="flex gap-2">
+        // Stacked, so the column stays narrow and the meal name keeps its room.
+        <div className="flex flex-col items-end gap-1">
           <button
             type="button"
             onClick={() => apply("skipped")}
@@ -154,7 +155,7 @@ export function TodayMealActions({ entryId, status, mealName }: Props) {
             <button
               type="submit"
               disabled={isPending || !replacementName.trim()}
-              className="rounded-lg bg-[var(--brand-action)] px-2.5 py-1 text-2xs font-semibold text-[var(--text-on-brand)] disabled:opacity-50"
+              className="rounded-lg bg-[var(--btn-primary-bg)] px-2.5 py-1 text-2xs font-semibold text-[var(--btn-primary-text)] disabled:opacity-50"
             >
               {isPending ? "Saving…" : "Log it"}
             </button>

@@ -1,47 +1,39 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { AppTopBar } from "@/components/shared/AppTopBar";
 import { BottomNav } from "@/components/shared/BottomNav";
 import { Sidebar } from "@/components/shared/Sidebar";
-import { Logo } from "@/components/shared/Logo";
 
 type AppShellProps = {
- children: React.ReactNode;
+  children: React.ReactNode;
+  /** First letter of the account email, for the avatar button. */
+  initial: string;
+  isPro: boolean;
 };
 
-/** Routes that render their own full-bleed green gradient header on mobile. */
+/** Routes whose page starts with a header card and sets its own gutters on mobile. */
 function hasGradientHeader(pathname: string): boolean {
- const roots = ["/today","/planner","/recipes","/grocery","/nutrition","/goals","/pantry"];
- if (roots.some((r) => pathname === r || pathname.startsWith(`${r}/`))) return true;
- return pathname ==="/settings" || pathname.startsWith("/settings/");
+  const roots = ["/today", "/planner", "/recipes", "/grocery", "/nutrition", "/goals", "/pantry", "/settings", "/billing", "/sample-week"];
+  return roots.some((r) => pathname === r || pathname.startsWith(`${r}/`));
 }
 
-export function AppShell({ children }: AppShellProps) {
- const pathname = usePathname() ??"";
- const gradientHeader = hasGradientHeader(pathname);
+export function AppShell({ children, initial, isPro }: AppShellProps) {
+  const pathname = usePathname() ?? "";
+  const gradientHeader = hasGradientHeader(pathname);
 
- return (
- <div className="flex min-h-screen overflow-x-hidden bg-[var(--surface-muted)] text-[var(--text-primary)]">
- <Sidebar />
- <div className="relative flex w-full flex-1 flex-col">
- {gradientHeader ? (
- <div className="pointer-events-none absolute inset-x-0 top-0 z-20 app-mobile-gutter pt-[max(0.75rem,env(safe-area-inset-top))] md:hidden">
- <Logo size="sm" variant="icon" href="/today" className="pointer-events-auto" />
- </div>
- ) : (
- <header className="border-b border-[var(--border-default)] bg-[var(--surface-card)] px-4 py-3 md:hidden">
- <Logo size="sm" href="/today" />
- </header>
- )}
- <main
- className={`page-content flex-1 overflow-x-hidden md:p-8 md:pb-8 ${
- gradientHeader ?"p-0 md:p-8" :"app-mobile-gutter py-4 md:p-8"
- }`}
- >
- {children}
- </main>
- <BottomNav />
- </div>
- </div>
- );
+  return (
+    <div className="app-frame">
+      <Sidebar isPro={isPro} />
+      <div className="app-main">
+        <AppTopBar initial={initial} />
+        <main
+          className={`page-content flex-1 overflow-x-hidden ${gradientHeader ? "" : "app-mobile-gutter py-4 md:py-0"}`}
+        >
+          <div className="app-content">{children}</div>
+        </main>
+      </div>
+      <BottomNav />
+    </div>
+  );
 }

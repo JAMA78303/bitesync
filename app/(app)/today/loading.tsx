@@ -3,7 +3,7 @@ import { ds } from "@/lib/ui/classes";
 export default function TodayLoading() {
   return (
     <div className={`${ds.mobilePage} ${ds.pageContent} animate-pulse`}>
-      <div className={ds.gradientHeaderCompact}>
+      <div className={ds.gradientHeader}>
         <div className="mb-2 h-4 w-40 rounded bg-[var(--header-stat-bg)]" />
         <div className="h-7 w-32 rounded bg-[var(--header-stat-bg)]" />
       </div>

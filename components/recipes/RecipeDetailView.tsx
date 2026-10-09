@@ -6,7 +6,6 @@ import { CookingMode } from "@/components/recipes/CookingMode";
 import { MealThumbnail } from "@/components/ui/MealThumbnail";
 import { parseRecipeSteps } from "@/lib/recipes/parseRecipeSteps";
 import { getDietTag } from "@/lib/ui/dietTags";
-import { getDietTagStyle } from "@/lib/ui/dietTagStyles";
 import { formatIngredientWeightSuffix } from "@/lib/nutrition/convert";
 import { isCookedWeightStaple } from "@/lib/recipes/cookedWeight";
 import { ds } from "@/lib/ui/classes";
@@ -90,59 +89,69 @@ export function RecipeDetailView({
 
  return (
  <div className={`${ds.mobilePage} ${ds.pageContent}`}>
- <div className="relative flex h-40 items-center justify-center rounded-b-none bg-[var(--surface-action-subtle)]">
- <MealThumbnail recipeName={recipe.name} mealType="dinner" size="lg" />
+ <header className={`${ds.gradientHeader} flex flex-col gap-4 md:flex-row md:items-center md:justify-between`}>
+ <div className="min-w-0">
+ <span className={ds.kicker}>{dietTag ? dietTag : "RECIPE"}</span>
+ <h1 className={`mb-1.5 ${ds.pageTitle}`}>{recipe.name}</h1>
  {recipe.source_domain && recipe.source_url ? (
  <a
  href={recipe.source_url}
  target="_blank"
  rel="noopener noreferrer"
- className="absolute right-3 bottom-3 flex items-center gap-1 rounded-full bg-[var(--surface-overlay)]/80 px-2 py-1 text-xs text-[var(--text-muted)] backdrop-blur-sm"
+ className={`${ds.pageSubtitle} underline-offset-2 hover:underline`}
  >
- <span>🔗</span> {recipe.source_domain}
+ Imported from {recipe.source_domain} ↗
  </a>
- ) : null}
+ ) : (
+ <p className={ds.pageSubtitle}>
+ {kcal ? `${Math.round(kcal)} kcal · ${Math.round(protein)}g protein` : "Your recipe"}
+ </p>
+ )}
  </div>
-
- <div className={`${ds.mobileGutter} pt-4`}>
- <Link href="/recipes" className="mb-4 inline-flex text-sm font-medium text-[var(--brand-primary)]">
+ <Link href="/recipes" className={`${ds.heroGhostBtn} shrink-0 self-start md:self-center`}>
  ← Back to recipes
  </Link>
+ </header>
 
- {dietTag ? (
- <span className={`mb-2 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${getDietTagStyle(dietTag)}`}>
- {dietTag}
- </span>
+ <div className={`${ds.mobileGutter} grid items-start gap-5 md:grid-cols-[minmax(0,1fr)_300px]`}>
+ <article className={`${ds.card} overflow-hidden`}>
+ <div className="flex h-36 items-center justify-center bg-[var(--surface-action-subtle)] md:h-44">
+ <MealThumbnail recipeName={recipe.name} mealType="dinner" size="lg" />
+ </div>
+
+ <div className="p-5 md:p-7">
+ {recipe.description ? (
+ <p className="mb-5 text-sm leading-relaxed text-[var(--text-secondary)]">{recipe.description}</p>
  ) : null}
- <h1 className="mb-1 text-xl font-extrabold text-[var(--text-primary)]">{recipe.name}</h1>
- {recipe.description ? <p className="mb-4 text-sm text-[var(--text-muted)]">{recipe.description}</p> : null}
 
  <div className="mb-6 grid grid-cols-4 gap-2">
  {macroCells.map((m) => (
- <div key={m.label} className="rounded-xl bg-[var(--surface-brand-subtle)] p-2.5 text-center">
- <p className="text-xs font-bold text-[var(--text-primary)]">{m.value}</p>
- <p className="text-2xs text-[var(--text-muted)]">{m.unit}</p>
- <p className="mt-0.5 text-2xs text-[var(--text-muted)]">{m.label}</p>
+ <div key={m.label} className="rounded-xl bg-[var(--surface-brand-subtle)] px-1 py-3 text-center">
+ <p className="font-display text-base font-extrabold text-[var(--text-primary)]">
+ {m.value}
+ <span className="text-[11px] font-semibold text-[var(--text-muted)]">{m.unit === "g" ? "g" : ""}</span>
+ </p>
+ <p className="mt-0.5 text-[11px] text-[var(--text-muted)]">{m.label}</p>
  </div>
  ))}
  </div>
 
- <div className="mb-6 flex items-center justify-between rounded-2xl bg-[var(--surface-muted)] px-4 py-3">
- <span className="text-sm font-medium text-[var(--text-secondary)]">Serves</span>
+ <div className="mb-6 flex items-center justify-between rounded-xl border border-[var(--border-default)] px-4 py-3">
+ <span className="text-sm font-semibold text-[var(--text-secondary)]">Serves</span>
  <div className="flex items-center gap-3">
  <button
  type="button"
  onClick={() => setServings((s) => Math.max(1, s - 1))}
- className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border-default)] text-[var(--text-muted)]"
+ className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-default)] text-[var(--text-secondary)] hover:border-[var(--brand-primary)]"
  aria-label="Decrease servings"
  >
  −
  </button>
- <span className="w-4 text-center font-bold text-[var(--text-primary)]">{servings}</span>
+ <span className="w-5 text-center font-display font-extrabold text-[var(--text-primary)]">{servings}</span>
  <button
  type="button"
  onClick={() => setServings((s) => s + 1)}
- className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border-default)] text-[var(--text-muted)]"
+ className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-default)] text-[var(--text-secondary)] hover:border-[var(--brand-primary)]"
  aria-label="Increase servings"
  >
  +
@@ -150,11 +159,11 @@ export function RecipeDetailView({
  </div>
  </div>
 
- <h2 className="mb-3 text-sm font-bold text-[var(--text-primary)]">Ingredients</h2>
- <div className="mb-6 space-y-0">
+ <span className={ds.sectionKicker}>INGREDIENTS · {servings} {servings === 1 ? "SERVING" : "SERVINGS"}</span>
+ <div className="mt-2 space-y-0">
  {ingredients.length === 0 ? (
  <p className="text-sm text-[var(--text-muted)]">
- No ingredients yet.{""}
+ No ingredients yet.{" "}
  <Link href={editHref} className="font-medium text-[var(--brand-primary)] underline">
  Add in edit
  </Link>
@@ -169,7 +178,7 @@ export function RecipeDetailView({
  return (
  <div
  key={ing.id}
- className="flex items-center justify-between border-b border-[var(--border-subtle)] py-2"
+ className="flex items-center justify-between border-b border-[var(--border-subtle)] py-2.5 last:border-b-0"
  >
  <div className="flex min-w-0 items-center gap-2">
  <span className="text-sm text-[var(--text-secondary)]">
@@ -194,7 +203,17 @@ export function RecipeDetailView({
  })
  )}
  </div>
+ </div>
+ </article>
 
+ <aside className={`${ds.card} p-5 md:sticky md:top-[92px] md:p-6`}>
+ <span className={ds.sectionKicker}>ADD TO YOUR WEEK</span>
+ <h2 className="mb-2 font-display text-lg font-extrabold tracking-[-0.02em] text-[var(--text-primary)]">
+ Ready to plan this meal?
+ </h2>
+ <p className="mb-5 text-sm leading-relaxed text-[var(--text-muted)]">
+ Pick a day in your planner and that day&apos;s totals update with it.
+ </p>
  {methodSteps.length ? (
  <button
  type="button"
@@ -204,15 +223,13 @@ export function RecipeDetailView({
  Cook
  </button>
  ) : null}
-
- <div className="flex gap-3">
  <Link
  href="/planner"
- className={`${methodSteps.length ? ds.secondaryBtn : ds.primaryBtn} flex-1 py-3.5 text-center`}
+ className={`${methodSteps.length ? ds.secondaryBtn : ds.primaryBtn} w-full py-3.5 text-center`}
  >
  Add to planner
  </Link>
- <div className="flex gap-2">
+ <div className="mt-3 flex justify-end gap-2">
  {lifecycleActions ?? (
  <>
  {archiveAction}
@@ -220,7 +237,7 @@ export function RecipeDetailView({
  </>
  )}
  </div>
- </div>
+ </aside>
  </div>
 
  {cookingOpen ? (
