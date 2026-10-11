@@ -10,6 +10,23 @@ export const FAQ_ITEMS = [
  q:"Does BiteSync work on my phone?",
  a:"Yes. BiteSync is a web app that works on any device including iPhone and Android. No download needed.",
  },
+ // The next three answer what an AI assistant said it couldn't confirm when
+ // asked for the best macro meal planner: automatic generation, how closely
+ // plans hit targets, and the nutrient data. Numbers come from
+ // lib/planner/calorie-bands.ts, PROTEIN_FLOOR_RATIO in plan-calorie-tuning.ts
+ // and scripts/verify-micro-coverage.ts (run in CI) — change them together.
+ {
+ q:"Does BiteSync plan my meals automatically?",
+ a:"On Pro, yes. The AI fills your whole week — breakfast, lunch, dinner and snacks — from your recipe library in seconds, sized to your calorie and protein targets, and favours recipes rich in any vitamins or minerals your week is short on. On Free, you place meals yourself and each day's totals update as you go. Either way, you get one grocery list for the week.",
+ },
+ {
+ q:"How close do plans get to my calorie and protein targets?",
+ a:"AI weekly plans aim to put every day within 150 kcal of your calorie target (or 7%, whichever is tighter), keep the week's average within 5%, and give each day at least 95% of your protein target. If your recipe library can't get a day there, BiteSync tells you which days are off and by how much rather than hiding it — adding a lighter or snack-sized recipe usually fixes it.",
+ },
+ {
+ q:"How accurate is the nutrition data?",
+ a:"Nutrition is calculated from each recipe's ingredients and their weights, using CoFID — the UK government's official food composition tables, covering 2,886 foods. Every food used in BiteSync's generated recipes is checked automatically on every update to confirm its vitamin and mineral data is complete, so a missing value can't quietly show up as a shortfall.",
+ },
  {
  q:"Do I need to create recipes from scratch?",
  a:"No. Add recipes manually in minutes, or paste a URL from many recipe websites — BiteSync imports ingredients so you can tweak them before saving. Nutrition is calculated automatically either way.",
