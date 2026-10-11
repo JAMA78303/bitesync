@@ -13,7 +13,9 @@
  * these are claims, not proof — fine for spotting a trend on a small site.
  */
 
-export type CrawlerKind = "user" | "search" | "training" | "preview";
+/** "referral" is a person, not a bot: someone who clicked through from an AI
+ *  assistant's answer (see aiReferrals.ts). It shares the table and page. */
+export type CrawlerKind = "referral" | "user" | "search" | "training" | "preview";
 
 export type Crawler = { bot: string; kind: CrawlerKind };
 
@@ -53,6 +55,10 @@ export function identifyCrawler(userAgent: string | null | undefined): Crawler |
 }
 
 export const CRAWLER_KIND_LABELS: Record<CrawlerKind, { title: string; description: string }> = {
+  referral: {
+    title: "Visitors from AI answers",
+    description: "A person clicked through to BiteSync from an AI assistant's answer.",
+  },
   user: {
     title: "Read to answer someone",
     description: "A person asked an AI a question and it read this page to answer.",
