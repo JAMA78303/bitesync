@@ -30,6 +30,9 @@ export const POST_SLUGS = [
   "meal-planning-reduce-food-waste",
   "raw-or-cooked-weight",
   "does-meal-planning-help",
+  "mealime-alternatives",
+  "bitesync-vs-myfitnesspal",
+  "bitesync-vs-eat-this-much",
 ] as const;
 
 export type PostSlug = (typeof POST_SLUGS)[number];

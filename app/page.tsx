@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Newsreader } from "next/font/google";
 import {
@@ -39,6 +40,13 @@ const newsreader = Newsreader({
   weight: ["500"],
   display: "swap",
 });
+
+// The homepage had no canonical, and www.bitesync.io served a full copy of it
+// (next.config.ts now redirects www). Every other public page already names
+// its one address.
+export const metadata: Metadata = {
+  alternates: { canonical: "https://bitesync.io" },
+};
 
 const NAV_LINKS: readonly HomeNavLink[] = [
   { href: "#how-it-works", label: "How it works" },
@@ -166,7 +174,7 @@ function HeroPlannerExample() {
 
 const PROOF = [
   { Icon: ShieldCheck, title: "Built by a dietitian", detail: "Targets and portions from clinical practice" },
-  { Icon: BarChart3, title: "UK food data", detail: "Nutrition from CoFID, the UK's official tables" },
+  { Icon: BarChart3, title: "Official food data", detail: "Nutrition from government food composition tables" },
   { Icon: Lock, title: "Private by default", detail: "No ads, data never sold" },
   { Icon: CircleDollarSign, title: "Free to start", detail: "No card needed" },
 ] as const;
@@ -200,7 +208,7 @@ const FEATURES = [
   {
     Icon: ClipboardList,
     title: "Automatic nutrition",
-    body: "Calories, protein, carbs, fat and fibre calculated from your ingredients, using UK food data.",
+    body: "Calories, protein, carbs, fat and fibre calculated from your ingredients, using official food composition data.",
   },
   {
     Icon: Package,
@@ -217,7 +225,11 @@ const FEATURES = [
 export default async function LandingPage() {
   // Same registry as the blog routes and sitemap, so publishing a post
   // surfaces it here automatically.
-  const featuredPosts = (await loadAllPosts()).slice(0, FEATURED_POST_COUNT);
+  // Comparison posts are for people choosing between apps (and the AI
+  // answers they ask); the homepage strip shows the nutrition writing.
+  const featuredPosts = (await loadAllPosts())
+    .filter((post) => post.category !== "Comparisons")
+    .slice(0, FEATURED_POST_COUNT);
   const quote = TESTIMONIALS[0];
 
   return (
@@ -301,18 +313,18 @@ export default async function LandingPage() {
           <div className="wrap">
             <div className="metric">
               <b>2,886</b>
-              <span>UK foods with official nutrition data</span>
+              <span>foods with official nutrition data</span>
             </div>
             <div className="metric">
               <b>12</b>
-              <span>vitamins &amp; minerals checked against UK reference values</span>
+              <span>vitamins &amp; minerals checked against recommended intakes</span>
             </div>
             <div className="metric">
               <b>7 days</b>
               <span>planned in one go, to your targets</span>
             </div>
             <div className="metric">
-              <b>£0</b>
+              <b>Free</b>
               <span>to start — no card needed</span>
             </div>
           </div>
@@ -335,8 +347,8 @@ export default async function LandingPage() {
                     See what your week is missing <span className="pro-chip">PRO</span>
                   </h3>
                   <p>
-                    Iron, iodine, vitamin D and nine more, checked across the whole week against UK reference
-                    values. Something no calorie counter shows you.
+                    Iron, iodine, vitamin D and nine more, checked across the whole week against recommended
+                    intakes. Something no calorie counter shows you.
                   </p>
                 </div>
                 <div className="mini-chart" aria-hidden>

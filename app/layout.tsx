@@ -66,6 +66,13 @@ export const metadata: Metadata = {
  },
  /** File-based icons in `app/` (favicon.ico, icon.png, apple-icon.png). Extra PNG sizes in `public/`. */
  manifest: "/manifest.webmanifest",
+ // Prove ownership to Google Search Console and Bing Webmaster Tools
+ // (property https://bitesync.io/ in both). Public by design and tied to no
+ // personal detail; removing one un-verifies the site with that engine.
+ verification: {
+  google: "zCUBgwSfXoov_Bs0xXTJzJ23mPx3p5mJbj9bRbEKjCc",
+  other: { "msvalidate.01": "496338C116C4FD874A25C7B552B664A6" },
+ },
 };
 
 export default function RootLayout({
