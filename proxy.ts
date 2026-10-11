@@ -1,6 +1,7 @@
 import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { identifyCrawler } from "@/lib/analytics/aiCrawlers";
+import { identifyAiReferral } from "@/lib/analytics/aiReferrals";
 import { recordCrawlerVisit } from "@/lib/analytics/recordCrawlerVisit";
 import {
   isAllowedWithoutEmailConfirmation,
@@ -65,7 +66,18 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   // background, so the page is not held up. See lib/analytics/aiCrawlers.ts.
   const userAgent = request.headers.get("user-agent") ?? "";
   const crawler = identifyCrawler(userAgent);
-  if (crawler) event.waitUntil(recordCrawlerVisit(crawler, path, userAgent));
+  if (crawler) {
+    event.waitUntil(recordCrawlerVisit(crawler, path, userAgent));
+  } else if (request.headers.get("sec-fetch-mode") === "navigate" && !request.headers.get("rsc")) {
+    // A person landing on a page (not a prefetch or in-app navigation) from
+    // an AI assistant's answer. Only the landing page is recorded: clicks
+    // within the site carry bitesync.io as their Referer.
+    const referral = identifyAiReferral(
+      request.headers.get("referer"),
+      request.nextUrl.searchParams.get("utm_source"),
+    );
+    if (referral) event.waitUntil(recordCrawlerVisit(referral, path, null));
+  }
 
   const { user, response } = await updateSession(request);
 
