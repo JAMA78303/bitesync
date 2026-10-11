@@ -31,8 +31,8 @@ export const FAQ_ITEMS = [
  a: `Email ${SUPPORT_EMAIL} — it goes straight to ${FOUNDER.name}, who built BiteSync. You can also send feedback from Settings in the app.`,
  },
  {
- q:"Can I use BiteSync outside the UK?",
- a:"Yes. Food composition data describes the food itself, so it travels — a chicken breast has the same protein wherever you shop. Two things to know: subscriptions are billed in GBP, and micronutrient targets follow UK dietary reference values, which track EFSA and WHO guidance closely for most nutrients.",
+ q:"Can I use BiteSync in any country?",
+ a:"Yes. BiteSync runs in any browser, and food composition data describes the food itself, so it travels — a chicken breast has the same protein wherever you shop. Two things to know: subscriptions are billed in pounds (GBP), so your bank converts the price to your currency, and vitamin and mineral targets follow UK dietary reference values, which closely match European (EFSA) and WHO guidance for most nutrients.",
  },
  {
  q:"Who built BiteSync?",

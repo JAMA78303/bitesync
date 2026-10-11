@@ -19,7 +19,7 @@ const STEPS = [
   },
   {
     title: "Spot micronutrient gaps",
-    body: "See what your week is missing — iron, iodine, vitamin D — against UK reference values.",
+    body: "See what your week is missing — iron, iodine, vitamin D — against recommended intakes.",
     pro: true,
   },
 ] as const;

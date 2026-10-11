@@ -174,7 +174,7 @@ function HeroPlannerExample() {
 
 const PROOF = [
   { Icon: ShieldCheck, title: "Built by a dietitian", detail: "Targets and portions from clinical practice" },
-  { Icon: BarChart3, title: "UK food data", detail: "Nutrition from CoFID, the UK's official tables" },
+  { Icon: BarChart3, title: "Official food data", detail: "Nutrition from government food composition tables" },
   { Icon: Lock, title: "Private by default", detail: "No ads, data never sold" },
   { Icon: CircleDollarSign, title: "Free to start", detail: "No card needed" },
 ] as const;
@@ -208,7 +208,7 @@ const FEATURES = [
   {
     Icon: ClipboardList,
     title: "Automatic nutrition",
-    body: "Calories, protein, carbs, fat and fibre calculated from your ingredients, using UK food data.",
+    body: "Calories, protein, carbs, fat and fibre calculated from your ingredients, using official food composition data.",
   },
   {
     Icon: Package,
@@ -313,18 +313,18 @@ export default async function LandingPage() {
           <div className="wrap">
             <div className="metric">
               <b>2,886</b>
-              <span>UK foods with official nutrition data</span>
+              <span>foods with official nutrition data</span>
             </div>
             <div className="metric">
               <b>12</b>
-              <span>vitamins &amp; minerals checked against UK reference values</span>
+              <span>vitamins &amp; minerals checked against recommended intakes</span>
             </div>
             <div className="metric">
               <b>7 days</b>
               <span>planned in one go, to your targets</span>
             </div>
             <div className="metric">
-              <b>£0</b>
+              <b>Free</b>
               <span>to start — no card needed</span>
             </div>
           </div>
@@ -347,8 +347,8 @@ export default async function LandingPage() {
                     See what your week is missing <span className="pro-chip">PRO</span>
                   </h3>
                   <p>
-                    Iron, iodine, vitamin D and nine more, checked across the whole week against UK reference
-                    values. Something no calorie counter shows you.
+                    Iron, iodine, vitamin D and nine more, checked across the whole week against recommended
+                    intakes. Something no calorie counter shows you.
                   </p>
                 </div>
                 <div className="mini-chart" aria-hidden>
