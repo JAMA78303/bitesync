@@ -11,6 +11,19 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.join(__dirname),
   },
+  // One address for the site. www.bitesync.io served a full copy of every
+  // page, which search engines count as duplicates of the bitesync.io ones.
+  // /api is left alone: webhooks (Stripe) don't follow redirects.
+  async redirects() {
+    return [
+      {
+        source: "/:path((?!api/).*)",
+        has: [{ type: "host", value: "www.bitesync.io" }],
+        destination: "https://bitesync.io/:path",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 // Enables importing .mdx modules (blog posts live in content/blog/). MDX files

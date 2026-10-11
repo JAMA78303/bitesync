@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Newsreader } from "next/font/google";
 import {
@@ -39,6 +40,13 @@ const newsreader = Newsreader({
   weight: ["500"],
   display: "swap",
 });
+
+// The homepage had no canonical, and www.bitesync.io served a full copy of it
+// (next.config.ts now redirects www). Every other public page already names
+// its one address.
+export const metadata: Metadata = {
+  alternates: { canonical: "https://bitesync.io" },
+};
 
 const NAV_LINKS: readonly HomeNavLink[] = [
   { href: "#how-it-works", label: "How it works" },
@@ -217,7 +225,11 @@ const FEATURES = [
 export default async function LandingPage() {
   // Same registry as the blog routes and sitemap, so publishing a post
   // surfaces it here automatically.
-  const featuredPosts = (await loadAllPosts()).slice(0, FEATURED_POST_COUNT);
+  // Comparison posts are for people choosing between apps (and the AI
+  // answers they ask); the homepage strip shows the nutrition writing.
+  const featuredPosts = (await loadAllPosts())
+    .filter((post) => post.category !== "Comparisons")
+    .slice(0, FEATURED_POST_COUNT);
   const quote = TESTIMONIALS[0];
 
   return (
