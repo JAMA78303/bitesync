@@ -33,6 +33,10 @@ export const POST_SLUGS = [
   "mealime-alternatives",
   "bitesync-vs-myfitnesspal",
   "bitesync-vs-eat-this-much",
+  "best-meal-planner-apps-macros",
+  "bitesync-vs-cronometer",
+  "bitesync-vs-macrofactor",
+  "bitesync-vs-samsung-food",
 ] as const;
 
 export type PostSlug = (typeof POST_SLUGS)[number];
