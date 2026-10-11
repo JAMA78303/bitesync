@@ -25,7 +25,7 @@ export const FAQ_ITEMS = [
  },
  {
  q:"How accurate is the nutrition data?",
- a:"Nutrition is calculated from each recipe's ingredients and their weights, using CoFID — the UK government's official food composition tables, covering 2,886 foods. Every food used in BiteSync's generated recipes is checked automatically on every update to confirm its vitamin and mineral data is complete, so a missing value can't quietly show up as a shortfall.",
+ a:"Recipes are calculated ingredient by ingredient, by weight, using CoFID — the UK government's official food composition tables, covering 2,886 foods. (An imported recipe uses the website's own figures when it publishes them.) Every food used in BiteSync's generated recipes is checked automatically on every update to confirm its vitamin and mineral data is complete, so a missing value can't quietly show up as a shortfall.",
  },
  {
  q:"Do I need to create recipes from scratch?",
