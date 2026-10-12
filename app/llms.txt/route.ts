@@ -55,6 +55,7 @@ export async function GET() {
     "",
     `- [Home](${BASE}/)`,
     `- [Why I built BiteSync — ${FOUNDER_BYLINE}](${BASE}${FOUNDER.path})`,
+    `- [Free macro calculator](${BASE}/macro-calculator): daily calories, protein, carbs and fat for a goal, using the same method and safety limits as BiteSync's planner. No sign-up.`,
     `- [Blog](${BASE}/blog)`,
     `- [Privacy](${BASE}/privacy)`,
     `- [Terms](${BASE}/terms)`,

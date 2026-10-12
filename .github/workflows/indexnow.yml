@@ -12,6 +12,8 @@ on:
       - "app/blog/**"
       - "components/landing/**"
       - "app/llms.txt/**"
+      - "app/macro-calculator/**"
+      - "components/calculator/**"
   workflow_dispatch:
 
 jobs:
