@@ -556,6 +556,7 @@ export default async function LandingPage() {
           <div className="footer-bottom">
             <span>© {new Date().getFullYear()} BiteSync</span>
             <span className="flex flex-wrap gap-x-5 gap-y-2">
+              <Link href="/macro-calculator">Macro calculator</Link>
               <Link href="/privacy">Privacy policy</Link>
               <Link href="/terms">Terms</Link>
               <a href={supportMailto()}>Help: {SUPPORT_EMAIL}</a>

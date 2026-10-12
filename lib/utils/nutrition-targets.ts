@@ -70,7 +70,7 @@ function reconcileCarbFatRounding(kcal: number, protein: number, carbs: number, 
  * disruption — a 60kg woman losing weight was given 33g (0.55 g/kg) with nothing
  * stopping it going lower. Held at 0.6 g/kg, taking the shortfall from carbs.
  */
-const MIN_FAT_G_PER_KG = 0.6;
+export const MIN_FAT_G_PER_KG = 0.6;
 
 function macroSplitFromKcalProtein(
   kcal: number,

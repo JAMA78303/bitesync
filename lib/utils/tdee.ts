@@ -20,7 +20,7 @@ export type TDEEResult = {
   dailyProtein: number;
 };
 
-const PAL: Record<ActivityLevel, number> = {
+export const PAL: Record<ActivityLevel, number> = {
   sedentary: 1.2,
   light: 1.375,
   moderate: 1.55,
@@ -62,7 +62,7 @@ export function calculateTDEE(bmr: number, activityLevel: ActivityLevel): number
  * roughly 250-350 kcal; the previous +500 reliably added fat beyond what the
  * "Build muscle" label promises.
  */
-const GOAL_TDEE_ADJUSTMENT: Record<Goal, number> = {
+export const GOAL_TDEE_ADJUSTMENT: Record<Goal, number> = {
   lose: -0.2,
   maintain: 0,
   gain: 0.1,
@@ -104,7 +104,7 @@ export function proteinReferenceWeightKg(weightKg: number, heightCm: number, sex
  * ranges (PENG/RNI territory); the athlete figures are reserved for people whose
  * stated activity justifies them. Activity is already collected for TDEE.
  */
-const PROTEIN_G_PER_KG: Record<ActivityLevel, Record<Goal, number>> = {
+export const PROTEIN_G_PER_KG: Record<ActivityLevel, Record<Goal, number>> = {
   sedentary: { maintain: 1.0, lose: 1.2, gain: 1.2 },
   light: { maintain: 1.1, lose: 1.2, gain: 1.2 },
   moderate: { maintain: 1.4, lose: 1.6, gain: 1.6 },
