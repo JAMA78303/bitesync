@@ -37,6 +37,7 @@ export const POST_SLUGS = [
   "bitesync-vs-cronometer",
   "bitesync-vs-macrofactor",
   "bitesync-vs-samsung-food",
+  "how-much-protein-do-you-need",
 ] as const;
 
 export type PostSlug = (typeof POST_SLUGS)[number];
