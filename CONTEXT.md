@@ -52,7 +52,7 @@ Update this file whenever behavior, architecture, or UX choices change.
 - **Status:** Accepted
 - **Decision:** Protein scales by activity level against adjusted bodyweight above BMI 30; calorie goals are a percentage of TDEE, not a flat 500; fat is floored at 0.6 g/kg.
 - **Why:** Flat figures meant different things to different bodies — a 140kg sedentary man was prescribed 308g of protein, and a 60kg woman got a 32% deficit from the same "lose weight" selection.
-- **Consequence:** Athlete-level multipliers are reserved for users whose stated activity justifies them. Multipliers were agreed against PENG ranges and should not be changed without the same scrutiny.
+- **Consequence:** Athlete-level multipliers are reserved for users whose stated activity justifies them. Multipliers should not be changed without a dietitian's review. (They were first checked against PENG ranges, but PENG is guidance for patients needing nutrition support, not healthy adults, so it is no longer the reference.)
 
 ### DEC-008: Pantry Matching Is Strict, Recipe Matching Is Fuzzy
 - **Date:** 2026-08-22

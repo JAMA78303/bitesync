@@ -100,9 +100,10 @@ export function proteinReferenceWeightKg(weightKg: number, heightCm: number, sex
  *
  * The previous flat 1.8–2.2 came from the resistance-trained-athlete-in-a-deficit
  * literature (Helms et al.) and was applied to everyone, including sedentary
- * users, on total bodyweight. Sedentary intakes now sit nearer clinical adequacy
- * ranges (PENG/RNI territory); the athlete figures are reserved for people whose
- * stated activity justifies them. Activity is already collected for TDEE.
+ * users, on total bodyweight. Sedentary intakes now sit nearer healthy-adult
+ * adequacy (just above the UK RNI of 0.75 g/kg); the athlete figures are
+ * reserved for people whose stated activity justifies them. Activity is
+ * already collected for TDEE.
  */
 export const PROTEIN_G_PER_KG: Record<ActivityLevel, Record<Goal, number>> = {
   sedentary: { maintain: 1.0, lose: 1.2, gain: 1.2 },
