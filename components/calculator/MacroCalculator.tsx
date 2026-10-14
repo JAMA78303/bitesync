@@ -11,6 +11,7 @@ import {
   lbToKg,
   parseCalculatorInput,
 } from "@/lib/calculator/macroCalculator";
+import { saveCalculatorPrefill } from "@/lib/onboarding/setupDefaults";
 import { ds } from "@/lib/ui/classes";
 import {
   ACTIVITY_OPTIONS,
@@ -315,7 +316,15 @@ export function MacroCalculator() {
                 BiteSync sets these same targets for you, plans your meals to hit them before you shop, and turns the
                 week into one grocery list.
               </p>
-              <Link href="/signup" className={`${ds.primaryBtn} mt-3 w-full gap-2`}>
+              <Link
+                href="/signup"
+                // Kept in this browser only, so setup can start with these answers
+                // filled in. Nothing is sent anywhere (see the page's FAQ).
+                onClick={() => {
+                  if (input) saveCalculatorPrefill(window.localStorage, { values: input, units });
+                }}
+                className={`${ds.primaryBtn} mt-3 w-full gap-2`}
+              >
                 Plan my week free
                 <ArrowRight className="h-4 w-4" aria-hidden />
               </Link>

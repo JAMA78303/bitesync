@@ -21,7 +21,7 @@ const PATH = "/macro-calculator";
 export const metadata: Metadata = {
   title: "Macro calculator: daily calories and protein for your goal",
   description:
-    "Free macro calculator built by a dietitian. Work out your daily calories, protein, carbs and fat to lose weight, maintain or build muscle. No sign-up, and nothing you enter is saved.",
+    "Free macro calculator built by a dietitian. Work out your daily calories, protein, carbs and fat to lose weight, maintain or build muscle. No sign-up, and nothing you enter is sent anywhere.",
   alternates: { canonical: `${BASE}${PATH}` },
   openGraph: {
     title: "Free macro calculator, built by a dietitian",
@@ -61,7 +61,7 @@ const CALCULATOR_FAQ = [
   },
   {
     q: "Is anything I enter saved?",
-    a: "No. The calculation runs in your browser. Nothing you type is sent to BiteSync or stored.",
+    a: "Nothing you type is sent to BiteSync: the calculation runs in your browser. If you tap “Plan my week free”, your answers are kept in this browser for up to 7 days, so you don't have to type them again when you set up BiteSync.",
   },
   {
     q: "Who shouldn't use this calculator?",
@@ -118,7 +118,7 @@ export default function MacroCalculatorPage() {
         <p className="mt-3 max-w-2xl text-base leading-relaxed text-[var(--text-secondary)]">
           Work out how many calories and how much protein, carbs and fat to eat each day to lose weight, maintain or
           build muscle. It uses the same method as BiteSync&apos;s planner, built by a dietitian. Free, no sign-up, and
-          nothing you enter is saved.
+          nothing you enter is sent anywhere.
         </p>
 
         <div className="mt-8">
