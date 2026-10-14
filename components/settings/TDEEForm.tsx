@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useEffect, type ReactNode } from "react";
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertTriangle, Calculator, Info, Loader2, ShieldCheck } from "lucide-react";
@@ -9,6 +9,13 @@ import { Input } from "@/components/ui/input";
 import { ds } from "@/lib/ui/classes";
 import { useToast } from "@/components/ui/use-toast";
 import { saveTDEEProfile } from "@/lib/supabase/profile-actions";
+import {
+ clearCalculatorPrefill,
+ readCalculatorPrefill,
+ unitsForLocale,
+ type HeightUnit,
+ type WeightUnit,
+} from "@/lib/onboarding/setupDefaults";
 import {
  cmToFtIn,
  cmToM,
@@ -34,17 +41,19 @@ import {
  type TDEEResult,
 } from "@/lib/utils/tdee";
 
-type WeightUnit ="kg" |"lb" |"st_lb";
-type HeightUnit ="cm" |"m" |"ft_in";
-
 type Props = {
  defaultValues?: Partial<TDEEFormValues>;
  /** First-run onboarding — allows free users to set targets once. */
  onboardingMode?: boolean;
  onSaved?: () => void;
+ /**
+ * Onboarding only: rendered just above the submit button (the optional
+ * dietary-needs chips), so the one call to action stays at the bottom.
+ */
+ beforeSubmit?: ReactNode;
 };
 
-export function TDEEForm({ defaultValues, onboardingMode = false, onSaved }: Props) {
+export function TDEEForm({ defaultValues, onboardingMode = false, onSaved, beforeSubmit }: Props) {
  const [isPending, startTransition] = useTransition();
  const [preview, setPreview] = useState<(TDEEResult & { bmi: number; rawDailyCalories: number }) | null>(null);
  const [weightUnit, setWeightUnit] = useState<WeightUnit>("kg");
@@ -115,8 +124,31 @@ export function TDEEForm({ defaultValues, onboardingMode = false, onSaved }: Pro
  }
 
  useEffect(() => {
+ // Onboarding with nothing saved yet: start in the visitor's own units, and
+ // carry over anything they typed into the public macro calculator.
+ if (onboardingMode && !defaultValues?.weightKg) {
+ form.register("sex");
+ form.register("goal");
+ const prefill = typeof window !== "undefined" ? readCalculatorPrefill(window.localStorage) : null;
+ const units = prefill
+ ? prefill.units === "imperial"
+ ? { weight: "lb" as const, height: "ft_in" as const }
+ : { weight: "kg" as const, height: "cm" as const }
+ : unitsForLocale(typeof navigator !== "undefined" ? navigator.language : undefined);
+ if (prefill) form.reset(prefill.values);
+ const kg = Number(form.getValues("weightKg"));
+ const cm = Number(form.getValues("heightCm"));
+ setWeightUnit(units.weight);
+ setHeightUnit(units.height);
+ if (units.weight === "lb" && kg > 0) setLbOnlyStr(String(Math.round(kgToLb(kg))));
+ if (units.height === "ft_in" && cm > 0) {
+ const { ft, inch } = cmToFtIn(cm);
+ setFtStr(String(ft));
+ setInStr(String(Math.round(inch)));
+ }
+ }
  updatePreview();
- // eslint-disable-next-line react-hooks/exhaustive-deps -- initial preview from server defaultValues
+ // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once on mount
  }, []);
 
  function onSubmit(values: TDEEFormValues) {
@@ -140,6 +172,7 @@ export function TDEEForm({ defaultValues, onboardingMode = false, onSaved }: Pro
  });
  }
  if (onboardingMode && onSaved) {
+ if (typeof window !== "undefined") clearCalculatorPrefill(window.localStorage);
  onSaved();
  return;
  }
@@ -169,20 +202,21 @@ export function TDEEForm({ defaultValues, onboardingMode = false, onSaved }: Pro
  preview.rawDailyCalories < minCal &&
  preview.dailyCalories >= minCal;
 
- return (
- <form onSubmit={form.handleSubmit(onSubmit)} onChange={updatePreview} className="space-y-4">
- <div className="grid gap-3 sm:grid-cols-2">
+ const weightField = (
  <div className="space-y-2">
+ <div className="flex items-center justify-between gap-3">
  <label className="block text-sm font-medium text-[var(--text-secondary)]">Weight</label>
  <select
  value={weightUnit}
  onChange={(e) => onWeightUnitChange(e.target.value as WeightUnit)}
- className="theme-aware-select h-10 w-full rounded-md border border-[var(--border-default)] px-3 text-sm"
+ aria-label="Weight units"
+ className="theme-aware-select h-8 rounded-md border border-[var(--border-default)] px-2 text-xs"
  >
- <option value="kg">Kilograms (kg)</option>
- <option value="lb">Pounds (lb)</option>
- <option value="st_lb">Stones + pounds</option>
+ <option value="kg">kg</option>
+ <option value="lb">lb</option>
+ <option value="st_lb">st + lb</option>
  </select>
+ </div>
  {weightUnit ==="kg" ? (
  <>
  <Input
@@ -269,18 +303,23 @@ export function TDEEForm({ defaultValues, onboardingMode = false, onSaved }: Pro
  <p className={`mt-1 text-xs ${ds.errorText}`}>{form.formState.errors.weightKg.message}</p>
  ) : null}
  </div>
+ );
 
+ const heightField = (
  <div className="space-y-2">
+ <div className="flex items-center justify-between gap-3">
  <label className="block text-sm font-medium text-[var(--text-secondary)]">Height</label>
  <select
  value={heightUnit}
  onChange={(e) => onHeightUnitChange(e.target.value as HeightUnit)}
- className="theme-aware-select h-10 w-full rounded-md border border-[var(--border-default)] px-3 text-sm"
+ aria-label="Height units"
+ className="theme-aware-select h-8 rounded-md border border-[var(--border-default)] px-2 text-xs"
  >
- <option value="cm">Centimetres (cm)</option>
- <option value="m">Metres (m)</option>
- <option value="ft_in">Feet + inches</option>
+ <option value="cm">cm</option>
+ <option value="m">m</option>
+ <option value="ft_in">ft + in</option>
  </select>
+ </div>
  {heightUnit ==="cm" ? (
  <>
  <Input
@@ -367,9 +406,9 @@ export function TDEEForm({ defaultValues, onboardingMode = false, onSaved }: Pro
  <p className={`mt-1 text-xs ${ds.errorText}`}>{form.formState.errors.heightCm.message}</p>
  ) : null}
  </div>
- </div>
+ );
 
- {bmiPreview != null && bmiPreview > 0 && bmiCategory ? (
+ const bmiCard = bmiPreview != null && bmiPreview > 0 && bmiCategory ? (
  <div className={`rounded-xl border border-[var(--border-default)] p-4 ${getBMIColour(bmiCategory)}`}>
  <div className="flex items-start justify-between gap-3">
  <div>
@@ -384,9 +423,9 @@ export function TDEEForm({ defaultValues, onboardingMode = false, onSaved }: Pro
  BMI is a rough guide and doesn&apos;t account for muscle mass or body composition.
  </p>
  </div>
- ) : null}
+ ) : null;
 
- <div className="grid grid-cols-2 gap-3">
+ const ageField = (
  <div>
  <label className="mb-1.5 block text-sm font-medium text-[var(--text-secondary)]">Age</label>
  <Input
@@ -399,6 +438,9 @@ export function TDEEForm({ defaultValues, onboardingMode = false, onSaved }: Pro
  />
  {form.formState.errors.age ? <p className={`mt-1 text-xs ${ds.errorText}`}>{form.formState.errors.age.message}</p> : null}
  </div>
+ );
+
+ const sexSelect = (
  <div>
  <label className="mb-1.5 block text-sm font-medium text-[var(--text-secondary)]">Sex</label>
  <select
@@ -412,8 +454,9 @@ export function TDEEForm({ defaultValues, onboardingMode = false, onSaved }: Pro
  </select>
  {form.formState.errors.sex ? <p className={`mt-1 text-xs ${ds.errorText}`}>{form.formState.errors.sex.message}</p> : null}
  </div>
- </div>
+ );
 
+ const activityField = (
  <div>
  <label className="mb-1.5 block text-sm font-medium text-[var(--text-secondary)]">Activity level</label>
  <select
@@ -432,7 +475,9 @@ export function TDEEForm({ defaultValues, onboardingMode = false, onSaved }: Pro
  <p className={`mt-1 text-xs ${ds.errorText}`}>{form.formState.errors.activityLevel.message}</p>
  ) : null}
  </div>
+ );
 
+ const goalSelect = (
  <div>
  <label className="mb-1.5 block text-sm font-medium text-[var(--text-secondary)]">Goal</label>
  <select
@@ -453,16 +498,17 @@ export function TDEEForm({ defaultValues, onboardingMode = false, onSaved }: Pro
  </select>
  {form.formState.errors.goal ? <p className={`mt-1 text-xs ${ds.errorText}`}>{form.formState.errors.goal.message}</p> : null}
  </div>
+ );
 
- {bmiPreview != null && bmiPreview > 0 && !isSafeToLoseWeight(bmiPreview) ? (
+ const underweightCallout = bmiPreview != null && bmiPreview > 0 && !isSafeToLoseWeight(bmiPreview) ? (
  <div className={`flex gap-3 rounded-xl p-4 ${ds.errorCallout}`}>
  <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden />
  <div className="space-y-1 text-sm">
  <p className="font-semibold">Weight loss not recommended</p>
  <p className="text-xs leading-relaxed opacity-95">
- Your BMI is below 18.5 (underweight per WHO). The &quot;Lose weight&quot; goal is disabled; if you save with
- another goal, we never apply a calorie deficit while you are underweight.
- Please speak to your GP or a registered dietitian for personal advice.
+ Your BMI is below 18.5 (underweight per WHO), so we won&apos;t set a weight-loss target: your targets
+ will be for maintaining your weight. Please speak to your GP or a registered dietitian for personal
+ advice.
  </p>
  <a
  href="https://www.nhs.uk/live-well/healthy-weight/"
@@ -474,9 +520,9 @@ export function TDEEForm({ defaultValues, onboardingMode = false, onSaved }: Pro
  </a>
  </div>
  </div>
- ) : null}
+ ) : null;
 
- {showLoseSafety && isSafeToLoseWeight(bmiPreview!) ? (
+ const loseSafetyCallout = showLoseSafety && isSafeToLoseWeight(bmiPreview!) ? (
  <div className={`flex gap-3 rounded-xl p-4 ${ds.successCallout}`}>
  <Info className="mt-0.5 h-5 w-5 shrink-0 text-[var(--semantic-success-text)]" aria-hidden />
  <div className="text-sm">
@@ -488,9 +534,9 @@ export function TDEEForm({ defaultValues, onboardingMode = false, onSaved }: Pro
  </p>
  </div>
  </div>
- ) : null}
+ ) : null;
 
- {floorHit && minCal != null ? (
+ const floorCallout = floorHit && minCal != null ? (
  <div className={`flex gap-3 rounded-xl p-4 ${ds.warnCallout}`}>
  <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--semantic-warn-text)]" aria-hidden />
  <p className="text-xs leading-relaxed">
@@ -498,9 +544,9 @@ export function TDEEForm({ defaultValues, onboardingMode = false, onSaved }: Pro
  We&apos;ve set your target to <strong>{minCal} kcal</strong>. Consult your GP before going lower.
  </p>
  </div>
- ) : null}
+ ) : null;
 
- {preview ? (
+ const previewCard = preview ? (
  <div className="space-y-3 rounded-xl border border-[var(--brand-primary)] bg-[var(--surface-brand-subtle)] p-4">
  <div className="flex items-center gap-2">
  <Calculator className="h-4 w-4 text-[var(--brand-primary)]" />
@@ -545,8 +591,9 @@ export function TDEEForm({ defaultValues, onboardingMode = false, onSaved }: Pro
  </dl>
  </div>
  </div>
- ) : null}
+ ) : null;
 
+ const submitButton = (
  <Button type="submit" disabled={isPending} className="h-10 w-full bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] hover:bg-[var(--btn-primary-hover)]">
  {isPending ? (
  <>
@@ -560,6 +607,130 @@ export function TDEEForm({ defaultValues, onboardingMode = false, onSaved }: Pro
 "Save my targets"
  )}
  </Button>
+ );
+
+ // Onboarding only: big tap targets for the two choices, goal first because
+ // it's the reason people came. A third of sign-ups left step 1 having
+ // entered nothing (Oct 2026), when the goal sat last in a long form.
+ const loseBlocked = bmiPreview != null && bmiPreview > 0 && !isSafeToLoseWeight(bmiPreview);
+ const choiceClass = (on: boolean) =>
+ `min-h-12 rounded-xl border px-2 text-sm font-semibold transition-colors disabled:opacity-40 ${
+ on
+ ? "border-[var(--btn-primary-bg)] bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)]"
+ : "border-[var(--border-default)] bg-[var(--surface-input)] text-[var(--text-secondary)] hover:border-[var(--brand-action)]"
+ }`;
+
+ const goalButtons = (
+ <div>
+ <p className="mb-2 text-sm font-medium text-[var(--text-secondary)]">What&apos;s your goal?</p>
+ <div role="group" aria-label="Goal" className="grid grid-cols-3 gap-2">
+ {GOAL_OPTIONS.map((option) => (
+ <button
+ key={option.value}
+ type="button"
+ aria-pressed={goal === option.value}
+ disabled={option.value === "lose" && loseBlocked}
+ onClick={() => {
+ form.setValue("goal", option.value, { shouldValidate: true, shouldDirty: true });
+ updatePreview();
+ }}
+ className={choiceClass(goal === option.value)}
+ >
+ {option.label}
+ </button>
+ ))}
+ </div>
+ {form.formState.errors.goal ? <p className={`mt-1 text-xs ${ds.errorText}`}>Choose a goal</p> : null}
+ </div>
+ );
+
+ const sexButtons = (
+ <div>
+ <p className="mb-1.5 text-sm font-medium text-[var(--text-secondary)]">Sex</p>
+ <div role="group" aria-label="Sex" className="grid grid-cols-2 gap-2">
+ {(
+ [
+ ["female", "Female"],
+ ["male", "Male"],
+ ] as const
+ ).map(([value, label]) => (
+ <button
+ key={value}
+ type="button"
+ aria-pressed={sex === value}
+ onClick={() => {
+ form.setValue("sex", value, { shouldValidate: true, shouldDirty: true });
+ updatePreview();
+ }}
+ className={choiceClass(sex === value)}
+ >
+ {label}
+ </button>
+ ))}
+ </div>
+ {form.formState.errors.sex ? <p className={`mt-1 text-xs ${ds.errorText}`}>Choose one</p> : null}
+ </div>
+ );
+
+ const compactPreview = preview ? (
+ <div
+ aria-live="polite"
+ className="rounded-2xl border border-[var(--brand-primary)] bg-[var(--surface-brand-subtle)] p-4"
+ >
+ <p className="text-xs font-semibold uppercase tracking-wide text-[var(--brand-primary)]">Your daily targets</p>
+ <div className="mt-1 flex flex-wrap items-baseline gap-x-5 gap-y-1">
+ <p className="text-2xl font-bold tabular-nums text-[var(--text-primary)]">
+ {preview.dailyCalories.toLocaleString("en-GB")}
+ <span className="ml-1 text-sm font-medium text-[var(--text-muted)]">kcal</span>
+ </p>
+ <p className="text-2xl font-bold tabular-nums text-[var(--text-primary)]">
+ {preview.dailyProtein} g<span className="ml-1 text-sm font-medium text-[var(--text-muted)]">protein</span>
+ </p>
+ </div>
+ <p className="mt-1 text-xs text-[var(--text-muted)]">
+ Every plan and grocery list is built to hit these. You can change them any time.
+ </p>
+ </div>
+ ) : null;
+
+ if (onboardingMode) {
+ return (
+ <form onSubmit={form.handleSubmit(onSubmit)} onChange={updatePreview} className="space-y-5">
+ {goalButtons}
+ <div className="grid grid-cols-2 gap-3">
+ {sexButtons}
+ {ageField}
+ </div>
+ {heightField}
+ {weightField}
+ {activityField}
+ {underweightCallout}
+ {floorCallout}
+ {beforeSubmit}
+ {compactPreview}
+ {submitButton}
+ </form>
+ );
+ }
+
+ return (
+ <form onSubmit={form.handleSubmit(onSubmit)} onChange={updatePreview} className="space-y-4">
+ <div className="grid gap-3 sm:grid-cols-2">
+ {weightField}
+ {heightField}
+ </div>
+ {bmiCard}
+ <div className="grid grid-cols-2 gap-3">
+ {ageField}
+ {sexSelect}
+ </div>
+ {activityField}
+ {goalSelect}
+ {underweightCallout}
+ {loseSafetyCallout}
+ {floorCallout}
+ {previewCard}
+ {submitButton}
  </form>
  );
 }

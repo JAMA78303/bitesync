@@ -8,6 +8,7 @@ import { DietaryPreferencesPicker } from "@/components/settings/DietaryPreferenc
 import { FillMyLibraryModal } from "@/components/recipes/FillMyLibraryModal";
 import { ImportRecipeModal } from "@/components/recipes/ImportRecipeModal";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/shared/Logo";
 import {
   finishOnboardingStep1,
   finishOnboardingStep2,
@@ -212,10 +213,10 @@ export function FirstRunWizard({ profile, isPro, recipeCount, recipePreview = []
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-[var(--header-from)] to-[var(--surface-page)]">
-      <div className="flex h-40 items-center justify-center sm:h-48">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[var(--surface-overlay)]/20 text-4xl backdrop-blur-sm sm:h-24 sm:w-24 sm:text-5xl">
-          🥗
-        </div>
+      {/* Slim, so step 1's form starts near the top of a phone screen. The old
+          160px emoji header pushed the first question below the fold. */}
+      <div className="px-6 py-5">
+        <Logo size="sm" href="" onDark />
       </div>
 
       <div className="flex flex-1 flex-col rounded-t-3xl bg-[var(--surface-card)] px-6 pt-8 pb-6">
@@ -251,40 +252,35 @@ export function FirstRunWizard({ profile, isPro, recipeCount, recipePreview = []
         ) : null}
 
         {step === 1 ? (
-          <div className="space-y-6">
-            <div>
-              <h2 className="mb-2 text-sm font-semibold text-[var(--text-primary)]">Food preferences</h2>
-              <p className="mb-3 text-sm text-[var(--text-muted)]">
-                Tap any that apply — they save as you go. Skip this if none do.
+          <div className="space-y-5">
+            {/* One short screen, goal first, targets shown as soon as they can be
+                worked out. A third of sign-ups left this step having entered
+                nothing (Oct 2026) when it opened with eight diet tiles and the
+                button sat two screens down. Dietary needs are optional chips
+                just above the button: they still save before starter recipes
+                are made, which is what step 1 completing triggers. */}
+            <p className="text-sm text-[var(--text-muted)]">
+              About 30 seconds. We use this to size every plan and grocery list to you.
+            </p>
+            <TDEEForm
+              defaultValues={tdeeDefaults}
+              onboardingMode
+              onSaved={onStep1Complete}
+              beforeSubmit={
+                <div>
+                  <p className="mb-2 text-sm font-medium text-[var(--text-secondary)]">
+                    Any dietary needs? <span className="font-normal text-[var(--text-muted)]">(optional)</span>
+                  </p>
+                  <DietaryPreferencesPicker initialSelected={dietary} compact />
+                </div>
+              }
+            />
+            {/* Under the button just pressed. */}
+            {busy === "step1" ? (
+              <p role="status" className={busyNoteClass}>
+                Adding starter recipes sized to your targets…
               </p>
-              {/* autoSave: this screen has one call to action, the targets form's
-                  Continue below. A second "Save preferences" button here advanced
-                  nothing, and continuing without pressing it discarded the choice. */}
-              <DietaryPreferencesPicker initialSelected={dietary} autoSave />
-            </div>
-            <div>
-              <h2 className="mb-2 text-sm font-semibold text-[var(--text-primary)]">Calorie &amp; protein targets</h2>
-              <p className="mb-3 text-sm text-[var(--text-muted)]">
-                {/* Free users were told "Set your targets for this session" as if
-                    nothing would persist. It does — allowFreeFirstRun saves them.
-                    Telling someone their effort won't count is a poor opener for
-                    six body-stat fields. */}
-                Worked out from your body stats and goal, then saved to your profile.
-                Every plan and grocery list is built to hit these.
-              </p>
-              <TDEEForm
-                defaultValues={tdeeDefaults}
-                onboardingMode
-                onSaved={onStep1Complete}
-              />
-              {/* Under the button just pressed — on a phone the top of this
-                  form is a screen away by now. */}
-              {busy === "step1" ? (
-                <p role="status" className={`mt-3 ${busyNoteClass}`}>
-                  Adding starter recipes sized to your targets…
-                </p>
-              ) : null}
-            </div>
+            ) : null}
           </div>
         ) : null}
 

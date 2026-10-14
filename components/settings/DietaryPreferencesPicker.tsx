@@ -20,6 +20,19 @@ const DIET_ICONS: Record<string, LucideIcon> = {
  halal: MoonStar,
 };
 
+/**
+ * Chip labels for the compact picker. "No specific preferences" and "I eat
+ * meat" are left out there: choosing nothing already means no restrictions.
+ */
+const COMPACT_LABELS: Record<string, string> = {
+ vegetarian: "Vegetarian",
+ vegan: "Vegan",
+ pescatarian: "Pescatarian",
+ gluten_free: "Gluten free",
+ dairy_free: "Dairy free",
+ halal: "Halal",
+};
+
 type Props = {
  initialSelected: string[];
  completeOnboarding?: boolean;
@@ -33,6 +46,8 @@ type Props = {
  * skipping it and continuing silently discarded the selection.
  */
  autoSave?: boolean;
+ /** Small chips for real restrictions only (onboarding step 1). Implies autoSave. */
+ compact?: boolean;
 };
 
 export function DietaryPreferencesPicker({
@@ -41,6 +56,7 @@ export function DietaryPreferencesPicker({
  onSaved,
  submitLabel,
  autoSave = false,
+ compact = false,
 }: Props) {
  const [selected, setSelected] = useState<string[]>(initialSelected);
  const [message, setMessage] = useState<string | null>(null);
@@ -82,7 +98,37 @@ export function DietaryPreferencesPicker({
  function handleToggle(key: string) {
  const next = toggleDietarySelection(selected, key);
  setSelected(next);
- if (autoSave) persist(next, false);
+ if (autoSave || compact) persist(next, false);
+ }
+
+ if (compact) {
+ return (
+ <div>
+ <div role="group" aria-label="Dietary needs" className="flex flex-wrap gap-2">
+ {DIETARY_PREFERENCE_OPTIONS.filter((pref) => pref.key in COMPACT_LABELS).map((pref) => {
+ const isSelected = selected.includes(pref.key);
+ const Icon = DIET_ICONS[pref.key] ?? Utensils;
+ return (
+ <button
+ key={pref.key}
+ type="button"
+ aria-pressed={isSelected}
+ onClick={() => handleToggle(pref.key)}
+ className={`inline-flex min-h-10 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors ${
+ isSelected
+ ? "border-[var(--btn-primary-bg)] bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)]"
+ : "border-[var(--border-default)] bg-[var(--surface-input)] text-[var(--text-secondary)] hover:border-[var(--brand-action)]"
+ }`}
+ >
+ <Icon className="h-4 w-4" strokeWidth={1.8} aria-hidden />
+ {COMPACT_LABELS[pref.key]}
+ </button>
+ );
+ })}
+ </div>
+ {error ? <p className="mt-2 text-sm text-[var(--semantic-error-text)]">{error}</p> : null}
+ </div>
+ );
  }
 
  return (
