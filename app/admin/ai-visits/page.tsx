@@ -1,5 +1,6 @@
 import { CRAWLER_KIND_LABELS, type CrawlerKind } from "@/lib/analytics/aiCrawlers";
 import { createServiceClient } from "@/lib/supabase/service";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
@@ -7,6 +8,8 @@ type Visit = { seen_at: string; bot: string; kind: CrawlerKind; path: string };
 
 const KINDS: CrawlerKind[] = ["referral", "user", "search", "training", "preview"];
 const DAY_MS = 24 * 60 * 60 * 1000;
+/** The bot name on the one row the referral setup check writes; never shown. */
+const SETUP_CHECK_BOT = "(setup check)";
 
 function when(iso: string): string {
   return new Date(iso).toLocaleString("en-GB", {
@@ -23,19 +26,45 @@ const th = "px-3 py-2 text-left text-xs font-semibold text-[var(--text-muted)]";
 const td = "px-3 py-2 text-sm text-[var(--text-secondary)]";
 
 /** The last 30 days of visits, and the cutoff for "last 7 days". */
-async function loadVisits() {
+async function loadVisits(db: SupabaseClient) {
   const now = Date.now();
-  const { data, error } = await createServiceClient()
+  const { data, error } = await db
     .from("ai_crawler_visits")
     .select("seen_at, bot, kind, path")
+    .neq("bot", SETUP_CHECK_BOT)
     .gte("seen_at", new Date(now - 30 * DAY_MS).toISOString())
     .order("seen_at", { ascending: false })
     .limit(5000);
   return { data, error, weekAgo: now - 7 * DAY_MS };
 }
 
+type ReferralSetup = { ok: true } | { ok: false; missingSql: boolean; message: string };
+
+/**
+ * Whether the table accepts "referral" rows, i.e. whether
+ * sql/2026-10-11_ai_referrals.sql has been run. Without it every click-through
+ * from an AI answer is rejected on insert, and the page would just show 0.
+ *
+ * Any referral row already stored proves it. Otherwise one probe row is
+ * inserted (hidden from the page); once that succeeds it is itself the proof,
+ * so at most one probe row is ever written.
+ */
+async function checkReferralSetup(db: SupabaseClient): Promise<ReferralSetup> {
+  const existing = await db.from("ai_crawler_visits").select("id").eq("kind", "referral").limit(1);
+  if (existing.error) return { ok: false, missingSql: false, message: existing.error.message };
+  if (existing.data?.length) return { ok: true };
+
+  const probe = await db
+    .from("ai_crawler_visits")
+    .insert({ bot: SETUP_CHECK_BOT, kind: "referral", path: "/admin/ai-visits", user_agent: null });
+  if (!probe.error) return { ok: true };
+  // 23514: check_violation — the old kind constraint without 'referral'.
+  return { ok: false, missingSql: probe.error.code === "23514", message: probe.error.message };
+}
+
 export default async function AdminAiVisitsPage() {
-  const { data, error, weekAgo } = await loadVisits();
+  const db = createServiceClient();
+  const [{ data, error, weekAgo }, referralSetup] = await Promise.all([loadVisits(db), checkReferralSetup(db)]);
 
   if (error) {
     return (
@@ -93,6 +122,24 @@ export default async function AdminAiVisitsPage() {
           themselves, and a name can be faked, so read this as a trend rather than proof.
         </p>
       </div>
+
+      {!referralSetup.ok && (
+        <div className="rounded-2xl border border-[var(--status-warning-border)] bg-[var(--status-warning-bg)] p-4 text-sm text-[var(--text-primary)]">
+          {referralSetup.missingSql ? (
+            <>
+              <p className="font-semibold">Visitors from AI answers aren&apos;t being counted.</p>
+              <p className="mt-1 text-[var(--text-secondary)]">
+                The database rejects them, so that card stays at 0 whatever happens. Run{" "}
+                <code>sql/2026-10-11_ai_referrals.sql</code> in the Supabase SQL editor, then reload this page.
+              </p>
+            </>
+          ) : (
+            <p>
+              Couldn&apos;t check whether visitors from AI answers can be saved ({referralSetup.message}).
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {KINDS.map((kind) => {
