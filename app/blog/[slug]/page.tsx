@@ -5,7 +5,8 @@ import { Logo } from "@/components/shared/Logo";
 import { JsonLd } from "@/components/shared/JsonLd";
 import { FOUNDER, FOUNDER_BYLINE } from "@/lib/founder";
 import { blogPostingSchema } from "@/lib/seo/structuredData";
-import { isPostSlug, loadPost, POST_SLUGS } from "@/content/blog/posts";
+import { isPostSlug, loadAllPosts, loadPost, POST_SLUGS } from "@/content/blog/posts";
+import { pickRelatedPosts } from "@/lib/blog/relatedPosts";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -46,7 +47,8 @@ function formatDate(iso: string): string {
 export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params;
   if (!isPostSlug(slug)) notFound();
-  const { meta, Content } = await loadPost(slug);
+  const [{ meta, Content }, allPosts] = await Promise.all([loadPost(slug), loadAllPosts()]);
+  const related = pickRelatedPosts(allPosts, slug);
 
   return (
     <div className="min-h-screen bg-[var(--surface-card)]">
@@ -77,6 +79,27 @@ export default async function BlogPostPage({ params }: Props) {
         <div className="mt-6">
           <Content />
         </div>
+        {related.length ? (
+          <nav aria-labelledby="more-articles" className="mt-12 border-t border-[var(--border-subtle)] pt-8">
+            <h2 id="more-articles" className="text-lg font-semibold text-[var(--text-primary)]">
+              More articles
+            </h2>
+            <ul className="mt-4 space-y-4">
+              {related.map((post) => (
+                <li key={post.slug}>
+                  <p className="text-xs font-medium text-[var(--brand-primary)]">{post.category}</p>
+                  <Link
+                    href={`/blog/${post.slug}`}
+                    className="font-medium text-[var(--text-primary)] hover:text-[var(--brand-primary)] hover:underline"
+                  >
+                    {post.title}
+                  </Link>
+                  <p className="mt-1 text-sm text-[var(--text-muted)]">{post.description}</p>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ) : null}
         <Link
           href="/signup"
           className="mt-10 inline-flex rounded-xl bg-[var(--btn-primary-bg)] px-5 py-2.5 text-sm font-medium text-[var(--btn-primary-text)] hover:bg-[var(--btn-primary-hover)]"
