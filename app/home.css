@@ -1531,6 +1531,17 @@
   flex-wrap: wrap;
   gap: 8px 20px;
 }
+.lp .footer-compare {
+  margin-top: 22px;
+  align-items: baseline;
+}
+.lp .footer-compare-label {
+  color: var(--lp-ink-faint);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
 .lp .footer a {
   color: var(--lp-ink-soft);
   font-size: 13px;

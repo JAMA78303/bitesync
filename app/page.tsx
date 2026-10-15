@@ -27,7 +27,7 @@ import { HomeReveal } from "@/components/landing/home/HomeReveal";
 import { FAQ_ITEMS } from "@/components/landing/LandingFaq";
 import { TESTIMONIALS } from "@/components/landing/LandingTestimonials";
 import { faqPageSchema, softwareApplicationSchema } from "@/lib/seo/structuredData";
-import { loadAllPosts } from "@/content/blog/posts";
+import { loadAllPosts, type Post } from "@/content/blog/posts";
 import { FOUNDER, FOUNDER_BYLINE } from "@/lib/founder";
 import { SUPPORT_EMAIL, supportMailto } from "@/lib/support";
 import "./home.css";
@@ -59,6 +59,19 @@ const NAV_LINKS: readonly HomeNavLink[] = [
 
 /** The landing strip shows the newest few; the full list lives at /blog. */
 const FEATURED_POST_COUNT = 3;
+
+/**
+ * Footer labels for comparison posts. "BiteSync vs X: …" titles shorten to the
+ * part before the colon; the ones that don't follow that pattern are named here.
+ */
+const COMPARISON_LABELS: Partial<Record<string, string>> = {
+  "best-meal-planner-apps-macros": "Best meal planners for macros",
+  "mealime-alternatives": "Mealime alternatives",
+};
+
+function comparisonLabel(post: Post): string {
+  return COMPARISON_LABELS[post.slug] ?? post.title.split(":")[0];
+}
 
 function formatPostDate(iso: string): string {
   return new Date(`${iso}T00:00:00`).toLocaleDateString("en-GB", {
@@ -227,9 +240,12 @@ export default async function LandingPage() {
   // surfaces it here automatically.
   // Comparison posts are for people choosing between apps (and the AI
   // answers they ask); the homepage strip shows the nutrition writing.
-  const featuredPosts = (await loadAllPosts())
-    .filter((post) => post.category !== "Comparisons")
-    .slice(0, FEATURED_POST_COUNT);
+  const allPosts = await loadAllPosts();
+  const featuredPosts = allPosts.filter((post) => post.category !== "Comparisons").slice(0, FEATURED_POST_COUNT);
+  // The footer links every comparison instead: links from the homepage count
+  // most with search engines, and these are the pages that answer "best app
+  // for X" and "alternative to X".
+  const comparisonPosts = allPosts.filter((post) => post.category === "Comparisons");
   const quote = TESTIMONIALS[0];
 
   return (
@@ -553,6 +569,16 @@ export default async function LandingPage() {
               <Link href="/login">Sign in</Link>
             </nav>
           </div>
+          {comparisonPosts.length > 0 ? (
+            <nav aria-label="Compare BiteSync with other apps" className="footer-compare">
+              <span className="footer-compare-label">Compare</span>
+              {comparisonPosts.map((post) => (
+                <Link key={post.slug} href={`/blog/${post.slug}`}>
+                  {comparisonLabel(post)}
+                </Link>
+              ))}
+            </nav>
+          ) : null}
           <div className="footer-bottom">
             <span>© {new Date().getFullYear()} BiteSync</span>
             <span className="flex flex-wrap gap-x-5 gap-y-2">
