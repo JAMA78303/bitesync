@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { generateGroceryList } from "@/lib/supabase/grocery";
 import { getProfile } from "@/lib/supabase/profile";
 import { createClient } from "@/lib/supabase/server";
 import { getUserTier } from "@/lib/subscription";
@@ -10,14 +9,9 @@ import { toUserFacingError } from "@/lib/errors/userFacing";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { FIRST_RUN_STEP } from "@/lib/onboarding/first-run";
 import { goalsFromProfile, seedStarterLibrary } from "@/lib/onboarding/starterLibrary";
-import { firstRunWeeks, resolveUserToday } from "@/lib/onboarding/firstWeeks";
-import { getOrCreateMealPlan } from "@/lib/supabase/meal-plans";
-import {
-  generateAIWeekPlan,
-  generateHeuristicWeekPlan,
-  type GoalContext,
-} from "@/app/(app)/planner/ai-actions";
-import { MEAL_TYPES } from "@/types";
+import { resolveUserToday } from "@/lib/onboarding/firstWeeks";
+import { planUpcomingWeeks } from "@/lib/planner/upcoming-weeks";
+import type { GoalContext } from "@/app/(app)/planner/ai-actions";
 
 async function requireUserId() {
   const supabase = await createClient();
@@ -44,70 +38,6 @@ export async function advanceOnboardingStep(step: number) {
   return { success: true as const, step };
 }
 
-const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6];
-
-async function weekIsEmpty(supabase: SupabaseClient, mealPlanId: string): Promise<boolean> {
-  const { count } = await supabase
-    .from("meal_plan_entries")
-    .select("id", { count: "exact", head: true })
-    .eq("meal_plan_id", mealPlanId);
-  return (count ?? 0) === 0;
-}
-
-async function planWeekWithGrocery(
-  mealPlanId: string,
-  goals: GoalContext,
-  useAi: boolean,
-  groceryDays: number[],
-): Promise<{ error: string } | { success: true }> {
-  const week = useAi
-    ? await generateAIWeekPlan({ mealPlanId, goals })
-    : await generateHeuristicWeekPlan({ mealPlanId, goals });
-  if ("error" in week && week.error) return { error: week.error };
-  const grocery = await generateGroceryList(mealPlanId, groceryDays, [...MEAL_TYPES]);
-  if ("error" in grocery && grocery.error) return { error: grocery.error };
-  return { success: true };
-}
-
-/**
- * A new user's first plan: the main week — this one Monday to Wednesday, next
- * one from Thursday (lib/onboarding/firstWeeks) — and, late in the week, the
- * days left in this one, so Today is not empty while they wait for Monday.
- * Only the main week can fail the call. The leftover days are best effort,
- * planned with the standard planner whatever the tier, and their grocery list
- * covers just those days.
- */
-async function planFirstWeeks(opts: {
-  supabase: SupabaseClient;
-  goals: GoalContext;
-  today: Date;
-  useAiForMainWeek: boolean;
-  onlyIfEmpty: boolean;
-}): Promise<{ error: string } | { mainWeekStart: string; mainPlanId: string }> {
-  const weeks = firstRunWeeks(opts.today);
-  const main = await getOrCreateMealPlan(weeks.mainWeekStart);
-  if (!main.data) return { error: main.error ?? "Could not load your planner." };
-
-  if (!opts.onlyIfEmpty || (await weekIsEmpty(opts.supabase, main.data.id))) {
-    const planned = await planWeekWithGrocery(main.data.id, opts.goals, opts.useAiForMainWeek, ALL_DAYS);
-    if ("error" in planned) return planned;
-  }
-
-  if (weeks.nextWeekStart) {
-    try {
-      const current = (await getOrCreateMealPlan(weeks.thisWeekStart)).data;
-      if (current && (await weekIsEmpty(opts.supabase, current.id))) {
-        const rest = await planWeekWithGrocery(current.id, opts.goals, false, weeks.remainingDays);
-        if ("error" in rest) console.warn("[firstRun] rest of this week not planned:", rest.error);
-      }
-    } catch (err) {
-      console.warn("[firstRun] rest of this week failed:", err instanceof Error ? err.message : err);
-    }
-  }
-
-  return { mainWeekStart: weeks.mainWeekStart, mainPlanId: main.data.id };
-}
-
 /**
  * Every skipper used to land on an empty planner, and none of them ever
  * planned a meal. Now skipping still gets them a starter library and their
@@ -119,7 +49,7 @@ async function setUpStarterWeek(supabase: SupabaseClient, userId: string, localD
     const [profile, tier] = await Promise.all([getProfile(), getUserTier()]);
     await seedStarterLibrary(supabase, userId, { profile, isPro: tier === "pro" });
 
-    const planned = await planFirstWeeks({
+    const planned = await planUpcomingWeeks({
       supabase,
       goals: goalsFromProfile(profile),
       today: resolveUserToday(localDate),
@@ -218,7 +148,7 @@ export async function generateFirstRunWeekAndGrocery(input: { goals: GoalContext
   // with "Upgrade to Pro" instead of building a heuristic week.
   const isPro = (await getUserTier()) === "pro";
 
-  const planned = await planFirstWeeks({
+  const planned = await planUpcomingWeeks({
     supabase,
     goals: input.goals,
     today: resolveUserToday(input.localDate),

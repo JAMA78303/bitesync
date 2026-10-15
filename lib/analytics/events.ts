@@ -23,3 +23,16 @@ export function trackFirstRunSkipped(step: number) {
 export function trackFirstRunStepViewed(step: number) {
   track("first_run_step_viewed", { step: String(step) });
 }
+
+/** Coming back each week: the reminder offer, add to home screen, one-tap planning. */
+export function trackReminderOffer(placement: "welcome" | "today", outcome: "on" | "not_now" | "failed") {
+  track("reminder_offer", { placement, outcome });
+}
+
+export function trackInstallOffer(placement: "welcome" | "today", outcome: string) {
+  track("install_offer", { placement, outcome });
+}
+
+export function trackUpcomingWeekPlanned(trigger: "card" | "reminder") {
+  track("upcoming_week_planned", { trigger });
+}
