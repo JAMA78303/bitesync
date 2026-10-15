@@ -27,10 +27,12 @@ function isAuthorized(request: Request): boolean {
 }
 
 const PAYLOADS: Record<ReminderKind, PushPayload> = {
+  // Opens Today with plan=upcoming, which plans the empty week on arrival, so
+  // the tap that opens the app is the only one needed.
   weekly: {
-    title: "Plan your week",
-    body: "Your next week is still empty — build it in a couple of minutes and get your grocery list.",
-    url: "/planner",
+    title: "Plan next week in one tap",
+    body: "Next week is still empty. Tap and BiteSync plans it from your recipes, grocery list included.",
+    url: "/today?plan=upcoming",
     tag: "bitesync-weekly",
   },
   // BiteSync plans meals; it has no food log. The old copy ("Log what you ate")

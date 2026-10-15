@@ -13,9 +13,11 @@ import { MEAL_TYPES } from "@/types";
 import { ds } from "@/lib/ui/classes";
 import { groupByAisle } from "@/lib/grocery/aisles";
 import { groceryShareText } from "@/lib/grocery/shareText";
+import { WeeklyHabitCard } from "@/components/habit/WeeklyHabitCard";
 
 type Props = {
- searchParams: Promise<{ week?: string; plan?: string }>;
+ /** `welcome=1` is the end of setup: the first planned week's list. */
+ searchParams: Promise<{ week?: string; plan?: string; welcome?: string }>;
 };
 
 export const dynamic = "force-dynamic";
@@ -113,6 +115,9 @@ export default async function GroceryPage({ searchParams }: Props) {
  </div>
  ) : null}
  <div className={`${ds.mobileGutter} ${ds.overlap} space-y-2`}>
+ {/* The moment someone has just planned their first week is when a
+ reminder for the next one makes most sense. */}
+ {params.welcome === "1" ? <WeeklyHabitCard placement="welcome" /> : null}
  {uncheckedItems.length > 0 ? (
  <div className={`${ds.card} overflow-hidden`}>
  {/* Grouped by food group, which is also roughly how a supermarket is laid out. */}

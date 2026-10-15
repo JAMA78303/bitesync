@@ -28,6 +28,8 @@ type Props = {
  compactHero?: boolean;
  /** Fixed date string for screenshot staging. */
  dateLabel?: string;
+ /** Cards above today's meals: planning the coming week, reminders. */
+ extras?: React.ReactNode;
 };
 
 export function TodayDashboard({
@@ -38,6 +40,7 @@ export function TodayDashboard({
  heroOnly = false,
  compactHero = false,
  dateLabel,
+ extras,
 }: Props) {
  const remaining = Math.max(0, targets.kcal - totals.kcal);
  const calorieStatus = getGoalStatus("kcal", totals.kcal, targets.kcal);
@@ -139,6 +142,8 @@ export function TodayDashboard({
 
  {nextMeal && !compactHero && !heroOnly ? <UpNextCard meal={nextMeal} /> : null}
  </div>
+
+ {extras && !heroOnly && !compactHero ? <div className="mt-6">{extras}</div> : null}
 
  {heroOnly ? null : (
  <section className="mb-4 mt-8">

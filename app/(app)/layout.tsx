@@ -1,6 +1,7 @@
 import { AppShell } from "@/components/shared/AppShell";
 import { AppProviders } from "@/components/ui/AppProviders";
 import { FeedbackFab } from "@/components/feedback/FeedbackFab";
+import { InstallPromptCapture } from "@/components/habit/InstallPromptCapture";
 import { getUserTier } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
@@ -24,6 +25,7 @@ export default async function ProtectedLayout({
         {children}
       </AppShell>
       <FeedbackFab />
+      <InstallPromptCapture />
     </AppProviders>
   );
 }
