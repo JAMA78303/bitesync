@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getMonday, toLocalISO, addDays, isCurrentWeek } from "@/lib/utils/dates";
+import { plannerWeekStart, toLocalISO, addDays, isCurrentWeek } from "@/lib/utils/dates";
 import { fetchRecipeNutritionMap } from "@/lib/supabase/recipe-nutrition-query";
 import { getOrCreateMealPlan, getMealPlanEntries } from "@/lib/supabase/meal-plans";
 import { buildGridFromEntries } from "@/lib/planner/build-grid";
@@ -32,13 +32,8 @@ export default async function PlannerPage({ searchParams }: Props) {
  const supabase = await createClient();
  const params = await searchParams;
 
- let weekStart: Date;
- if (params.week) {
- const parsed = new Date(`${params.week}T00:00:00`);
- weekStart = getMonday(parsed);
- } else {
- weekStart = getMonday(new Date());
- }
+ // Midday, not midnight: these Dates go to the browser (WeekNav, PlannerGrid).
+ const weekStart = plannerWeekStart(params.week);
 
  const weekStartISO = toLocalISO(weekStart);
  const weekDates = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
