@@ -7,6 +7,21 @@ export function getMonday(date: Date): Date {
   return d;
 }
 
+/**
+ * Monday of the planner week for `week` (YYYY-MM-DD), or of the week containing
+ * `now`, at midday. The planner page builds these Dates on the server (UTC) and
+ * hands them to the browser. At midnight UTC a visitor in the Americas saw
+ * Sunday's date: the week label and day numbers were a day early, "next week"
+ * landed back on the same week and "previous" skipped one. Midday keeps the
+ * calendar date the same anywhere from UTC−11 to UTC+11.
+ */
+export function plannerWeekStart(week?: string | null, now: Date = new Date()): Date {
+  const parsed = week && /^\d{4}-\d{2}-\d{2}$/.test(week) ? new Date(`${week}T00:00:00`) : null;
+  const monday = getMonday(parsed && !Number.isNaN(parsed.getTime()) ? parsed : now);
+  monday.setHours(12, 0, 0, 0);
+  return monday;
+}
+
 export function toLocalISO(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
