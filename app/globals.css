@@ -753,7 +753,7 @@ select.theme-aware-select {
   display: grid;
   width: 100%;
   max-width: 460px;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 3px;
   padding: 7px;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -781,7 +781,7 @@ select.theme-aware-select {
 .app-mobile-nav-item small {
   max-width: 100%;
   overflow: hidden;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   line-height: 1.1;
   text-overflow: ellipsis;

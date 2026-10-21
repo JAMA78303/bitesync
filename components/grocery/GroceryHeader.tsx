@@ -1,6 +1,5 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
-import { Package } from "lucide-react";
+import { GroceryPantrySwitch } from "@/components/grocery/GroceryPantrySwitch";
 import { ds } from "@/lib/ui/classes";
 
 type Props = {
@@ -29,6 +28,8 @@ export function GroceryHeader({ subtitle, total, checked, actions }: Props) {
  </div>
  </div>
 
+ <GroceryPantrySwitch current="list" />
+
  <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/15">
  <div
  className="h-full rounded-full bg-[var(--accent-lime)] transition-all duration-500"
@@ -39,16 +40,8 @@ export function GroceryHeader({ subtitle, total, checked, actions }: Props) {
  {actions ? <div className="mt-4">{actions}</div> : null}
 
  <p className={`mt-3 text-2xs ${ds.headerStatLabel}`}>
- Quantities use shopping units (slices → loaf, cloves → bulb).
+ Quantities use shopping units (slices → loaf, cloves → bulb). Pantry items are left off new lists.
  </p>
- {/* The pantry is what trims this list, so the way to it lives here too. */}
- <Link
- href="/pantry"
- className="mt-2 inline-flex min-h-8 items-center gap-1.5 text-xs font-semibold text-[var(--accent-lime)] underline-offset-2 hover:underline"
- >
- <Package className="h-3.5 w-3.5" aria-hidden />
- Pantry items are left off new lists · Manage pantry →
- </Link>
  </header>
  );
 }
