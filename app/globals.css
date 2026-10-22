@@ -753,7 +753,7 @@ select.theme-aware-select {
   display: grid;
   width: 100%;
   max-width: 460px;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 3px;
   padding: 7px;
   border: 1px solid rgba(255, 255, 255, 0.08);

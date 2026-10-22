@@ -2,40 +2,44 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
  CalendarDays,
  Leaf,
  Home,
+ MoreHorizontal,
  Package,
+ Settings,
  ShoppingBasket,
  BarChart2,
  Target,
 } from "lucide-react";
+import { isActivePath } from "@/components/shared/appNav";
+import { MobileNavMoreSheet } from "@/components/shared/MobileNavMoreSheet";
 
 /**
- * Goals was behind the "More" sheet, so changing a calorie or protein target
- * — the numbers every other screen is measured against — took three taps
- * starting from an unlabelled overflow button. It is a primary destination.
+ * Five tabs, the most a phone tab bar holds comfortably. Seven squeezed each
+ * item to ~46px at 375px, labels had to be cut ("Nutrition" became "Stats")
+ * and the icons crowded together. The four screens people use every week —
+ * Today, Plan, Recipes, Grocery — keep their own tab; the rest sit behind
+ * More, which is labelled and lights up when you're on one of its screens,
+ * so nothing is hidden behind an unlabelled overflow button.
  *
- * That makes seven columns. At the narrowest common phone (375px) the bar is
- * ~327px of usable track, so each item gets ~46px: still above the 44px
- * minimum touch target, and the 48px row height is unchanged. "Nutrition" is
- * the one label too wide to survive that at 10px, so it becomes "Stats" —
- * shortening a label is a smaller cost than burying a screen.
- *
- * Pantry was then the one screen left behind "More" (with Settings), and
- * people couldn't find it. It now takes More's place, next to Grocery, which
- * it feeds. Settings needs no tab: it's the account button in the top bar.
+ * Pantry is also linked from the grocery list, which it feeds, and Settings
+ * from the account button in the top bar.
  */
 const PRIMARY_ITEMS = [
  { href:"/today", label:"Today", Icon: Home },
  { href:"/planner", label:"Plan", Icon: CalendarDays },
  { href:"/recipes", label:"Recipes", Icon: Leaf },
  { href:"/grocery", label:"Grocery", Icon: ShoppingBasket },
- { href:"/pantry", label:"Pantry", Icon: Package },
- { href:"/nutrition", label:"Stats", Icon: BarChart2 },
+] as const;
+
+const MORE_ITEMS = [
  { href:"/goals", label:"Goals", Icon: Target },
+ { href:"/nutrition", label:"Nutrition", Icon: BarChart2 },
+ { href:"/pantry", label:"Pantry", Icon: Package },
+ { href:"/settings", label:"Settings", Icon: Settings },
 ] as const;
 
 /** Focus on one of these opens the on-screen keyboard. */
@@ -76,16 +80,20 @@ function useKeyboardOpen(): boolean {
 }
 
 export function BottomNav() {
- const pathname = usePathname();
+ const pathname = usePathname() ??"";
  const keyboardOpen = useKeyboardOpen();
+ const [moreOpen, setMoreOpen] = useState(false);
+ const closeMore = useCallback(() => setMoreOpen(false), []);
+ const moreActive = MORE_ITEMS.some(({ href }) => isActivePath(pathname, href));
 
  if (keyboardOpen) return null;
 
  return (
+ <>
  <div className="app-mobile-nav-wrap">
  <nav className="app-mobile-nav" aria-label="Main navigation">
  {PRIMARY_ITEMS.map(({ href, label, Icon }) => {
- const isActive = pathname === href || pathname.startsWith(`${href}/`);
+ const isActive = isActivePath(pathname, href);
 
  return (
  <Link
@@ -100,7 +108,20 @@ export function BottomNav() {
  </Link>
  );
  })}
+ <button
+ type="button"
+ className="app-mobile-nav-item"
+ data-active={moreActive ? "true" : undefined}
+ aria-haspopup="dialog"
+ aria-expanded={moreOpen}
+ onClick={() => setMoreOpen(true)}
+ >
+ <MoreHorizontal className="h-5 w-5 shrink-0" strokeWidth={moreActive ? 2.2 : 1.8} aria-hidden />
+ <small>More</small>
+ </button>
  </nav>
  </div>
+ <MobileNavMoreSheet items={MORE_ITEMS} open={moreOpen} onClose={closeMore} />
+ </>
  );
 }
