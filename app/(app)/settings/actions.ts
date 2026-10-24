@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createSupabaseAdmin } from "@/lib/supabase/admin";
+import { createSupabaseAdmin, createSupabaseAuthAdmin } from "@/lib/supabase/admin";
 import { getProfile } from "@/lib/supabase/profile";
 import { getStripeServer } from "@/lib/stripe/server";
 import { createClient } from "@/lib/supabase/server";
@@ -27,15 +27,20 @@ export async function deleteAccount(confirmEmail: string): Promise<{ error?: str
   }
 
   const profile = await getProfile();
+  const stripeCustomerId = profile?.stripe_customer_id?.trim();
   const stripeSubscriptionId = profile?.stripe_subscription_id?.trim();
 
-  if (stripeSubscriptionId) {
+  // Deleting the Stripe customer also cancels any subscription; their invoices
+  // stay in Stripe for the accounts. Upgrade creates a customer before checkout,
+  // so people who never paid have one too.
+  if (stripeCustomerId || stripeSubscriptionId) {
     try {
       const stripe = getStripeServer();
-      await stripe.subscriptions.cancel(stripeSubscriptionId);
+      if (stripeCustomerId) await stripe.customers.del(stripeCustomerId);
+      else if (stripeSubscriptionId) await stripe.subscriptions.cancel(stripeSubscriptionId);
     } catch (err) {
-      console.error("[deleteAccount] Stripe subscription cancel failed:", err);
-      // Continue — user may already be cancelled; still delete account data.
+      console.error("[deleteAccount] Stripe cleanup failed:", err);
+      // Continue — the customer may already be gone; still delete account data.
     }
   }
 
@@ -59,9 +64,18 @@ export async function deleteAccount(confirmEmail: string): Promise<{ error?: str
     return { error: "Could not delete your profile. Please try again or contact hello@bitesync.io." };
   }
 
-  const { error: authError } = await admin.auth.admin.deleteUser(user.id);
+  // Last step: the login itself. Every step above is safe to repeat, so if this
+  // fails the person can press Delete again. Plan runs, pantry items and push
+  // subscriptions cascade from the login.
+  let authError: string | null = null;
+  try {
+    const { error } = await createSupabaseAuthAdmin().auth.admin.deleteUser(user.id);
+    authError = error?.message ?? null;
+  } catch (err) {
+    authError = err instanceof Error ? err.message : String(err);
+  }
   if (authError) {
-    console.error("[deleteAccount] auth delete:", authError.message);
+    console.error("[deleteAccount] auth delete:", authError);
     return { error: "Could not delete your account. Please try again or contact hello@bitesync.io." };
   }
 
