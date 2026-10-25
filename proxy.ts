@@ -9,6 +9,7 @@ import {
   VERIFY_EMAIL_PATH,
 } from "@/lib/auth/emailVerification";
 import { updateSession } from "@/lib/supabase/middleware";
+import { isNativeAppUserAgent } from "@/lib/native/app";
 
 const PROTECTED_ROUTES = ["/today", "/planner", "/recipes", "/grocery", "/pantry", "/nutrition", "/goals", "/settings", "/billing", "/sample-week"];
 const AUTH_ROUTES = ["/login", "/signup", VERIFY_EMAIL_PATH];
@@ -77,6 +78,12 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
       request.nextUrl.searchParams.get("utm_source"),
     );
     if (referral) event.waitUntil(recordCrawlerVisit(referral, path, null));
+  }
+
+  // The iPhone app opens on /today. Its users never need the marketing
+  // homepage, which shows web prices Apple doesn't allow inside an iOS app.
+  if (path === "/" && isNativeAppUserAgent(userAgent)) {
+    return NextResponse.redirect(new URL("/today", request.url));
   }
 
   const { user, response } = await updateSession(request);

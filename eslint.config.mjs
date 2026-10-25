@@ -18,6 +18,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated iPhone app project (Capacitor copies JS into it).
+    "ios/**",
   ]),
 ]);
 
