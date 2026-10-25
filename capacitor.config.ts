@@ -26,6 +26,11 @@ const config: CapacitorConfig = {
     contentInset: "never",
   },
   plugins: {
+    // Light status-bar text: app pages open with the deep-green header under it.
+    StatusBar: {
+      style: "DARK",
+      overlaysWebView: true,
+    },
     SplashScreen: {
       launchShowDuration: 600,
       launchAutoHide: true,
