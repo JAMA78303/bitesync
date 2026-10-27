@@ -2,6 +2,7 @@ import { Capacitor } from "@capacitor/core";
 import { Haptics, ImpactStyle } from "@capacitor/haptics";
 import { Preferences } from "@capacitor/preferences";
 import { Share } from "@capacitor/share";
+import { StatusBar, Style } from "@capacitor/status-bar";
 
 /**
  * The iPhone app's native features, for client components. Each helper does
@@ -12,6 +13,19 @@ import { Share } from "@capacitor/share";
 /** True inside the BiteSync iPhone app. Call from effects or handlers, not render. */
 export function isNativeApp(): boolean {
   return typeof window !== "undefined" && Capacitor.isNativePlatform();
+}
+
+/**
+ * The colour of the clock and battery icons. capacitor.config.ts starts with
+ * light icons for the deep-green sign-in pages; the signed-in top bar is ivory
+ * in light mode, where the icons have to be dark to show.
+ */
+export function setStatusBarIcons(icons: "light" | "dark"): void {
+  if (!isNativeApp()) return;
+  // Capacitor names styles after the background: Style.Dark gives light icons.
+  StatusBar.setStyle({ style: icons === "light" ? Style.Dark : Style.Light }).catch(() => {
+    // Cosmetic; leave the icons as they are.
+  });
 }
 
 /** A light tap the user feels, e.g. ticking off a grocery item. */
