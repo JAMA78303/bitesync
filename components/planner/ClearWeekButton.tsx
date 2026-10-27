@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { clearWeekEntries } from "@/lib/supabase/meal-plan-actions";
+import { refreshNativeReminders } from "@/lib/native/reminders";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -35,6 +36,7 @@ export function ClearWeekButton({ mealPlanId }: Props) {
         return;
       }
       toast({ title: "Week cleared", description: "All meals removed from this week's plan." });
+      refreshNativeReminders();
       router.refresh();
     });
   }

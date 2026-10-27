@@ -36,3 +36,43 @@ export async function planUpcomingWeek(localDate?: string) {
   revalidatePath("/grocery");
   return { success: true as const, weekStart: planned.mainWeekStart };
 }
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Which of these weeks (Mondays, YYYY-MM-DD) already have meals. The iPhone app
+ * asks before scheduling its Sunday reminders, so a planned week gets none,
+ * the same rule as the web push (app/api/cron/push-reminders).
+ */
+export async function getPlannedWeekStarts(weekStarts: string[]) {
+  const weeks = weekStarts.filter((w) => ISO_DATE.test(w)).slice(0, 8);
+  if (!weeks.length) return { success: true as const, planned: [] as string[] };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Please sign in again." };
+
+  const { data: plans, error } = await supabase
+    .from("meal_plans")
+    .select("id, week_start_date")
+    .eq("user_id", user.id)
+    .in("week_start_date", weeks);
+  if (error) return { error: error.message };
+  if (!plans?.length) return { success: true as const, planned: [] as string[] };
+
+  const { data: entries, error: entriesError } = await supabase
+    .from("meal_plan_entries")
+    .select("meal_plan_id")
+    .in(
+      "meal_plan_id",
+      plans.map((p) => p.id as string),
+    )
+    .limit(1000);
+  if (entriesError) return { error: entriesError.message };
+
+  const withMeals = new Set((entries ?? []).map((e) => e.meal_plan_id as string));
+  const planned = plans.filter((p) => withMeals.has(p.id as string)).map((p) => p.week_start_date as string);
+  return { success: true as const, planned: [...new Set(planned)] };
+}

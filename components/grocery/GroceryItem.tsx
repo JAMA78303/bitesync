@@ -5,6 +5,7 @@ import { Check, Trash2 } from "lucide-react";
 import { formatGroceryItem } from "@/lib/grocery/storeUnits";
 import { deleteGroceryItem, toggleGroceryItem } from "@/lib/supabase/grocery-actions";
 import { useToast } from "@/components/ui/use-toast";
+import { tapFeedback } from "@/lib/native/bridge";
 
 type Props = {
  id: string;
@@ -32,6 +33,7 @@ export function GroceryItem({
  function handleToggle() {
  const newChecked = !checked;
  setChecked(newChecked);
+ tapFeedback();
 
  if (debounceRef.current) clearTimeout(debounceRef.current);
  debounceRef.current = setTimeout(() => {

@@ -28,3 +28,14 @@ CAP_SERVER_URL=http://localhost:3000 npx cap sync ios
 ```
 
 Run `npx cap sync ios` again, without the variable, before building for TestFlight.
+
+## Native features
+
+The site calls these Capacitor plugins only when it runs inside the app (`lib/native/bridge.ts`):
+
+- **Reminders** (`@capacitor/local-notifications`, `lib/native/reminders.ts`). The app can't receive web push, so the phone schedules the Sunday and evening reminders itself and re-plans them on open, on resume and after a plan changes. Sign-out and account deletion cancel them.
+- **Share list** (`@capacitor/share`): the iPhone share sheet.
+- **A light tap** when ticking a grocery item (`@capacitor/haptics`).
+- **Offline grocery list** (`@capacitor/preferences`): the last list opened is kept on the phone and shown by `offline.html`.
+
+`ios/App/App/PrivacyInfo.xcprivacy` declares the UserDefaults use that `@capacitor/preferences` needs. Adding a plugin is a native change: run `npx cap sync ios` and ship a new build.
