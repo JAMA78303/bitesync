@@ -137,8 +137,10 @@ export function planBulkFillBatch(
   count: number,
   hard: HardDietConstraints,
   baseSeed: number,
+  /** Per-type counts to use instead of the even split (the onboarding starter set). */
+  typeCountsOverride?: Record<GoalMealSlot, number>,
 ): BulkFillSlotPlan[] {
-  const typeCounts = bulkFillMealTypeCountsExact(count);
+  const typeCounts = typeCountsOverride ?? bulkFillMealTypeCountsExact(count);
   const slots: BulkFillSlotPlan[] = [];
   let slotIndex = 0;
 
