@@ -67,6 +67,7 @@ const FEATURED_POST_COUNT = 3;
 const COMPARISON_LABELS: Partial<Record<string, string>> = {
   "best-meal-planner-apps-macros": "Best meal planners for macros",
   "mealime-alternatives": "Mealime alternatives",
+  "eat-this-much-alternatives": "Eat This Much alternatives",
 };
 
 function comparisonLabel(post: Post): string {
