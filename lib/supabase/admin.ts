@@ -83,6 +83,21 @@ export function createSupabaseAdmin(): SupabaseClient {
   });
 }
 
+/**
+ * Options for the client that manages login accounts. createSupabaseAdmin's
+ * `accessToken` option makes supabase-js throw on any `auth.*` access, so
+ * `auth.admin.deleteUser` there could never run (accounts were left behind).
+ */
+export const AUTH_ADMIN_CLIENT_OPTIONS = {
+  auth: { autoRefreshToken: false, persistSession: false },
+} as const;
+
+/** Service-role client for `auth.admin` calls (deleting a user's login). */
+export function createSupabaseAuthAdmin(): SupabaseClient {
+  const { url, key } = getValidatedSupabaseServiceContext();
+  return createClient(url, key, AUTH_ADMIN_CLIENT_OPTIONS);
+}
+
 function restAuthHeaders(key: string): Record<string, string> {
   return {
     apikey: key,

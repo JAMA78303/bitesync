@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test:nutrition": "tsx lib/nutrition/cofidMatch.test.ts && tsx lib/nutrition/drv.test.ts && tsx lib/nutrition/vitamin-a-retinol.test.ts && tsx lib/nutrition/publisherNutrition.test.ts && tsx lib/nutrition/weeklyMicroTotals.test.ts && tsx lib/nutrition/freeSugars.test.ts && tsx lib/recipes/parseIngredient.test.ts && tsx lib/recipes/cookedWeight.test.ts && tsx lib/dietary/dairy.test.ts && tsx lib/utils/nutrition-targets.test.ts && tsx lib/today/goal-status.test.ts && tsx lib/pantry/units.test.ts && tsx lib/calculator/macroCalculator.test.ts && tsx lib/onboarding/setupDefaults.test.ts",
-    "test:auth": "tsx lib/auth/emailVerification.test.ts && tsx lib/auth/heardFrom.test.ts",
+    "test:auth": "tsx lib/auth/emailVerification.test.ts && tsx lib/auth/heardFrom.test.ts && tsx lib/supabase/authAdmin.test.ts",
     "test:waitlist": "tsx lib/waitlist/halal.test.ts",
     "test:analytics": "tsx lib/analytics/aiCrawlers.test.ts && tsx lib/analytics/aiReferrals.test.ts && tsx lib/native/app.test.ts && tsx lib/native/reminderSchedule.test.ts",
     "test:blog": "tsx lib/blog/relatedPosts.test.ts",
