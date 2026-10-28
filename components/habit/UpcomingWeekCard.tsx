@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CalendarPlus } from "lucide-react";
 import { planUpcomingWeek } from "@/app/(app)/planner/upcoming-actions";
 import { trackUpcomingWeekPlanned } from "@/lib/analytics/events";
+import { refreshNativeReminders } from "@/lib/native/reminders";
 import { toLocalISO } from "@/lib/utils/dates";
 import { ds } from "@/lib/ui/classes";
 
@@ -45,6 +46,7 @@ export function UpcomingWeekCard({ weekStart, isNextWeek, autoStart = false }: P
         return;
       }
       trackUpcomingWeekPlanned(trigger);
+      refreshNativeReminders();
       router.push(`/planner?week=${result.weekStart}`);
     });
   }

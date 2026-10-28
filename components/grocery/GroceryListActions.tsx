@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Pencil, Share2, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { DaySelectorModal } from "@/components/planner/DaySelectorModal";
@@ -15,6 +15,8 @@ import {
  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { deleteGroceryList } from "@/lib/supabase/grocery-actions";
+import { clearOfflineGroceryList, isNativeApp, saveOfflineGroceryList, shareNative } from "@/lib/native/bridge";
+import { getMonday, toLocalISO } from "@/lib/utils/dates";
 import type { MealType } from "@/types";
 import { ds } from "@/lib/ui/classes";
 
@@ -25,14 +27,24 @@ type Props = {
  filledMealTypes: MealType[];
  /** Plain-text list of what's still to buy; no Share button when there's nothing. */
  shareText?: string | null;
+ /** Items on the list, ticked or not; 0 means there's no list to keep offline. */
+ itemCount?: number;
 };
 
-export function GroceryListActions({ mealPlanId, weekStart, filledDays, filledMealTypes, shareText }: Props) {
+export function GroceryListActions({ mealPlanId, weekStart, filledDays, filledMealTypes, shareText, itemCount = 0 }: Props) {
  const [showSelector, setShowSelector] = useState(false);
  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
  const [isPending, startTransition] = useTransition();
  const { toast } = useToast();
  const router = useRouter();
+
+ // In the iPhone app, keep the latest list on the phone for the offline page
+ // (native/www/offline.html), so it still opens in a shop with no signal.
+ // Only this week's or a later list, and only one that has items.
+ useEffect(() => {
+ if (itemCount === 0 || weekStart < toLocalISO(getMonday(new Date()))) return;
+ saveOfflineGroceryList(shareText ?? null, weekStart).catch(() => {});
+ }, [shareText, itemCount, weekStart]);
 
  /**
  * The phone's share sheet where there is one (WhatsApp, Messages, Notes…);
@@ -41,7 +53,14 @@ export function GroceryListActions({ mealPlanId, weekStart, filledDays, filledMe
  */
  async function handleShare() {
  if (!shareText) return;
- if (typeof navigator.share === "function") {
+ if (isNativeApp()) {
+ try {
+ await shareNative("Grocery list", shareText);
+ return;
+ } catch {
+ // The sheet couldn't open; copy instead.
+ }
+ } else if (typeof navigator.share === "function") {
  try {
  await navigator.share({ title: "Grocery list", text: shareText });
  return;
@@ -66,6 +85,7 @@ export function GroceryListActions({ mealPlanId, weekStart, filledDays, filledMe
  }
  setShowDeleteConfirm(false);
  toast({ title:"Grocery list deleted" });
+ clearOfflineGroceryList(weekStart).catch(() => {});
  router.refresh();
  });
  }

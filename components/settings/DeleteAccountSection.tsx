@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { deleteAccount } from "@/app/(app)/settings/actions";
+import { clearNativeAccountData } from "@/lib/native/reminders";
 
 type Props = {
   email: string;
@@ -43,6 +44,8 @@ export function DeleteAccountSection({ email }: Props) {
         disabled={!canSubmit}
         onClick={() => {
           startTransition(async () => {
+            // Before, because a successful delete redirects away inside the action.
+            await clearNativeAccountData();
             const result = await deleteAccount(confirmEmail);
             if (result?.error) setError(result.error);
           });

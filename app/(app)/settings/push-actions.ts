@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { toUserFacingError } from "@/lib/errors/userFacing";
 import { pushEnvReady, sendPushNotification } from "@/lib/push/send";
+import { TEST_REMINDER_PAYLOAD } from "@/lib/push/reminderPayloads";
 import type { ActionResult } from "@/types";
 
 export type PushPreferences = {
@@ -154,12 +155,7 @@ export async function sendTestPushNotification(endpoint: string): Promise<Action
   if (error) return { error: toUserFacingError(error, "profile", "sendTestPushNotification") };
   if (!data) return { error: "This device is not subscribed to notifications." };
 
-  const result = await sendPushNotification(data, {
-    title: "BiteSync notifications are on",
-    body: "This is what a reminder will look like.",
-    url: "/planner",
-    tag: "bitesync-test",
-  });
+  const result = await sendPushNotification(data, TEST_REMINDER_PAYLOAD);
 
   if (!result.ok) {
     if (result.gone) {

@@ -215,7 +215,7 @@ export function FirstRunWizard({ profile, isPro, recipeCount, recipePreview = []
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-[var(--header-from)] to-[var(--surface-page)]">
       {/* Slim, so step 1's form starts near the top of a phone screen. The old
           160px emoji header pushed the first question below the fold. */}
-      <div className="px-6 py-5">
+      <div className="px-6 pb-5 pt-[max(1.25rem,env(safe-area-inset-top))]">
         <Logo size="sm" href="" onDark />
       </div>
 
