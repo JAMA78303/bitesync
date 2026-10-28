@@ -10,6 +10,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/blog`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
     // A free tool answer engines can point people to ("use this calculator").
     { url: `${BASE}/macro-calculator`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/halal`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
     { url: `${BASE}/login`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
     { url: `${BASE}/signup`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     // Present and crawlable but previously unlisted. Answer engines cite policy
