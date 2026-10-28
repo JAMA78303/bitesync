@@ -119,8 +119,8 @@ export function TodayDashboard({
  <MacroBar metric="fat" label="Fat" value={totals.fat} target={targets.fat} unit="g" kcal={totals.kcal} />
  <MacroBar metric="carbs" label="Carbs" value={totals.carbs} target={targets.carbs} unit="g" />
  </div>
- {/* On mobile /goals sits behind the "More" sheet, so the targets driving every
- number above were effectively undiscoverable. Put the way in next to them. */}
+ {/* The targets driving every number above: the way to change them sits
+ next to them, as well as on the Goals tab. */}
  <Link
  href="/goals"
  className="mt-5 flex items-center justify-between rounded-xl border border-[var(--border-default)] px-3.5 py-3 transition-colors hover:border-[var(--brand-primary)]"

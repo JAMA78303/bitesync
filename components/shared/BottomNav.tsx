@@ -7,36 +7,33 @@ import {
  CalendarDays,
  Leaf,
  Home,
- Package,
  ShoppingBasket,
- BarChart2,
  Target,
 } from "lucide-react";
 
 /**
- * Goals was behind the "More" sheet, so changing a calorie or protein target
- * — the numbers every other screen is measured against — took three taps
- * starting from an unlabelled overflow button. It is a primary destination.
+ * Five tabs, and no "More". Seven made each tab ~46px wide on a 375px phone
+ * with 10px labels: busy, and easy to tap the wrong one. A "More" sheet was
+ * tried before and people couldn't find what was behind it (Goals and Pantry
+ * were both moved out of one), so nothing hides behind an overflow button.
  *
- * That makes seven columns. At the narrowest common phone (375px) the bar is
- * ~327px of usable track, so each item gets ~46px: still above the 44px
- * minimum touch target, and the 48px row height is unchanged. "Nutrition" is
- * the one label too wide to survive that at 10px, so it becomes "Stats" —
- * shortening a label is a smaller cost than burying a screen.
- *
- * Pantry was then the one screen left behind "More" (with Settings), and
- * people couldn't find it. It now takes More's place, next to Grocery, which
- * it feeds. Settings needs no tab: it's the account button in the top bar.
+ * Instead the two quieter screens live inside the one they belong to:
+ * - Pantry is a List | Pantry switch on Grocery, the list it trims.
+ * - Stats is the "This week" card on Today, where people check their day.
+ * Those screens light up the tab they live under (`also`). Settings needs no
+ * tab: it's the account button in the top bar.
  */
 const PRIMARY_ITEMS = [
- { href:"/today", label:"Today", Icon: Home },
- { href:"/planner", label:"Plan", Icon: CalendarDays },
- { href:"/recipes", label:"Recipes", Icon: Leaf },
- { href:"/grocery", label:"Grocery", Icon: ShoppingBasket },
- { href:"/pantry", label:"Pantry", Icon: Package },
- { href:"/nutrition", label:"Stats", Icon: BarChart2 },
- { href:"/goals", label:"Goals", Icon: Target },
+ { href:"/today", label:"Today", Icon: Home, also: ["/nutrition"] },
+ { href:"/planner", label:"Plan", Icon: CalendarDays, also: [] },
+ { href:"/recipes", label:"Recipes", Icon: Leaf, also: [] },
+ { href:"/grocery", label:"Grocery", Icon: ShoppingBasket, also: ["/pantry"] },
+ { href:"/goals", label:"Goals", Icon: Target, also: [] },
 ] as const;
+
+function isUnder(pathname: string, href: string): boolean {
+ return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 /** Focus on one of these opens the on-screen keyboard. */
 function opensKeyboard(target: EventTarget | null): boolean {
@@ -84,8 +81,8 @@ export function BottomNav() {
  return (
  <div className="app-mobile-nav-wrap">
  <nav className="app-mobile-nav" aria-label="Main navigation">
- {PRIMARY_ITEMS.map(({ href, label, Icon }) => {
- const isActive = pathname === href || pathname.startsWith(`${href}/`);
+ {PRIMARY_ITEMS.map(({ href, label, Icon, also }) => {
+ const isActive = [href, ...also].some((path) => isUnder(pathname, path));
 
  return (
  <Link
