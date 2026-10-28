@@ -18,6 +18,8 @@ import {
   type PushPreferences,
 } from "@/app/(app)/settings/push-actions";
 import { useToast } from "@/components/ui/use-toast";
+import { NativeReminderSettings } from "@/components/settings/NativeReminderSettings";
+import { isNativeApp } from "@/lib/native/bridge";
 import { ds } from "@/lib/ui/classes";
 
 type Props = {
@@ -30,6 +32,8 @@ export function NotificationSettings({ vapidPublicKey }: Props) {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [ready, setReady] = useState(false);
+  // The iPhone app schedules reminders itself; set after mount, as the server can't tell.
+  const [native, setNative] = useState(false);
   const [blockedReason, setBlockedReason] = useState<"unsupported" | "needs-install" | null>(null);
   const [endpoint, setEndpoint] = useState<string | null>(null);
   const [prefs, setPrefs] = useState<PushPreferences>(DEFAULT_PREFS);
@@ -38,6 +42,13 @@ export function NotificationSettings({ vapidPublicKey }: Props) {
     let cancelled = false;
 
     async function hydrate() {
+      if (isNativeApp()) {
+        if (!cancelled) {
+          setNative(true);
+          setReady(true);
+        }
+        return;
+      }
       const support = getPushSupport();
       if (!support.supported) {
         if (!cancelled) {
@@ -131,7 +142,7 @@ export function NotificationSettings({ vapidPublicKey }: Props) {
     });
   }, [endpoint, toast]);
 
-  if (!vapidPublicKey) return null;
+  if (!vapidPublicKey && !native) return null;
 
   return (
     <div className={`${ds.card} ${ds.cardPadding} space-y-3`}>
@@ -140,7 +151,9 @@ export function NotificationSettings({ vapidPublicKey }: Props) {
         <h2 className="text-sm font-bold text-[var(--text-primary)]">Reminders</h2>
       </div>
 
-      {!ready ? (
+      {native ? (
+        <NativeReminderSettings />
+      ) : !ready ? (
         <p className="text-xs text-[var(--text-muted)]">Checking notification support…</p>
       ) : blockedReason === "needs-install" ? (
         <p className="text-xs text-[var(--text-muted)]">

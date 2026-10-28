@@ -9,6 +9,8 @@ import {
   subscribeToPush,
 } from "@/lib/push/client";
 import { savePushSubscription } from "@/app/(app)/settings/push-actions";
+import { isNativeApp } from "@/lib/native/bridge";
+import { getNativeReminderPrefs, nativeNotificationPermission, turnOnNativeReminders } from "@/lib/native/reminders";
 import { hasInstallPrompt, promptInstall, subscribeInstallPrompt } from "@/lib/pwa/installPrompt";
 import { installHelpFor, type InstallHelp } from "@/lib/pwa/platform";
 import { isHabitCardSnoozed, snoozeHabitCard } from "@/lib/habit/snooze";
@@ -19,9 +21,9 @@ type Placement = "welcome" | "today";
 
 type View =
   | { kind: "hidden" }
-  | { kind: "reminder"; install: InstallHelp }
+  | { kind: "reminder"; install: InstallHelp; native?: boolean }
   | { kind: "install"; install: InstallHelp }
-  | { kind: "done" };
+  | { kind: "done"; native?: boolean };
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
 
@@ -47,7 +49,8 @@ function currentInstallHelp(): InstallHelp {
  * reminder and BiteSync on their home screen. Only 1 account had reminders on
  * (Oct 2026); they were a toggle in Settings that nobody found. On iPhone the
  * home screen comes first, because Safari only allows notifications from
- * home-screen apps. "Not now" hides it on this device for three weeks.
+ * home-screen apps. In the iPhone app it only offers the reminder, which the
+ * phone itself schedules. "Not now" hides it on this device for three weeks.
  */
 export function WeeklyHabitCard({ placement }: { placement: Placement }) {
   const [view, setView] = useState<View>({ kind: "hidden" });
@@ -60,6 +63,14 @@ export function WeeklyHabitCard({ placement }: { placement: Placement }) {
     let cancelled = false;
     async function decide(): Promise<View> {
       if (isHabitCardSnoozed(window.localStorage)) return { kind: "hidden" };
+      if (isNativeApp()) {
+        const [prefs, permission] = await Promise.all([
+          getNativeReminderPrefs().catch(() => null),
+          nativeNotificationPermission().catch(() => "prompt" as const),
+        ]);
+        if (prefs?.weeklyPlanReminder || permission === "denied") return { kind: "hidden" };
+        return { kind: "reminder", install: "installed", native: true };
+      }
       const install = currentInstallHelp();
       const support = getPushSupport();
       if (VAPID_PUBLIC_KEY && support.supported && Notification.permission !== "denied") {
@@ -91,6 +102,13 @@ export function WeeklyHabitCard({ placement }: { placement: Placement }) {
     setError(null);
     startTransition(async () => {
       try {
+        if (isNativeApp()) {
+          const existing = await getNativeReminderPrefs();
+          await turnOnNativeReminders({ dailyLogReminder: existing?.dailyLogReminder ?? false, weeklyPlanReminder: true });
+          trackReminderOffer(placement, "on");
+          setView({ kind: "done", native: true });
+          return;
+        }
         const sub = await subscribeToPush(VAPID_PUBLIC_KEY);
         const result = await savePushSubscription(serializeSubscription(sub), {
           weeklyPlanReminder: true,
@@ -118,7 +136,9 @@ export function WeeklyHabitCard({ placement }: { placement: Placement }) {
   if (view.kind === "done") {
     return (
       <div role="status" className={`mb-4 rounded-2xl px-4 py-3 text-sm ${ds.successCallout}`}>
-        You’re set. We’ll nudge you on Sunday if next week is still empty. Change it any time in Settings.
+        {view.native
+          ? "You’re set. We’ll nudge you on Sunday afternoon to plan next week. Change it any time in Settings."
+          : "You’re set. We’ll nudge you on Sunday if next week is still empty. Change it any time in Settings."}
       </div>
     );
   }
@@ -141,7 +161,9 @@ export function WeeklyHabitCard({ placement }: { placement: Placement }) {
             {isReminder ? "Want a nudge to plan next week?" : "Add BiteSync to your home screen"}
           </h2>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            {isReminder
+            {isReminder && view.native
+              ? "One notification on Sunday afternoon. Tap it and, if next week is still empty, BiteSync plans it for you. Turn it off any time in Settings."
+              : isReminder
               ? "One notification on Sunday afternoon, only if next week is still empty. Tap it and your week is planned. Turn it off any time in Settings."
               : install === "ios-steps"
                 ? "It opens like an app, and on iPhone it’s what lets us send your Sunday reminder to plan next week."

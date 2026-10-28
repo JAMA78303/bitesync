@@ -7,11 +7,14 @@ import { redirect } from "next/navigation";
 import { getStripeServer } from "@/lib/stripe/server";
 import { fetchProfileStripeCustomerId, updateOrInsertProfile } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { isNativeAppRequest } from "@/lib/native/server";
 
 export async function createCheckoutSession(
   priceId: string,
   billingPeriod: "monthly" | "annual",
 ) {
+  // No Stripe inside the iPhone app (Apple's rules): every upgrade button lands here.
+  if (await isNativeAppRequest()) redirect("/billing");
   const stripe = getStripeServer();
   const supabase = await createClient();
   const {
@@ -71,6 +74,7 @@ export async function createCheckoutSession(
 }
 
 export async function createCustomerPortalSession() {
+  if (await isNativeAppRequest()) redirect("/billing");
   const stripe = getStripeServer();
   const supabase = await createClient();
   const {

@@ -10,6 +10,7 @@ import {
   generateHeuristicWeekPlan,
   type GoalContext,
 } from "@/app/(app)/planner/ai-actions";
+import { refreshNativeReminders } from "@/lib/native/reminders";
 
 type Props = {
   isPro: boolean;
@@ -63,6 +64,7 @@ export function GenerateAIWeekPlanButton({ isPro, mealPlanId, goals }: Props) {
         if ("snackLibraryNotice" in result && result.snackLibraryNotice) {
           toast({ title: "Snack library", description: result.snackLibraryNotice });
         }
+        refreshNativeReminders();
         router.refresh();
       } catch (err) {
         const message = err instanceof Error ? err.message : "Something went wrong";

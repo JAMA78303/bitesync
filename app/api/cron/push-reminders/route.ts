@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { pushEnvReady, sendPushNotification, type PushPayload } from "@/lib/push/send";
+import { pushEnvReady, sendPushNotification } from "@/lib/push/send";
+import { REMINDER_PAYLOADS, type ReminderKind } from "@/lib/push/reminderPayloads";
 import { addDays, getMonday, toLocalISO } from "@/lib/utils/dates";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-type ReminderKind = "weekly" | "daily";
 
 type SubscriptionRow = {
   id: string;
@@ -25,26 +24,6 @@ function isAuthorized(request: Request): boolean {
   if (!secret) return false;
   return request.headers.get("authorization") === `Bearer ${secret}`;
 }
-
-const PAYLOADS: Record<ReminderKind, PushPayload> = {
-  // Opens Today with plan=upcoming, which plans the empty week on arrival, so
-  // the tap that opens the app is the only one needed.
-  weekly: {
-    title: "Plan next week in one tap",
-    body: "Next week is still empty. Tap and BiteSync plans it from your recipes, grocery list included.",
-    url: "/today?plan=upcoming",
-    tag: "bitesync-weekly",
-  },
-  // BiteSync plans meals; it has no food log. The old copy ("Log what you ate")
-  // asked users to do something the app cannot do. An evening nudge is useful for
-  // a planner when it is about the next day's cooking, not yesterday's intake.
-  daily: {
-    title: "Check tomorrow's plan",
-    body: "See what's planned so you can defrost or prep anything you need.",
-    url: "/planner",
-    tag: "bitesync-daily",
-  },
-};
 
 /** Users whose upcoming week already has meals — they don't need nagging. */
 async function usersWithPlannedNextWeek(
@@ -122,7 +101,7 @@ export async function GET(request: Request) {
   let failed = 0;
 
   for (const target of targets) {
-    const result = await sendPushNotification(target, PAYLOADS[kind]);
+    const result = await sendPushNotification(target, REMINDER_PAYLOADS[kind]);
 
     if (result.ok) {
       sent += 1;

@@ -19,6 +19,9 @@ on:
 jobs:
   submit:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -26,7 +29,22 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      # A fixed sleep wasn't enough: on 19 Oct the deploy took 11 minutes, Bing
+      # crawled straight after our ping and got the 404 page, whose noindex it
+      # then kept. Wait for Vercel's own "success" status on this commit instead.
       - name: Wait for the production deploy
-        run: sleep 240
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for i in $(seq 1 60); do
+            state=$(gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/statuses" \
+              -q '[.[] | select(.context == "Vercel")][0].state')
+            if [ "$state" = "success" ]; then sleep 30; exit 0; fi
+            if [ "$state" = "failure" ] || [ "$state" = "error" ]; then
+              echo "::error::Vercel deploy $state; not pinging"; exit 1
+            fi
+            sleep 30
+          done
+          echo "::warning::No Vercel success after 30 minutes; pinging anyway"
       - name: Submit sitemap URLs
         run: npx tsx scripts/indexnow.ts

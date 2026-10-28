@@ -88,6 +88,7 @@ export default async function GroceryPage({ searchParams }: Props) {
  filledDays={filledDays}
  filledMealTypes={filledMealTypes}
  shareText={toBuy.length ? groceryShareText(subtitle, toBuy) : null}
+ itemCount={total}
  />
  );
 

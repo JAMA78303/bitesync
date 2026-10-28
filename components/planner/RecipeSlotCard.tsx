@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { removeSlotEntry } from "@/lib/supabase/meal-plan-actions";
+import { refreshNativeReminders } from "@/lib/native/reminders";
 import { useToast } from "@/components/ui/use-toast";
 import { MealThumbnail } from "@/components/ui/MealThumbnail";
 import { getDietTag } from "@/lib/ui/dietTags";
@@ -88,6 +89,7 @@ export function RecipeSlotCard({
  });
  return;
  }
+ refreshNativeReminders();
  router.refresh();
  } catch (err) {
  setRemoved(false);

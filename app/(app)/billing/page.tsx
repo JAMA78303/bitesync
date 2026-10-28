@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { isProSubscriptionStatus } from "@/lib/subscription";
 import { reconcileBillingSubscriptionFromStripe } from "@/lib/stripe/reconcile-billing-subscription";
 import { BillingClient } from "@/components/settings/BillingClient";
+import { AppBillingNotice } from "@/components/settings/AppBillingNotice";
+import { isNativeAppRequest } from "@/lib/native/server";
 
 type Props = {
  searchParams: Promise<{ success?: string; cancelled?: string }>;
@@ -44,6 +46,10 @@ export default async function BillingPage({ searchParams }: Props) {
  hasStripeCustomer = true;
  }
  }
+ }
+
+ if (await isNativeAppRequest()) {
+ return <AppBillingNotice isPro={isPro} />;
  }
 
  return (

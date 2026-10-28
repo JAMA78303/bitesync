@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { CreditCard, FileText, KeyRound, Mail, ShieldCheck, Target } from "lucide-react";
 import { RowIcon } from "@/components/ui/RowIcon";
-import { logout } from "@/app/(app)/settings/actions";
 import { DeleteAccountSection } from "@/components/settings/DeleteAccountSection";
+import { SignOutButton } from "@/components/settings/SignOutButton";
 import { SettingsThemeRow } from "@/components/settings/SettingsThemeRow";
 import { NotificationSettings } from "@/components/settings/NotificationSettings";
 import { FeedbackForm } from "@/components/feedback/FeedbackForm";
@@ -183,14 +183,7 @@ export default async function SettingsPage() {
  </div>
  ) : null}
 
- <form action={logout}>
- <button
- type="submit"
- className="w-full rounded-2xl border border-[var(--border-default)] bg-[var(--surface-elevated)] py-3.5 text-sm font-semibold text-[var(--text-secondary)]"
- >
- Sign out
- </button>
- </form>
+ <SignOutButton />
 
  <DeleteAccountSection email={email} />
  </div>
