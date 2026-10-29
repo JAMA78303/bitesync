@@ -59,7 +59,7 @@ function PlanStatus({ plan, native }: { plan: ShellPlan; native: boolean }) {
         }
       : plan.plan === "expired"
         ? {
-            title: "Trial ended",
+            title: plan.lapsed ? "Pro ended" : "Trial ended",
             body: native ? "Your recipes and plans are still here." : "Your recipes and plans are still here. Upgrade to keep planning.",
             cta: "See Pro plans",
           }

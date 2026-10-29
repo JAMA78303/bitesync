@@ -423,7 +423,13 @@ export function RecipesPageClient({
  ? "Fill your library in a minute — or add and import recipes one at a time"
  : "Your saved recipes show up here"
  }
- action={{ href: "/sample-week", label: "See a sample week" }}
+ action={
+ canAddRecipes
+ ? { href: "/sample-week", label: "See a sample week" }
+ : native
+ ? undefined
+ : { href: "/billing", label: "See BiteSync Pro" }
+ }
  />
  ) : (
  <EmptyState

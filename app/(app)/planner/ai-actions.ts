@@ -3,7 +3,7 @@
 import { FRIENDLY_BY_CONTEXT, toUserFacingError } from "@/lib/errors/userFacing";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { canUseAiWeekPlan, getAccess } from "@/lib/subscription";
+import { getAccess, takeAiWeekPlan } from "@/lib/subscription";
 import { TRIAL_AI_PLAN_CAP } from "@/lib/billing/access";
 import { planningAccessError } from "@/lib/supabase/meal-plans";
 import { fetchRecipeNutritionMap } from "@/lib/supabase/recipe-nutrition-query";
@@ -1060,17 +1060,18 @@ async function generateAIWeekPlanInner(
   let claudeApplyError: string | undefined;
   let aiFallbackNotice: string | undefined;
 
-  // Claude on Pro, and on a trial for its first TRIAL_AI_PLAN_CAP plans; after
-  // that the standard planner still plans the week, and says why.
+  // Claude on Pro, and on a trial for its first TRIAL_AI_PLAN_CAP plans (each
+  // one counted before the call); after that the standard planner still plans
+  // the week, and says why.
   let claudeAllowed = false;
-  if (!options?.heuristicOnly && access?.hasPro) {
-    claudeAllowed = await canUseAiWeekPlan();
-    if (!claudeAllowed && access.plan === "trial") {
+  if (!options?.heuristicOnly && access?.hasPro && isAnthropicMealAiEnabled()) {
+    claudeAllowed = await takeAiWeekPlan();
+    if (!claudeAllowed && access.aiCapUntil) {
       aiFallbackNotice = `You've used this trial's ${TRIAL_AI_PLAN_CAP} AI plans, so this week was planned with the standard planner.`;
     }
   }
 
-  if (claudeAllowed && isAnthropicMealAiEnabled()) {
+  if (claudeAllowed) {
     const claudeStarted = Date.now();
     await markPlanRunPhase(supabase, trace, "claude");
     try {

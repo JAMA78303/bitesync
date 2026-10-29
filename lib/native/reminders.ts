@@ -156,19 +156,22 @@ async function plan(now: Date): Promise<void> {
     } else {
       const planned = new Set(result.planned);
       const { title, url } = REMINDER_PAYLOADS.weekly;
+      const until = "planUntil" in result && result.planUntil ? Date.parse(result.planUntil) : Infinity;
       // Copy that stays true if the week gets planned elsewhere before Sunday.
       weeklyReminderTimes(
         now,
         weeks.filter((w) => !planned.has(w)),
-      ).forEach(({ at }, i) => {
-        notifications.push({
-          id: WEEKLY_IDS[i]!,
-          title,
-          body: NATIVE_WEEKLY_BODY,
-          schedule: { at, allowWhileIdle: true },
-          extra: { url },
+      )
+        .filter(({ at }) => at.getTime() < until)
+        .forEach(({ at }, i) => {
+          notifications.push({
+            id: WEEKLY_IDS[i]!,
+            title,
+            body: NATIVE_WEEKLY_BODY,
+            schedule: { at, allowWhileIdle: true },
+            extra: { url },
+          });
         });
-      });
     }
   }
 

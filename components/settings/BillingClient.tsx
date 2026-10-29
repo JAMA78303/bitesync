@@ -47,6 +47,8 @@ type Props = {
   chargeAtTrialEnd: boolean;
   /** A free-plan account from before the trial that hasn't had its trial. */
   canStartTrial: boolean;
+  /** A paid subscription ended (not a trial running out): no "nothing was charged". */
+  lapsed: boolean;
   showSuccess: boolean;
   showCancelled: boolean;
   monthlyPriceId: string;
@@ -139,6 +141,7 @@ export function BillingClient({
   trialEndsAt,
   chargeAtTrialEnd,
   canStartTrial,
+  lapsed,
   showSuccess,
   showCancelled,
   monthlyPriceId,
@@ -214,7 +217,7 @@ export function BillingClient({
     pro: "Pro · active",
     trial: `Pro trial · ${daysLeftLabel(trialDaysLeft)}`,
     free: "Free plan",
-    expired: "Trial ended",
+    expired: lapsed ? "Pro ended" : "Trial ended",
   }[plan];
 
   return (
@@ -450,11 +453,12 @@ export function BillingClient({
             {plan === "expired" ? (
               <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--surface-card)] p-5 shadow-sm">
                 <p className="text-sm font-semibold text-[var(--text-primary)]">
-                  Your {TRIAL_DAYS}-day Pro trial has ended
+                  {lapsed ? "Your BiteSync Pro subscription has ended" : `Your ${TRIAL_DAYS}-day Pro trial has ended`}
                 </p>
                 <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                  {trialEndDay ? `It ended on ${trialEndDay}. ` : ""}Nothing was charged, and
-                  everything you made is still here. You can keep:
+                  {lapsed
+                    ? "Everything you made is still here. You can keep:"
+                    : `${trialEndDay ? `It ended on ${trialEndDay}. ` : ""}Nothing was charged, and everything you made is still here. You can keep:`}
                 </p>
                 <div className="mt-3">
                   <FeatureList items={KEPT_AFTER_TRIAL} tone="card" />

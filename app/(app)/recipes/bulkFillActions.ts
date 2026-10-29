@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { RecipeIngredientInput } from "@/lib/nutrition/calculate";
 import { getDailyCalorieTarget, getDailyProteinTarget } from "@/lib/utils/nutrition-targets";
 import { getProfile } from "@/lib/supabase/profile";
-import { canCreateRecipe, canUseAiRecipes, getAccess, getRecipeCount } from "@/lib/subscription";
+import { canCreateRecipe, getAccess, getRecipeCount, takeAiRecipe } from "@/lib/subscription";
 import { TRIAL_ENDED_RECIPES } from "@/lib/billing/access";
 import { initialDietaryPreferencesFromProfile } from "@/lib/dietary/constraints";
 import {
@@ -140,7 +140,8 @@ export async function generateFillLibrarySlot(payload: {
 
   const [existing, aiMethod] = await Promise.all([
     loadExistingLibrarySnapshot(supabase, user.id),
-    canUseAiRecipes(),
+    // Counted per recipe drafted with Claude, saved or not.
+    takeAiRecipe(),
   ]);
 
   const draft = await generateHybridRecipeDraft({
@@ -155,7 +156,7 @@ export async function generateFillLibrarySlot(payload: {
     // every new signup at onboarding step 2 — had their library written by
     // Claude at our cost. The template engine composes the same recipes with
     // the same computed nutrition; only the written method differs. A trial
-    // gets it for its first TRIAL_AI_RECIPE_CAP recipes (canUseAiRecipes).
+    // gets it for its first TRIAL_AI_RECIPE_CAP recipes (takeAiRecipe).
     useLlmMethod: aiMethod,
   });
 

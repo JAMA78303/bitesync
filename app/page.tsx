@@ -217,7 +217,6 @@ const FEATURES = [
     Icon: Sparkles,
     title: "AI weekly meal plans",
     body: "Fill the whole week from your own recipes in seconds, sized to your calorie and protein targets.",
-    pro: true,
   },
   {
     Icon: ClipboardList,
@@ -361,7 +360,7 @@ export default async function LandingPage() {
                     <BarChart3 className="h-5 w-5" />
                   </span>
                   <h3>
-                    See what your week is missing <span className="pro-chip">PRO</span>
+                    See what your week is missing
                   </h3>
                   <p>
                     Iron, iodine, vitamin D and nine more, checked across the whole week against recommended
@@ -387,14 +386,13 @@ export default async function LandingPage() {
                   </div>
                 </div>
               </article>
-              {FEATURES.map(({ Icon, title, body, ...rest }) => (
+              {FEATURES.map(({ Icon, title, body }) => (
                 <article key={title} className="feature">
                   <span className="f-ico" aria-hidden>
                     <Icon className="h-5 w-5" />
                   </span>
                   <h3>
                     {title}
-                    {"pro" in rest && rest.pro ? <span className="pro-chip">PRO</span> : null}
                   </h3>
                   <p>{body}</p>
                 </article>

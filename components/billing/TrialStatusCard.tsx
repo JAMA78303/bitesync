@@ -12,7 +12,7 @@ import { toLocalISO } from "@/lib/utils/dates";
 import { ds } from "@/lib/ui/classes";
 
 type Props = {
-  access: Pick<Access, "plan" | "trialDaysLeft" | "trialEndsAt" | "trialThen" | "canStartTrial">;
+  access: Pick<Access, "plan" | "trialDaysLeft" | "trialEndsAt" | "trialThen" | "canStartTrial" | "lapsed">;
   /**
    * Inside the iPhone app: no price and no link to web checkout, which the
    * App Store doesn't allow until Pro is sold there (lib/native/server.ts).
@@ -74,7 +74,7 @@ export function TrialStatusCard({ access, native }: Props) {
     return (
       <UpgradeCard
         placement="today"
-        title="Your 7-day Pro trial has ended"
+        title={access.lapsed ? "Your BiteSync Pro subscription has ended" : "Your 7-day Pro trial has ended"}
         body={
           native
             ? "Everything you planned is still here, and you can still tick off meals and your grocery list. Planning new weeks needs BiteSync Pro."
@@ -95,7 +95,9 @@ export function TrialStatusCard({ access, native }: Props) {
       />
     );
   }
-  if (access.plan === "free" && access.canStartTrial) {
+  // On the web only: in the app the trial would unlock Pro outside Apple's
+  // in-app purchase, so the app's billing page and sidebar don't offer it either.
+  if (access.plan === "free" && access.canStartTrial && !native) {
     return <StartTrialCard native={native} />;
   }
   return null;

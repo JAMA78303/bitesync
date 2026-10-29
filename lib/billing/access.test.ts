@@ -75,6 +75,21 @@ assert(optInDone.plan === "free" && optInDone.canPlan && !optInDone.canStartTria
 assert(access({ subscriptionStatus: "free", now: new Date(launch + 30 * DAY) }).plan === "expired", "cancelled new account is expired");
 assert(access({ subscriptionStatus: "canceled", createdAt: iso(launch - DAY), now: new Date(launch + 30 * DAY) }).plan === "free", "cancelled legacy account is free");
 
+// Upgrading mid-trial keeps the trial's AI caps until it would have ended; comps have none.
+const upgradedMidTrial = access({ subscriptionStatus: "pro", now: new Date(launch + 3 * DAY) });
+assert(upgradedMidTrial.plan === "pro" && upgradedMidTrial.aiCapUntil === iso(launch + 8 * DAY), "caps run to the trial end");
+assert(access({ subscriptionStatus: "pro", now: new Date(launch + 9 * DAY) }).aiCapUntil === null, "no caps after the trial");
+assert(comp.aiCapUntil === null, "comped accounts have no caps");
+assert(day1.aiCapUntil === day1.trialEndsAt, "a trial is capped until it ends");
+assert(legacy.aiCapUntil === null, "the free plan has no AI to cap");
+
+// A subscription that ended isn't a trial running out.
+const lapsedNew = access({ subscriptionStatus: "free", hadSubscription: true, now: new Date(launch + 60 * DAY) });
+assert(lapsedNew.plan === "expired" && lapsedNew.lapsed, "a new account whose subscription ended is lapsed");
+const lapsedOld = access({ subscriptionStatus: "free", hadSubscription: true, createdAt: iso(launch - DAY), now: new Date(launch + 60 * DAY) });
+assert(lapsedOld.plan === "free" && lapsedOld.lapsed && !lapsedOld.canStartTrial, "a former subscriber gets no trial offer");
+assert(!ended.lapsed, "a trial running out isn't lapsed");
+
 // Bad data never locks anyone out.
 assert(access({ createdAt: null }).plan === "free", "missing created_at is free");
 assert(access({ createdAt: "not a date" }).plan === "free", "unreadable created_at is free");

@@ -12,7 +12,9 @@ import { ThemeSwitch } from "@/components/shared/ThemeSwitch";
  * so the days left are never a surprise. Pro and the free plan show nothing.
  */
 function trialNote(plan: ShellPlan | null): { short: string; full: string } | null {
-  if (plan?.plan === "expired") return { short: "Trial ended", full: "Pro trial ended" };
+  if (plan?.plan === "expired") {
+    return plan.lapsed ? { short: "Pro ended", full: "Pro subscription ended" } : { short: "Trial ended", full: "Pro trial ended" };
+  }
   if (plan?.plan !== "trial") return null;
   const n = plan.trialDaysLeft ?? 1;
   const days = `${n} ${n === 1 ? "day" : "days"}`;

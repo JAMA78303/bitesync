@@ -14,11 +14,31 @@ export function normalizeStripeId(value: unknown): string | null {
   return null;
 }
 
-/** Align with app billing rules: past_due/unpaid still unlock until Stripe ends access. */
+type SubscriptionFacts = Pick<Stripe.Subscription, "status" | "trial_end" | "items">;
+
+/**
+ * A subscription started during a 7-day trial whose first real charge, at the
+ * trial's end, hasn't been paid: it is still in its first paid period. Without
+ * this, the grace a failed payment gets (past_due) would let someone keep Pro
+ * for weeks without ever paying.
+ */
+export function firstChargeAfterTrialUnpaid(subscription: Pick<SubscriptionFacts, "trial_end" | "items">): boolean {
+  if (!subscription.trial_end) return false;
+  const starts = (subscription.items?.data ?? []).map((item) => item.current_period_start);
+  if (!starts.length) return false;
+  return Math.max(...starts) <= subscription.trial_end;
+}
+
+/**
+ * Align with app billing rules: a failed renewal (past_due) keeps Pro until
+ * Stripe ends access, but only for customers who have paid before. Unpaid
+ * (retries used up) and a failed first charge after a trial don't.
+ */
 export function stripeSubscriptionStatusToDbProfileStatus(
-  status: Stripe.Subscription.Status,
+  subscription: SubscriptionFacts,
 ): "pro" | "past_due" | "free" {
+  const { status } = subscription;
   if (status === "active" || status === "trialing") return "pro";
-  if (status === "past_due" || status === "unpaid") return "past_due";
+  if (status === "past_due") return firstChargeAfterTrialUnpaid(subscription) ? "free" : "past_due";
   return "free";
 }

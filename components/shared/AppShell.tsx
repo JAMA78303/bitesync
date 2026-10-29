@@ -7,7 +7,7 @@ import { Sidebar } from "@/components/shared/Sidebar";
 import type { Access } from "@/lib/billing/access";
 
 /** What the sidebar and top bar say about the account's plan (lib/billing/access.ts). */
-export type ShellPlan = Pick<Access, "plan" | "trialDaysLeft" | "canStartTrial">;
+export type ShellPlan = Pick<Access, "plan" | "trialDaysLeft" | "canStartTrial" | "lapsed">;
 
 type AppShellProps = {
   children: React.ReactNode;

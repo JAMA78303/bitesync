@@ -34,9 +34,12 @@ export const TRIAL_AI_RECIPE_CAP = 20;
 /** The free plan's recipe allowance (legacy accounts). */
 export const FREE_RECIPE_LIMIT = 10;
 
-/** Server errors once a trial has ended. No price, so they're fine inside the iPhone app too. */
-export const TRIAL_ENDED_PLANNING = `Your ${TRIAL_DAYS}-day Pro trial has ended. Upgrade to BiteSync Pro to keep planning.`;
-export const TRIAL_ENDED_RECIPES = `Your ${TRIAL_DAYS}-day Pro trial has ended. Upgrade to BiteSync Pro to keep adding recipes.`;
+/**
+ * Server errors once a trial has ended. They state the rule rather than say
+ * "upgrade", because the iPhone app shows them too and can't sell Pro yet.
+ */
+export const TRIAL_ENDED_PLANNING = `Your ${TRIAL_DAYS}-day Pro trial has ended. Planning new weeks needs BiteSync Pro.`;
+export const TRIAL_ENDED_RECIPES = `Your ${TRIAL_DAYS}-day Pro trial has ended. Adding recipes needs BiteSync Pro.`;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const TRIAL_MS = TRIAL_DAYS * DAY_MS;
@@ -73,6 +76,17 @@ export type Access = {
   trialThen: "free" | "expired" | null;
   /** A legacy free account that hasn't used its one-time trial. */
   canStartTrial: boolean;
+  /**
+   * Off Pro after a paid subscription ended (not a trial running out), so the
+   * app says "your subscription has ended", not "nothing was charged".
+   */
+  lapsed: boolean;
+  /**
+   * Until when the trial's AI caps apply (ISO), or null. That's the trial, and
+   * also the rest of it for someone who upgraded mid-trial (Stripe holds the
+   * first charge until then), so upgrading and cancelling can't lift the caps.
+   */
+  aiCapUntil: string | null;
 };
 
 export type AccessInput = {
@@ -83,6 +97,8 @@ export type AccessInput = {
   emailConfirmedAt: string | null | undefined;
   /** auth.users.raw_app_meta_data; service-role writable only. */
   appMetadata: Record<string, unknown> | null | undefined;
+  /** profiles.stripe_subscription_id is set: they had a subscription at some point. */
+  hadSubscription?: boolean;
   now: Date;
 };
 
@@ -119,35 +135,40 @@ const NO_TRIAL = { trialStartedAt: null, trialEndsAt: null, trialDaysLeft: null,
 export function resolveAccess(input: AccessInput): Access {
   const now = input.now.getTime();
   const meta = input.appMetadata ?? {};
-  const paying = isProSubscriptionStatus(input.subscriptionStatus);
-  const comped = !paying && meta.comp_pro === true;
-  if (paying || comped) {
-    return { plan: "pro", ...PRO, comped, ...NO_TRIAL, canStartTrial: false };
-  }
-
   const launch = time(TRIAL_LAUNCH);
   const created = time(input.createdAt);
   // Anything unreadable falls back to the free plan everyone had before the
   // trial, never to expired: a bad date must not lock anyone out.
   const legacy = !Number.isFinite(launch) || !Number.isFinite(created) || created < launch;
+  // The account's trial, if it has one: an older account's opt-in, or a new
+  // account's first 7 days, which start when the email is confirmed (the app
+  // can't be used before), so slow confirmers don't lose days.
+  const optIn = time(meta.trial_started_at);
+  const confirmed = time(input.emailConfirmedAt);
+  const window = legacy
+    ? Number.isFinite(optIn)
+      ? trial(optIn, now)
+      : null
+    : trial(Number.isFinite(confirmed) ? confirmed : created, now);
 
-  if (legacy) {
-    const optIn = time(meta.trial_started_at);
-    if (Number.isFinite(optIn)) {
-      const t = trial(optIn, now);
-      const { active, ...dates } = t;
-      if (active) return { plan: "trial", ...PRO, comped: false, ...dates, trialThen: "free", canStartTrial: false };
-      return { plan: "free", ...FREE, comped: false, ...dates, trialThen: null, canStartTrial: false };
-    }
-    return { plan: "free", ...FREE, comped: false, ...NO_TRIAL, canStartTrial: true };
+  const paying = isProSubscriptionStatus(input.subscriptionStatus);
+  const comped = !paying && meta.comp_pro === true;
+  if (paying || comped) {
+    const aiCapUntil = paying && window?.active ? window.trialEndsAt : null;
+    return { plan: "pro", ...PRO, comped, ...NO_TRIAL, canStartTrial: false, lapsed: false, aiCapUntil };
   }
 
-  // New accounts: the clock starts when the email is confirmed (the app can't
-  // be used before), so slow confirmers don't lose days.
-  const confirmed = time(input.emailConfirmedAt);
-  const { active, ...dates } = trial(Number.isFinite(confirmed) ? confirmed : created, now);
-  if (active) return { plan: "trial", ...PRO, comped: false, ...dates, trialThen: "expired", canStartTrial: false };
-  return { plan: "expired", ...EXPIRED, comped: false, ...dates, trialThen: null, canStartTrial: false };
+  const lapsed = input.hadSubscription === true;
+  if (!window) {
+    return { plan: "free", ...FREE, comped: false, ...NO_TRIAL, canStartTrial: !lapsed, lapsed, aiCapUntil: null };
+  }
+  const { active, ...dates } = window;
+  if (active) {
+    const trialThen = legacy ? "free" : "expired";
+    return { plan: "trial", ...PRO, comped: false, ...dates, trialThen, canStartTrial: false, lapsed: false, aiCapUntil: dates.trialEndsAt };
+  }
+  if (legacy) return { plan: "free", ...FREE, comped: false, ...dates, trialThen: null, canStartTrial: false, lapsed, aiCapUntil: null };
+  return { plan: "expired", ...EXPIRED, comped: false, ...dates, trialThen: null, canStartTrial: false, lapsed, aiCapUntil: null };
 }
 
 /**

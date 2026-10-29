@@ -20,7 +20,6 @@ const STEPS = [
   {
     title: "Spot micronutrient gaps",
     body: "See what your week is missing — iron, iodine, vitamin D — against recommended intakes.",
-    pro: true,
   },
 ] as const;
 
@@ -190,7 +189,6 @@ export function HomeDemo() {
             <span className="n">{String(i + 1).padStart(2, "0")}</span>
             <h3>
               {s.title}
-              {"pro" in s && s.pro ? <span className="pro-chip">PRO</span> : null}
             </h3>
             <p>{s.body}</p>
             <span className="progress" ref={step === i ? progressRef : undefined} style={{ width: 0 }} aria-hidden />

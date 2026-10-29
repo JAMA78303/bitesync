@@ -29,7 +29,7 @@ const PRO_FEATURES = [
   "AI-written recipes",
   "All macros + micronutrient analysis",
   "Planner, grocery lists & recipe import",
-  "Priority support",
+  "Weekly reminders on your phone",
 ] as const;
 
 function Features({ items }: { items: readonly string[] }) {

@@ -70,6 +70,7 @@ export default async function BillingPage({ searchParams }: Props) {
       trialEndsAt={access?.trialEndsAt ?? null}
       chargeAtTrialEnd={onTrial && checkoutTrialEnd(access, new Date()) !== null}
       canStartTrial={!paying && Boolean(access?.canStartTrial)}
+      lapsed={!paying && Boolean(access?.lapsed)}
       showSuccess={params.success === "true"}
       showCancelled={params.cancelled === "true"}
       monthlyPriceId={process.env.STRIPE_PRO_MONTHLY_PRICE_ID!}

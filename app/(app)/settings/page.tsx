@@ -117,7 +117,7 @@ export default async function SettingsPage() {
  </div>
  </div>
 
- <NotificationSettings vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} />
+ <NotificationSettings vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} canPlan={plan !== "expired"} />
 
  <Link
  href="/goals"

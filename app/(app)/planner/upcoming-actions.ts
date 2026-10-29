@@ -56,10 +56,13 @@ export async function getPlannedWeekStarts(weekStarts: string[]) {
   const access = await getAccess();
   if (!access) return { error: "Please sign in again." };
   const canPlan = access.canPlan;
+  // A trial that ends in "expired" stops planning then, so the phone shouldn't
+  // schedule Sunday reminders past it (they'd promise a plan it can't make).
+  const planUntil = access.plan === "trial" && access.trialThen === "expired" ? access.trialEndsAt : null;
 
   const weeks = weekStarts.filter((w) => ISO_DATE.test(w)).slice(0, 8);
   // Can't plan: no reminders are scheduled, so which weeks have meals doesn't matter.
-  if (!weeks.length || !canPlan) return { success: true as const, planned: [] as string[], canPlan };
+  if (!weeks.length || !canPlan) return { success: true as const, planned: [] as string[], canPlan, planUntil };
 
   const supabase = await createClient();
   const {
@@ -73,7 +76,7 @@ export async function getPlannedWeekStarts(weekStarts: string[]) {
     .eq("user_id", user.id)
     .in("week_start_date", weeks);
   if (error) return { error: error.message };
-  if (!plans?.length) return { success: true as const, planned: [] as string[], canPlan };
+  if (!plans?.length) return { success: true as const, planned: [] as string[], canPlan, planUntil };
 
   const { data: entries, error: entriesError } = await supabase
     .from("meal_plan_entries")
@@ -87,5 +90,5 @@ export async function getPlannedWeekStarts(weekStarts: string[]) {
 
   const withMeals = new Set((entries ?? []).map((e) => e.meal_plan_id as string));
   const planned = plans.filter((p) => withMeals.has(p.id as string)).map((p) => p.week_start_date as string);
-  return { success: true as const, planned: [...new Set(planned)], canPlan };
+  return { success: true as const, planned: [...new Set(planned)], canPlan, planUntil };
 }

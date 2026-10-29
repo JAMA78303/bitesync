@@ -37,7 +37,12 @@ export default async function ProtectedLayout({
         initial={initial}
         plan={
           access
-            ? { plan: access.plan, trialDaysLeft: access.trialDaysLeft, canStartTrial: access.canStartTrial }
+            ? {
+                plan: access.plan,
+                trialDaysLeft: access.trialDaysLeft,
+                canStartTrial: access.canStartTrial,
+                lapsed: access.lapsed,
+              }
             : null
         }
         native={native}

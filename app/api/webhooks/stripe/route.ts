@@ -6,6 +6,7 @@ import { getStripeServer } from "@/lib/stripe/server";
 import { createSupabaseAdmin, updateOrInsertProfile } from "@/lib/supabase/admin";
 import {
   normalizeStripeId,
+  firstChargeAfterTrialUnpaid,
   stripeSubscriptionStatusToDbProfileStatus,
 } from "@/lib/stripe/subscription-sync";
 
@@ -158,8 +159,9 @@ export async function POST(request: Request) {
         }
         if (!userId) break;
 
+        // The first charge after a trial failing isn't a lapsed payer's grace period.
         const { error } = await updateOrInsertProfile(userId, {
-          subscription_status: "past_due",
+          subscription_status: firstChargeAfterTrialUnpaid(subscription) ? "free" : "past_due",
         });
 
         if (error) {
@@ -213,7 +215,7 @@ export async function POST(request: Request) {
         }
         if (!userId) break;
 
-        const profileStatus = stripeSubscriptionStatusToDbProfileStatus(subscription.status);
+        const profileStatus = stripeSubscriptionStatusToDbProfileStatus(subscription);
         const patch: Record<string, string> = {
           subscription_status: profileStatus,
         };
