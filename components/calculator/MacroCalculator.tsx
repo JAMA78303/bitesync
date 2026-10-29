@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { PLAN_MY_WEEK_CTA } from "@/components/calculator/cta";
 import {
   calculateMacros,
   cmToFtIn,
@@ -325,7 +326,7 @@ export function MacroCalculator() {
                 }}
                 className={`${ds.primaryBtn} mt-3 w-full gap-2`}
               >
-                Plan my week free
+                {PLAN_MY_WEEK_CTA}
                 <ArrowRight className="h-4 w-4" aria-hidden />
               </Link>
             </div>

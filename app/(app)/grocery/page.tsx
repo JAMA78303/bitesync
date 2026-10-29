@@ -14,6 +14,9 @@ import { ds } from "@/lib/ui/classes";
 import { groupByAisle } from "@/lib/grocery/aisles";
 import { groceryShareText } from "@/lib/grocery/shareText";
 import { WeeklyHabitCard } from "@/components/habit/WeeklyHabitCard";
+import { UpgradeCard } from "@/components/billing/UpgradeCard";
+import { getAccess } from "@/lib/subscription";
+import { isNativeAppRequest } from "@/lib/native/server";
 
 type Props = {
  /** `welcome=1` is the end of setup: the first planned week's list. */
@@ -39,7 +42,27 @@ export default async function GroceryPage({ searchParams }: Props) {
 
  const weekStart = params.week ? getMonday(new Date(`${params.week}T00:00:00`)) : getMonday(new Date());
  const weekStartISO = toLocalISO(weekStart);
- const mealPlanId = params.plan ?? (await getMealPlanIdForWeek(weekStartISO));
+ const [mealPlanId, access, native] = await Promise.all([
+ params.plan ?? getMealPlanIdForWeek(weekStartISO),
+ getAccess(),
+ isNativeAppRequest(),
+ ]);
+ // Once a 7-day trial has ended (lib/billing/access.ts), lists can't be made
+ // from the plan any more, but the one they have can still be ticked, added
+ // to by hand, shared and deleted. The actions check this themselves.
+ const canGenerate = access?.canPlan !== false;
+ const trialEndedCard = (
+ <UpgradeCard
+ placement="grocery"
+ title="Your 7-day Pro trial has ended"
+ body={
+ native
+ ? "Making grocery lists from your plan needs BiteSync Pro. You can still tick off, add and remove items on a list you have."
+ : "Upgrade to BiteSync Pro to make grocery lists from your plan. You can still tick off, add and remove items on a list you have."
+ }
+ native={native}
+ />
+ );
 
  let scopeDays: number[] | null = null;
  if (mealPlanId) {
@@ -61,7 +84,7 @@ export default async function GroceryPage({ searchParams }: Props) {
  <div className={`${ds.mobilePage} ${ds.pageContent}`}>
  <GroceryHeader subtitle={fallbackSubtitle} total={0} checked={0} />
  <div className={`${ds.mobileGutter} ${ds.overlap}`}>
- <GroceryEmptyState />
+ {canGenerate ? <GroceryEmptyState /> : trialEndedCard}
  </div>
  </div>
  );
@@ -89,15 +112,17 @@ export default async function GroceryPage({ searchParams }: Props) {
  filledMealTypes={filledMealTypes}
  shareText={toBuy.length ? groceryShareText(subtitle, toBuy) : null}
  itemCount={total}
+ canGenerate={canGenerate}
  />
  );
 
  if (total === 0) {
  return (
  <div className={`${ds.mobilePage} ${ds.pageContent}`}>
- <GroceryHeader subtitle={subtitle} total={0} checked={0} actions={headerActions} />
+ {/* With no list and no way to make one, Delete list is all that would be left. */}
+ <GroceryHeader subtitle={subtitle} total={0} checked={0} actions={canGenerate ? headerActions : undefined} />
  <div className={`${ds.mobileGutter} ${ds.overlap} space-y-4`}>
- <GroceryEmptyState />
+ {canGenerate ? <GroceryEmptyState /> : trialEndedCard}
  <ManualGroceryAdd mealPlanId={mealPlanId} />
  </div>
  </div>

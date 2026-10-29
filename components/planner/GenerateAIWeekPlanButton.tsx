@@ -11,23 +11,33 @@ import {
   type GoalContext,
 } from "@/app/(app)/planner/ai-actions";
 import { refreshNativeReminders } from "@/lib/native/reminders";
+import type { Plan } from "@/lib/billing/access";
 
 type Props = {
-  isPro: boolean;
+  /**
+   * lib/billing/access.ts. Pro and trial get both planners (the AI cap on a
+   * trial is enforced by the action, which falls back to the standard
+   * planner); free keeps the Pro note; expired gets nothing, as the page
+   * shows an upgrade card instead.
+   */
+  plan: Plan;
   mealPlanId: string;
   goals: GoalContext;
 };
 
-export function GenerateAIWeekPlanButton({ isPro, mealPlanId, goals }: Props) {
+export function GenerateAIWeekPlanButton({ plan, mealPlanId, goals }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   // Which planner is running, so "Planning…" shows on the button that was
   // tapped rather than always on the AI one.
   const [running, setRunning] = useState<"ai" | "standard" | null>(null);
   const { toast } = useToast();
+  const hasPro = plan === "pro" || plan === "trial";
+
+  if (plan === "expired") return null;
 
   function runWeekPlan(mode: "ai" | "standard") {
-    if (!isPro) {
+    if (!hasPro) {
       toast({
         title: "Pro feature",
         description: "Upgrade to Pro to generate AI weekly meal plans.",
@@ -100,7 +110,7 @@ export function GenerateAIWeekPlanButton({ isPro, mealPlanId, goals }: Props) {
       {/* The heuristic planner was reachable only through onboarding. Pro users
           had no way to a plan when Claude was slow or down, and no way to
           compare the two — which is how neither was ever measured. */}
-      {isPro ? (
+      {hasPro ? (
         <Button
           type="button"
           onClick={() => runWeekPlan("standard")}

@@ -7,6 +7,7 @@ import { FOUNDER, FOUNDER_BYLINE } from "@/lib/founder";
 import { blogPostingSchema } from "@/lib/seo/structuredData";
 import { isPostSlug, loadAllPosts, loadPost, POST_SLUGS } from "@/content/blog/posts";
 import { pickRelatedPosts } from "@/lib/blog/relatedPosts";
+import { TRIAL_DAYS } from "@/lib/billing/access";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -104,7 +105,7 @@ export default async function BlogPostPage({ params }: Props) {
           href="/signup"
           className="mt-10 inline-flex rounded-xl bg-[var(--btn-primary-bg)] px-5 py-2.5 text-sm font-medium text-[var(--btn-primary-text)] hover:bg-[var(--btn-primary-hover)]"
         >
-          Try BiteSync free
+          Try BiteSync free for {TRIAL_DAYS} days
         </Link>
         <p className="mt-6 flex gap-4">
           <Link href="/blog" className="text-sm text-[var(--text-muted)] hover:text-[var(--brand-primary)]">

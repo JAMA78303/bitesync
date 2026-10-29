@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { BiteSyncLogoMark } from "@/components/auth/BiteSyncLogoMark";
+import { TRIAL_DAYS } from "@/lib/billing/access";
+import { isNativeAppRequest } from "@/lib/native/server";
 import { ds } from "@/lib/ui/classes";
 
 type Props = {
@@ -10,8 +12,10 @@ type Props = {
  success?: ReactNode;
 };
 
-export function AuthLayout({ children, mode, error, success }: Props) {
+export async function AuthLayout({ children, mode, error, success }: Props) {
  const isLogin = mode ==="login";
+ // Inside the iPhone app, say nothing about paid plans (App Store rule 3.1.1).
+ const native = await isNativeAppRequest();
 
  return (
  <div className="flex min-h-screen flex-col bg-gradient-to-b from-[var(--header-from)] to-[var(--header-to)]">
@@ -44,7 +48,7 @@ export function AuthLayout({ children, mode, error, success }: Props) {
  <p className="mt-6 text-center text-sm text-[var(--text-muted)]">
  {isLogin ?"Don't have an account?" :"Already have an account?"}{" "}
  <Link href={isLogin ?"/signup" :"/login"} className="font-semibold text-[var(--text-link)]">
- {isLogin ?"Sign up free" :"Sign in"}
+ {isLogin ?"Sign up" :"Sign in"}
  </Link>
  </p>
 
@@ -56,9 +60,11 @@ export function AuthLayout({ children, mode, error, success }: Props) {
  </p>
  ) : null}
 
+ {!isLogin && !native ? (
  <p className="mt-8 text-center text-xs text-[var(--text-muted)]">
- No credit card required · Free tier always available
+ {TRIAL_DAYS}-day free trial of BiteSync Pro · No card needed
  </p>
+ ) : null}
  </div>
  </div>
  );

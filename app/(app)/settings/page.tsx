@@ -6,7 +6,7 @@ import { SignOutButton } from "@/components/settings/SignOutButton";
 import { SettingsThemeRow } from "@/components/settings/SettingsThemeRow";
 import { NotificationSettings } from "@/components/settings/NotificationSettings";
 import { FeedbackForm } from "@/components/feedback/FeedbackForm";
-import { isProSubscriptionStatus } from "@/lib/subscription";
+import { getAccess, isProSubscriptionStatus } from "@/lib/subscription";
 import { reconcileBillingSubscriptionFromStripe } from "@/lib/stripe/reconcile-billing-subscription";
 import { getProfile } from "@/lib/supabase/profile";
 import { createClient } from "@/lib/supabase/server";
@@ -45,7 +45,7 @@ const SETTINGS_GROUPS = [
 
 export default async function SettingsPage() {
  const supabase = await createClient();
- const [initialProfile, auth] = await Promise.all([getProfile(), supabase.auth.getUser()]);
+ const [initialProfile, auth, access] = await Promise.all([getProfile(), supabase.auth.getUser(), getAccess()]);
  let profile = initialProfile;
  const {
  data: { user },
@@ -63,7 +63,17 @@ export default async function SettingsPage() {
  }
  }
 
- const isPro = isProSubscriptionStatus(profile?.subscription_status);
+ // Paying through Stripe (maybe only just reconciled above, after getAccess
+ // ran) counts as Pro; otherwise the plan comes from lib/billing/access.ts.
+ const plan = isProSubscriptionStatus(profile?.subscription_status) ? "pro" : (access?.plan ?? "free");
+ const hasPro = plan === "pro" || plan === "trial";
+ const days = access?.trialDaysLeft ?? 1;
+ const planLabel = {
+ pro: "✦ Pro",
+ trial: `✦ Pro trial · ${days} ${days === 1 ? "day" : "days"} left`,
+ free: "Free plan",
+ expired: "Trial ended",
+ }[plan];
  const isAdmin =
  !!user &&
  (process.env.ADMIN_USER_ID ??"")
@@ -92,10 +102,10 @@ export default async function SettingsPage() {
  <p className="truncate text-sm font-bold text-[var(--text-primary)]">{email}</p>
  <span
  className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
- isPro ?"bg-[var(--accent-lime)] text-[var(--on-lime)]" :"bg-[var(--surface-brand-subtle)] text-[var(--brand-primary)]"
+ hasPro ?"bg-[var(--accent-lime)] text-[var(--on-lime)]" :"bg-[var(--surface-brand-subtle)] text-[var(--brand-primary)]"
  }`}
  >
- {isPro ?"✦ Pro" :"Free plan"}
+ {planLabel}
  </span>
  </div>
  </div>

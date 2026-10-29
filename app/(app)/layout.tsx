@@ -4,7 +4,8 @@ import { AppProviders } from "@/components/ui/AppProviders";
 import { FeedbackFab } from "@/components/feedback/FeedbackFab";
 import { InstallPromptCapture } from "@/components/habit/InstallPromptCapture";
 import { NativeAppSync } from "@/components/native/NativeAppSync";
-import { getUserTier } from "@/lib/subscription";
+import { getAccess } from "@/lib/subscription";
+import { isNativeAppRequest } from "@/lib/native/server";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -25,13 +26,22 @@ export default async function ProtectedLayout({
     {
       data: { user },
     },
-    tier,
-  ] = await Promise.all([supabase.auth.getUser(), getUserTier()]);
+    access,
+    native,
+  ] = await Promise.all([supabase.auth.getUser(), getAccess(), isNativeAppRequest()]);
   const initial = user?.email?.trim().charAt(0).toUpperCase() || "?";
 
   return (
     <AppProviders>
-      <AppShell initial={initial} isPro={tier === "pro"}>
+      <AppShell
+        initial={initial}
+        plan={
+          access
+            ? { plan: access.plan, trialDaysLeft: access.trialDaysLeft, canStartTrial: access.canStartTrial }
+            : null
+        }
+        native={native}
+      >
         {children}
       </AppShell>
       <FeedbackFab />

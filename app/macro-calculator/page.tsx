@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PLAN_MY_WEEK_CTA } from "@/components/calculator/cta";
 import { MacroCalculator } from "@/components/calculator/MacroCalculator";
 import { JsonLd } from "@/components/shared/JsonLd";
 import { Logo } from "@/components/shared/Logo";
+import { TRIAL_DAYS } from "@/lib/billing/access";
 import { FOUNDER, FOUNDER_BYLINE } from "@/lib/founder";
 import { faqPageSchema } from "@/lib/seo/structuredData";
 import { ds } from "@/lib/ui/classes";
@@ -61,7 +63,7 @@ const CALCULATOR_FAQ = [
   },
   {
     q: "Is anything I enter saved?",
-    a: "Nothing you type is sent to BiteSync: the calculation runs in your browser. If you tap “Plan my week free”, your answers are kept in this browser for up to 7 days, so you don't have to type them again when you set up BiteSync.",
+    a: `Nothing you type is sent to BiteSync: the calculation runs in your browser. If you tap “${PLAN_MY_WEEK_CTA}”, your answers are kept in this browser for up to a week, so you don't have to type them again when you set up BiteSync.`,
   },
   {
     q: "Who shouldn't use this calculator?",
@@ -69,7 +71,7 @@ const CALCULATOR_FAQ = [
   },
   {
     q: "How do I actually hit these numbers every day?",
-    a: "Plan ahead. BiteSync works out these same targets for you, plans your week's meals to hit them before you shop, and turns the week into one grocery list. It's free to start.",
+    a: `Plan ahead. BiteSync works out these same targets for you, plans your week's meals to hit them before you shop, and turns the week into one grocery list. You can try it free for ${TRIAL_DAYS} days, with no card needed.`,
   },
 ] as const;
 
@@ -105,7 +107,7 @@ export default function MacroCalculatorPage() {
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
           <Logo size="sm" href="/" />
           <Link href="/signup" className={`${ds.primaryBtn} px-4 py-2.5`}>
-            Start free
+            Start free trial
           </Link>
         </div>
       </header>
@@ -224,7 +226,7 @@ export default function MacroCalculatorPage() {
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <Link href="/signup" className={ds.primaryBtn}>
-              Plan my week free
+              {PLAN_MY_WEEK_CTA}
             </Link>
             <Link href="/blog/best-meal-planner-apps-macros" className={ds.secondaryBtn}>
               Compare meal planners

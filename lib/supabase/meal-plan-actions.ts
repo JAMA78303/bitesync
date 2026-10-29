@@ -4,12 +4,17 @@ import type { MealType } from "@/types";
 import {
   assignRecipeToSlot as assignRecipeToSlotImpl,
   clearWeekEntries as clearWeekEntriesImpl,
+  planningAccessError,
   quickAddMeal as quickAddMealImpl,
   removeSlotEntry as removeSlotEntryImpl,
   replaceMealEntry as replaceMealEntryImpl,
   setMealEntryStatus as setMealEntryStatusImpl,
   type MealEntryStatus,
 } from "@/lib/supabase/meal-plans";
+
+// Placing, removing and clearing meals is planning, so it needs canPlan.
+// Ticking a meal eaten or swapping it on Today stays open once a trial ends,
+// so the week already planned can still be finished.
 
 export async function assignRecipeToSlot(
   meal_plan_id: string,
@@ -18,6 +23,8 @@ export async function assignRecipeToSlot(
   meal_type: MealType,
   slot_index = 0,
 ) {
+  const blocked = await planningAccessError();
+  if (blocked) return { error: blocked };
   return assignRecipeToSlotImpl(meal_plan_id, recipe_id, day_of_week, meal_type, slot_index);
 }
 
@@ -29,6 +36,8 @@ export async function quickAddMeal(
   quick_add_calories?: number | null,
   slot_index = 0,
 ) {
+  const blocked = await planningAccessError();
+  if (blocked) return { error: blocked };
   return quickAddMealImpl(
     meal_plan_id,
     day_of_week,
@@ -40,10 +49,14 @@ export async function quickAddMeal(
 }
 
 export async function removeSlotEntry(entry_id: string) {
+  const blocked = await planningAccessError();
+  if (blocked) return { error: blocked };
   return removeSlotEntryImpl(entry_id);
 }
 
 export async function clearWeekEntries(meal_plan_id: string) {
+  const blocked = await planningAccessError();
+  if (blocked) return { error: blocked };
   return clearWeekEntriesImpl(meal_plan_id);
 }
 

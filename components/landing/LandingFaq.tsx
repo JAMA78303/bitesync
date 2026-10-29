@@ -3,7 +3,9 @@
  * page renders. Search and answer engines discard (and Google penalises) markup
  * describing content a visitor cannot see, so these must not be allowed to drift.
  */
+import { TRIAL_DAYS } from "@/lib/billing/access";
 import { FOUNDER } from "@/lib/founder";
+import { PRO_ANNUAL_PRICE, PRO_MONTHLY_PRICE } from "@/lib/stripe/pricing";
 import { SUPPORT_EMAIL } from "@/lib/support";
 export const FAQ_ITEMS = [
  {
@@ -17,7 +19,7 @@ export const FAQ_ITEMS = [
  // and scripts/verify-micro-coverage.ts (run in CI) — change them together.
  {
  q:"Does BiteSync plan my meals automatically?",
- a:"On Pro, yes. The AI fills your whole week — breakfast, lunch, dinner and snacks — from your recipe library in seconds, sized to your calorie and protein targets, and favours recipes rich in any vitamins or minerals your week is short on. On Free, you place meals yourself and each day's totals update as you go. Either way, you get one grocery list for the week.",
+ a:`On Pro, yes, and during the ${TRIAL_DAYS}-day free trial. The AI fills your whole week — breakfast, lunch, dinner and snacks — from your recipe library in seconds, sized to your calorie and protein targets, and favours recipes rich in any vitamins or minerals your week is short on. You can also place meals yourself, and each day's totals update as you go. Either way, you get one grocery list for the week.`,
  },
  {
  q:"How close do plans get to my calorie and protein targets?",
@@ -32,8 +34,8 @@ export const FAQ_ITEMS = [
  a:"No. Add recipes manually in minutes, or paste a URL from many recipe websites — BiteSync imports ingredients so you can tweak them before saving. Nutrition is calculated automatically either way.",
  },
  {
- q:"What is the difference between Free and Pro nutrition tracking?",
- a:"Free users see calories and protein per meal. Pro users get all four macros plus micronutrient analysis against published dietary reference values.",
+ q:"How much does BiteSync cost?",
+ a:`New accounts get a ${TRIAL_DAYS}-day free trial of BiteSync Pro, with no card needed. After that, Pro is ${PRO_MONTHLY_PRICE} a month or ${PRO_ANNUAL_PRICE} a year, billed in pounds (GBP). Nothing is charged unless you choose to upgrade. The macro calculator is free for everyone, with no account.`,
  },
  {
  q:"Is my data private?",
@@ -56,8 +58,8 @@ export const FAQ_ITEMS = [
  a: `${FOUNDER.name}, a registered dietitian, who built it to give people working towards a nutrition goal the structure to reach it. The targets, portion logic and micronutrient analysis come from clinical practice rather than from whatever a calorie-counting app happened to do first.`,
  },
  {
- q:"What happens when I reach the 10 recipe limit on Free?",
- a:"You will see a warning as you approach the limit. Archive older recipes to free up space or upgrade to Pro.",
+ q:"What happens when the free trial ends?",
+ a:"Nothing is charged, because there's no card to charge. Your recipes, meal plans and grocery lists stay in your account: you can still view them, tick off meals and finish the week's shopping. Planning new weeks, adding recipes and micronutrient analysis need Pro.",
  },
  {
  q:"Can I import recipes from other websites?",

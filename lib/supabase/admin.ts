@@ -92,7 +92,7 @@ export const AUTH_ADMIN_CLIENT_OPTIONS = {
   auth: { autoRefreshToken: false, persistSession: false },
 } as const;
 
-/** Service-role client for `auth.admin` calls (deleting a user's login). */
+/** Service-role client for `auth.admin` calls (deleting a login, setting app_metadata). */
 export function createSupabaseAuthAdmin(): SupabaseClient {
   const { url, key } = getValidatedSupabaseServiceContext();
   return createClient(url, key, AUTH_ADMIN_CLIENT_OPTIONS);

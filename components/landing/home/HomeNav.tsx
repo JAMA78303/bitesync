@@ -53,8 +53,8 @@ export function HomeNav({ links }: { links: readonly HomeNavLink[] }) {
             Sign in
           </Link>
           <Link className="btn btn-primary btn-sm" href="/signup">
-            <span className="nav-cta-long">Get started free</span>
-            <span className="nav-cta-short">Start free</span>
+            <span className="nav-cta-long">Start free trial</span>
+            <span className="nav-cta-short">Try free</span>
           </Link>
           <button
             type="button"

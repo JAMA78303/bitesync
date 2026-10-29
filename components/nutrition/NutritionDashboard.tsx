@@ -12,13 +12,19 @@ import { ds } from "@/lib/ui/classes";
 import { CofidAttribution } from "@/components/nutrition/CofidAttribution";
 import { DeficiencyRecommendations } from "@/components/planner/DeficiencyRecommendations";
 import { MicronutrientPanel } from "@/components/planner/MicronutrientPanel";
+import { UpgradeCard } from "@/components/billing/UpgradeCard";
 import type { MicroAnalysis } from "@/lib/supabase/nutrition";
 
 type Props = {
  weekAvg: { kcal: number; protein: number; carbs: number; fat: number };
  days: DayMacros[];
  targets: UserNutritionTargets;
- isProUser: boolean;
+ /** Pro or trial: micronutrient analysis (lib/billing/access.ts). */
+ hasPro: boolean;
+ /** A 7-day trial ended without paying: the upgrade card in place of micronutrients. */
+ trialEnded?: boolean;
+ /** Inside the iPhone app: no link to web checkout (lib/native/server.ts). */
+ native?: boolean;
  microAnalysis: MicroAnalysis | null;
  weekNav: React.ReactNode;
 };
@@ -27,7 +33,9 @@ export function NutritionDashboard({
  weekAvg,
  days,
  targets,
- isProUser,
+ hasPro,
+ trialEnded = false,
+ native = false,
  microAnalysis,
  weekNav,
 }: Props) {
@@ -177,30 +185,45 @@ export function NutritionDashboard({
  <h2 className={ds.sectionTitle}>Micronutrients</h2>
  <span className="text-xs text-[var(--text-muted)]">vs DRVs</span>
  </div>
- {isProUser && microAnalysis ? (
+ {hasPro && microAnalysis ? (
  <div className="space-y-4">
  <DeficiencyRecommendations deficiencies={microDeficiencies} excesses={microExcesses} />
  <MicronutrientPanel analysis={microAnalysis} />
  </div>
- ) : isProUser ? (
+ ) : hasPro ? (
  <div className={`${ds.card} ${ds.cardPadding} text-center`}>
  <p className="text-sm text-[var(--text-muted)]">Add meals to your planner to see micronutrient analysis.</p>
  <Link href="/planner" className="mt-2 inline-block text-sm font-semibold text-[var(--text-link)]">
  Go to planner →
  </Link>
  </div>
+ ) : trialEnded ? (
+ <UpgradeCard
+ placement="nutrition"
+ title="Your 7-day Pro trial has ended"
+ body={
+ native
+ ? "Your calories and macros are still here. Vitamins and minerals, against dietary reference values, are part of BiteSync Pro."
+ : "Your calories and macros are still here. Upgrade to BiteSync Pro to see vitamins and minerals against dietary reference values."
+ }
+ native={native}
+ />
  ) : (
  <div className="rounded-2xl bg-[var(--surface-action-subtle)] p-5 text-center">
  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand-navy-subtle)] text-[var(--brand-navy)] dark:bg-[var(--brand-navy-soft)] dark:text-[var(--text-on-header-muted)]" aria-hidden>
  <Dna className="h-6 w-6" strokeWidth={1.75} />
  </div>
  <p className={`mb-1 ${ds.tierPrimary}`}>Micronutrient analysis</p>
- <p className="mb-4 text-xs text-[var(--text-muted)]">
- See how your diet compares to dietary reference values for vitamins and minerals.
+ <p className={`text-xs text-[var(--text-muted)] ${native ? "" : "mb-4"}`}>
+ {native
+ ? "Part of BiteSync Pro: how your diet compares to dietary reference values for vitamins and minerals."
+ : "See how your diet compares to dietary reference values for vitamins and minerals."}
  </p>
+ {native ? null : (
  <Link href="/billing" className={ds.primaryBtn}>
  Upgrade to Pro
  </Link>
+ )}
  </div>
  )}
  </div>

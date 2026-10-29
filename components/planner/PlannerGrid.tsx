@@ -46,6 +46,16 @@ function isBreakfastRowEmpty(grid: PlannerGridType): boolean {
  return true;
 }
 
+/** An unplanned slot in a view-only planner: the shape of the add button, nothing to tap. */
+function EmptySlot() {
+ return (
+ <div className="flex min-h-[64px] w-full items-center justify-center rounded-[14px] border-[1.5px] border-dashed border-[var(--border-subtle)] text-sm text-[var(--text-muted)]">
+ <span aria-hidden>—</span>
+ <span className="sr-only">Nothing planned</span>
+ </div>
+ );
+}
+
 type Props = {
  grid: PlannerGridType;
  entries: MealPlanEntry[];
@@ -61,6 +71,11 @@ type Props = {
  dietaryPreferences?: string[];
  /** Force mobile day layout (screenshot capture at 390px). */
  forceMobileLayout?: boolean;
+ /**
+  * View only: no adding, removing or clearing meals. A trial that ended
+  * without paying (lib/billing/access.ts: canPlan); the actions refuse anyway.
+  */
+ readOnly?: boolean;
 };
 
 export function PlannerGrid({
@@ -76,6 +91,7 @@ export function PlannerGrid({
  dietPrefs,
  dietaryPreferences = [],
  forceMobileLayout = false,
+ readOnly = false,
 }: Props) {
  const [modalOpen, setModalOpen] = useState(false);
  const [activeDay, setActiveDay] = useState<number | null>(null);
@@ -103,12 +119,22 @@ export function PlannerGrid({
 
  function handleAssigned() {}
 
- const showBreakfastTip = isBreakfastRowEmpty(grid);
+ // The tip is about adding recipes, which a view-only planner can't.
+ const showBreakfastTip = !readOnly && isBreakfastRowEmpty(grid);
  const hasAnyMeals = entries.some((entry) => entry.recipe_id != null || !!entry.quick_add_name);
 
  return (
  <>
- {!hasAnyMeals ? (
+ {!hasAnyMeals && readOnly ? (
+ <EmptyState
+ icon={CalendarDays}
+ title="Nothing planned this week"
+ description="Weeks you've planned stay here to look back on"
+ action={{ href: "/recipes", label: "Browse recipes" }}
+ className="mb-4"
+ />
+ ) : null}
+ {!hasAnyMeals && !readOnly ? (
  <EmptyState
  icon={CalendarDays}
  title="Your week is empty"
@@ -118,7 +144,7 @@ export function PlannerGrid({
  className="mb-4"
  />
  ) : null}
- {hasAnyMeals ? (
+ {hasAnyMeals && !readOnly ? (
  <div className="mb-2 flex justify-end">
  <ClearWeekButton mealPlanId={mealPlanId} />
  </div>
@@ -149,8 +175,10 @@ export function PlannerGrid({
  <div className="space-y-1">
  {snackEntries.length > 0 ? (
  snackEntries.map((snack) => (
- <RecipeSlotCard key={snack.id} entry={snack} dietPrefs={dietPrefs} dietaryPreferences={dietaryPreferences} variant="grid" />
+ <RecipeSlotCard key={snack.id} entry={snack} dietPrefs={dietPrefs} dietaryPreferences={dietaryPreferences} variant="grid" readOnly={readOnly} />
  ))
+ ) : readOnly ? (
+ <EmptySlot />
  ) : (
  <AddSlotButton
  day={day}
@@ -161,7 +189,7 @@ export function PlannerGrid({
  onPickRecipe={openPicker}
  />
  )}
- {snackEntries.length > 0 ? (
+ {snackEntries.length > 0 && !readOnly ? (
  <AddSlotButton
  day={day}
  mealType={mealType}
@@ -173,7 +201,9 @@ export function PlannerGrid({
  ) : null}
  </div>
  ) : entry ? (
- <RecipeSlotCard key={entry.id} entry={entry} dietPrefs={dietPrefs} dietaryPreferences={dietaryPreferences} variant="grid" />
+ <RecipeSlotCard key={entry.id} entry={entry} dietPrefs={dietPrefs} dietaryPreferences={dietaryPreferences} variant="grid" readOnly={readOnly} />
+ ) : readOnly ? (
+ <EmptySlot />
  ) : (
  <AddSlotButton
  day={day}
@@ -216,8 +246,10 @@ export function PlannerGrid({
  dietaryPreferences={dietaryPreferences}
  showBreakfastTip={showBreakfastTip}
  forceMobileLayout={forceMobileLayout}
+ readOnly={readOnly}
  />
 
+ {readOnly ? null : (
  <RecipePickerModal
  open={modalOpen}
  onClose={() => setModalOpen(false)}
@@ -230,6 +262,7 @@ export function PlannerGrid({
  onAssigned={handleAssigned}
  weekDates={weekDates}
  />
+ )}
  </>
  );
 }
@@ -248,6 +281,7 @@ type MobileProps = {
  dietaryPreferences?: string[];
  showBreakfastTip: boolean;
  forceMobileLayout?: boolean;
+ readOnly?: boolean;
 };
 
 function PlannerGridMobileInline({
@@ -264,6 +298,7 @@ function PlannerGridMobileInline({
  dietaryPreferences = [],
  showBreakfastTip,
  forceMobileLayout = false,
+ readOnly = false,
 }: MobileProps) {
  const [activeDay, setActiveDay] = useState(initialActiveDay);
 
@@ -336,8 +371,11 @@ function PlannerGridMobileInline({
  entry={snack}
  dietPrefs={dietPrefs}
  dietaryPreferences={dietaryPreferences}
+ readOnly={readOnly}
  />
  ))
+ ) : readOnly ? (
+ <EmptySlot />
  ) : (
  <AddSlotButton
  day={activeDay}
@@ -348,7 +386,7 @@ function PlannerGridMobileInline({
  onPickRecipe={openPicker}
  />
  )}
- {snackEntries.length > 0 ? (
+ {snackEntries.length > 0 && !readOnly ? (
  <AddSlotButton
  day={activeDay}
  mealType={mealType}
@@ -360,7 +398,9 @@ function PlannerGridMobileInline({
  ) : null}
  </div>
  ) : entry ? (
- <RecipeSlotCard key={entry.id} entry={entry} dietPrefs={dietPrefs} dietaryPreferences={dietaryPreferences} />
+ <RecipeSlotCard key={entry.id} entry={entry} dietPrefs={dietPrefs} dietaryPreferences={dietaryPreferences} readOnly={readOnly} />
+ ) : readOnly ? (
+ <EmptySlot />
  ) : (
  <AddSlotButton
  day={activeDay}

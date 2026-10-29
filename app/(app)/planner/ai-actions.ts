@@ -3,7 +3,9 @@
 import { FRIENDLY_BY_CONTEXT, toUserFacingError } from "@/lib/errors/userFacing";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { getUserTier } from "@/lib/subscription";
+import { canUseAiWeekPlan, getAccess } from "@/lib/subscription";
+import { TRIAL_AI_PLAN_CAP } from "@/lib/billing/access";
+import { planningAccessError } from "@/lib/supabase/meal-plans";
 import { fetchRecipeNutritionMap } from "@/lib/supabase/recipe-nutrition-query";
 import { getProfile } from "@/lib/supabase/profile";
 import { getDailyCalorieTarget, getDailyProteinTarget } from "@/lib/utils/nutrition-targets";
@@ -885,7 +887,10 @@ export async function generateAIWeekPlan(input: GenerateAIWeekPlanInput) {
   return runWeekPlan(input, "ai", undefined);
 }
 
-/** Heuristic week fill — available on free tier (e.g. first-run onboarding). */
+/**
+ * Heuristic week fill — available on the free plan too (e.g. first-run
+ * onboarding), but not once a trial has ended (runWeekPlan checks canPlan).
+ */
 export async function generateHeuristicWeekPlan(input: GenerateAIWeekPlanInput) {
   return runWeekPlan(input, "heuristic", { skipProCheck: true, heuristicOnly: true });
 }
@@ -901,6 +906,11 @@ async function runWeekPlan(
   requested: "ai" | "heuristic",
   options?: { skipProCheck?: boolean; heuristicOnly?: boolean },
 ) {
+  // Every mode, AI or standard: a trial that ended without paying can't plan.
+  // Checked before the trace, as a refused request isn't a planner run.
+  const blocked = await planningAccessError();
+  if (blocked) return { error: blocked };
+
   const trace: PlanRunTrace = { requested, mealPlanId: input.mealPlanId, startedAt: Date.now() };
   let result: Awaited<ReturnType<typeof generateAIWeekPlanInner>>;
   try {
@@ -932,8 +942,9 @@ async function generateAIWeekPlanInner(
   options: { skipProCheck?: boolean; heuristicOnly?: boolean } | undefined,
   trace: PlanRunTrace,
 ) {
-  const tier = await getUserTier();
-  if (!options?.skipProCheck && tier !== "pro") {
+  // Pro and trial. The free plan gets the standard planner only.
+  const access = await getAccess();
+  if (!options?.skipProCheck && !access?.hasPro) {
     return { error: "Upgrade to Pro to generate AI weekly plans." };
   }
 
@@ -1049,7 +1060,17 @@ async function generateAIWeekPlanInner(
   let claudeApplyError: string | undefined;
   let aiFallbackNotice: string | undefined;
 
-  if (!options?.heuristicOnly && tier === "pro" && isAnthropicMealAiEnabled()) {
+  // Claude on Pro, and on a trial for its first TRIAL_AI_PLAN_CAP plans; after
+  // that the standard planner still plans the week, and says why.
+  let claudeAllowed = false;
+  if (!options?.heuristicOnly && access?.hasPro) {
+    claudeAllowed = await canUseAiWeekPlan();
+    if (!claudeAllowed && access.plan === "trial") {
+      aiFallbackNotice = `You've used this trial's ${TRIAL_AI_PLAN_CAP} AI plans, so this week was planned with the standard planner.`;
+    }
+  }
+
+  if (claudeAllowed && isAnthropicMealAiEnabled()) {
     const claudeStarted = Date.now();
     await markPlanRunPhase(supabase, trace, "claude");
     try {

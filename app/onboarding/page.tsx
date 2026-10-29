@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/supabase/profile";
-import { isProSubscriptionStatus } from "@/lib/subscription";
+import { getAccess } from "@/lib/subscription";
+import { isNativeAppRequest } from "@/lib/native/server";
 import { FirstRunWizard } from "@/components/onboarding/FirstRunWizard";
 import { clampFirstRunStep, FIRST_RUN_STEP } from "@/lib/onboarding/first-run";
 import { redirect } from "next/navigation";
@@ -19,9 +20,13 @@ export default async function OnboardingPage() {
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const [
+    {
+      data: { user },
+    },
+    access,
+    native,
+  ] = await Promise.all([supabase.auth.getUser(), getAccess(), isNativeAppRequest()]);
 
   let recipeCount = 0;
   let recipePreview: string[] = [];
@@ -40,10 +45,14 @@ export default async function OnboardingPage() {
   const step = clampFirstRunStep(profile?.onboarding_step);
   const resumeStep = step >= FIRST_RUN_STEP.WEEK ? 3 : step === FIRST_RUN_STEP.LIBRARY ? 2 : 1;
 
+  // A trial gets the Pro set-up (16 starter recipes, an AI first week); a
+  // trial that ended can save its targets and finish setup, but not plan.
   return (
     <FirstRunWizard
       profile={profile}
-      isPro={isProSubscriptionStatus(profile?.subscription_status)}
+      isPro={access?.hasPro ?? false}
+      canPlan={access?.canPlan ?? true}
+      native={native}
       recipeCount={recipeCount}
       recipePreview={recipePreview}
       key={resumeStep}

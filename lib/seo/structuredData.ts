@@ -17,6 +17,7 @@ import {
  * retrieval half, which is the half that can be engineered.
  */
 
+import { TRIAL_DAYS } from "@/lib/billing/access";
 import { FOUNDER } from "@/lib/founder";
 
 const BASE = "https://bitesync.io";
@@ -50,27 +51,26 @@ export function softwareApplicationSchema() {
       "Micronutrient analysis against dietary reference values",
       "Vegetarian, vegan and gluten-free planning",
     ],
+    // No free plan for new accounts: the trial is how Pro starts, so it rides
+    // on the Pro offers rather than being a £0 offer of its own.
     offers: [
-      {
-        "@type": "Offer",
-        name: "Free",
-        price: 0,
-        priceCurrency: PRICE_CURRENCY,
-        description: "Calories and protein per meal, up to 10 recipes.",
-      },
       {
         "@type": "Offer",
         name: "Pro monthly",
         price: PRO_MONTHLY_AMOUNT,
         priceCurrency: PRICE_CURRENCY,
-        description: "All macros, micronutrient analysis, and AI weekly plans.",
+        description:
+          "All macros, micronutrient analysis, and AI weekly plans. " +
+          `Starts with a ${TRIAL_DAYS}-day free trial, no card needed.`,
       },
       {
         "@type": "Offer",
         name: "Pro annual",
         price: PRO_ANNUAL_AMOUNT,
         priceCurrency: PRICE_CURRENCY,
-        description: "All macros, micronutrient analysis, and AI weekly plans, billed yearly.",
+        description:
+          "All macros, micronutrient analysis, and AI weekly plans, billed yearly. " +
+          `Starts with a ${TRIAL_DAYS}-day free trial, no card needed.`,
       },
     ],
   };

@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/supabase/profile";
 import { createClient } from "@/lib/supabase/server";
-import { getUserTier } from "@/lib/subscription";
+import { canUseAiWeekPlan, getAccess } from "@/lib/subscription";
+import { planningAccessError } from "@/lib/supabase/meal-plans";
 import { toUserFacingError } from "@/lib/errors/userFacing";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { FIRST_RUN_STEP } from "@/lib/onboarding/first-run";
@@ -43,11 +44,14 @@ export async function advanceOnboardingStep(step: number) {
  * planned a meal. Now skipping still gets them a starter library and their
  * first weeks planned from it, with the standard planner (no AI, a few
  * seconds). Best effort: a failure here is logged and the skip goes ahead.
+ * Once a trial has ended there is neither (no new recipes, no planning), and
+ * the skip still finishes setup so the account isn't held at onboarding.
  */
 async function setUpStarterWeek(supabase: SupabaseClient, userId: string, localDate?: string) {
   try {
-    const [profile, tier] = await Promise.all([getProfile(), getUserTier()]);
-    await seedStarterLibrary(supabase, userId, { profile, isPro: tier === "pro" });
+    const [profile, access] = await Promise.all([getProfile(), getAccess()]);
+    if (!access?.canAddRecipes || !access.canPlan) return;
+    await seedStarterLibrary(supabase, userId, { profile, isPro: access.hasPro });
 
     const planned = await planUpcomingWeeks({
       supabase,
@@ -122,8 +126,11 @@ export async function finishOnboardingStep1() {
   const { supabase, userId } = await requireUserId();
   if (userId) {
     try {
-      const [profile, tier] = await Promise.all([getProfile(), getUserTier()]);
-      starter = await seedStarterLibrary(supabase, userId, { profile, isPro: tier === "pro" });
+      // The Pro set (16) on Pro and trial, 10 on free, none once a trial has ended.
+      const [profile, access] = await Promise.all([getProfile(), getAccess()]);
+      if (access?.canAddRecipes) {
+        starter = await seedStarterLibrary(supabase, userId, { profile, isPro: access.hasPro });
+      }
     } catch (err) {
       // Step 2's generator is still there as the fallback.
       console.warn("[finishOnboardingStep1] starter library failed:", err instanceof Error ? err.message : err);
@@ -143,16 +150,20 @@ export async function finishOnboardingStep2() {
 export async function generateFirstRunWeekAndGrocery(input: { goals: GoalContext; localDate?: string }) {
   const { supabase, userId, error } = await requireUserId();
   if (error || !userId) return { error: error ?? "Unauthorized" };
-  // Tier from the server, not the client. The AI planner re-checks it anyway,
-  // so a spoofed flag never reached the LLM — it just failed the first run
-  // with "Upgrade to Pro" instead of building a heuristic week.
-  const isPro = (await getUserTier()) === "pro";
+  // A trial that ended can still finish setup (the wizard offers that), but
+  // not plan. needsPro lets the wizard switch to that.
+  const blocked = await planningAccessError();
+  if (blocked) return { error: blocked, needsPro: true as const };
+  // From the server, not the client. The AI planner re-checks it anyway, so a
+  // spoofed flag never reached the LLM — it just failed the first run with
+  // "Upgrade to Pro" instead of building a heuristic week.
+  const useAi = await canUseAiWeekPlan();
 
   const planned = await planUpcomingWeeks({
     supabase,
     goals: input.goals,
     today: resolveUserToday(input.localDate),
-    useAiForMainWeek: isPro,
+    useAiForMainWeek: useAi,
     onlyIfEmpty: false,
   });
   if ("error" in planned) return { error: planned.error };
@@ -163,7 +174,7 @@ export async function generateFirstRunWeekAndGrocery(input: { goals: GoalContext
   revalidatePath("/planner");
   revalidatePath("/grocery");
   redirect(
-    `/grocery?week=${planned.mainWeekStart}&plan=${planned.mainPlanId}&welcome=1${isPro ? "&pro=1" : ""}`,
+    `/grocery?week=${planned.mainWeekStart}&plan=${planned.mainPlanId}&welcome=1${useAi ? "&pro=1" : ""}`,
   );
 }
 

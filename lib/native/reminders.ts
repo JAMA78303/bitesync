@@ -130,7 +130,9 @@ async function cancelReminders(ids?: number[]): Promise<void> {
 
 /**
  * A Sunday reminder before each of the next few weeks that is still empty, and
- * the evening one if it's on. If the planned weeks can't be fetched, the Sunday
+ * the evening one if it's on. Once the account can't plan (a trial that ended
+ * without paying) there are no Sunday reminders, since planning needs Pro; the
+ * evening one stays. If the planned weeks can't be fetched, the Sunday
  * reminders already scheduled are kept, the evening one is still updated, and
  * this rejects so a caller can say so.
  */
@@ -149,6 +151,8 @@ async function plan(now: Date): Promise<void> {
     const result = await getPlannedWeekStarts(weeks);
     if ("error" in result) {
       weeklyFailed = true;
+    } else if ("canPlan" in result && result.canPlan === false) {
+      // Nothing to schedule: the cancel below removes any Sunday reminders left.
     } else {
       const planned = new Set(result.planned);
       const { title, url } = REMINDER_PAYLOADS.weekly;

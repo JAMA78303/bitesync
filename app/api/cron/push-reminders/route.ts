@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { createSupabaseAuthAdmin } from "@/lib/supabase/admin";
+import { isProSubscriptionStatus, resolveAccess } from "@/lib/billing/access";
 import { pushEnvReady, sendPushNotification } from "@/lib/push/send";
 import { REMINDER_PAYLOADS, type ReminderKind } from "@/lib/push/reminderPayloads";
 import { addDays, getMonday, toLocalISO } from "@/lib/utils/dates";
@@ -60,6 +62,75 @@ async function usersWithPlannedNextWeek(
   return planned;
 }
 
+/**
+ * Users who can't plan a week (lib/billing/access.ts): a new account whose
+ * trial ended without paying. "Plan next week in one tap" would only lead them
+ * to an upgrade prompt. Fails open: anyone whose plan can't be checked is left
+ * out of the set and gets the reminder as before, because a missed reminder
+ * costs more than one that ends at an upgrade prompt (the planner itself
+ * enforces the rule).
+ */
+async function usersWhoCannotPlan(
+  supabase: ReturnType<typeof createServiceClient>,
+  userIds: string[],
+): Promise<Set<string>> {
+  const cannotPlan = new Set<string>();
+  if (!userIds.length) return cannotPlan;
+
+  const { data: profiles, error } = await supabase
+    .from("profiles")
+    .select("id, subscription_status")
+    .in("id", userIds);
+  if (error) {
+    // Without the subscription status a paying user could look expired.
+    console.error("[push-reminders] profiles query failed; not checking trials", error.message);
+    return cannotPlan;
+  }
+  const statusById = new Map(
+    (profiles ?? []).map((p) => [p.id as string, p.subscription_status as string | null]),
+  );
+
+  let admin: ReturnType<typeof createSupabaseAuthAdmin>;
+  try {
+    admin = createSupabaseAuthAdmin();
+  } catch (err) {
+    console.error("[push-reminders] auth admin unavailable; not checking trials", err);
+    return cannotPlan;
+  }
+
+  const now = new Date();
+  let unchecked = 0;
+  await Promise.all(
+    userIds.map(async (userId) => {
+      const subscriptionStatus = statusById.get(userId);
+      // Paying users can always plan; no need to look up their login.
+      if (isProSubscriptionStatus(subscriptionStatus)) return;
+      try {
+        const { data, error: userError } = await admin.auth.admin.getUserById(userId);
+        if (userError || !data.user) {
+          unchecked += 1;
+          return;
+        }
+        const access = resolveAccess({
+          subscriptionStatus,
+          createdAt: data.user.created_at,
+          emailConfirmedAt: data.user.email_confirmed_at,
+          appMetadata: data.user.app_metadata,
+          now,
+        });
+        if (!access.canPlan) cannotPlan.add(userId);
+      } catch {
+        unchecked += 1;
+      }
+    }),
+  );
+
+  if (unchecked) {
+    console.error(`[push-reminders] couldn't check the plan of ${unchecked} user(s); sending as before`);
+  }
+  return cannotPlan;
+}
+
 export async function GET(request: Request) {
   if (!isAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -89,11 +160,21 @@ export async function GET(request: Request) {
   }
 
   let targets = (subscriptions ?? []) as SubscriptionRow[];
+  // Part of `skipped`: subscriptions left out because their trial has ended.
+  let skippedExpired = 0;
 
   if (kind === "weekly" && targets.length) {
     const userIds = [...new Set(targets.map((t) => t.user_id))];
     const alreadyPlanned = await usersWithPlannedNextWeek(supabase, userIds);
     targets = targets.filter((t) => !alreadyPlanned.has(t.user_id));
+
+    // The evening reminder still goes to everyone: viewing tomorrow's plan
+    // doesn't need Pro, planning a new week does.
+    const remaining = [...new Set(targets.map((t) => t.user_id))];
+    const cannotPlan = await usersWhoCannotPlan(supabase, remaining);
+    const before = targets.length;
+    targets = targets.filter((t) => !cannotPlan.has(t.user_id));
+    skippedExpired = before - targets.length;
   }
 
   let sent = 0;
@@ -123,7 +204,9 @@ export async function GET(request: Request) {
   }
 
   const skipped = (subscriptions?.length ?? 0) - targets.length;
-  console.log(`[push-reminders] ${kind}: sent ${sent}, skipped ${skipped}, removed ${removed}, failed ${failed}`);
+  console.log(
+    `[push-reminders] ${kind}: sent ${sent}, skipped ${skipped} (${skippedExpired} trial ended), removed ${removed}, failed ${failed}`,
+  );
 
-  return NextResponse.json({ ok: true, kind, sent, skipped, removed, failed });
+  return NextResponse.json({ ok: true, kind, sent, skipped, skippedExpired, removed, failed });
 }

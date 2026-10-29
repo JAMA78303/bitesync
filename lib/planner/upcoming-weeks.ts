@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { generateGroceryList } from "@/lib/supabase/grocery";
-import { getOrCreateMealPlan } from "@/lib/supabase/meal-plans";
+import { getOrCreateMealPlan, planningAccessError } from "@/lib/supabase/meal-plans";
 import { firstRunWeeks } from "@/lib/onboarding/firstWeeks";
 import {
   generateAIWeekPlan,
@@ -43,7 +43,8 @@ async function planWeekWithGrocery(
  * and their grocery list covers just those days.
  *
  * Used for a new user's first plan and for "plan next week in one tap" (the
- * Sunday reminder and the Today card), so both pick the same week.
+ * Sunday reminder and the Today card), so both pick the same week. Once a
+ * trial has ended it fails before creating any plan rows.
  */
 export async function planUpcomingWeeks(opts: {
   supabase: SupabaseClient;
@@ -52,6 +53,9 @@ export async function planUpcomingWeeks(opts: {
   useAiForMainWeek: boolean;
   onlyIfEmpty: boolean;
 }): Promise<{ error: string } | { mainWeekStart: string; mainPlanId: string }> {
+  const blocked = await planningAccessError();
+  if (blocked) return { error: blocked };
+
   const weeks = firstRunWeeks(opts.today);
   const main = await getOrCreateMealPlan(weeks.mainWeekStart);
   if (!main.data) return { error: main.error ?? "Could not load your planner." };

@@ -9,7 +9,7 @@ import {
 } from "@/lib/planner/plan-calorie-tuning";
 import { generateHybridRecipeDraft } from "@/lib/recipes/hybridRecipeEngine";
 import { insertGeneratedRecipe } from "@/lib/recipes/saveGeneratedRecipe";
-import { canCreateRecipe, getUserTier } from "@/lib/subscription";
+import { canCreateRecipe } from "@/lib/subscription";
 import { initialDietaryPreferencesFromProfile } from "@/lib/dietary/constraints";
 import type { MicroPriority } from "@/lib/nutrition/micro-rich-foods";
 import type { ProfileForTargets } from "@/lib/utils/nutrition-targets";
@@ -28,11 +28,9 @@ export async function createPlannerSnackRecipe(
   gapKcal: number,
   opts?: { attempt?: number; existingNames?: string[]; microPriorities?: MicroPriority[] },
 ): Promise<PlannerSnackRecipe | null> {
-  const tier = await getUserTier();
-  if (tier === "free") {
-    const allowed = await canCreateRecipe();
-    if (!allowed) return null;
-  }
+  // Unlimited on Pro and trial, up to the 10-recipe cap on free, none once a
+  // trial has ended.
+  if (!(await canCreateRecipe())) return null;
 
   const targetSnack = Math.min(
     SNACK_MAX_CALORIES,

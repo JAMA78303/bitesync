@@ -45,7 +45,7 @@ function PlannerDayCompact({
     <div className="flex h-full flex-col gap-2 overflow-hidden p-3">
       {showAiButton ? (
         <GenerateAIWeekPlanButton
-          isPro
+          plan="pro"
           mealPlanId="screenshot-plan"
           goals={{
             calorieTarget: SCREENSHOT_TARGETS.kcal,

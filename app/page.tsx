@@ -27,6 +27,7 @@ import { HomeReveal } from "@/components/landing/home/HomeReveal";
 import { FAQ_ITEMS } from "@/components/landing/LandingFaq";
 import { TESTIMONIALS } from "@/components/landing/LandingTestimonials";
 import { faqPageSchema, softwareApplicationSchema } from "@/lib/seo/structuredData";
+import { TRIAL_DAYS } from "@/lib/billing/access";
 import { loadAllPosts, type Post } from "@/content/blog/posts";
 import { FOUNDER, FOUNDER_BYLINE } from "@/lib/founder";
 import { SUPPORT_EMAIL, supportMailto } from "@/lib/support";
@@ -189,7 +190,7 @@ const PROOF = [
   { Icon: ShieldCheck, title: "Built by a dietitian", detail: "Targets and portions from clinical practice" },
   { Icon: BarChart3, title: "Official food data", detail: "Nutrition from government food composition tables" },
   { Icon: Lock, title: "Private by default", detail: "No ads, data never sold" },
-  { Icon: CircleDollarSign, title: "Free to start", detail: "No card needed" },
+  { Icon: CircleDollarSign, title: `${TRIAL_DAYS}-day free trial`, detail: "No card needed" },
 ] as const;
 
 const COMPARE_BEFORE = [
@@ -272,7 +273,7 @@ export default async function LandingPage() {
               </p>
               <div className="hero-actions">
                 <Link className="btn btn-primary" href="/signup">
-                  Plan my week free <ArrowRight className="h-[18px] w-[18px]" aria-hidden />
+                  Plan my week — {TRIAL_DAYS} days free <ArrowRight className="h-[18px] w-[18px]" aria-hidden />
                 </Link>
                 <a className="hero-text-link" href="#how-it-works">
                   See how it works <span aria-hidden>↓</span>
@@ -285,7 +286,7 @@ export default async function LandingPage() {
                 <span>
                   <b>Built by a registered dietitian</b>
                   <small>
-                    Free to start · No card needed ·{" "}
+                    {TRIAL_DAYS}-day free trial · No card needed ·{" "}
                     <Link href="/privacy">Private by default</Link>
                   </small>
                 </span>
@@ -341,7 +342,7 @@ export default async function LandingPage() {
             </div>
             <div className="metric">
               <b>Free</b>
-              <span>to start — no card needed</span>
+              <span>for your first {TRIAL_DAYS} days — no card needed</span>
             </div>
           </div>
         </section>
@@ -544,9 +545,11 @@ export default async function LandingPage() {
           <div className="wrap">
             <div className="cta lp-reveal">
               <h2 className="h2">Hit your macros without the spreadsheet</h2>
-              <p>Plan your week, shop once and track every day — free to start, no credit card required.</p>
+              <p>
+                Plan your week, shop once and track every day — free for {TRIAL_DAYS} days, no card needed.
+              </p>
               <Link className="btn btn-light" href="/signup">
-                Get started free <ArrowRight className="h-[18px] w-[18px]" aria-hidden />
+                Start free trial <ArrowRight className="h-[18px] w-[18px]" aria-hidden />
               </Link>
               <p className="small-print">
                 Private by default — no ads, data never sold. <Link href="/privacy">Privacy policy</Link>
