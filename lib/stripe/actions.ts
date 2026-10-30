@@ -8,6 +8,8 @@ import { getStripeServer } from "@/lib/stripe/server";
 import { fetchProfileStripeCustomerId, updateOrInsertProfile } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { isNativeAppRequest } from "@/lib/native/server";
+import { checkoutTrialEnd } from "@/lib/billing/access";
+import { getAccess } from "@/lib/subscription";
 
 export async function createCheckoutSession(
   priceId: string,
@@ -47,6 +49,12 @@ export async function createCheckoutSession(
     }
   }
 
+  // Upgrading during the 7-day trial first charges when the trial ends, so
+  // paying early doesn't cost the days left. Null (charge now) outside a
+  // trial, or with under 48 hours left, which Stripe won't accept.
+  const access = await getAccess();
+  const trialEnd = access ? checkoutTrialEnd(access, new Date()) : null;
+
   const session = await stripe.checkout.sessions.create({
     customer: customerId,
     mode: "subscription",
@@ -62,6 +70,7 @@ export async function createCheckoutSession(
     metadata: { supabase_user_id: user.id, billing_period: billingPeriod },
     subscription_data: {
       metadata: { supabase_user_id: user.id, billing_period: billingPeriod },
+      ...(trialEnd !== null ? { trial_end: trialEnd } : {}),
     },
     allow_promotion_codes: true,
   });

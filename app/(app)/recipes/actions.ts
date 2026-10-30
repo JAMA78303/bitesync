@@ -20,7 +20,8 @@ import {
 import { resolveGoalMatchedDraft } from "@/lib/recipes/libraryRecipeMatch";
 import { dietaryPreferencesToLegacyFlags, parseDietaryPreferences } from "@/lib/dietary/constraints";
 import { randomInt } from "node:crypto";
-import { canCreateRecipe, getRecipeCount, getUserTier } from "@/lib/subscription";
+import { canCreateRecipe, getAccess, getRecipeCount } from "@/lib/subscription";
+import { TRIAL_ENDED_RECIPES } from "@/lib/billing/access";
 import { getProfile } from "@/lib/supabase/profile";
 import { getDailyCalorieTarget } from "@/lib/utils/nutrition-targets";
 import {
@@ -60,6 +61,22 @@ export type CreateImportedRecipePayload = CreateRecipePayload & {
 };
 
 const GOAL_MEAL_SLOTS: GoalMealSlot[] = ["breakfast", "lunch", "dinner", "snack"];
+
+/** No price in these: the iPhone app shows the same messages (App Store rule 3.1.1). */
+const MICRO_SNACK_PRO_ERROR = "Snacks for a vitamin or mineral are part of BiteSync Pro.";
+
+/**
+ * Why one more recipe can't be added, or null when it can. The free plan keeps
+ * its "n/10" wording; once a trial has ended no recipes can be added at all.
+ */
+async function recipeLimitError(): Promise<string | null> {
+  if (await canCreateRecipe()) return null;
+  const access = await getAccess();
+  if (!access) return "Unauthorized";
+  if (!access.canAddRecipes) return TRIAL_ENDED_RECIPES;
+  const count = await getRecipeCount();
+  return `Recipe limit reached (${count}/${access.recipeLimit ?? count}). Upgrade to Pro for unlimited recipes.`;
+}
 
 function hashDraftNonce(uuid: string): number {
   let h = 2166136261 >>> 0;
@@ -155,6 +172,14 @@ export async function generateGoalMatchedRecipeDraft(payload: {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
+  // Drafts aren't saved, but building one costs (nutrition lookups can call
+  // the AI), so it needs the same access as adding a recipe.
+  const access = await getAccess();
+  if (!access) return { error: "Unauthorized" };
+  if (!access.canAddRecipes) return { error: TRIAL_ENDED_RECIPES };
+  // Aiming at a vitamin or mineral comes from the micronutrient check, which is Pro.
+  if (payload.microNutrientKey?.trim() && !access.hasPro) return { error: MICRO_SNACK_PRO_ERROR };
+
   if (!GOAL_MEAL_SLOTS.includes(payload.mealSlot)) {
     return { error: "Invalid meal slot." };
   }
@@ -227,6 +252,11 @@ export async function generateMicroFocusedSnackDraft(payload: {
   const nutrientKey = payload.nutrientKey.trim();
   if (!nutrientKey) return { error: "Missing nutrient." };
 
+  const access = await getAccess();
+  if (!access) return { error: "Unauthorized" };
+  if (!access.canAddRecipes) return { error: TRIAL_ENDED_RECIPES };
+  if (!access.hasPro) return { error: MICRO_SNACK_PRO_ERROR };
+
   const profile = await getProfile();
   const prefs = parseDietaryPreferences(profile?.dietary_preferences);
   const flags = dietaryPreferencesToLegacyFlags(prefs);
@@ -267,16 +297,8 @@ export async function createRecipe(
     return { error: "Unauthorized" };
   }
 
-  const [tier, allowed, count] = await Promise.all([
-    getUserTier(),
-    canCreateRecipe(),
-    getRecipeCount(),
-  ]);
-  if (tier === "free" && !allowed) {
-    return {
-      error: `Recipe limit reached (${count}/10). Upgrade to Pro for unlimited recipes.`,
-    };
-  }
+  const limitError = await recipeLimitError();
+  if (limitError) return { error: limitError };
 
   const { data: recipe, error: recipeError } = await supabase
     .from("recipes")
@@ -378,16 +400,8 @@ export async function createImportedRecipe(
     return { error: "Unauthorized" };
   }
 
-  const [tier, allowed, count] = await Promise.all([
-    getUserTier(),
-    canCreateRecipe(),
-    getRecipeCount(),
-  ]);
-  if (tier === "free" && !allowed) {
-    return {
-      error: `Recipe limit reached (${count}/10). Upgrade to Pro for unlimited recipes.`,
-    };
-  }
+  const limitError = await recipeLimitError();
+  if (limitError) return { error: limitError };
 
   const { totals: calculated, estimatedFlags, cofidMeta } = await calculateRecipeNutritionWithMeta(
     ingredients,

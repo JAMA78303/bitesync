@@ -14,6 +14,7 @@ const FillMyLibraryModal = dynamic(
  { ssr: false },
 );
 import { RecipeListCard, type RecipeListItem } from "@/components/recipes/RecipeListCard";
+import { RecipesTrialEnded } from "@/components/recipes/RecipeLimitReached";
 import { EmptyState } from "@/components/ui/EmptyState";
 import {
  archiveGeneratedRecipes,
@@ -44,6 +45,12 @@ type Props = {
  showArchived: boolean;
  showLimitWarning: boolean;
  recipeCount: number;
+ /** The free plan's allowance; null when unlimited or no recipes can be added. */
+ recipeLimit: number | null;
+ /** False once a 7-day trial has ended: add, import and fill give way to an UpgradeCard. */
+ canAddRecipes: boolean;
+ /** Inside the iPhone app: no prices or upgrade links. */
+ native: boolean;
  dietaryPreferences: string[];
  hasBreakfastFriendlyRecipe: boolean;
  canFillLibrary: boolean;
@@ -55,6 +62,9 @@ export function RecipesPageClient({
  showArchived,
  showLimitWarning,
  recipeCount,
+ recipeLimit,
+ canAddRecipes,
+ native,
  dietaryPreferences,
  hasBreakfastFriendlyRecipe,
  canFillLibrary,
@@ -233,7 +243,7 @@ export function RecipesPageClient({
  <p className={ds.pageSubtitle}>
  {showArchived
  ? "Restore any of these from its page."
- : `${recipeCount} ${recipeCount === 1 ? "recipe" : "recipes"} saved and ready to plan`}
+ : `${recipeCount} ${recipeCount === 1 ? "recipe" : "recipes"} saved${canAddRecipes ? " and ready to plan" : ""}`}
  </p>
  <Link
  href={showArchived ?"/recipes" :"/recipes?view=archived"}
@@ -242,7 +252,7 @@ export function RecipesPageClient({
  {showArchived ?"← Back to my recipes" :"View archived"}
  </Link>
  </div>
- {!showArchived ? (
+ {!showArchived && canAddRecipes ? (
  <div className="flex w-full shrink-0 gap-2.5 md:w-auto">
  <button
  type="button"
@@ -311,6 +321,8 @@ export function RecipesPageClient({
 
  {!showArchived ? (
  <div className="space-y-3">
+ {canAddRecipes ? (
+ <>
  <button
  type="button"
  onClick={() => setShowFillLibrary(true)}
@@ -329,6 +341,10 @@ export function RecipesPageClient({
  {!canFillLibrary && fillLibraryBlockedMessage ? (
  <p className="text-center text-xs text-[var(--semantic-warn-text)]">{fillLibraryBlockedMessage}</p>
  ) : null}
+ </>
+ ) : (
+ <RecipesTrialEnded placement="recipes" native={native} />
+ )}
  {listRecipes.length > 0 ? (
  <div className="flex flex-wrap justify-end gap-1">
  <button
@@ -366,29 +382,31 @@ export function RecipesPageClient({
  </div>
  ) : null}
 
- {showLimitWarning && !showArchived ? (
+ {showLimitWarning && recipeLimit !== null && !showArchived ? (
  <div className={`flex items-start gap-3 rounded-2xl p-4 ${ds.warnCallout}`}>
  <span className="flex-shrink-0 text-xl" aria-hidden>
  ⚠️
  </span>
  <div>
  <p className="text-sm font-semibold text-[var(--semantic-warn-text)]">
- {recipeCount}/10 recipes used
+ {recipeCount}/{recipeLimit} recipes used
  </p>
  <p className="mt-0.5 text-xs text-[var(--semantic-warn-text)]/80">
- Upgrade to Pro for unlimited recipes.
+ {native ? "Archive recipes you don't use to make room." : "Upgrade to Pro for unlimited recipes."}
  </p>
+ {native ? null : (
  <Link
  href="/billing"
  className="mt-1 inline-block text-xs font-bold text-[var(--semantic-warn-text)] underline"
  >
  Upgrade now
  </Link>
+ )}
  </div>
  </div>
  ) : null}
 
- {!hasBreakfastFriendlyRecipe && !showArchived && listRecipes.length > 0 ? (
+ {!hasBreakfastFriendlyRecipe && !showArchived && canAddRecipes && listRecipes.length > 0 ? (
  <div className={`rounded-2xl p-3 text-xs ${ds.warnCallout}`}>
  Tip: add breakfast-named recipes (oats, eggs, yoghurt) for better AI planning.
  </div>
@@ -400,8 +418,18 @@ export function RecipesPageClient({
  <EmptyState
  icon={ChefHat}
  title="No recipes yet"
- description="Fill your library in a minute — or add and import recipes one at a time"
- action={{ href: "/sample-week", label: "See a sample week" }}
+ description={
+ canAddRecipes
+ ? "Fill your library in a minute — or add and import recipes one at a time"
+ : "Your saved recipes show up here"
+ }
+ action={
+ canAddRecipes
+ ? { href: "/sample-week", label: "See a sample week" }
+ : native
+ ? undefined
+ : { href: "/billing", label: "See BiteSync Pro" }
+ }
  />
  ) : (
  <EmptyState

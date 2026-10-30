@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/supabase/profile";
-import { getUserTier } from "@/lib/subscription";
+import { canUseAiWeekPlan, getAccess } from "@/lib/subscription";
+import { planningAccessError } from "@/lib/supabase/meal-plans";
 import { goalsFromProfile } from "@/lib/onboarding/starterLibrary";
 import { resolveUserToday } from "@/lib/onboarding/firstWeeks";
 import { planUpcomingWeeks } from "@/lib/planner/upcoming-weeks";
@@ -21,12 +22,17 @@ export async function planUpcomingWeek(localDate?: string) {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Please sign in again." };
 
-  const [profile, tier] = await Promise.all([getProfile(), getUserTier()]);
+  // Before anything is created: a trial that ended can't plan.
+  const blocked = await planningAccessError();
+  if (blocked) return { error: blocked };
+
+  // Claude on Pro, and on a trial until its AI plans are used up.
+  const [profile, useAi] = await Promise.all([getProfile(), canUseAiWeekPlan()]);
   const planned = await planUpcomingWeeks({
     supabase,
     goals: goalsFromProfile(profile),
     today: resolveUserToday(localDate),
-    useAiForMainWeek: tier === "pro",
+    useAiForMainWeek: useAi,
     onlyIfEmpty: true,
   });
   if ("error" in planned) return { error: planned.error };
@@ -40,13 +46,23 @@ export async function planUpcomingWeek(localDate?: string) {
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
- * Which of these weeks (Mondays, YYYY-MM-DD) already have meals. The iPhone app
- * asks before scheduling its Sunday reminders, so a planned week gets none,
- * the same rule as the web push (app/api/cron/push-reminders).
+ * Which of these weeks (Mondays, YYYY-MM-DD) already have meals, and whether
+ * the account can plan at all. The iPhone app asks before scheduling its
+ * Sunday reminders, so a planned week gets none, the same rule as the web
+ * push (app/api/cron/push-reminders), and an account whose trial has ended
+ * gets none either.
  */
 export async function getPlannedWeekStarts(weekStarts: string[]) {
+  const access = await getAccess();
+  if (!access) return { error: "Please sign in again." };
+  const canPlan = access.canPlan;
+  // A trial that ends in "expired" stops planning then, so the phone shouldn't
+  // schedule Sunday reminders past it (they'd promise a plan it can't make).
+  const planUntil = access.plan === "trial" && access.trialThen === "expired" ? access.trialEndsAt : null;
+
   const weeks = weekStarts.filter((w) => ISO_DATE.test(w)).slice(0, 8);
-  if (!weeks.length) return { success: true as const, planned: [] as string[] };
+  // Can't plan: no reminders are scheduled, so which weeks have meals doesn't matter.
+  if (!weeks.length || !canPlan) return { success: true as const, planned: [] as string[], canPlan, planUntil };
 
   const supabase = await createClient();
   const {
@@ -60,7 +76,7 @@ export async function getPlannedWeekStarts(weekStarts: string[]) {
     .eq("user_id", user.id)
     .in("week_start_date", weeks);
   if (error) return { error: error.message };
-  if (!plans?.length) return { success: true as const, planned: [] as string[] };
+  if (!plans?.length) return { success: true as const, planned: [] as string[], canPlan, planUntil };
 
   const { data: entries, error: entriesError } = await supabase
     .from("meal_plan_entries")
@@ -74,5 +90,5 @@ export async function getPlannedWeekStarts(weekStarts: string[]) {
 
   const withMeals = new Set((entries ?? []).map((e) => e.meal_plan_id as string));
   const planned = plans.filter((p) => withMeals.has(p.id as string)).map((p) => p.week_start_date as string);
-  return { success: true as const, planned: [...new Set(planned)] };
+  return { success: true as const, planned: [...new Set(planned)], canPlan, planUntil };
 }

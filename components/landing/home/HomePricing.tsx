@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Check } from "lucide-react";
+import { TRIAL_AI_PLAN_CAP, TRIAL_AI_RECIPE_CAP, TRIAL_DAYS } from "@/lib/billing/access";
 import {
   FREE_PRICE,
   PRO_ANNUAL_MONTHLY_EQUIVALENT,
@@ -10,25 +11,25 @@ import {
   PRO_MONTHLY_PRICE,
 } from "@/lib/stripe/pricing";
 
-// Only what the product enforces. Targets moved to Free on 14 September, and
-// no history limit exists in the code, so "2 weeks of history" / "Unlimited
-// history" described a difference nobody would ever experience.
-const FREE_FEATURES = [
-  "Personal calorie & protein targets",
-  "Weekly meal planner",
-  "Calorie & protein tracking",
-  "Grocery list generation",
-  "Recipe import from URL",
-  "Up to 10 recipes",
+// Only what the product enforces (lib/billing/access.ts). The trial is Pro
+// with two AI caps, needs no card, and simply ends: nothing is deleted, but
+// planning new weeks and adding recipes need Pro after that.
+const TRIAL_FEATURES = [
+  "Everything in Pro",
+  `Up to ${TRIAL_AI_PLAN_CAP} AI weekly plans`,
+  `Up to ${TRIAL_AI_RECIPE_CAP} AI-written recipes`,
+  "No card needed",
+  "Nothing to cancel — it ends on its own",
+  "Your recipes and plans stay viewable afterwards",
 ] as const;
 
 const PRO_FEATURES = [
-  "Everything in Free",
-  "Unlimited recipes",
   "AI weekly meal plans",
+  "Unlimited recipes",
   "AI-written recipes",
   "All macros + micronutrient analysis",
-  "Priority support",
+  "Planner, grocery lists & recipe import",
+  "Weekly reminders on your phone",
 ] as const;
 
 function Features({ items }: { items: readonly string[] }) {
@@ -51,10 +52,10 @@ export function HomePricing() {
     <div className="wrap pricing">
       <div className="lp-reveal">
         <p className="kicker">Pricing</p>
-        <h2 className="h2">Start free. Upgrade when it earns it.</h2>
+        <h2 className="h2">Try Pro free for {TRIAL_DAYS} days. Keep it if it earns it.</h2>
         <p className="body" style={{ marginTop: 16 }}>
-          Plan by hand and build grocery lists for free. Pro adds AI weekly plans, unlimited recipes and the full
-          micronutrient picture.
+          Every new account starts with {TRIAL_DAYS} days of BiteSync Pro, with no card needed: AI weekly plans,
+          unlimited recipes and the full micronutrient picture. Nothing is charged unless you choose to upgrade.
         </p>
         <div className="bill-toggle" role="group" aria-label="Billing period">
           <button type="button" aria-pressed={!yearly} onClick={() => setYearly(false)}>
@@ -67,13 +68,19 @@ export function HomePricing() {
       </div>
       <div className="prices lp-reveal">
         <article className="price">
-          <h3>Free</h3>
-          <div className="amount">{FREE_PRICE}</div>
-          <div className="sub">Free forever</div>
-          <Features items={FREE_FEATURES} />
+          <h3>Free trial</h3>
+          <div className="amount">
+            {FREE_PRICE}
+            <small> for {TRIAL_DAYS} days</small>
+          </div>
+          <div className="sub">
+            Then {PRO_MONTHLY_PRICE}/month or {PRO_ANNUAL_PRICE}/year if you upgrade
+          </div>
+          <Features items={TRIAL_FEATURES} />
           <Link className="btn btn-outline" href="/signup">
-            Get started free
+            Start free trial
           </Link>
+          <p className="renew">After {TRIAL_DAYS} days, planning new weeks and adding recipes need Pro.</p>
         </article>
         <article className="price price--pro">
           <span className="tag">Recommended</span>
@@ -89,7 +96,7 @@ export function HomePricing() {
           </div>
           <Features items={PRO_FEATURES} />
           <Link className="btn btn-primary" href="/signup">
-            Upgrade to Pro
+            Try Pro free for {TRIAL_DAYS} days
           </Link>
           <p className="renew">Renews automatically until you cancel. Cancel anytime.</p>
         </article>

@@ -6,7 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import type { RecipeIngredientInput } from "@/lib/nutrition/calculate";
 import { getDailyCalorieTarget, getDailyProteinTarget } from "@/lib/utils/nutrition-targets";
 import { getProfile } from "@/lib/supabase/profile";
-import { canCreateRecipe, getRecipeCount, getUserTier } from "@/lib/subscription";
+import { canCreateRecipe, getAccess, getRecipeCount, takeAiRecipe } from "@/lib/subscription";
+import { TRIAL_ENDED_RECIPES } from "@/lib/billing/access";
 import { initialDietaryPreferencesFromProfile } from "@/lib/dietary/constraints";
 import {
   defaultBulkRecipeCount,
@@ -19,6 +20,8 @@ import {
 import { generateHybridRecipeDraft, type HybridRecipeDraft } from "@/lib/recipes/hybridRecipeEngine";
 import { insertGeneratedRecipe } from "@/lib/recipes/saveGeneratedRecipe";
 import type { ActionResult } from "@/types";
+
+/** No price: the iPhone app shows this too (App Store rule 3.1.1). */
 
 function toTitleCase(value: string): string {
   return value
@@ -80,6 +83,10 @@ export async function planFillMyLibrary(
   } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
+  const access = await getAccess();
+  if (!access) return { error: "Unauthorized" };
+  if (!access.canAddRecipes) return { error: TRIAL_ENDED_RECIPES };
+
   const profile = await getProfile();
   const daily = getDailyCalorieTarget(profile);
   if (daily == null || !Number.isFinite(Number(daily)) || daily < 800) {
@@ -125,9 +132,16 @@ export async function generateFillLibrarySlot(payload: {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
-  const [existing, tier] = await Promise.all([
+  // Each slot is its own request and costs money, so access is checked here
+  // too, not only in planFillMyLibrary.
+  const access = await getAccess();
+  if (!access) return { error: "Unauthorized" };
+  if (!access.canAddRecipes) return { error: TRIAL_ENDED_RECIPES };
+
+  const [existing, aiMethod] = await Promise.all([
     loadExistingLibrarySnapshot(supabase, user.id),
-    getUserTier(),
+    // Counted per recipe drafted with Claude, saved or not.
+    takeAiRecipe(),
   ]);
 
   const draft = await generateHybridRecipeDraft({
@@ -141,8 +155,9 @@ export async function generateFillLibrarySlot(payload: {
     // file only ever gated the recipe *count*, so free users — including
     // every new signup at onboarding step 2 — had their library written by
     // Claude at our cost. The template engine composes the same recipes with
-    // the same computed nutrition; only the written method differs.
-    useLlmMethod: tier === "pro",
+    // the same computed nutrition; only the written method differs. A trial
+    // gets it for its first TRIAL_AI_RECIPE_CAP recipes (takeAiRecipe).
+    useLlmMethod: aiMethod,
   });
 
   if (!draft) {
@@ -182,6 +197,10 @@ export async function saveFillLibraryRecipes(
     return { error: "Select at least one recipe to save." };
   }
 
+  const access = await getAccess();
+  if (!access) return { error: "Unauthorized" };
+  if (!access.canAddRecipes) return { error: TRIAL_ENDED_RECIPES };
+
   const saved: { id: string; name: string }[] = [];
   const failed: { name: string; error: string }[] = [];
 
@@ -200,8 +219,8 @@ export async function saveFillLibraryRecipes(
       continue;
     }
 
-    const [tier, allowed] = await Promise.all([getUserTier(), canCreateRecipe()]);
-    if (tier === "free" && !allowed) {
+    // Unlimited on Pro and trial; the free plan stops at its 10.
+    if (!(await canCreateRecipe())) {
       failed.push({
         name,
         error: "Recipe limit reached — upgrade to Pro or save fewer recipes.",
@@ -249,12 +268,16 @@ export async function getFillLibraryPreflight(): Promise<
   } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
-  const [profile, count, tier, allowed] = await Promise.all([
+  const [profile, count, access, allowed] = await Promise.all([
     getProfile(),
     getRecipeCount(),
-    getUserTier(),
+    getAccess(),
     canCreateRecipe(),
   ]);
+
+  if (access && !access.canAddRecipes) {
+    return { success: true, data: { canGenerate: false, recipeCount: count, message: TRIAL_ENDED_RECIPES } };
+  }
 
   const daily = getDailyCalorieTarget(profile);
   if (daily == null || daily < 800) {
@@ -268,13 +291,13 @@ export async function getFillLibraryPreflight(): Promise<
     };
   }
 
-  if (tier === "free" && !allowed) {
+  if (!allowed) {
     return {
       success: true,
       data: {
         canGenerate: false,
         recipeCount: count,
-        message: "Recipe limit reached (10). Upgrade to Pro or archive recipes.",
+        message: `Recipe limit reached (${access?.recipeLimit ?? count}). Upgrade to Pro or archive recipes.`,
       },
     };
   }

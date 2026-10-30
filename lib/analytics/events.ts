@@ -36,3 +36,15 @@ export function trackInstallOffer(placement: "welcome" | "today", outcome: strin
 export function trackUpcomingWeekPlanned(trigger: "card" | "reminder") {
   track("upcoming_week_planned", { trigger });
 }
+
+/**
+ * The 7-day trial (lib/billing/access.ts). Who started one, and where people
+ * saw and pressed an upgrade prompt. Trial-to-paid itself comes from Stripe.
+ */
+export function trackTrialStarted(source: "signup" | "legacy_opt_in") {
+  track("trial_started", { source });
+}
+
+export function trackUpgradePrompt(placement: string, action: "viewed" | "clicked") {
+  track("upgrade_prompt", { placement, action });
+}

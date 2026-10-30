@@ -1,13 +1,16 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { plannerWeekStart, toLocalISO, addDays, isCurrentWeek } from "@/lib/utils/dates";
 import { fetchRecipeNutritionMap } from "@/lib/supabase/recipe-nutrition-query";
-import { getOrCreateMealPlan, getMealPlanEntries } from "@/lib/supabase/meal-plans";
+import { getOrCreateMealPlan, getMealPlanForWeek, getMealPlanEntries } from "@/lib/supabase/meal-plans";
 import { buildGridFromEntries } from "@/lib/planner/build-grid";
 import { initialDietaryPreferencesFromProfile } from "@/lib/dietary/constraints";
 import { getProfile } from "@/lib/supabase/profile";
 import { getDailyCalorieTarget, getDailyProteinTarget } from "@/lib/utils/nutrition-targets";
-import { getUserTier } from "@/lib/subscription";
+import { getAccess } from "@/lib/subscription";
+import { isNativeAppRequest } from "@/lib/native/server";
+import { UpgradeCard } from "@/components/billing/UpgradeCard";
 import { PlannerGrid } from "@/components/planner/PlannerGrid";
 import { WeekNav } from "@/components/planner/WeekNav";
 import { GenerateListButton } from "@/components/planner/GenerateListButton";
@@ -29,8 +32,12 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export default async function PlannerPage({ searchParams }: Props) {
- const supabase = await createClient();
- const params = await searchParams;
+ const [supabase, params, access] = await Promise.all([createClient(), searchParams, getAccess()]);
+ if (!access) redirect("/login");
+ // A trial that ended without paying (lib/billing/access.ts) can look back at
+ // its weeks but not change them. Every planning action refuses on its own;
+ // this only stops the page offering controls that would fail.
+ const readOnly = !access.canPlan;
 
  // Midday, not midnight: these Dates go to the browser (WeekNav, PlannerGrid).
  const weekStart = plannerWeekStart(params.week);
@@ -41,19 +48,22 @@ export default async function PlannerPage({ searchParams }: Props) {
  const currentWeek = isCurrentWeek(weekStart);
  const initialActiveDay = currentWeek ? (today.getDay() === 0 ? 6 : today.getDay() - 1) : 0;
 
- const [{ data: recipes }, mealPlanResult, profile, userTier] = await Promise.all([
+ const [{ data: recipes }, mealPlanResult, profile, native] = await Promise.all([
  supabase
  .from("recipes")
  .select("id,name,fits_vegetarian,fits_vegan,fits_gluten_free")
  .is("archived_at", null)
  .order("name"),
- getOrCreateMealPlan(weekStartISO),
+ // Read only: looking at a week it never planned shouldn't create a plan row.
+ readOnly
+ ? getMealPlanForWeek(weekStartISO).then((plan) => ({ data: plan, error: null }))
+ : getOrCreateMealPlan(weekStartISO),
  getProfile(),
- getUserTier(),
+ isNativeAppRequest(),
  ]);
  const { data: mealPlan, error } = mealPlanResult;
 
- if (error || !mealPlan) {
+ if (error || (!mealPlan && !readOnly)) {
  return (
  <div className={ds.mobilePage}>
  <div className={ds.gradientHeader}>
@@ -73,10 +83,12 @@ export default async function PlannerPage({ searchParams }: Props) {
  );
  }
 
+ // Null only when read only and nothing was ever planned for this week.
+ const mealPlanId = mealPlan?.id ?? null;
  const recipeIds = (recipes ?? []).map((r) => r.id);
  const [nutritionMap, { data: entries }, ingResult] = await Promise.all([
  recipes && recipes.length > 0 ? fetchRecipeNutritionMap(supabase, recipeIds) : new Map(),
- getMealPlanEntries(mealPlan.id),
+ mealPlanId ? getMealPlanEntries(mealPlanId) : Promise.resolve({ data: [] }),
  recipeIds.length
  ? supabase.from("recipe_ingredients").select("recipe_id,name").in("recipe_id", recipeIds)
  : Promise.resolve({ data: [] as { recipe_id: string; name: string }[] | null }),
@@ -127,10 +139,10 @@ export default async function PlannerPage({ searchParams }: Props) {
  ),
  );
  let microAnalysis: Awaited<ReturnType<typeof getWeeklyMicroAnalysis>> = null;
- if (userTier ==="pro") {
+ if (access.hasPro && mealPlanId) {
  try {
  const sex = profile?.sex ==="female" ?"female" :"male";
- microAnalysis = await getWeeklyMicroAnalysis(mealPlan.id, weekStartISO, sex);
+ microAnalysis = await getWeeklyMicroAnalysis(mealPlanId, weekStartISO, sex);
  } catch (err) {
  console.error("Micro analysis failed:", err);
  }
@@ -144,20 +156,34 @@ export default async function PlannerPage({ searchParams }: Props) {
  <p className={ds.pageSubtitle}>Plan your meals, generate your list</p>
  <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
  <WeekNav weekStart={weekStart} onGradient />
+ {mealPlanId && !readOnly ? (
  <GenerateListButton
- mealPlanId={mealPlan.id}
+ mealPlanId={mealPlanId}
  weekStart={weekStartISO}
  filledDays={filledDays}
  filledMealTypes={filledMealTypes}
  onGradient
  />
+ ) : null}
  </div>
  </div>
 
  <div className={`${ds.mobileGutter} ${ds.overlap} space-y-4 ${ds.pageContent}`}>
+ {readOnly ? (
+ <UpgradeCard
+ placement="planner"
+ title="Your 7-day Pro trial has ended"
+ body={
+ native
+ ? "Your planned weeks are still here to look back on. Planning new weeks, adding meals and making grocery lists need BiteSync Pro."
+ : "Your planned weeks are still here to look back on. Upgrade to BiteSync Pro to plan new weeks, add meals and make grocery lists."
+ }
+ native={native}
+ />
+ ) : mealPlanId ? (
           <GenerateAIWeekPlanButton
-            isPro={userTier ==="pro"}
-            mealPlanId={mealPlan.id}
+            plan={access.plan}
+            mealPlanId={mealPlanId}
             goals={{
               calorieTarget: dailyCalorieTarget,
               proteinTarget: dailyProteinTarget,
@@ -166,11 +192,12 @@ export default async function PlannerPage({ searchParams }: Props) {
               followsGlutenFree: Boolean(profile?.follows_gluten_free),
             }}
           />
+ ) : null}
 
  <PlannerGrid
  grid={grid}
  entries={plannerEntries}
- mealPlanId={mealPlan.id}
+ mealPlanId={mealPlanId ?? ""}
  recipes={formattedRecipes}
  weekDates={weekDates}
  weekStartIso={weekStartISO}
@@ -179,13 +206,14 @@ export default async function PlannerPage({ searchParams }: Props) {
  dailyProteinTarget={dailyProteinTarget}
  dietPrefs={dietPrefs}
  dietaryPreferences={dietaryPreferences}
+ readOnly={readOnly}
  />
 
  {microAnalysis ? (
  <PlannerMicroSummary analysis={microAnalysis} weekStartISO={weekStartISO} />
  ) : null}
 
- {!microAnalysis && userTier ==="pro" ? (
+ {!microAnalysis && access.hasPro ? (
  <Link href={`/nutrition?week=${weekStartISO}`} className="block text-sm font-medium text-[var(--brand-primary)]">
  Add meals to see nutrition analysis →
  </Link>

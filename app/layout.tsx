@@ -3,6 +3,7 @@ import { DM_Sans, Manrope } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Analytics } from "@vercel/analytics/next";
 import { ThemeSync } from "@/components/shared/ThemeSync";
+import { TRIAL_DAYS } from "@/lib/billing/access";
 import "./globals.css";
 
 /** Body text. */
@@ -26,7 +27,7 @@ export const metadata: Metadata = {
  template: "%s | BiteSync",
  },
  description:
-  "Plan your week, hit your protein and calorie targets, and get one grocery list — automatically. Free to start.",
+  `Plan your week, hit your protein and calorie targets, and get one grocery list — automatically. ${TRIAL_DAYS}-day free trial, no card needed.`,
  keywords: [
   "meal planner",
   "macro meal plan",

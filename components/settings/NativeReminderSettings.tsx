@@ -21,7 +21,7 @@ const DEFAULT_PREFS: PushPreferences = { weeklyPlanReminder: true, dailyLogRemin
  * (NotificationSettings), but the phone schedules them (lib/native/reminders.ts),
  * so there's no push subscription and nothing to add to the home screen.
  */
-export function NativeReminderSettings() {
+export function NativeReminderSettings({ canPlan = true }: { canPlan?: boolean }) {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [ready, setReady] = useState(false);
@@ -127,19 +127,25 @@ export function NativeReminderSettings() {
 
   return (
     <>
-      <label className="flex cursor-pointer items-start justify-between gap-3 rounded-xl border border-[var(--border-subtle)] px-3 py-2">
-        <span className="min-w-0">
-          <span className="block text-sm font-medium text-[var(--text-primary)]">Plan your week</span>
-          <span className="block text-xs text-[var(--text-muted)]">Sunday afternoon, to plan next week</span>
-        </span>
-        <input
-          type="checkbox"
-          checked={prefs.weeklyPlanReminder}
-          onChange={() => handleToggle("weeklyPlanReminder")}
-          disabled={isPending}
-          className="mt-1 h-4 w-4 shrink-0 accent-[var(--brand-primary)]"
-        />
-      </label>
+      {canPlan ? (
+        <label className="flex cursor-pointer items-start justify-between gap-3 rounded-xl border border-[var(--border-subtle)] px-3 py-2">
+          <span className="min-w-0">
+            <span className="block text-sm font-medium text-[var(--text-primary)]">Plan your week</span>
+            <span className="block text-xs text-[var(--text-muted)]">Sunday afternoon, to plan next week</span>
+          </span>
+          <input
+            type="checkbox"
+            checked={prefs.weeklyPlanReminder}
+            onChange={() => handleToggle("weeklyPlanReminder")}
+            disabled={isPending}
+            className="mt-1 h-4 w-4 shrink-0 accent-[var(--brand-primary)]"
+          />
+        </label>
+      ) : (
+        <p className="rounded-xl border border-[var(--border-subtle)] px-3 py-2 text-xs text-[var(--text-muted)]">
+          Sunday reminders to plan your week need BiteSync Pro, as planning new weeks does.
+        </p>
+      )}
 
       <label className="flex cursor-pointer items-start justify-between gap-3 rounded-xl border border-[var(--border-subtle)] px-3 py-2">
         <span className="min-w-0">

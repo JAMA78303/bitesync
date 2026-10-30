@@ -1,4 +1,3 @@
-import { revalidatePath } from "next/cache";
 import type Stripe from "stripe";
 import { updateOrInsertProfile } from "@/lib/supabase/admin";
 import { isProSubscriptionStatus } from "@/lib/subscription";
@@ -57,7 +56,7 @@ export async function reconcileBillingSubscriptionFromStripe(params: {
       return { isPro: false, hasStripeCustomer: hasCustomer };
     }
 
-    const mapped = stripeSubscriptionStatusToDbProfileStatus(subscription.status);
+    const mapped = stripeSubscriptionStatusToDbProfileStatus(subscription);
     const grantsPro = mapped === "pro" || mapped === "past_due";
 
     const cid = normalizeStripeId(subscription.customer);
@@ -68,10 +67,9 @@ export async function reconcileBillingSubscriptionFromStripe(params: {
         stripe_subscription_id: subscription.id,
         ...(cid ? { stripe_customer_id: cid } : {}),
       });
-      revalidatePath("/billing");
-      revalidatePath("/settings");
-      revalidatePath("/settings/billing");
-      revalidatePath("/recipes");
+      // No revalidatePath: this runs while /billing and /settings render, where
+      // Next 16 throws on it (which landed in the catch below and reported "not
+      // Pro"). Both pages are dynamic, so the next render reads the new status.
       return { isPro: true, hasStripeCustomer: true };
     }
 

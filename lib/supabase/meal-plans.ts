@@ -4,7 +4,20 @@ import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { fetchRecipeNutritionMap } from "@/lib/supabase/recipe-nutrition-query";
+import { getAccess } from "@/lib/subscription";
+import { TRIAL_ENDED_PLANNING } from "@/lib/billing/access";
 import type { MealType, MealPlanEntry } from "@/types";
+
+/**
+ * Null when the signed-in account may plan weeks, place meals and make grocery
+ * lists; otherwise the error to return. Every planning server action asks
+ * this itself, whatever the page showed.
+ */
+export async function planningAccessError(): Promise<string | null> {
+  const access = await getAccess();
+  if (!access) return "Please sign in again.";
+  return access.canPlan ? null : TRIAL_ENDED_PLANNING;
+}
 
 async function enrichEntriesWithNutrition(
   supabase: SupabaseClient,

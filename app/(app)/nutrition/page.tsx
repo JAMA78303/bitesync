@@ -2,7 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { NutritionDashboard } from "@/components/nutrition/NutritionDashboard";
 import { computeWeeklyMacrosFromEntries } from "@/lib/planner/weekly-macros";
-import { getUserTier } from "@/lib/subscription";
+import { getAccess } from "@/lib/subscription";
+import { isNativeAppRequest } from "@/lib/native/server";
 import { getMealPlanForWeek, getMealPlanEntries } from "@/lib/supabase/meal-plans";
 import { getWeeklyMicroAnalysis } from "@/lib/supabase/nutrition";
 import { getProfile } from "@/lib/supabase/profile";
@@ -29,11 +30,14 @@ export default async function NutritionPage({
  const prevWeekISO = toLocalISO(new Date(weekStart.getTime() - 7 * 86400000));
  const nextWeekISO = toLocalISO(new Date(weekStart.getTime() + 7 * 86400000));
 
- const [profile, mealPlan, tier] = await Promise.all([
+ const [profile, mealPlan, access, native] = await Promise.all([
  getProfile(),
  getMealPlanForWeek(weekStartISO),
- getUserTier(),
+ getAccess(),
+ isNativeAppRequest(),
  ]);
+ // Micronutrients are Pro (and trial); everyone sees their macros.
+ const hasPro = access?.hasPro ?? false;
 
  const targets = deriveNutritionTargets(profile);
  let microAnalysis: Awaited<ReturnType<typeof getWeeklyMicroAnalysis>> = null;
@@ -42,7 +46,7 @@ export default async function NutritionPage({
  if (mealPlan) {
  const { data } = await getMealPlanEntries(mealPlan.id);
  entries = data ?? [];
- if (tier ==="pro") {
+ if (hasPro) {
  try {
  microAnalysis = await getWeeklyMicroAnalysis(
  mealPlan.id,
@@ -83,7 +87,9 @@ export default async function NutritionPage({
  weekAvg={weekAvg}
  days={days}
  targets={targets}
- isProUser={tier ==="pro"}
+ hasPro={hasPro}
+ trialEnded={access?.plan === "expired"}
+ native={native}
  microAnalysis={microAnalysis}
  weekNav={weekNav}
  />

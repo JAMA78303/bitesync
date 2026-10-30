@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Logo } from "@/components/shared/Logo";
 import { JsonLd } from "@/components/shared/JsonLd";
 import { aboutPageSchema } from "@/lib/seo/structuredData";
+import { TRIAL_DAYS } from "@/lib/billing/access";
 import { FOUNDER, FOUNDER_BYLINE } from "@/lib/founder";
 
 export const metadata: Metadata = {
@@ -71,7 +72,7 @@ export default function AboutPage() {
           href="/signup"
           className="mt-10 inline-flex rounded-xl bg-[var(--btn-primary-bg)] px-5 py-3 text-sm font-semibold text-[var(--btn-primary-text)] hover:bg-[var(--btn-primary-hover)]"
         >
-          Start planning for free
+          Start your {TRIAL_DAYS}-day free trial
         </Link>
       </article>
     </div>

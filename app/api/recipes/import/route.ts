@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getAccess } from "@/lib/subscription";
+import { TRIAL_ENDED_RECIPES } from "@/lib/billing/access";
 import {
   detectSourceType,
   isSocialSourceType,
@@ -90,6 +92,12 @@ export async function POST(request: NextRequest) {
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
+  }
+  // Saving checks this too; stopping here saves fetching and parsing a page
+  // that can't be saved once a trial has ended.
+  const access = await getAccess();
+  if (!access?.canAddRecipes) {
+    return NextResponse.json({ error: TRIAL_ENDED_RECIPES }, { status: 403 });
   }
 
   const body = await request.json().catch(() => ({}));

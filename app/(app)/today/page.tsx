@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { TrialStatusCard } from "@/components/billing/TrialStatusCard";
 import { TodayDashboard } from "@/components/today/TodayDashboard";
 import { UpcomingWeekCard } from "@/components/habit/UpcomingWeekCard";
 import { WeeklyHabitCard } from "@/components/habit/WeeklyHabitCard";
@@ -10,6 +11,8 @@ import { computeWeeklyMacrosFromEntries, type DayMacros } from "@/lib/planner/we
 import { getMealPlanEntries } from "@/lib/supabase/meal-plans";
 import { getProfile } from "@/lib/supabase/profile";
 import { createClient } from "@/lib/supabase/server";
+import { getAccess } from "@/lib/subscription";
+import { isNativeAppRequest } from "@/lib/native/server";
 import { summariseWeek } from "@/lib/today/week-stats";
 import { getMonday, toLocalISO } from "@/lib/utils/dates";
 import { deriveNutritionTargets } from "@/lib/utils/nutrition-targets";
@@ -41,7 +44,7 @@ export default async function TodayPage({ searchParams }: Props) {
   return computeWeeklyMacrosFromEntries(entries ?? [], weekStart).days;
  };
 
- const [meals, profile, upcoming, weekDays, params] = await Promise.all([
+ const [meals, profile, upcoming, weekDays, params, access, native] = await Promise.all([
   getTodaysMeals(user.id).catch((error) => {
    console.error("[today] getTodaysMeals failed", error);
    return [];
@@ -59,10 +62,16 @@ export default async function TodayPage({ searchParams }: Props) {
    return null;
   }),
   searchParams,
+  getAccess(),
+  isNativeAppRequest(),
  ]);
  const targets = deriveNutritionTargets(profile);
  const totals = sumTodayTotals(meals);
  const dietaryPreferences = initialDietaryPreferencesFromProfile(profile);
+ // A trial that has ended can't plan (lib/billing/access.ts), so no one-tap
+ // week, no auto-plan from the Sunday reminder link, and no offer of a
+ // reminder to plan: the trial card says why instead.
+ const canPlan = access?.canPlan !== false;
 
  return (
  <TodayDashboard
@@ -72,7 +81,8 @@ export default async function TodayPage({ searchParams }: Props) {
  dietaryPreferences={dietaryPreferences}
  extras={
  <>
- {upcoming?.isEmpty ? (
+ {access ? <TrialStatusCard access={access} native={native} /> : null}
+ {upcoming?.isEmpty && canPlan ? (
  <UpcomingWeekCard
  weekStart={upcoming.weekStart}
  isNextWeek={upcoming.isNextWeek}
@@ -80,7 +90,7 @@ export default async function TodayPage({ searchParams }: Props) {
  />
  ) : null}
  {weekDays ? <WeekStatsCard stats={summariseWeek(weekDays, targets)} /> : null}
- <WeeklyHabitCard placement="today" />
+ {canPlan ? <WeeklyHabitCard placement="today" /> : null}
  </>
  }
  />

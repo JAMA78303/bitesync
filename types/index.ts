@@ -158,5 +158,4 @@ export type GroceryItem = {
   created_at: string;
 };
 
-export type UserTier = "free" | "pro";
 export type SubscriptionStatus = "free" | "pro" | "past_due" | "cancelled";

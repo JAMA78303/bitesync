@@ -1,21 +1,34 @@
 import Link from "next/link";
 import { RecipeForm } from "@/components/recipes/RecipeForm";
-import { RecipeLimitReached } from "@/components/recipes/RecipeLimitReached";
+import { RecipeLimitReached, RecipesTrialEnded } from "@/components/recipes/RecipeLimitReached";
 import { getProfile } from "@/lib/supabase/profile";
 import { getDailyCalorieTarget, getDailyProteinTarget } from "@/lib/utils/nutrition-targets";
-import { canCreateRecipe, getRecipeCount } from "@/lib/subscription";
+import { canCreateRecipe, getAccess, getRecipeCount } from "@/lib/subscription";
+import { isNativeAppRequest } from "@/lib/native/server";
 import { ds } from "@/lib/ui/classes";
 
 export const dynamic = "force-dynamic";
 
 export default async function NewRecipePage() {
- const allowed = await canCreateRecipe();
- const count = await getRecipeCount();
+ const [access, allowed, count] = await Promise.all([getAccess(), canCreateRecipe(), getRecipeCount()]);
 
  if (!allowed) {
+ const native = await isNativeAppRequest();
  return (
  <div className={`${ds.mobileGutter} py-4 md:py-0`}>
- <RecipeLimitReached count={count} />
+ <div className="mx-auto max-w-sm space-y-4 py-12">
+ {access && !access.canAddRecipes ? (
+ <RecipesTrialEnded placement="recipe_new" native={native} />
+ ) : (
+ <RecipeLimitReached count={count} limit={access?.recipeLimit ?? count} native={native} />
+ )}
+ <Link
+ href="/recipes"
+ className="block text-center text-sm font-semibold text-[var(--brand-primary)] hover:underline"
+ >
+ ← Back to recipes
+ </Link>
+ </div>
  </div>
  );
  }

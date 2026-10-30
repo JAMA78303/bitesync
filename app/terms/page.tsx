@@ -1,5 +1,14 @@
 import Link from "next/link";
 import { Logo } from "@/components/shared/Logo";
+import { TRIAL_AI_PLAN_CAP, TRIAL_AI_RECIPE_CAP, TRIAL_DAYS, TRIAL_LAUNCH } from "@/lib/billing/access";
+
+/** "30 October 2026": the day the trial replaced the free plan for new accounts. */
+const TRIAL_LAUNCH_DATE = new Date(TRIAL_LAUNCH).toLocaleDateString("en-GB", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: "UTC",
+});
 
 export const metadata = {
   title: "Terms of service — BiteSync",
@@ -28,9 +37,19 @@ const SECTIONS = [
     ],
   },
   {
+    title: "Free trial",
+    body: [
+      `New accounts get ${TRIAL_DAYS} days of BiteSync Pro free, without giving payment details. The trial does not turn into a paid subscription by itself: you only pay if you choose to subscribe.`,
+      `During the trial, AI week plans are limited to ${TRIAL_AI_PLAN_CAP} and AI-written recipe methods to ${TRIAL_AI_RECIPE_CAP} new recipes; after that the standard planner and recipe templates are used.`,
+      "When the trial ends, Pro features stop, including planning new weeks, adding recipes and making grocery lists. Your recipes, meal plans and grocery lists stay in your account and you can still view them.",
+      `Accounts created before ${TRIAL_LAUNCH_DATE} keep the free plan they signed up for, and can start one ${TRIAL_DAYS}-day Pro trial. When it ends, the account returns to the free plan.`,
+    ],
+  },
+  {
     title: "Subscriptions and billing",
     body: [
       "Paid plans are billed through Stripe. Prices and billing intervals are shown at checkout.",
+      "If you subscribe during your trial, the first payment is taken when the trial ends, or straight away if less than two days of it are left.",
       "You can manage or cancel your subscription from the billing page. Cancellation stops future charges; access continues until the end of the current billing period unless stated otherwise.",
     ],
   },
@@ -79,7 +98,7 @@ export default function TermsPage() {
       <article className="mx-auto max-w-2xl px-4 py-12">
         <p className="text-sm font-medium text-[var(--brand-primary)]">Legal</p>
         <h1 className="mt-2 text-3xl font-bold text-[var(--text-primary)]">Terms of service</h1>
-        <p className="mt-2 text-sm text-[var(--text-muted)]">Last updated: 13 June 2026</p>
+        <p className="mt-2 text-sm text-[var(--text-muted)]">Last updated: 30 October 2026</p>
         <div className="mt-10 space-y-8">
           {SECTIONS.map((section) => (
             <section key={section.title}>

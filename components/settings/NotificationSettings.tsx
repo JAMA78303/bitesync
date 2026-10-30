@@ -24,11 +24,13 @@ import { ds } from "@/lib/ui/classes";
 
 type Props = {
   vapidPublicKey: string;
+  /** False once a trial has ended: no Sunday "plan your week" reminders are sent then. */
+  canPlan?: boolean;
 };
 
 const DEFAULT_PREFS: PushPreferences = { weeklyPlanReminder: true, dailyLogReminder: false };
 
-export function NotificationSettings({ vapidPublicKey }: Props) {
+export function NotificationSettings({ vapidPublicKey, canPlan = true }: Props) {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [ready, setReady] = useState(false);
@@ -152,7 +154,7 @@ export function NotificationSettings({ vapidPublicKey }: Props) {
       </div>
 
       {native ? (
-        <NativeReminderSettings />
+        <NativeReminderSettings canPlan={canPlan} />
       ) : !ready ? (
         <p className="text-xs text-[var(--text-muted)]">Checking notification support…</p>
       ) : blockedReason === "needs-install" ? (
@@ -180,21 +182,27 @@ export function NotificationSettings({ vapidPublicKey }: Props) {
         </>
       ) : (
         <>
-          <label className="flex cursor-pointer items-start justify-between gap-3 rounded-xl border border-[var(--border-subtle)] px-3 py-2">
-            <span className="min-w-0">
-              <span className="block text-sm font-medium text-[var(--text-primary)]">Plan your week</span>
-              <span className="block text-xs text-[var(--text-muted)]">
-                Sunday afternoon, only if next week is empty
+          {canPlan ? (
+            <label className="flex cursor-pointer items-start justify-between gap-3 rounded-xl border border-[var(--border-subtle)] px-3 py-2">
+              <span className="min-w-0">
+                <span className="block text-sm font-medium text-[var(--text-primary)]">Plan your week</span>
+                <span className="block text-xs text-[var(--text-muted)]">
+                  Sunday afternoon, only if next week is empty
+                </span>
               </span>
-            </span>
-            <input
-              type="checkbox"
-              checked={prefs.weeklyPlanReminder}
-              onChange={() => handleToggle("weeklyPlanReminder")}
-              disabled={isPending}
-              className="mt-1 h-4 w-4 shrink-0 accent-[var(--brand-primary)]"
-            />
-          </label>
+              <input
+                type="checkbox"
+                checked={prefs.weeklyPlanReminder}
+                onChange={() => handleToggle("weeklyPlanReminder")}
+                disabled={isPending}
+                className="mt-1 h-4 w-4 shrink-0 accent-[var(--brand-primary)]"
+              />
+            </label>
+          ) : (
+            <p className="rounded-xl border border-[var(--border-subtle)] px-3 py-2 text-xs text-[var(--text-muted)]">
+            Sunday reminders to plan your week need BiteSync Pro, as planning new weeks does.
+          </p>
+          )}
 
           <label className="flex cursor-pointer items-start justify-between gap-3 rounded-xl border border-[var(--border-subtle)] px-3 py-2">
             <span className="min-w-0">

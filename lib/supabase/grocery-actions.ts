@@ -8,6 +8,10 @@ import {
   generateGroceryList as generateGroceryListImpl,
   toggleGroceryItem as toggleGroceryItemImpl,
 } from "@/lib/supabase/grocery";
+import { planningAccessError } from "@/lib/supabase/meal-plans";
+
+// Making a list from the plan needs canPlan. Ticking, deleting and adding
+// items by hand stay open once a trial ends, so the week can still be shopped.
 
 export async function toggleGroceryItem(item_id: string, is_checked: boolean) {
   return toggleGroceryItemImpl(item_id, is_checked);
@@ -22,6 +26,8 @@ export async function generateGroceryList(
   selectedDays?: number[],
   selectedMealTypes?: MealType[],
 ) {
+  const blocked = await planningAccessError();
+  if (blocked) return { error: blocked };
   return generateGroceryListImpl(meal_plan_id, selectedDays, selectedMealTypes);
 }
 

@@ -1,39 +1,57 @@
-"use client";
+import { UpgradeCard } from "@/components/billing/UpgradeCard";
 
-import { useState } from "react";
-import { Lock } from "lucide-react";
-import { PaywallModal } from "@/components/shared/PaywallModal";
+type LimitProps = {
+ count: number;
+ /** The plan's allowance (FREE_RECIPE_LIMIT on the free plan). */
+ limit: number;
+ /** Inside the iPhone app: no upgrade link or price (UpgradeCard). */
+ native?: boolean;
+};
 
-type Props = { count: number };
-
-export function RecipeLimitReached({ count }: Props) {
- const [open, setOpen] = useState(false);
-
+/** /recipes/new once the free plan's recipes are used up. */
+export function RecipeLimitReached({ count, limit, native = false }: LimitProps) {
  return (
- <div className="mx-auto max-w-sm px-4 py-16 text-center">
- <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100">
- <Lock className="h-7 w-7 text-amber-600" />
- </div>
- <h2 className="mb-2 text-lg font-semibold text-[var(--text-primary)]">Recipe limit reached</h2>
- <p className="mb-6 text-sm text-[var(--text-muted)]">
- You&apos;ve used {count} of 10 free recipes. Upgrade to Pro for unlimited recipes.
- </p>
- <button
- type="button"
- onClick={() => setOpen(true)}
- className="inline-block rounded-xl bg-[var(--btn-primary-bg)] px-6 py-3 text-sm font-medium text-[var(--btn-primary-text)] transition-colors hover:bg-[var(--btn-primary-hover)]"
- >
- Upgrade to Pro
- </button>
- <p className="mt-4 text-xs text-[var(--text-on-brand-muted)]">
- Or archive unused recipes to free up space
- </p>
-
- <PaywallModal
- open={open}
- onClose={() => setOpen(false)}
- reason="You've reached the 10 recipe limit."
+ <div className="space-y-4">
+ <UpgradeCard
+ placement="recipe_limit"
+ title="Recipe limit reached"
+ body={
+ native
+ ? `You've used ${count} of ${limit} free recipes.`
+ : `You've used ${count} of ${limit} free recipes. Upgrade to Pro for unlimited recipes.`
+ }
+ native={native}
  />
+ <p className="text-center text-xs text-[var(--text-muted)]">
+ {native ? "Archive recipes you don't use to free up space." : "Or archive unused recipes to free up space"}
+ </p>
  </div>
+ );
+}
+
+type TrialEndedProps = {
+ /** For analytics: where it's shown. */
+ placement: string;
+ native?: boolean;
+ className?: string;
+};
+
+/**
+ * In place of add, import and fill once a 7-day trial has ended without
+ * paying. Existing recipes stay viewable and editable.
+ */
+export function RecipesTrialEnded({ placement, native = false, className = "" }: TrialEndedProps) {
+ return (
+ <UpgradeCard
+ placement={placement}
+ title="Your 7-day Pro trial has ended"
+ body={
+ native
+ ? "Your recipes are all still here to view, edit and cook. Adding new ones needs BiteSync Pro."
+ : "Your recipes are all still here to view, edit and cook. Upgrade to BiteSync Pro to add, import and generate new ones."
+ }
+ native={native}
+ className={className}
+ />
  );
 }

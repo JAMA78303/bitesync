@@ -29,9 +29,22 @@ type Props = {
  shareText?: string | null;
  /** Items on the list, ticked or not; 0 means there's no list to keep offline. */
  itemCount?: number;
+ /**
+  * Making a list from the plan (Edit list). False once a 7-day trial has
+  * ended (lib/billing/access.ts: canPlan); sharing and deleting stay.
+  */
+ canGenerate?: boolean;
 };
 
-export function GroceryListActions({ mealPlanId, weekStart, filledDays, filledMealTypes, shareText, itemCount = 0 }: Props) {
+export function GroceryListActions({
+ mealPlanId,
+ weekStart,
+ filledDays,
+ filledMealTypes,
+ shareText,
+ itemCount = 0,
+ canGenerate = true,
+}: Props) {
  const [showSelector, setShowSelector] = useState(false);
  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
  const [isPending, startTransition] = useTransition();
@@ -99,16 +112,19 @@ export function GroceryListActions({ mealPlanId, weekStart, filledDays, filledMe
  Share list
  </button>
  ) : null}
+ {canGenerate ? (
  <button type="button" className={`${ds.heroGhostBtn} flex-1 sm:flex-none`} onClick={() => setShowSelector(true)}>
  <Pencil className="h-3.5 w-3.5" aria-hidden />
  Edit list
  </button>
+ ) : null}
  <button type="button" className={`${ds.heroGhostBtn} flex-1 sm:flex-none`} onClick={() => setShowDeleteConfirm(true)}>
  <Trash2 className="h-3.5 w-3.5" aria-hidden />
  Delete list
  </button>
  </div>
 
+ {canGenerate ? (
  <DaySelectorModal
  open={showSelector}
  onClose={() => setShowSelector(false)}
@@ -117,12 +133,17 @@ export function GroceryListActions({ mealPlanId, weekStart, filledDays, filledMe
  filledDays={filledDays}
  filledMealTypes={filledMealTypes}
  />
+ ) : null}
 
  {showDeleteConfirm ? (
  <AlertDialog>
  <AlertDialogContent>
  <AlertDialogTitle>Delete this grocery list?</AlertDialogTitle>
- <AlertDialogDescription>This removes all current grocery items for this week. You can regenerate it anytime.</AlertDialogDescription>
+ <AlertDialogDescription>
+ {canGenerate
+ ?"This removes all current grocery items for this week. You can regenerate it anytime."
+ :"This removes all current grocery items for this week."}
+ </AlertDialogDescription>
  <AlertDialogFooter>
  <AlertDialogCancel onClick={() => setShowDeleteConfirm(false)}>Cancel</AlertDialogCancel>
  <AlertDialogAction

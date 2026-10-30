@@ -3,7 +3,8 @@ import { fetchRecipeNutritionMap } from "@/lib/supabase/recipe-nutrition-query";
 import { initialDietaryPreferencesFromProfile } from "@/lib/dietary/constraints";
 import { getProfile } from "@/lib/supabase/profile";
 import { getDailyCalorieTarget } from "@/lib/utils/nutrition-targets";
-import { canCreateRecipe, getRecipeCount, getUserTier } from "@/lib/subscription";
+import { canCreateRecipe, getAccess, getRecipeCount } from "@/lib/subscription";
+import { isNativeAppRequest } from "@/lib/native/server";
 import { RecipesPageClient } from "@/components/recipes/RecipesPageClient";
 import type { RecipeListItem } from "@/components/recipes/RecipeListCard";
 
@@ -48,13 +49,19 @@ export default async function RecipesPage({ searchParams }: Props) {
  const params = await searchParams;
  const showArchived = params.view ==="archived";
  const supabase = await createClient();
- const [tier, count, auth, profile] = await Promise.all([
- getUserTier(),
+ const [access, count, canCreate, auth, profile, native] = await Promise.all([
+ getAccess(),
  getRecipeCount(),
+ canCreateRecipe(),
  supabase.auth.getUser(),
  getProfile(),
+ isNativeAppRequest(),
  ]);
- const showLimitWarning = tier ==="free" && count >= 8;
+ // Expired trials can't add recipes at all (an UpgradeCard replaces the
+ // controls); only the free plan has a number to warn about.
+ const canAddRecipes = access?.canAddRecipes ?? true;
+ const recipeLimit = canAddRecipes ? (access?.recipeLimit ?? null) : null;
+ const showLimitWarning = recipeLimit !== null && count >= recipeLimit - 2;
  const {
  data: { user },
  } = auth;
@@ -99,14 +106,14 @@ export default async function RecipesPage({ searchParams }: Props) {
  );
 
  const dailyTarget = getDailyCalorieTarget(profile);
- const canCreate = await canCreateRecipe();
- const canFillLibrary =
- Boolean(dailyTarget && dailyTarget >= 800) && (tier !=="free" || canCreate);
+ const canFillLibrary = Boolean(dailyTarget && dailyTarget >= 800) && canCreate;
  const fillLibraryBlockedMessage =
  dailyTarget == null || dailyTarget < 800
  ?"Set your daily calorie target in Settings first."
- : tier ==="free" && !canCreate
- ?"Recipe limit reached — upgrade to Pro or archive recipes."
+ : !canCreate
+ ? native
+ ?"Recipe limit reached — archive recipes to make room."
+ :"Recipe limit reached — upgrade to Pro or archive recipes."
  : null;
 
  return (
@@ -115,6 +122,9 @@ export default async function RecipesPage({ searchParams }: Props) {
  showArchived={showArchived}
  showLimitWarning={showLimitWarning}
  recipeCount={count}
+ recipeLimit={recipeLimit}
+ canAddRecipes={canAddRecipes}
+ native={native}
  dietaryPreferences={initialDietaryPreferencesFromProfile(profile)}
  hasBreakfastFriendlyRecipe={hasBreakfastFriendlyRecipe}
  canFillLibrary={canFillLibrary}

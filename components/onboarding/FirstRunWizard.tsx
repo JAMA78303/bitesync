@@ -9,7 +9,9 @@ import { FillMyLibraryModal } from "@/components/recipes/FillMyLibraryModal";
 import { ImportRecipeModal } from "@/components/recipes/ImportRecipeModal";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/shared/Logo";
+import { UpgradeCard } from "@/components/billing/UpgradeCard";
 import {
+  completeFirstRun,
   finishOnboardingStep1,
   finishOnboardingStep2,
   generateFirstRunWeekAndGrocery,
@@ -22,7 +24,7 @@ import {
   clampFirstRunStep,
   firstRunLibraryCount,
 } from "@/lib/onboarding/first-run";
-import { trackFirstRunSkipped, trackFirstRunStepViewed } from "@/lib/analytics/events";
+import { trackFirstRunSkipped, trackFirstRunStepViewed, trackUpgradePrompt } from "@/lib/analytics/events";
 import { firstRunWeeks } from "@/lib/onboarding/firstWeeks";
 import { toLocalISO } from "@/lib/utils/dates";
 import type { GoalContext } from "@/app/(app)/planner/ai-actions";
@@ -47,7 +49,12 @@ type ProfileSlice = {
 
 type Props = {
   profile: ProfileSlice | null;
+  /** Pro or trial. */
   isPro: boolean;
+  /** False once a trial has ended without paying: setup can finish, planning can't. */
+  canPlan: boolean;
+  /** Inside the iPhone app: no link to web checkout. */
+  native: boolean;
   recipeCount: number;
   /** First few recipe names, oldest first, for the step 2 summary. */
   recipePreview?: string[];
@@ -96,8 +103,71 @@ function ProgressDots({ step }: { step: 1 | 2 | 3 }) {
   );
 }
 
-export function FirstRunWizard({ profile, isPro, recipeCount, recipePreview = [] }: Props) {
+/**
+ * Steps 2 and 3 once a trial has ended: recipes and planning need Pro, so
+ * the way on is to finish setup without a week. Both buttons finish setup
+ * first, because until then every app page, billing included, sends the
+ * account back here. For the same reason the card's own billing link is
+ * hidden (native) and the button below stands in for it on the web.
+ */
+function TrialEndedStep({
+  native,
+  pending,
+  onFinish,
+}: {
+  native: boolean;
+  pending: boolean;
+  onFinish: (to: "/today" | "/billing") => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <UpgradeCard
+        placement="onboarding"
+        title="Your 7-day Pro trial has ended"
+        body={
+          native
+            ? "Your targets are saved. Adding recipes and planning weeks need BiteSync Pro."
+            : "Your targets are saved. Upgrade to BiteSync Pro to add recipes and plan your weeks."
+        }
+        native
+      />
+      {native ? null : (
+        <Button
+          type="button"
+          onClick={() => {
+            trackUpgradePrompt("onboarding", "clicked");
+            onFinish("/billing");
+          }}
+          disabled={pending}
+          className={`${ds.primaryBtn} w-full`}
+        >
+          See BiteSync Pro
+        </Button>
+      )}
+      <Button
+        type="button"
+        variant={native ? "default" : "outline"}
+        onClick={() => onFinish("/today")}
+        disabled={pending}
+        className={native ? `${ds.primaryBtn} w-full` : "w-full"}
+      >
+        Finish setup
+      </Button>
+    </div>
+  );
+}
+
+export function FirstRunWizard({
+  profile,
+  isPro,
+  canPlan: canPlanAtLoad,
+  native,
+  recipeCount,
+  recipePreview = [],
+}: Props) {
   const router = useRouter();
+  // Also turns false if the trial ends while the wizard is open (step 3 says so).
+  const [canPlan, setCanPlan] = useState(canPlanAtLoad);
   const [step, setStep] = useState<1 | 2 | 3>(() => {
     const s = clampFirstRunStep(profile?.onboarding_step);
     if (s >= FIRST_RUN_STEP.WEEK) return 3;
@@ -203,11 +273,31 @@ export function FirstRunWizard({ profile, isPro, recipeCount, recipePreview = []
     setError(null);
     startTransition(async () => {
       try {
-        await generateFirstRunWeekAndGrocery({ goals, localDate: toLocalISO(new Date()) });
+        // Success redirects, so a result here is always an error. It used to
+        // be dropped, which left the button doing nothing.
+        const result = await generateFirstRunWeekAndGrocery({ goals, localDate: toLocalISO(new Date()) });
+        if (result && "needsPro" in result && result.needsPro) {
+          setCanPlan(false);
+        } else if (result && "error" in result && result.error) {
+          setError(result.error);
+        }
       } catch (err) {
         if (err && typeof err === "object" && "digest" in err) return;
         setError(err instanceof Error ? err.message : "Could not generate your week.");
       }
+    });
+  }
+
+  function finishWithoutPlan(to: "/today" | "/billing") {
+    setError(null);
+    startTransition(async () => {
+      const result = await completeFirstRun();
+      if ("error" in result && result.error) {
+        setError(result.error);
+        return;
+      }
+      router.push(to);
+      router.refresh();
     });
   }
 
@@ -226,7 +316,11 @@ export function FirstRunWizard({ profile, isPro, recipeCount, recipePreview = []
               Step {step} of 3
             </p>
             <h1 className="mt-1 text-2xl font-bold text-[var(--text-primary)]">
-              {step === 2 && libraryCount > 0 ? "Your starter recipes" : FIRST_RUN_STEP_LABELS[step]}
+              {step > 1 && !canPlan
+                ? "Finish setup"
+                : step === 2 && libraryCount > 0
+                  ? "Your starter recipes"
+                  : FIRST_RUN_STEP_LABELS[step]}
             </h1>
           </div>
           <button
@@ -247,7 +341,7 @@ export function FirstRunWizard({ profile, isPro, recipeCount, recipePreview = []
 
         {busy === "skip" ? (
           <p role="status" className={`mb-4 ${busyNoteClass}`}>
-            Adding starter recipes and planning your week — a few seconds…
+            {canPlan ? "Adding starter recipes and planning your week — a few seconds…" : "Finishing setup…"}
           </p>
         ) : null}
 
@@ -278,13 +372,17 @@ export function FirstRunWizard({ profile, isPro, recipeCount, recipePreview = []
             {/* Under the button just pressed. */}
             {busy === "step1" ? (
               <p role="status" className={busyNoteClass}>
-                Adding starter recipes sized to your targets…
+                {canPlan ? "Adding starter recipes sized to your targets…" : "Saving your targets…"}
               </p>
             ) : null}
           </div>
         ) : null}
 
-        {step === 2 && libraryCount > 0 ? (
+        {step > 1 && !canPlan ? (
+          <TrialEndedStep native={native} pending={isPending} onFinish={finishWithoutPlan} />
+        ) : null}
+
+        {step === 2 && canPlan && libraryCount > 0 ? (
           <div className="space-y-4">
             <div className={`rounded-2xl px-4 py-3 text-sm ${ds.successCallout}`}>
               <p className="font-semibold">
@@ -356,7 +454,7 @@ export function FirstRunWizard({ profile, isPro, recipeCount, recipePreview = []
           </div>
         ) : null}
 
-        {step === 2 && libraryCount === 0 ? (
+        {step === 2 && canPlan && libraryCount === 0 ? (
           <div className="space-y-4">
             <p className="text-sm text-[var(--text-muted)]">
               Add recipes sized to your diet — or import one you already love from a URL.
@@ -393,7 +491,7 @@ export function FirstRunWizard({ profile, isPro, recipeCount, recipePreview = []
           </div>
         ) : null}
 
-        {step === 3 ? (
+        {step === 3 && canPlan ? (
           <div className="space-y-4">
             <p className="text-sm text-[var(--text-muted)]">
               {isPro

@@ -26,6 +26,8 @@ type Props = {
  dietaryPreferences?: string[];
  /** Compact vertical layout for narrow planner grid cells. */
  variant?:"default" |"grid";
+ /** No remove button: a view-only planner (a trial that has ended). */
+ readOnly?: boolean;
 };
 
 export function RecipeSlotCard({
@@ -33,6 +35,7 @@ export function RecipeSlotCard({
  dietPrefs,
  dietaryPreferences = [],
  variant ="default",
+ readOnly = false,
 }: Props) {
  const router = useRouter();
  const [isPending, startTransition] = useTransition();
@@ -133,7 +136,7 @@ export function RecipeSlotCard({
  const cardInner =
  variant ==="grid" ? (
  <div
- className={`card-soft flex min-h-[88px] min-w-0 w-full flex-col rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] p-2 pr-7 ${
+ className={`card-soft flex min-h-[88px] min-w-0 w-full flex-col rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] p-2 ${readOnly ?"" :"pr-7"} ${
  isPending ?"opacity-50" :""
  }`}
  >
@@ -231,6 +234,7 @@ export function RecipeSlotCard({
  ) : (
  cardInner
  )}
+ {readOnly ? null : (
  <button
  type="button"
  onClick={(e) => {
@@ -244,6 +248,7 @@ export function RecipeSlotCard({
  >
  <X className="h-3.5 w-3.5" />
  </button>
+ )}
  </div>
  );
 }
