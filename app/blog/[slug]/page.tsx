@@ -4,10 +4,11 @@ import { notFound } from "next/navigation";
 import { Logo } from "@/components/shared/Logo";
 import { JsonLd } from "@/components/shared/JsonLd";
 import { FOUNDER, FOUNDER_BYLINE } from "@/lib/founder";
-import { blogPostingSchema } from "@/lib/seo/structuredData";
+import { blogPostingSchema, faqPageSchema } from "@/lib/seo/structuredData";
 import { isPostSlug, loadAllPosts, loadPost, POST_SLUGS } from "@/content/blog/posts";
 import { pickRelatedPosts } from "@/lib/blog/relatedPosts";
 import { TRIAL_DAYS } from "@/lib/billing/access";
+import { ogImages } from "@/lib/seo/openGraph";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -26,6 +27,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: meta.title,
     description: meta.description,
     alternates: { canonical: `https://bitesync.io/blog/${slug}` },
+    // A page's own openGraph replaces the root one rather than merging, so
+    // the image and the Twitter card have to be restated or previews go blank.
     openGraph: {
       type: "article",
       title: meta.title,
@@ -33,7 +36,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       publishedTime: meta.datePublished,
       modifiedTime: meta.dateModified,
       url: `https://bitesync.io/blog/${slug}`,
+      images: ogImages(meta.title),
     },
+    twitter: { card: "summary_large_image", title: meta.title, description: meta.description },
   };
 }
 
@@ -48,12 +53,13 @@ function formatDate(iso: string): string {
 export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params;
   if (!isPostSlug(slug)) notFound();
-  const [{ meta, Content }, allPosts] = await Promise.all([loadPost(slug), loadAllPosts()]);
+  const [{ meta, Content, faq }, allPosts] = await Promise.all([loadPost(slug), loadAllPosts()]);
   const related = pickRelatedPosts(allPosts, slug);
 
   return (
     <div className="min-h-screen bg-[var(--surface-card)]">
       <JsonLd data={blogPostingSchema({ slug, ...meta })} />
+      {faq.length ? <JsonLd data={faqPageSchema(faq)} /> : null}
       <header className="border-b border-[var(--border-subtle)] px-4 py-4">
         <Logo size="sm" href="/" />
       </header>
@@ -80,6 +86,21 @@ export default async function BlogPostPage({ params }: Props) {
         <div className="mt-6">
           <Content />
         </div>
+        {faq.length ? (
+          <section aria-labelledby="faq" className="mt-10">
+            <h2 id="faq" className="text-xl font-semibold text-[var(--text-primary)]">
+              Questions people ask
+            </h2>
+            <dl className="mt-4 space-y-5">
+              {faq.map((item) => (
+                <div key={item.q}>
+                  <dt className="font-medium text-[var(--text-primary)]">{item.q}</dt>
+                  <dd className="mt-1 text-[var(--text-secondary)]">{item.a}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        ) : null}
         {related.length ? (
           <nav aria-labelledby="more-articles" className="mt-12 border-t border-[var(--border-subtle)] pt-8">
             <h2 id="more-articles" className="text-lg font-semibold text-[var(--text-primary)]">

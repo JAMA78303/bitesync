@@ -19,6 +19,13 @@ export type PostMeta = {
 export type Post = PostMeta & { slug: string };
 
 /**
+ * Optional `export const faq` in a post: questions people ask, rendered after
+ * the post and as FAQPage JSON-LD, which answer engines quote directly.
+ * Answers are plain text.
+ */
+export type PostFaq = readonly { q: string; a: string }[];
+
+/**
  * Adding a post: create content/blog/<slug>.mdx with an exported `meta`, then
  * add the slug here. The route's static params, the sitemap and the index page
  * all derive from this list, so there is exactly one place a post can be
@@ -50,11 +57,11 @@ export function isPostSlug(slug: string): slug is PostSlug {
 
 export async function loadPost(
   slug: PostSlug,
-): Promise<{ meta: PostMeta; Content: ComponentType }> {
+): Promise<{ meta: PostMeta; Content: ComponentType; faq: PostFaq }> {
   // The static "./" prefix and ".mdx" suffix let the bundler enumerate the
   // directory at build time; isPostSlug keeps the variable part closed.
-  const mod = (await import(`./${slug}.mdx`)) as { meta: PostMeta; default: ComponentType };
-  return { meta: mod.meta, Content: mod.default };
+  const mod = (await import(`./${slug}.mdx`)) as { meta: PostMeta; default: ComponentType; faq?: PostFaq };
+  return { meta: mod.meta, Content: mod.default, faq: mod.faq ?? [] };
 }
 
 /** Every post, newest first. */

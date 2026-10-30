@@ -2,12 +2,24 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Logo } from "@/components/shared/Logo";
 import { loadAllPosts } from "@/content/blog/posts";
+import { ogImages } from "@/lib/seo/openGraph";
 
 export const metadata: Metadata = {
   title: "Blog",
   description:
     "Nutrition science, meal planning and macro tracking from BiteSync — written by a registered dietitian.",
   alternates: { canonical: "https://bitesync.io/blog" },
+  openGraph: {
+    title: "The BiteSync blog",
+    description: "Nutrition science, meal planning and macro tracking, written by a registered dietitian.",
+    url: "https://bitesync.io/blog",
+    images: ogImages("The BiteSync blog"),
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "The BiteSync blog",
+    description: "Nutrition science, meal planning and macro tracking, written by a registered dietitian.",
+  },
 };
 
 function formatDate(iso: string): string {

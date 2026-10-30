@@ -26,7 +26,7 @@ import { HomePricing } from "@/components/landing/home/HomePricing";
 import { HomeReveal } from "@/components/landing/home/HomeReveal";
 import { FAQ_ITEMS } from "@/components/landing/LandingFaq";
 import { TESTIMONIALS } from "@/components/landing/LandingTestimonials";
-import { faqPageSchema, softwareApplicationSchema } from "@/lib/seo/structuredData";
+import { faqPageSchema, organizationSchema, softwareApplicationSchema, websiteSchema } from "@/lib/seo/structuredData";
 import { TRIAL_DAYS } from "@/lib/billing/access";
 import { loadAllPosts, type Post } from "@/content/blog/posts";
 import { FOUNDER, FOUNDER_BYLINE } from "@/lib/founder";
@@ -250,6 +250,8 @@ export default async function LandingPage() {
 
   return (
     <div className={`lp ${newsreader.variable}`}>
+      <JsonLd data={organizationSchema()} />
+      <JsonLd data={websiteSchema()} />
       <JsonLd data={softwareApplicationSchema()} />
       <JsonLd data={faqPageSchema(FAQ_ITEMS)} />
       <HomeNav links={NAV_LINKS} />
@@ -267,8 +269,8 @@ export default async function LandingPage() {
                 <em>planned to your macros.</em>
               </h1>
               <p className="hero-lead">
-                Bring your recipes, nutrition targets and grocery list together — so eating well takes less
-                thinking.
+                BiteSync is a weekly meal planner, built by a dietitian. It plans your week from your own
+                recipes to your calorie and protein targets, and makes one grocery list.
               </p>
               <div className="hero-actions">
                 <Link className="btn btn-primary" href="/signup">

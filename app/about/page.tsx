@@ -5,11 +5,19 @@ import { JsonLd } from "@/components/shared/JsonLd";
 import { aboutPageSchema } from "@/lib/seo/structuredData";
 import { TRIAL_DAYS } from "@/lib/billing/access";
 import { FOUNDER, FOUNDER_BYLINE } from "@/lib/founder";
+import { ogImages } from "@/lib/seo/openGraph";
 
 export const metadata: Metadata = {
   title: "Why I built BiteSync",
-  description: `${FOUNDER_BYLINE}, on why BiteSync exists: people know the goal they want to reach, but not the steps that get them there. Planning meals in advance gives a goal structure.`,
+  description: `${FOUNDER_BYLINE}, on why BiteSync exists: people know their goal but not the steps to it, and planning meals ahead gives it structure.`,
   alternates: { canonical: FOUNDER.path },
+  openGraph: {
+    title: "Why I built BiteSync",
+    description: `${FOUNDER_BYLINE}, on why BiteSync exists.`,
+    url: `https://bitesync.io${FOUNDER.path}`,
+    images: ogImages("Why I built BiteSync"),
+  },
+  twitter: { card: "summary_large_image", title: "Why I built BiteSync", description: `${FOUNDER_BYLINE}, on why BiteSync exists.` },
 };
 
 /**

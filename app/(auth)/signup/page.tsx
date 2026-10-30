@@ -1,8 +1,17 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { signUp } from "@/app/(auth)/signup/actions";
 import { AuthSubmitButton } from "@/components/shared/AuthSubmitButton";
 import { HEARD_FROM_OPTIONS } from "@/lib/auth/heardFrom";
+import { TRIAL_DAYS } from "@/lib/billing/access";
+
+// Its own title and canonical, rather than the homepage's.
+export const metadata: Metadata = {
+  title: `Start your ${TRIAL_DAYS}-day free trial`,
+  description: `Create your BiteSync account: a weekly meal planner built by a dietitian. ${TRIAL_DAYS} days of Pro free, no card needed.`,
+  alternates: { canonical: "https://bitesync.io/signup" },
+};
 import { ds } from "@/lib/ui/classes";
 
 export default async function SignupPage({

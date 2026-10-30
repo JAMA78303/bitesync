@@ -33,6 +33,10 @@ export async function GET() {
     "Web app — works in any browser on iOS, Android and desktop; no install. " +
       `New accounts get a ${TRIAL_DAYS}-day free trial of BiteSync Pro, no card needed. After that, Pro is ${PRO_MONTHLY_PRICE}/month or ${PRO_ANNUAL_PRICE}/year, billed in GBP and renewing automatically until cancelled. The macro calculator is free.`,
     "",
+    // Other products share the name; say which one this is.
+    "BiteSync at bitesync.io is not affiliated with bitesync.net (a family meal planner) or bitesync.co. " +
+      "Built in the UK by a dietitian, using UK food composition data (CoFID); it works in any country.",
+    "",
     "## What it does",
     "",
     "- Personal calorie and protein targets from body stats, activity level and goal (TDEE-based)",

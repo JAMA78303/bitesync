@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { CONFIRMED_LOG_IN_MESSAGE } from "@/lib/auth/emailVerification";
 import { ds } from "@/lib/ui/classes";
+
+// Nothing here for search results or answer engines to quote.
+export const metadata: Metadata = {
+  title: "Sign in",
+  robots: { index: false, follow: true },
+};
 
 export default async function LoginPage({
  searchParams,
