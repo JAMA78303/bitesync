@@ -25,7 +25,7 @@ export const TRIAL_DAYS = 7;
  * to people who signed up for a trial. Set to the production deploy of the
  * trial PR.
  */
-export const TRIAL_LAUNCH = "2026-10-29T00:00:00.000Z";
+export const TRIAL_LAUNCH = "2026-10-30T11:15:00.000Z";
 
 /** Claude week plans per trial; after that the standard planner still works. */
 export const TRIAL_AI_PLAN_CAP = 5;

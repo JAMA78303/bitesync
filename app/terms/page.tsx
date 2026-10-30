@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Logo } from "@/components/shared/Logo";
 import { TRIAL_AI_PLAN_CAP, TRIAL_AI_RECIPE_CAP, TRIAL_DAYS, TRIAL_LAUNCH } from "@/lib/billing/access";
 
-/** "29 October 2026": the day the trial replaced the free plan for new accounts. */
+/** "30 October 2026": the day the trial replaced the free plan for new accounts. */
 const TRIAL_LAUNCH_DATE = new Date(TRIAL_LAUNCH).toLocaleDateString("en-GB", {
   day: "numeric",
   month: "long",
@@ -98,7 +98,7 @@ export default function TermsPage() {
       <article className="mx-auto max-w-2xl px-4 py-12">
         <p className="text-sm font-medium text-[var(--brand-primary)]">Legal</p>
         <h1 className="mt-2 text-3xl font-bold text-[var(--text-primary)]">Terms of service</h1>
-        <p className="mt-2 text-sm text-[var(--text-muted)]">Last updated: 29 October 2026</p>
+        <p className="mt-2 text-sm text-[var(--text-muted)]">Last updated: 30 October 2026</p>
         <div className="mt-10 space-y-8">
           {SECTIONS.map((section) => (
             <section key={section.title}>
