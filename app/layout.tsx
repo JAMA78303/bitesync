@@ -23,11 +23,11 @@ const manrope = Manrope({
 
 export const metadata: Metadata = {
  title: {
- default: "BiteSync — Plan meals to your macros",
+ default: "BiteSync — Weekly meal planner that hits your macros",
  template: "%s | BiteSync",
  },
  description:
-  `Plan your week, hit your protein and calorie targets, and get one grocery list — automatically. ${TRIAL_DAYS}-day free trial, no card needed.`,
+  `BiteSync is a weekly meal planner that plans your meals to your protein and calorie targets and makes one grocery list. ${TRIAL_DAYS}-day free trial, no card needed.`,
  keywords: [
   "meal planner",
   "macro meal plan",
@@ -47,9 +47,9 @@ export const metadata: Metadata = {
  locale: "en_GB",
  url: "https://bitesync.io",
  siteName: "BiteSync",
- title: "BiteSync — Plan meals to your macros",
+ title: "BiteSync — Weekly meal planner that hits your macros",
  description:
-  "Plan your week, hit your protein and calorie targets, and get one grocery list — automatically.",
+  "A weekly meal planner that plans your meals to your protein and calorie targets and makes one grocery list.",
  images: [
   {
    url: "/opengraph-image",
@@ -61,9 +61,9 @@ export const metadata: Metadata = {
  },
  twitter: {
  card: "summary_large_image",
- title: "BiteSync — Plan meals to your macros",
+ title: "BiteSync — Weekly meal planner that hits your macros",
  description:
-  "Plan your week, hit your protein and calorie targets, and get one grocery list — automatically.",
+  "A weekly meal planner that plans your meals to your protein and calorie targets and makes one grocery list.",
  },
  /** File-based icons in `app/` (favicon.ico, icon.png, apple-icon.png). Extra PNG sizes in `public/`. */
  manifest: "/manifest.webmanifest",

@@ -1,13 +1,20 @@
 import * as cheerio from "cheerio";
 
-function decodeHtmlEntities(value: string): string {
+/**
+ * Recipe sites often put HTML-escaped text in their JSON-LD ("Corn &amp; Feta
+ * Salad"), which then showed up literally in imported names.
+ */
+export function decodeHtmlEntities(value: string): string {
   return value
-    .replace(/&amp;/g, "&")
+    .replace(/&#(\d+);/g, (_, n: string) => String.fromCodePoint(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, n: string) => String.fromCodePoint(parseInt(n, 16)))
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&nbsp;/g, " ");
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&nbsp;/g, " ")
+    // Last, so "&amp;lt;" becomes "&lt;" rather than "<".
+    .replace(/&amp;/g, "&");
 }
 
 export function extractOpenGraphText(html: string): { title: string; description: string } {

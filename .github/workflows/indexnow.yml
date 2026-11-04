@@ -14,6 +14,16 @@ on:
       - "app/llms.txt/**"
       - "app/macro-calculator/**"
       - "components/calculator/**"
+      # Site-wide text and data answer engines read: titles, JSON-LD, prices, about.
+      - "app/layout.tsx"
+      - "app/about/**"
+      - "app/terms/**"
+      - "app/(auth)/signup/**"
+      - "app/sitemap.ts"
+      - "lib/seo/**"
+      - "lib/founder.ts"
+      - "lib/stripe/pricing.ts"
+      - "lib/billing/access.ts"
   workflow_dispatch:
 
 jobs:

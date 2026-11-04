@@ -21,6 +21,46 @@ import { TRIAL_DAYS } from "@/lib/billing/access";
 import { FOUNDER } from "@/lib/founder";
 
 const BASE = "https://bitesync.io";
+const ORG_ID = `${BASE}/#organization`;
+const WEBSITE_ID = `${BASE}/#website`;
+
+/**
+ * Profiles elsewhere that are BiteSync's own (sameAs). They tell answer
+ * engines which "BiteSync" this is: bitesync.net and bitesync.co are
+ * unrelated products. Add each one as it goes live.
+ */
+const SAME_AS: string[] = [];
+
+/** The organisation by reference, so every page points at one node. */
+const ORG_REF = { "@type": "Organization", "@id": ORG_ID, name: "BiteSync", url: BASE } as const;
+
+export function organizationSchema() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": ORG_ID,
+    name: "BiteSync",
+    url: BASE,
+    logo: `${BASE}/icon.png`,
+    description:
+      "BiteSync (bitesync.io) is a weekly meal planner built by a dietitian in the UK. " +
+      "It is not affiliated with bitesync.net or bitesync.co.",
+    founder: founderPersonSchema(),
+    ...(SAME_AS.length ? { sameAs: SAME_AS } : {}),
+  };
+}
+
+export function websiteSchema() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": WEBSITE_ID,
+    name: "BiteSync",
+    url: BASE,
+    inLanguage: "en-GB",
+    publisher: { "@id": ORG_ID },
+  };
+}
 
 /** Facts stated on the page. Nothing here may claim more than the page shows. */
 export function softwareApplicationSchema() {
@@ -36,12 +76,7 @@ export function softwareApplicationSchema() {
       "Weekly meal planner that builds a week to your calorie and macro targets, " +
       "calculates nutrition from your ingredients, and generates one merged grocery " +
       "list. Includes micronutrient analysis against published dietary reference values.",
-    creator: {
-      "@type": "Organization",
-      name: "BiteSync",
-      url: BASE,
-      founder: founderPersonSchema(),
-    },
+    creator: ORG_REF,
     featureList: [
       "TDEE-based calorie and protein targets",
       "Weekly meal planner with running daily totals",
@@ -92,9 +127,12 @@ export function blogPostingSchema(post: {
     datePublished: post.datePublished,
     dateModified: post.dateModified,
     url: `${BASE}/blog/${post.slug}`,
+    inLanguage: "en-GB",
+    image: `${BASE}/opengraph-image`,
     mainEntityOfPage: `${BASE}/blog/${post.slug}`,
-    author: { "@type": "Organization", name: "BiteSync", url: BASE },
-    publisher: { "@type": "Organization", name: "BiteSync", url: BASE },
+    author: ORG_REF,
+    publisher: { ...ORG_REF, logo: `${BASE}/icon.png` },
+    isPartOf: { "@id": WEBSITE_ID },
     // reviewedBy is a WebPage property, so it rides on the page node rather
     // than the BlogPosting itself.
     ...(post.reviewedBy === "founder"
@@ -116,7 +154,7 @@ export function founderPersonSchema() {
     name: FOUNDER.name,
     jobTitle: FOUNDER.credential,
     url: `${BASE}${FOUNDER.path}`,
-    worksFor: { "@type": "Organization", name: "BiteSync", url: BASE },
+    worksFor: ORG_REF,
   };
 }
 

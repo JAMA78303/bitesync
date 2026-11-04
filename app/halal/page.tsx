@@ -8,6 +8,7 @@ import { FOUNDER, FOUNDER_BYLINE } from "@/lib/founder";
 import { ds } from "@/lib/ui/classes";
 import { cleanCountry, cleanRef } from "@/lib/waitlist/halal";
 import { recordHalalVisit } from "@/lib/waitlist/halalStore";
+import { ogImages } from "@/lib/seo/openGraph";
 
 const BASE = "https://bitesync.io";
 const PATH = "/halal";
@@ -15,12 +16,18 @@ const PATH = "/halal";
 export const metadata: Metadata = {
   title: "Halal macros for Muslims who train",
   description:
-    "Coming to BiteSync: snap a meal to see its protein, halal ingredient checks explained clearly, and Ramadan plans that keep your gains. Built by a dietitian. Join the waitlist.",
+    "Coming to BiteSync: snap a meal to see its protein, halal ingredient checks explained, and Ramadan plans that keep your gains. Join the waitlist.",
   alternates: { canonical: `${BASE}${PATH}` },
   openGraph: {
     title: "Halal macros for Muslims who train",
     description: "Snap your meal, hit your protein, and know what's in your food. Every day, and every fast.",
     url: `${BASE}${PATH}`,
+    images: ogImages("Halal macros for Muslims who train"),
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Halal macros for Muslims who train",
+    description: "Snap your meal, hit your protein, and know what's in your food. Every day, and every fast.",
   },
 };
 

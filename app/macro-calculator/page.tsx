@@ -6,6 +6,7 @@ import { JsonLd } from "@/components/shared/JsonLd";
 import { Logo } from "@/components/shared/Logo";
 import { TRIAL_DAYS } from "@/lib/billing/access";
 import { FOUNDER, FOUNDER_BYLINE } from "@/lib/founder";
+import { ogImages } from "@/lib/seo/openGraph";
 import { faqPageSchema } from "@/lib/seo/structuredData";
 import { ds } from "@/lib/ui/classes";
 import { MIN_FAT_G_PER_KG } from "@/lib/utils/nutrition-targets";
@@ -23,12 +24,18 @@ const PATH = "/macro-calculator";
 export const metadata: Metadata = {
   title: "Macro calculator: daily calories and protein for your goal",
   description:
-    "Free macro calculator built by a dietitian. Work out your daily calories, protein, carbs and fat to lose weight, maintain or build muscle. No sign-up, and nothing you enter is sent anywhere.",
+    "Free macro calculator built by a dietitian: your daily calories, protein, carbs and fat to lose weight, maintain or build muscle. No sign-up needed.",
   alternates: { canonical: `${BASE}${PATH}` },
   openGraph: {
     title: "Free macro calculator, built by a dietitian",
     description: "Your daily calories, protein, carbs and fat for your goal, in seconds.",
     url: `${BASE}${PATH}`,
+    images: ogImages("BiteSync free macro calculator"),
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Free macro calculator, built by a dietitian",
+    description: "Your daily calories, protein, carbs and fat for your goal, in seconds.",
   },
 };
 
