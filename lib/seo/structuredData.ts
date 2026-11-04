@@ -29,7 +29,7 @@ const WEBSITE_ID = `${BASE}/#website`;
  * engines which "BiteSync" this is: bitesync.net and bitesync.co are
  * unrelated products. Add each one as it goes live.
  */
-const SAME_AS: string[] = [];
+const SAME_AS: string[] = ["https://www.tiktok.com/@bitesync.io"];
 
 /** The organisation by reference, so every page points at one node. */
 const ORG_REF = { "@type": "Organization", "@id": ORG_ID, name: "BiteSync", url: BASE } as const;
