@@ -1,5 +1,6 @@
 import * as cheerio from "cheerio";
 import { parsePublisherNutritionFromRecipeNode, type PublisherNutritionPerServing } from "@/lib/nutrition/publisherNutrition";
+import { decodeHtmlEntities } from "@/lib/recipes/extractCaptionText";
 import { parseIngredientLine, type ParsedIngredient } from "@/lib/recipes/parseIngredient";
 
 function parseRecipeYield(node: Record<string, unknown>): number {
@@ -80,8 +81,10 @@ export function extractRecipeFromHtml(html: string, fallbackName = "Imported Rec
             }
           | undefined;
         if (recipeNode) {
-          name = String(recipeNode.name ?? "").trim();
-          rawIngredients = (recipeNode.recipeIngredient ?? []).map((v) => String(v).trim()).filter(Boolean);
+          name = decodeHtmlEntities(String(recipeNode.name ?? "")).trim();
+          rawIngredients = (recipeNode.recipeIngredient ?? [])
+            .map((v) => decodeHtmlEntities(String(v)).trim())
+            .filter(Boolean);
           steps = parseInstructions(recipeNode.recipeInstructions);
           detectedServings = parseRecipeYield(recipeNode as Record<string, unknown>);
           publisherNutritionPerServing =
