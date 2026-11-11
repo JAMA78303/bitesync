@@ -1,4 +1,5 @@
 import {
+  drvFor,
   getDeficiencyHeadline,
   getTrafficLight,
   getTrafficLightLabel,
@@ -84,5 +85,26 @@ assertEqual(
   "88% of daily target",
   "B12 88% label",
 );
+
+// Iron changes with age (NHS): women 14.8 mg until 50, then 8.7 mg; boys 11.3 mg up to 18.
+assertEqual(drvFor("iron_mg", { sex: "female", age: 49 })?.rni, 14.8, "iron woman 49");
+assertEqual(drvFor("iron_mg", { sex: "female", age: 50 })?.rni, 8.7, "iron woman 50");
+assertEqual(drvFor("iron_mg", { sex: "female", age: 72 })?.rni, 8.7, "iron woman 72");
+assertEqual(drvFor("iron_mg", { sex: "female", age: 17 })?.rni, 14.8, "iron girl 17");
+assertEqual(drvFor("iron_mg", { sex: "male", age: 17 })?.rni, 11.3, "iron boy 17");
+assertEqual(drvFor("iron_mg", { sex: "male", age: 19 })?.rni, 8.7, "iron man 19");
+// Unknown age keeps the adult figures; the sex-only form is unchanged.
+assertEqual(drvFor("iron_mg", { sex: "female", age: null })?.rni, 14.8, "iron woman, age unknown");
+assertEqual(drvFor("iron_mg", { sex: "male" })?.rni, 8.7, "iron man, age unknown");
+assertEqual(drvFor("iron_mg", "female")?.rni, 14.8, "iron by sex only");
+// Age touches only iron; the upper limit stays.
+assertEqual(drvFor("calcium_mg", { sex: "female", age: 60 })?.rni, 700, "calcium woman 60");
+assertEqual(drvFor("iron_mg", { sex: "female", age: 60 })?.upper, 17, "iron upper limit unchanged");
+assertEqual(drvFor("not_a_nutrient", { sex: "female", age: 60 }), undefined, "unknown nutrient");
+// 9 mg a day: low for a 30-year-old woman, met for a 55-year-old.
+assertEqual(getTrafficLight("iron_mg", 9 * 7, { sex: "female", age: 30 }), "red", "iron 9 mg, woman 30");
+assertEqual(getTrafficLight("iron_mg", 9 * 7, { sex: "female", age: 55 }), "green", "iron 9 mg, woman 55");
+assertEqual(isUnderTarget("iron_mg", 9 * 7, { sex: "female", age: 55 }), false, "iron 9 mg not under at 55");
+assertEqual(getTrafficLightLabel("iron_mg", 8.7 * 7, { sex: "female", age: 55 }), "100% of daily target", "iron label at 55");
 
 console.log("drv.test.ts: all assertions passed");

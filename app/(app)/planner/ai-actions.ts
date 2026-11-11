@@ -937,6 +937,33 @@ async function runWeekPlan(
   return result;
 }
 
+/** What a plan leaned towards: the nutrients that were low (labels, lowest first) and in which week. */
+type MicroFocus = { labels: string[]; from: "this-week" | "last-week" };
+
+/** The user's planned weeks in the four weeks before this one, most recent first. */
+async function earlierPlannedWeeks(
+  supabase: SupabaseClient,
+  userId: string,
+  weekStartISO: string,
+): Promise<{ id: string; week_start_date: string }[]> {
+  const from = new Date(`${weekStartISO}T00:00:00Z`);
+  if (Number.isNaN(from.getTime())) return [];
+  from.setUTCDate(from.getUTCDate() - 28);
+  const { data, error } = await supabase
+    .from("meal_plans")
+    .select("id, week_start_date")
+    .eq("user_id", userId)
+    .lt("week_start_date", weekStartISO)
+    .gte("week_start_date", from.toISOString().slice(0, 10))
+    .order("week_start_date", { ascending: false })
+    .limit(3);
+  if (error) {
+    console.warn("[micro] earlier weeks not loaded:", error.message);
+    return [];
+  }
+  return (data ?? []) as { id: string; week_start_date: string }[];
+}
+
 async function generateAIWeekPlanInner(
   input: GenerateAIWeekPlanInput,
   options: { skipProCheck?: boolean; heuristicOnly?: boolean } | undefined,
@@ -1024,18 +1051,34 @@ async function generateAIWeekPlanInner(
   );
   const goalBias = calorieGoalBiasFromProfile(profile);
 
+  // The plan leans towards the vitamins and minerals that are running low: in
+  // this week's meals when it's being re-planned, or in the last planned week
+  // when this one is new (most people cook much the same recipes each week).
   let snackMicroPriorities: MicroPriority[] = DEFAULT_SNACK_MICRO_PRIORITIES;
+  let microFocus: MicroFocus | undefined;
   const sex = profile?.sex === "male" || profile?.sex === "female" ? (profile.sex as Sex) : null;
   if (sex && plan.week_start_date) {
     await markPlanRunPhase(supabase, trace, "micro-analysis");
-    const microAnalysis = await getWeeklyMicroAnalysis(input.mealPlanId, plan.week_start_date, sex);
+    const person = { sex, age: profile?.age };
+    let microAnalysis = await getWeeklyMicroAnalysis(input.mealPlanId, plan.week_start_date, person);
+    let from: MicroFocus["from"] = "this-week";
+    if (!microAnalysis) {
+      for (const week of await earlierPlannedWeeks(supabase, user.id, plan.week_start_date)) {
+        microAnalysis = await getWeeklyMicroAnalysis(week.id, week.week_start_date, person);
+        if (microAnalysis) {
+          from = "last-week";
+          break;
+        }
+      }
+    }
     if (microAnalysis) {
       snackMicroPriorities = microPrioritiesFromDeficiencies(microAnalysis.must_hit);
-      const lowKeys = microAnalysis.must_hit
+      const low = microAnalysis.must_hit
         .filter((n) => n.under_target && (n.traffic === "red" || n.traffic === "amber"))
-        .map((n) => n.key);
-      if (lowKeys.length) {
-        console.warn("[heuristic] snack micro priorities from current plan:", lowKeys.join(", "));
+        .sort((a, b) => (a.traffic === b.traffic ? 0 : a.traffic === "red" ? -1 : 1));
+      if (low.length) {
+        console.warn(`[heuristic] micro priorities from ${from}:`, low.map((n) => n.key).join(", "));
+        microFocus = { labels: low.slice(0, 3).map((n) => n.label), from };
       }
     }
   }
@@ -1086,6 +1129,7 @@ async function generateAIWeekPlanInner(
         dietaryConstraintsLine: dietContext.dietaryConstraintsLine || undefined,
         allergies: input.goals.allergens ?? [],
         microPriorityFoods,
+        microPrioritySource: microFocus?.from,
       });
       trace.claudeMs = Date.now() - claudeStarted;
       if (aiPlan?.telemetry) {
@@ -1475,5 +1519,7 @@ async function generateAIWeekPlanInner(
     heuristicWarning,
     snackLibraryNotice,
     aiFallbackNotice,
+    // The vitamin and mineral check is Pro, so only Pro says what the plan leaned towards.
+    microFocus: access?.hasPro ? microFocus : undefined,
   };
 }

@@ -74,6 +74,16 @@ export function GenerateAIWeekPlanButton({ plan, mealPlanId, goals }: Props) {
         if ("snackLibraryNotice" in result && result.snackLibraryNotice) {
           toast({ title: "Snack library", description: result.snackLibraryNotice });
         }
+        if ("microFocus" in result && result.microFocus) {
+          const { labels, from } = result.microFocus;
+          toast({
+            title: `Leaning towards ${listNutrients(labels)}`,
+            description:
+              from === "last-week"
+                ? "Your last planned week was low on these, so this plan favours foods rich in them."
+                : "This week was low on these, so the new plan favours foods rich in them.",
+          });
+        }
         refreshNativeReminders();
         router.refresh();
       } catch (err) {
@@ -124,4 +134,10 @@ export function GenerateAIWeekPlanButton({ plan, mealPlanId, goals }: Props) {
       ) : null}
     </div>
   );
+}
+
+/** "iron, vitamin D and iodine": labels as they read mid-sentence. */
+function listNutrients(labels: string[]): string {
+  const words = labels.map((l) => l.charAt(0).toLowerCase() + l.slice(1));
+  return words.length > 1 ? `${words.slice(0, -1).join(", ")} and ${words.at(-1)}` : (words[0] ?? "");
 }

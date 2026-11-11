@@ -66,6 +66,8 @@ export type GenerateMealPlanParams = {
   allergies: string[];
   /** Foods rich in the user's under-target micronutrients — prefer recipes containing them. */
   microPriorityFoods?: string[];
+  /** Where the priorities came from: this week's meals, or the last planned week's. */
+  microPrioritySource?: "this-week" | "last-week";
 };
 
 function requireApiKey(): string {
@@ -222,7 +224,9 @@ MY DAILY TARGETS:
   Protein: ${params.dailyProteinTarget}g
 ${
   params.microPriorityFoods?.length
-    ? `\nMICRONUTRIENT PRIORITIES:\n  My week is currently low on micronutrients found in: ${params.microPriorityFoods.join(", ")}.\n  Prefer recipes containing these ingredients when calories and protein allow.\n`
+    ? `\nMICRONUTRIENT PRIORITIES:\n  ${
+        params.microPrioritySource === "last-week" ? "My last planned week was" : "My week is currently"
+      } low on micronutrients found in: ${params.microPriorityFoods.join(", ")}.\n  Prefer recipes containing these ingredients when calories and protein allow.\n`
     : ""
 }
 
