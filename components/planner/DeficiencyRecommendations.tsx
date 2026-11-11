@@ -62,7 +62,7 @@ export function DeficiencyRecommendations({ deficiencies, excesses }: Props) {
  </div>
  {isRed && richFoods.length > 0 ? (
               <p className="ml-6 text-xs opacity-80">
- Add more: <span className="font-medium">{richFoods.slice(0, 3).join(",")}</span>
+ Add more: <span className="font-medium">{richFoods.slice(0, 3).join(", ")}</span>
  </p>
  ) : null}
  {isRed ? (

@@ -59,7 +59,8 @@ export function GenerateMicroSnackButton({ nutrientKey, nutrientLabel }: Props) 
  className="ml-6 mt-2 inline-flex items-center gap-1.5 rounded-lg bg-[var(--btn-primary-bg)] px-3 py-1.5 text-xs font-semibold text-[var(--btn-primary-text)] hover:bg-[var(--btn-primary-hover)] disabled:opacity-60"
  >
  {isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
- Generate snack for {nutrientLabel.toLowerCase()}
+ {/* Only the first letter: "vitamin D", not "vitamin d". */}
+ Generate snack for {nutrientLabel.charAt(0).toLowerCase() + nutrientLabel.slice(1)}
  </button>
  );
 }
