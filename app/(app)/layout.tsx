@@ -5,7 +5,7 @@ import { FeedbackFab } from "@/components/feedback/FeedbackFab";
 import { InstallPromptCapture } from "@/components/habit/InstallPromptCapture";
 import { NativeAppSync } from "@/components/native/NativeAppSync";
 import { getAccess } from "@/lib/subscription";
-import { nativeWithoutPurchases } from "@/lib/native/server";
+import { isNativeAppRequest, nativeWithoutPurchases } from "@/lib/native/server";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +28,8 @@ export default async function ProtectedLayout({
     },
     access,
     native,
-  ] = await Promise.all([supabase.auth.getUser(), getAccess(), nativeWithoutPurchases()]);
+    inApp,
+  ] = await Promise.all([supabase.auth.getUser(), getAccess(), nativeWithoutPurchases(), isNativeAppRequest()]);
   const initial = user?.email?.trim().charAt(0).toUpperCase() || "?";
 
   return (
@@ -49,7 +50,10 @@ export default async function ProtectedLayout({
       >
         {children}
       </AppShell>
-      <FeedbackFab />
+      {/* Not in the iPhone app: on a phone screen the floating pill sits over
+          content (it covered the paywall's Subscribe button) and shows in every
+          App Store screenshot. Settings → Feedback has the same form. */}
+      {inApp ? null : <FeedbackFab />}
       <InstallPromptCapture />
       <NativeAppSync />
     </AppProviders>
