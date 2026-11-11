@@ -17,7 +17,9 @@ export function FeedbackFab() {
   const [sent, setSent] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  if (pathname.startsWith("/onboarding")) return null;
+  // Billing too: the pill floats over the Subscribe button and the renewal
+  // terms Apple requires to be clearly visible before a purchase.
+  if (pathname.startsWith("/onboarding") || pathname.startsWith("/billing")) return null;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

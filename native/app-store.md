@@ -1,18 +1,19 @@
 # Getting BiteSync into the App Store
 
 Where things stand, what's left, and the text to paste into App Store Connect.
-Last updated 10 November 2026.
+Last updated 11 November 2026.
 
 ## Where things stand
 
 | | Status |
 |---|---|
 | iPhone app (Capacitor shell, reminders, share sheet, offline grocery list) | Done, live since 28 Oct |
-| Signing, archive, upload from this Mac | Works. The upload on 10 Nov stopped only because the app record doesn't exist yet |
+| Signing, archive, upload from this Mac | Works. Build 1.0 (1) uploaded 11 Nov |
 | In-app account deletion (Apple requires it) | Done |
 | Privacy manifest | Done |
-| In-app purchase for Pro (Apple requires it) | Code written, **not yet tested with a real purchase**: needs steps 1–5 below |
-| App record in App Store Connect | **Missing** (step 2) |
+| In-app purchase for Pro (Apple requires it) | Done. Sandbox test on 11 Nov: bought, Pro unlocked, lapsed, Restore found nothing as expected |
+| App record in App Store Connect | Done (app id 6833558001) |
+| Price and availability | Free; 147 countries. Not the EU (no trader details yet) or China mainland (needs a licence) |
 | Screenshots (6.9-inch, 1320 × 2868) | To do (Claude) |
 | Listing text, privacy answers, review notes | Drafted below |
 
@@ -32,9 +33,9 @@ Only you can do these: they need your Apple and RevenueCat accounts.
    | Product ID | Duration | Price | Display name |
    |---|---|---|---|
    | `bitesync_pro_monthly` | 1 month | £6.99 | BiteSync Pro Monthly |
-   | `bitesync_pro_annual` | 1 year | £59 (or the nearest price Apple offers) | BiteSync Pro Yearly |
+   | `bitesync_pro_annual` | 1 year | £59.99 (Apple's UK prices go from £49.99 to £59.99) | BiteSync Pro Yearly |
 
-   Description for both: `AI week plans, vitamin and mineral checks, and unlimited recipes.` No introductory offer: new accounts already get 7 days of Pro free without one.
+   Description for both (55 characters max): `AI week plans, nutrient checks and unlimited recipes.` No introductory offer: new accounts already get 7 days of Pro free without one.
 4. **Set up RevenueCat** (free at this size; it keeps track of who has paid Apple).
    - Create a project called BiteSync and add an App Store app with bundle ID `io.bitesync.app`.
    - Follow its prompt to add an App Store Connect in-app purchase key.
@@ -144,6 +145,7 @@ Raise `CURRENT_PROJECT_VERSION` in the Xcode project for every upload: App Store
 ## Still to do after the steps above
 
 - Screenshots at 1320 × 2868: Today, the planner, a recipe, the grocery list, the vitamin and mineral check.
-- Sandbox purchase test on a real iPhone: buy, restore, cancel, and check Pro unlocks and locks again.
+- ~~Sandbox purchase test on a real iPhone~~: done 11 Nov.
+- A screenshot of the paywall for each subscription's Review Information (the same picture works for both).
 - Email confirmation inside the app: the link in the email opens Safari, so a new sign-up has to come back to the app and sign in. It works, but a 6-digit code would be smoother.
 - Optional for a later version: a "Today's meals" home-screen widget.
