@@ -21,7 +21,7 @@ const SECTIONS = [
       "Profile and health-related inputs you choose to provide: body stats (weight, height, age, sex), activity level, nutrition goals, dietary preferences, and any recipes or meal plans you create.",
       "Usage data: how you use the app (e.g. pages visited, features used) to improve the product.",
       "How you heard about BiteSync, if you choose to tell us when you sign up — used only to understand which channels bring people to the app.",
-      "Payment information: billing is handled by Stripe. We store Stripe customer and subscription IDs, not full card numbers.",
+      "Payment information: on the website, billing is handled by Stripe; we store Stripe customer and subscription IDs, not full card numbers. In the iPhone app, subscriptions are bought through Apple; we receive confirmation of the purchase and when it renews or ends, never your card details.",
     ],
   },
   {
@@ -36,7 +36,8 @@ const SECTIONS = [
   {
     title: "Processors and storage",
     body: [
-      "We use Supabase (database and authentication) and Stripe (payments) as data processors. Your data is stored on servers in regions chosen by those providers.",
+      "We use these data processors: Supabase (database and authentication), Vercel (hosting and anonymous usage statistics), Stripe (payments on the website), and Apple and RevenueCat (subscriptions bought in the iPhone app). Your data is stored on servers in regions chosen by those providers.",
+      "AI features (AI week plans, AI-written recipes and nutrition estimates) are powered by Anthropic. To produce them we send the recipes involved, your calorie and protein targets, and your dietary preferences and allergens. We do not send your name or email address.",
       "We do not sell your personal data.",
     ],
   },
@@ -78,7 +79,7 @@ export default function PrivacyPage() {
       <article className="mx-auto max-w-2xl px-4 py-12">
         <p className="text-sm font-medium text-[var(--brand-primary)]">Legal</p>
         <h1 className="mt-2 text-3xl font-bold text-[var(--text-primary)]">Privacy policy</h1>
-        <p className="mt-2 text-sm text-[var(--text-muted)]">Last updated: 13 June 2026</p>
+        <p className="mt-2 text-sm text-[var(--text-muted)]">Last updated: 10 November 2026</p>
         <p className="mt-6 text-base leading-relaxed text-[var(--text-secondary)]">
           This policy explains what personal data BiteSync collects, why we collect it, and your choices.
         </p>

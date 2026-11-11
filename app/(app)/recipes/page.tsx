@@ -4,7 +4,7 @@ import { initialDietaryPreferencesFromProfile } from "@/lib/dietary/constraints"
 import { getProfile } from "@/lib/supabase/profile";
 import { getDailyCalorieTarget } from "@/lib/utils/nutrition-targets";
 import { canCreateRecipe, getAccess, getRecipeCount } from "@/lib/subscription";
-import { isNativeAppRequest } from "@/lib/native/server";
+import { nativeWithoutPurchases } from "@/lib/native/server";
 import { RecipesPageClient } from "@/components/recipes/RecipesPageClient";
 import type { RecipeListItem } from "@/components/recipes/RecipeListCard";
 
@@ -55,7 +55,7 @@ export default async function RecipesPage({ searchParams }: Props) {
  canCreateRecipe(),
  supabase.auth.getUser(),
  getProfile(),
- isNativeAppRequest(),
+ nativeWithoutPurchases(),
  ]);
  // Expired trials can't add recipes at all (an UpgradeCard replaces the
  // controls); only the free plan has a number to warn about.

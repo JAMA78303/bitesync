@@ -24,6 +24,9 @@ export async function createCheckoutSession(
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   if (!isEmailConfirmed(user)) redirect(VERIFY_EMAIL_PATH);
+  // Already paying Apple for Pro (bought in the iPhone app): don't start a
+  // second subscription here.
+  if ((await getAccess())?.store === "apple") redirect("/billing");
 
   const { data: profile } = await supabase
     .from("profiles")

@@ -39,6 +39,8 @@ type Props = {
   paying: boolean;
   /** Pro given through app_metadata: nothing in Stripe to manage. */
   comped: boolean;
+  /** Pro bought in the iPhone app: Apple bills it, so there's no Stripe to manage. */
+  billedByApple: boolean;
   hasStripeCustomer: boolean;
   trialDaysLeft: number | null;
   /** End of the current or last trial (ISO), if there was one. */
@@ -136,6 +138,7 @@ export function BillingClient({
   plan,
   paying,
   comped,
+  billedByApple,
   hasStripeCustomer,
   trialDaysLeft,
   trialEndsAt,
@@ -366,7 +369,9 @@ export function BillingClient({
                 <p className="text-center text-xs text-[var(--text-muted)]">
                   {comped
                     ? "Pro is included with your account at no charge, so there's nothing to manage or cancel."
-                    : "There's no subscription to manage here."}
+                    : billedByApple
+                      ? "You subscribed in the iPhone app, so Apple bills you. Manage or cancel it on your iPhone: Settings, your name, then Subscriptions."
+                      : "There's no subscription to manage here."}
                 </p>
               )}
             </div>

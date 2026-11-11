@@ -16,7 +16,7 @@ import { groceryShareText } from "@/lib/grocery/shareText";
 import { WeeklyHabitCard } from "@/components/habit/WeeklyHabitCard";
 import { UpgradeCard } from "@/components/billing/UpgradeCard";
 import { getAccess } from "@/lib/subscription";
-import { isNativeAppRequest } from "@/lib/native/server";
+import { nativeWithoutPurchases } from "@/lib/native/server";
 
 type Props = {
  /** `welcome=1` is the end of setup: the first planned week's list. */
@@ -45,7 +45,7 @@ export default async function GroceryPage({ searchParams }: Props) {
  const [mealPlanId, access, native] = await Promise.all([
  params.plan ?? getMealPlanIdForWeek(weekStartISO),
  getAccess(),
- isNativeAppRequest(),
+ nativeWithoutPurchases(),
  ]);
  // Once a 7-day trial has ended (lib/billing/access.ts), lists can't be made
  // from the plan any more, but the one they have can still be ticked, added

@@ -9,7 +9,7 @@ import { initialDietaryPreferencesFromProfile } from "@/lib/dietary/constraints"
 import { getProfile } from "@/lib/supabase/profile";
 import { getDailyCalorieTarget, getDailyProteinTarget } from "@/lib/utils/nutrition-targets";
 import { getAccess } from "@/lib/subscription";
-import { isNativeAppRequest } from "@/lib/native/server";
+import { nativeWithoutPurchases } from "@/lib/native/server";
 import { UpgradeCard } from "@/components/billing/UpgradeCard";
 import { PlannerGrid } from "@/components/planner/PlannerGrid";
 import { WeekNav } from "@/components/planner/WeekNav";
@@ -59,7 +59,7 @@ export default async function PlannerPage({ searchParams }: Props) {
  ? getMealPlanForWeek(weekStartISO).then((plan) => ({ data: plan, error: null }))
  : getOrCreateMealPlan(weekStartISO),
  getProfile(),
- isNativeAppRequest(),
+ nativeWithoutPurchases(),
  ]);
  const { data: mealPlan, error } = mealPlanResult;
 

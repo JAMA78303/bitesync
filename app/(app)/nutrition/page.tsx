@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { NutritionDashboard } from "@/components/nutrition/NutritionDashboard";
 import { computeWeeklyMacrosFromEntries } from "@/lib/planner/weekly-macros";
 import { getAccess } from "@/lib/subscription";
-import { isNativeAppRequest } from "@/lib/native/server";
+import { nativeWithoutPurchases } from "@/lib/native/server";
 import { getMealPlanForWeek, getMealPlanEntries } from "@/lib/supabase/meal-plans";
 import { getWeeklyMicroAnalysis } from "@/lib/supabase/nutrition";
 import { getProfile } from "@/lib/supabase/profile";
@@ -34,7 +34,7 @@ export default async function NutritionPage({
  getProfile(),
  getMealPlanForWeek(weekStartISO),
  getAccess(),
- isNativeAppRequest(),
+ nativeWithoutPurchases(),
  ]);
  // Micronutrients are Pro (and trial); everyone sees their macros.
  const hasPro = access?.hasPro ?? false;

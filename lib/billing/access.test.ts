@@ -90,6 +90,20 @@ const lapsedOld = access({ subscriptionStatus: "free", hadSubscription: true, cr
 assert(lapsedOld.plan === "free" && lapsedOld.lapsed && !lapsedOld.canStartTrial, "a former subscriber gets no trial offer");
 assert(!ended.lapsed, "a trial running out isn't lapsed");
 
+// An App Store subscription (app_metadata.iap_pro_until) is Pro until that time.
+const appleNow = new Date(launch + 20 * DAY);
+const apple = access({ appMetadata: { iap_pro_until: iso(launch + 40 * DAY) }, now: appleNow });
+assert(apple.plan === "pro" && apple.hasPro && apple.store === "apple" && !apple.comped, "an active Apple subscription is pro");
+assert(apple.aiCapUntil === null, "Apple charges straight away, so no trial caps");
+const appleMidTrial = access({ appMetadata: { iap_pro_until: iso(launch + 40 * DAY) }, now: new Date(launch + 3 * DAY) });
+assert(appleMidTrial.plan === "pro" && appleMidTrial.aiCapUntil === null, "buying in the app mid-trial lifts the caps");
+const appleEnded = access({ appMetadata: { iap_pro_until: iso(launch + 15 * DAY) }, now: appleNow });
+assert(appleEnded.plan === "expired" && appleEnded.lapsed && appleEnded.store === null, "an ended Apple subscription is lapsed");
+const both = access({ subscriptionStatus: "pro", appMetadata: { iap_pro_until: iso(launch + 40 * DAY) }, now: appleNow });
+assert(both.store === "stripe", "Stripe is reported first when both are active");
+assert(upgradedMidTrial.store === "stripe" && day1.store === null && legacy.store === null, "store is set only when paying");
+assert(access({ appMetadata: { iap_pro_until: "soon" } }).plan === "trial", "an unreadable Apple date is ignored");
+
 // Bad data never locks anyone out.
 assert(access({ createdAt: null }).plan === "free", "missing created_at is free");
 assert(access({ createdAt: "not a date" }).plan === "free", "unreadable created_at is free");
