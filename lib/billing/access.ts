@@ -35,6 +35,13 @@ export const TRIAL_AI_RECIPE_CAP = 20;
 export const FREE_RECIPE_LIMIT = 10;
 
 /**
+ * app_metadata key: until when an App Store subscription grants Pro (ISO).
+ * Written by lib/iap/revenuecat.ts from RevenueCat; it lapses by itself if a
+ * renewal is never reported.
+ */
+export const APPLE_PRO_UNTIL_KEY = "iap_pro_until";
+
+/**
  * Server errors once a trial has ended. They state the rule rather than say
  * "upgrade", because the iPhone app shows them too and can't sell Pro yet.
  */
@@ -64,6 +71,11 @@ export type Access = {
   recipeLimit: number | null;
   /** Comped through app_metadata rather than paying (no Stripe to manage). */
   comped: boolean;
+  /**
+   * Who bills a paying account: Stripe (bought on the website) or Apple
+   * (bought in the iPhone app). Each is managed where it was bought.
+   */
+  store: "stripe" | "apple" | null;
   /** When the current or last trial started and ends (ISO); null if there was none. */
   trialStartedAt: string | null;
   trialEndsAt: string | null;
@@ -127,9 +139,9 @@ function trial(start: number, now: number): Pick<Access, "trialStartedAt" | "tri
   };
 }
 
-const PRO = { hasPro: true, canPlan: true, canAddRecipes: true, recipeLimit: null } as const;
-const FREE = { hasPro: false, canPlan: true, canAddRecipes: true, recipeLimit: FREE_RECIPE_LIMIT } as const;
-const EXPIRED = { hasPro: false, canPlan: false, canAddRecipes: false, recipeLimit: 0 } as const;
+const PRO = { hasPro: true, canPlan: true, canAddRecipes: true, recipeLimit: null, store: null } as const;
+const FREE = { hasPro: false, canPlan: true, canAddRecipes: true, recipeLimit: FREE_RECIPE_LIMIT, store: null } as const;
+const EXPIRED = { hasPro: false, canPlan: false, canAddRecipes: false, recipeLimit: 0, store: null } as const;
 const NO_TRIAL = { trialStartedAt: null, trialEndsAt: null, trialDaysLeft: null, trialThen: null } as const;
 
 export function resolveAccess(input: AccessInput): Access {
@@ -151,14 +163,20 @@ export function resolveAccess(input: AccessInput): Access {
       : null
     : trial(Number.isFinite(confirmed) ? confirmed : created, now);
 
-  const paying = isProSubscriptionStatus(input.subscriptionStatus);
+  const stripe = isProSubscriptionStatus(input.subscriptionStatus);
+  const appleUntil = time(meta[APPLE_PRO_UNTIL_KEY]);
+  const apple = appleUntil > now;
+  const paying = stripe || apple;
   const comped = !paying && meta.comp_pro === true;
   if (paying || comped) {
-    const aiCapUntil = paying && window?.active ? window.trialEndsAt : null;
-    return { plan: "pro", ...PRO, comped, ...NO_TRIAL, canStartTrial: false, lapsed: false, aiCapUntil };
+    // Stripe holds a mid-trial upgrade's first charge until the trial ends, so
+    // the caps stay until then; Apple charges straight away.
+    const aiCapUntil = stripe && window?.active ? window.trialEndsAt : null;
+    const store = stripe ? "stripe" : apple ? "apple" : null;
+    return { plan: "pro", ...PRO, comped, store, ...NO_TRIAL, canStartTrial: false, lapsed: false, aiCapUntil };
   }
 
-  const lapsed = input.hadSubscription === true;
+  const lapsed = input.hadSubscription === true || Number.isFinite(appleUntil);
   if (!window) {
     return { plan: "free", ...FREE, comped: false, ...NO_TRIAL, canStartTrial: !lapsed, lapsed, aiCapUntil: null };
   }

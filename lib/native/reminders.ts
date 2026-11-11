@@ -4,6 +4,7 @@ import { getPlannedWeekStarts } from "@/app/(app)/planner/upcoming-actions";
 import type { PushPreferences } from "@/app/(app)/settings/push-actions";
 import { NATIVE_WEEKLY_BODY, REMINDER_PAYLOADS, TEST_REMINDER_PAYLOAD } from "@/lib/push/reminderPayloads";
 import { isNativeApp, OFFLINE_GROCERY_KEY } from "@/lib/native/bridge";
+import { signOutOfPurchases } from "@/lib/native/purchases";
 import {
   DAILY_REMINDER_HOUR,
   upcomingWeekStarts,
@@ -118,6 +119,7 @@ export async function clearNativeAccountData(): Promise<void> {
     turnOffNativeReminders(),
     Preferences.remove({ key: OFFLINE_GROCERY_KEY }),
     LocalNotifications.removeAllDeliveredNotifications(),
+    signOutOfPurchases(),
   ]);
 }
 

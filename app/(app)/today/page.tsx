@@ -12,7 +12,7 @@ import { getMealPlanEntries } from "@/lib/supabase/meal-plans";
 import { getProfile } from "@/lib/supabase/profile";
 import { createClient } from "@/lib/supabase/server";
 import { getAccess } from "@/lib/subscription";
-import { isNativeAppRequest } from "@/lib/native/server";
+import { nativeWithoutPurchases } from "@/lib/native/server";
 import { summariseWeek } from "@/lib/today/week-stats";
 import { getMonday, toLocalISO } from "@/lib/utils/dates";
 import { deriveNutritionTargets } from "@/lib/utils/nutrition-targets";
@@ -63,7 +63,7 @@ export default async function TodayPage({ searchParams }: Props) {
   }),
   searchParams,
   getAccess(),
-  isNativeAppRequest(),
+  nativeWithoutPurchases(),
  ]);
  const targets = deriveNutritionTargets(profile);
  const totals = sumTodayTotals(meals);

@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/supabase/profile";
 import { getAccess } from "@/lib/subscription";
-import { isNativeAppRequest } from "@/lib/native/server";
+import { nativeWithoutPurchases } from "@/lib/native/server";
 import { FirstRunWizard } from "@/components/onboarding/FirstRunWizard";
 import { clampFirstRunStep, FIRST_RUN_STEP } from "@/lib/onboarding/first-run";
 import { redirect } from "next/navigation";
@@ -26,7 +26,7 @@ export default async function OnboardingPage() {
     },
     access,
     native,
-  ] = await Promise.all([supabase.auth.getUser(), getAccess(), isNativeAppRequest()]);
+  ] = await Promise.all([supabase.auth.getUser(), getAccess(), nativeWithoutPurchases()]);
 
   let recipeCount = 0;
   let recipePreview: string[] = [];

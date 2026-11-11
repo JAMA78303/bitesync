@@ -14,7 +14,7 @@ const STATIC_LAST_CHANGED = {
   halal: "2026-10-28",
   signup: "2026-10-30",
   about: "2026-10-30",
-  privacy: "2026-09-27",
+  privacy: "2026-11-10",
   terms: "2026-10-30",
 } as const;
 

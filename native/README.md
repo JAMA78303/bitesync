@@ -39,3 +39,13 @@ The site calls these Capacitor plugins only when it runs inside the app (`lib/na
 - **Offline grocery list** (`@capacitor/preferences`): the last list opened is kept on the phone and shown by `offline.html`.
 
 `ios/App/App/PrivacyInfo.xcprivacy` declares the UserDefaults use that `@capacitor/preferences` needs. Adding a plugin is a native change: run `npx cap sync ios` and ship a new build.
+
+## In-app purchase and the App Store
+
+Apple doesn't allow Stripe checkout inside an iOS app, so in the app Pro is an App Store subscription sold through RevenueCat (`@revenuecat/purchases-capacitor`):
+
+- `lib/native/purchases.ts` and `components/settings/NativePaywall.tsx`: the paywall on `/billing` inside the app, with Apple's prices.
+- `lib/iap/revenuecat.ts`, `app/api/webhooks/revenuecat` and `app/(app)/billing/iap-actions.ts`: the server asks RevenueCat what an account has paid for and records it in the account's auth `app_metadata` (`iap_pro_until`), which `lib/billing/access.ts` reads. Stripe subscriptions are separate and unchanged.
+- It is off until `NEXT_PUBLIC_REVENUECAT_IOS_KEY` is set: until then the app shows no prices or upgrade links (`nativePurchasesEnabled` in `lib/native/app.ts`).
+
+`native/app-store.md` has the account steps, the listing text, the privacy answers and the upload commands.

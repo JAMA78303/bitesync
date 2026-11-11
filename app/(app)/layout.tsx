@@ -5,7 +5,7 @@ import { FeedbackFab } from "@/components/feedback/FeedbackFab";
 import { InstallPromptCapture } from "@/components/habit/InstallPromptCapture";
 import { NativeAppSync } from "@/components/native/NativeAppSync";
 import { getAccess } from "@/lib/subscription";
-import { isNativeAppRequest } from "@/lib/native/server";
+import { nativeWithoutPurchases } from "@/lib/native/server";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +28,7 @@ export default async function ProtectedLayout({
     },
     access,
     native,
-  ] = await Promise.all([supabase.auth.getUser(), getAccess(), isNativeAppRequest()]);
+  ] = await Promise.all([supabase.auth.getUser(), getAccess(), nativeWithoutPurchases()]);
   const initial = user?.email?.trim().charAt(0).toUpperCase() || "?";
 
   return (

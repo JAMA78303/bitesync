@@ -5,6 +5,8 @@ import { checkoutTrialEnd } from "@/lib/billing/access";
 import { reconcileBillingSubscriptionFromStripe } from "@/lib/stripe/reconcile-billing-subscription";
 import { BillingClient } from "@/components/settings/BillingClient";
 import { AppBillingNotice } from "@/components/settings/AppBillingNotice";
+import { NativePaywall } from "@/components/settings/NativePaywall";
+import { nativePurchasesEnabled } from "@/lib/native/app";
 import { isNativeAppRequest } from "@/lib/native/server";
 
 type Props = {
@@ -57,6 +59,19 @@ export default async function BillingPage({ searchParams }: Props) {
   const onTrial = plan === "trial" && access !== null;
 
   if (await isNativeAppRequest()) {
+    // In the app, Pro is an App Store subscription. Until that is set up
+    // (lib/native/app.ts), the page has nothing to buy and no prices.
+    if (user && nativePurchasesEnabled()) {
+      return (
+        <NativePaywall
+          userId={user.id}
+          plan={plan}
+          store={paying ? "stripe" : (access?.store ?? null)}
+          trialDaysLeft={onTrial ? access.trialDaysLeft : null}
+          lapsed={!paying && Boolean(access?.lapsed)}
+        />
+      );
+    }
     return <AppBillingNotice plan={plan} trialDaysLeft={onTrial ? access.trialDaysLeft : null} />;
   }
 
@@ -65,6 +80,7 @@ export default async function BillingPage({ searchParams }: Props) {
       plan={plan}
       paying={paying}
       comped={plan === "pro" && !paying && Boolean(access?.comped)}
+      billedByApple={plan === "pro" && !paying && access?.store === "apple"}
       hasStripeCustomer={hasStripeCustomer}
       trialDaysLeft={onTrial ? access.trialDaysLeft : null}
       trialEndsAt={access?.trialEndsAt ?? null}

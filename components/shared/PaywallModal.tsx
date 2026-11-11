@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import Link from "next/link";
 import { Lock, Loader2, Zap } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { createCheckoutSession } from "@/lib/stripe/actions";
 import { PRO_MONTHLY_PRICE } from "@/lib/stripe/pricing";
+import { nativePurchasesEnabled } from "@/lib/native/app";
 import { isNativeApp } from "@/lib/native/bridge";
+import { ds } from "@/lib/ui/classes";
 
 type Props = {
   open: boolean;
@@ -41,19 +44,29 @@ export function PaywallModal({ open, onClose, reason }: Props) {
           </div>
 
           <h2 className="mb-2 text-base font-semibold text-[var(--text-primary)]">
-            {native ? "Part of BiteSync Pro" : "Upgrade to BiteSync Pro"}
+            {native && !nativePurchasesEnabled() ? "Part of BiteSync Pro" : "Upgrade to BiteSync Pro"}
           </h2>
 
           <p className="mb-6 text-sm text-[var(--text-muted)]">
             {native
-              ? `${reason} Pro isn't available to buy in the app yet.`
+              ? nativePurchasesEnabled()
+                ? `${reason} Upgrade to Pro for unlimited access.`
+                : `${reason} Pro isn't available to buy in the app yet.`
               : `${reason} Upgrade to Pro for unlimited access.`}
           </p>
 
           {native ? (
-            <Button variant="ghost" onClick={onClose} className="w-full text-[var(--text-muted)]">
-              Close
-            </Button>
+            <div className="flex flex-col gap-2">
+              {/* In the app, Pro is an App Store subscription, sold on /billing. */}
+              {nativePurchasesEnabled() ? (
+                <Link href="/billing" onClick={onClose} className={`${ds.primaryBtn} flex w-full items-center justify-center`}>
+                  See BiteSync Pro
+                </Link>
+              ) : null}
+              <Button variant="ghost" onClick={onClose} className="w-full text-[var(--text-muted)]">
+                Close
+              </Button>
+            </div>
           ) : (
             <>
               <div className="flex flex-col gap-2">

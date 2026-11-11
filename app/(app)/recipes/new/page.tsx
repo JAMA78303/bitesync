@@ -4,7 +4,7 @@ import { RecipeLimitReached, RecipesTrialEnded } from "@/components/recipes/Reci
 import { getProfile } from "@/lib/supabase/profile";
 import { getDailyCalorieTarget, getDailyProteinTarget } from "@/lib/utils/nutrition-targets";
 import { canCreateRecipe, getAccess, getRecipeCount } from "@/lib/subscription";
-import { isNativeAppRequest } from "@/lib/native/server";
+import { nativeWithoutPurchases } from "@/lib/native/server";
 import { ds } from "@/lib/ui/classes";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +13,7 @@ export default async function NewRecipePage() {
  const [access, allowed, count] = await Promise.all([getAccess(), canCreateRecipe(), getRecipeCount()]);
 
  if (!allowed) {
- const native = await isNativeAppRequest();
+ const native = await nativeWithoutPurchases();
  return (
  <div className={`${ds.mobileGutter} py-4 md:py-0`}>
  <div className="mx-auto max-w-sm space-y-4 py-12">
