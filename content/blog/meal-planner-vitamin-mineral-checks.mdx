@@ -11,7 +11,7 @@ export const meta = {
 export const faq = [
   {
     q: "Is there a meal planner that checks vitamins and minerals?",
-    a: "Yes. BiteSync is a weekly meal planner that checks 12 vitamins and minerals across the week you've planned, against UK reference intakes for men and women. When you re-plan a week, it leans the new plan towards foods rich in whatever fell short. The check is part of BiteSync Pro, which every new account can try free for 7 days.",
+    a: "Yes. BiteSync is a weekly meal planner that checks 12 vitamins and minerals across the week you've planned, against UK reference intakes for your sex, and for iron your age. When you plan your next week, it leans the plan towards foods rich in whatever fell short. The check is part of BiteSync Pro, which every new account can try free for 7 days.",
   },
   {
     q: "Which vitamins and minerals does BiteSync check?",
@@ -31,7 +31,7 @@ export const faq = [
   },
   {
     q: "Do men and women get different vitamin and mineral targets in BiteSync?",
-    a: "Yes, where UK reference intakes differ. Women's iron reference is 14.8 mg a day against 8.7 mg for men, and zinc, magnesium, selenium and vitamin A also differ, as does the saturated fat limit.",
+    a: "Yes, where UK reference intakes differ. Women's iron reference is 14.8 mg a day until 50 and 8.7 mg from 50, the same as men's. Zinc, magnesium, selenium and vitamin A also differ by sex, as does the saturated fat limit.",
   },
   {
     q: "Is BiteSync's vitamin and mineral check free?",
@@ -43,7 +43,7 @@ export const faq = [
   },
 ];
 
-**Yes: BiteSync is a weekly meal planner that checks 12 vitamins and minerals across the whole week you've planned.** It compares the week's daily average with UK reference intakes, which differ for men and women, and flags anything low before you shop. When you re-plan the week, it leans the new plan towards foods rich in whatever fell short. The check is part of BiteSync Pro, and every new account gets 7 days of Pro free, with no card needed.
+**Yes: BiteSync is a weekly meal planner that checks 12 vitamins and minerals across the whole week you've planned.** It compares the week's daily average with UK reference intakes, which differ for men and women (and for iron, by age), and flags anything low before you shop. When you plan your next week, it leans the plan towards foods rich in whatever fell short. The check is part of BiteSync Pro, and every new account gets 7 days of Pro free, with no card needed.
 
 Plenty of apps show vitamins and minerals for a food or a logged day. What's rare is a planner that adds up the week you're about to eat, judges it against reference intakes for your sex, and changes the plan when something falls short. Of the apps we checked, BiteSync is the only one that describes all three.
 
@@ -53,7 +53,7 @@ Plenty of apps show vitamins and minerals for a food or a logged day. What's rar
 
 | App | Vitamins and minerals | Plans your week |
 | --- | --- | --- |
-| **BiteSync** | **12, judged across the planned week against reference intakes for your sex (Pro)** | **Yes; a re-planned week leans towards what fell short** |
+| **BiteSync** | **12, judged across the planned week against reference intakes for your sex and age (Pro)** | **Yes; your next plan leans towards what fell short** |
 | Cronometer | Up to 95 nutrients and other compounds, in what you've logged | No; Repeat Items (Gold) schedules chosen foods |
 | MyFitnessPal | Five: vitamins A and C, calcium, iron and potassium | Meal Planner on Premium+ only |
 | Eat This Much | Shown per food; extra targets only for fibre, sodium and cholesterol | Yes, to macros you set; a week at a time on Premium |
@@ -64,15 +64,15 @@ Plenty of apps show vitamins and minerals for a food or a logged day. What's rar
 
 1. **Plan the week.** Place meals yourself, or let Pro fill the week. Plan all seven days: the check divides the week's total by seven, so an empty day pulls every average down.
 2. **It works out what's in each meal.** Each ingredient is converted to grams and matched to a food composition table, and its vitamins and minerals are counted every time that recipe appears. Meals you mark as skipped on the Today screen drop out. If an ingredient has no vitamin and mineral data, BiteSync says how many are missing and treats the totals as a minimum, rather than counting the food as zero.
-3. **It compares the daily average with reference intakes for your sex.** The 12 are vitamins A, C, D and B12, folate, iron, calcium, zinc, magnesium, potassium, selenium and iodine, judged against UK reference nutrient intakes. Iron, zinc, magnesium, selenium and vitamin A differ for men and women. It also checks three limits: saturated fat (20 g a day for women, 30 g for men), salt (6 g) and free sugars (30 g, not counting whole fruit or the sugar in milk).
+3. **It compares the daily average with reference intakes for your sex and age.** The 12 are vitamins A, C, D and B12, folate, iron, calcium, zinc, magnesium, potassium, selenium and iodine, judged against UK reference nutrient intakes. Iron, zinc, magnesium, selenium and vitamin A differ for men and women, and iron also changes with age: women need 14.8 mg a day until 50, then 8.7 mg. It also checks three limits: saturated fat (20 g a day for women, 30 g for men), salt (6 g) and free sugars (30 g, not counting whole fruit or the sugar in milk).
 4. **It shows a traffic light.** Green is 90% or more of the reference, amber ("Almost there") is 70% to 90%, and red ("Low") is under 70%. A nutrient also turns amber if the week goes over a safe upper level. For the limits, amber starts at 80% and red at 100%. Results show on the planner and on the week's Nutrition page.
-5. **It helps you close the gap.** A "Low" card suggests foods rich in that nutrient (for iron: lentils, spinach and oats) and can draft a snack recipe aimed at it for you to check. When you re-plan the week, BiteSync first checks the meals already on that week, then favours recipes in your library that contain foods rich in whatever is low or almost there. A new, empty week has nothing to check yet, so it starts from a default list: vitamin D, iron, folate, vitamin C and calcium.
+5. **It helps you close the gap.** A "Low" card suggests foods rich in that nutrient (for iron: lentils, spinach and oats) and can draft a snack recipe aimed at it for you to check. When you plan a new week, BiteSync looks back at your last planned week and favours recipes in your library that contain foods rich in whatever was low or almost there, since most people cook much the same recipes week to week. When you re-plan a week, it checks that week's own meals instead. The planner tells you what it leaned towards. If you haven't planned a week in the last four, it starts from a default list: vitamin D, iron, folate, vitamin C and calcium.
 
 Calories and protein still come first: the lean decides between recipes that fit your numbers. It can only choose from recipes you have, so it narrows a gap rather than promising to close it.
 
 ## A worked example
 
-*This is an illustration, not a real person's week. We ran an example week for a woman through BiteSync's own nutrition code: 28 meals and snacks, averaging about 1,650 kcal and 96 g of protein a day.*
+*This is an illustration, not a real person's week. We ran an example week for a 34-year-old woman through BiteSync's own nutrition code: 28 meals and snacks, averaging about 1,650 kcal and 96 g of protein a day.*
 
 The week: a Greek yoghurt bowl with berries and granola every morning, an apple with peanut butter every afternoon, and lunches and dinners rotating cheese sandwiches, chicken with rice and broccoli, chicken pasta, beef chilli and a chicken and sweet potato traybake.
 
@@ -88,7 +88,7 @@ Then we made three swaps, using foods BiteSync leans towards for this week's gap
 
 *Daily averages across the week. The other seven were green in both weeks.*
 
-- **The same week can pass for one person and fall short for another.** Planned for a man, the first week's 8.3 mg of iron is 95% of his 8.7 mg reference: green. That's why the check needs your sex.
+- **The same week can pass for one person and fall short for another.** Planned for a man, the first week's 8.3 mg of iron is 95% of his 8.7 mg reference: green. That's why the check needs your sex, and for iron your age: from 50, her reference would also be 8.7 mg.
 - **Small swaps move some numbers a lot.** Potassium went from amber to green and iron from red to amber. Iron would need more.
 - **Vitamin D stays low on food alone.** The salmon dinners lifted it to 4.5 µg a day, still under half of 10 µg, because few foods contain much. In the UK, the NHS advises everyone to consider a daily supplement containing 10 micrograms of vitamin D in autumn and winter, as it's hard to get enough from food alone ([NHS: vitamin D](https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-d/)). BiteSync doesn't recommend supplements or doses beyond pointing you to that advice.
 - **Iodine barely moved.** It comes mainly from dairy, fish and eggs, and these swaps mostly traded one source for another, such as milk for yoghurt.
@@ -97,7 +97,7 @@ Then we made three swaps, using foods BiteSync leans towards for this week's gap
 
 The check compares the meals you planned with reference intakes. A low result is not a diagnosis of deficiency: it can't see food outside the plan, supplements, or how your body absorbs and stores nutrients. If you're worried about a nutrient, or have symptoms such as ongoing tiredness, speak to your GP.
 
-BiteSync uses UK reference intakes for adults, split by sex. They don't change for pregnancy, breastfeeding or age. The NHS says women aged 50 and over need 8.7 mg of iron a day rather than 14.8 mg (though women still having periods may need more), so an iron flag may overstate the gap after menopause ([NHS: iron](https://www.nhs.uk/conditions/vitamins-and-minerals/iron/)). If you're pregnant, breastfeeding, under 19 or have a condition that affects a nutrient, ask your GP or a dietitian which figures apply to you.
+BiteSync uses UK reference intakes for adults, split by sex, and for iron by age. Following the NHS, a woman's iron reference is 14.8 mg a day until 50 and 8.7 mg from 50, though women still having periods after 50 may need the higher figure ([NHS: iron](https://www.nhs.uk/conditions/vitamins-and-minerals/iron/)). The figures don't change for pregnancy or breastfeeding. If you're pregnant, breastfeeding, under 19 or have a condition that affects a nutrient, ask your GP or a dietitian which figures apply to you.
 
 BiteSync also sets calorie and protein targets. Speak to your GP or a dietitian before following a calorie target if you're pregnant or breastfeeding, are under 18, have or have had an eating disorder, have kidney disease, or take medicine for diabetes. BiteSync is for people aged 16 and over.
 
@@ -139,7 +139,7 @@ BiteSync is our app, so we're biased. Every BiteSync feature here is checked aga
 
 ## The verdict
 
-If you want a meal planner that checks your vitamins and minerals across the week, and does something about a shortfall, **choose BiteSync**. It judges 12 against reference intakes for your sex, shows what's low before you shop, and leans a re-planned week towards foods rich in what's short, alongside calorie and protein targets set for you and one grocery list. [Try it free for 7 days](/signup), no card needed.
+If you want a meal planner that checks your vitamins and minerals across the week, and does something about a shortfall, **choose BiteSync**. It judges 12 against reference intakes for your sex and age, shows what's low before you shop, and leans your next plan towards foods rich in what's short, alongside calorie and protein targets set for you and one grocery list. [Try it free for 7 days](/signup), no card needed.
 
 Want your calorie and protein targets first? Try the [free macro calculator](/macro-calculator), with no sign-up. For why the weekly view matters, read [which meal planners show micronutrient gaps](/blog/meal-planners-micronutrient-gaps). Weighing up a tracker? See [BiteSync vs Cronometer](/blog/bitesync-vs-cronometer). Planning from your own recipes? See [a meal planner for your own recipes and macros](/blog/meal-planner-own-recipes-macros).
 
