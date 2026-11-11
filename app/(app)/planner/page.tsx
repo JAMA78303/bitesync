@@ -142,7 +142,7 @@ export default async function PlannerPage({ searchParams }: Props) {
  if (access.hasPro && mealPlanId) {
  try {
  const sex = profile?.sex ==="female" ?"female" :"male";
- microAnalysis = await getWeeklyMicroAnalysis(mealPlanId, weekStartISO, sex);
+ microAnalysis = await getWeeklyMicroAnalysis(mealPlanId, weekStartISO, { sex, age: profile?.age });
  } catch (err) {
  console.error("Micro analysis failed:", err);
  }

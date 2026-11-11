@@ -51,7 +51,7 @@ export default async function NutritionPage({
  microAnalysis = await getWeeklyMicroAnalysis(
  mealPlan.id,
  weekStartISO,
- (profile?.sex as"male" |"female") ??"male",
+ { sex: profile?.sex === "female" ? "female" : "male", age: profile?.age },
  );
  } catch (err) {
  console.error("Micro analysis failed:", err);

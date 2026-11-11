@@ -70,6 +70,40 @@ export const UK_DRVS: Record<string, Record<Sex, DRVEntry>> = {
   },
 };
 
+/** Whose reference intakes to use. Age changes a few of them (AGE_RNIS); unknown age uses the adult figures above. */
+export type Person = { sex: Sex; age?: number | null };
+
+/**
+ * Where the UK reference intake changes with age: the RNI from each age up,
+ * in order. Iron: 14.8 mg for girls and women until 50, then 8.7 mg (NHS:
+ * "8.7mg a day for women aged 50 and over"); 11.3 mg for boys up to 18, then
+ * 8.7 mg for men.
+ */
+const AGE_RNIS: Partial<Record<string, Record<Sex, { fromAge: number; rni: number }[]>>> = {
+  iron_mg: {
+    male: [
+      { fromAge: 0, rni: 11.3 },
+      { fromAge: 19, rni: 8.7 },
+    ],
+    female: [
+      { fromAge: 0, rni: 14.8 },
+      { fromAge: 50, rni: 8.7 },
+    ],
+  },
+};
+
+/** The reference intake for one nutrient and person; undefined for an unknown nutrient. */
+export function drvFor(nutrientKey: string, who: Sex | Person): DRVEntry | undefined {
+  const { sex, age } = typeof who === "string" ? { sex: who, age: null } : who;
+  const base = UK_DRVS[nutrientKey]?.[sex];
+  const bands = AGE_RNIS[nutrientKey]?.[sex];
+  const years = Number(age);
+  if (!base || !bands || age == null || !Number.isFinite(years)) return base;
+  let rni = base.rni;
+  for (const band of bands) if (years >= band.fromAge) rni = band.rni;
+  return rni === base.rni ? base : { ...base, rni };
+}
+
 export const NUTRIENT_LABELS: Record<string, string> = {
   vitamin_a_mcg: "Vitamin A",
   vitamin_c_mg: "Vitamin C",
@@ -111,8 +145,8 @@ export type MicroCheckContext = {
   weeklyRetinolMcg?: number;
 };
 
-export function isUnderTarget(nutrientKey: string, weeklyTotal: number, sex: Sex): boolean {
-  const drv = UK_DRVS[nutrientKey]?.[sex];
+export function isUnderTarget(nutrientKey: string, weeklyTotal: number, who: Sex | Person): boolean {
+  const drv = drvFor(nutrientKey, who);
   if (!drv || drv.type === "limit" || drv.rni <= 0) return false;
   return dailyAverageFromWeekly(weeklyTotal) < drv.rni;
 }
@@ -120,10 +154,10 @@ export function isUnderTarget(nutrientKey: string, weeklyTotal: number, sex: Sex
 export function isAboveUpperLimit(
   nutrientKey: string,
   weeklyTotal: number,
-  sex: Sex,
+  who: Sex | Person,
   context?: MicroCheckContext,
 ): boolean {
-  const drv = UK_DRVS[nutrientKey]?.[sex];
+  const drv = drvFor(nutrientKey, who);
   if (!drv?.upper || drv.upper <= 0) return false;
   if (nutrientKey === "vitamin_a_mcg") {
     const retinolWeekly = context?.weeklyRetinolMcg ?? weeklyTotal;
@@ -135,10 +169,10 @@ export function isAboveUpperLimit(
 export function getTrafficLight(
   nutrientKey: string,
   weeklyTotal: number,
-  sex: Sex,
+  who: Sex | Person,
   context?: MicroCheckContext,
 ): TrafficLight {
-  const drv = UK_DRVS[nutrientKey]?.[sex];
+  const drv = drvFor(nutrientKey, who);
   if (!drv) return "green";
   const dailyAvg = dailyAverageFromWeekly(weeklyTotal);
 
@@ -154,17 +188,17 @@ export function getTrafficLight(
   if (pctRni < MICRO_HIT_GREEN_THRESHOLD) return "amber";
 
   // Target met — excess above a safe upper limit is a distinct amber, not deficiency red.
-  if (isAboveUpperLimit(nutrientKey, weeklyTotal, sex, context)) return "amber";
+  if (isAboveUpperLimit(nutrientKey, weeklyTotal, who, context)) return "amber";
   return "green";
 }
 
 export function getTrafficLightLabel(
   nutrientKey: string,
   weeklyTotal: number,
-  sex: Sex,
+  who: Sex | Person,
   context?: MicroCheckContext,
 ): string {
-  const drv = UK_DRVS[nutrientKey]?.[sex];
+  const drv = drvFor(nutrientKey, who);
   if (!drv) return "";
   const dailyAvg = dailyAverageFromWeekly(weeklyTotal);
 
@@ -175,7 +209,7 @@ export function getTrafficLightLabel(
 
   const pct = Math.round((dailyAvg / drv.rni) * 100);
   const base = `${pct}% of daily target`;
-  if (isAboveUpperLimit(nutrientKey, weeklyTotal, sex, context)) {
+  if (isAboveUpperLimit(nutrientKey, weeklyTotal, who, context)) {
     if (nutrientKey === "vitamin_a_mcg") {
       return `${base} · above retinol upper limit`;
     }

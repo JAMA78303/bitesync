@@ -5,6 +5,8 @@ import {
   getTrafficLightLabel,
   isAboveUpperLimit,
   isUnderTarget,
+  drvFor,
+  type Person,
   type Sex,
   type TrafficLight,
 } from "@/lib/nutrition/drv";
@@ -42,7 +44,8 @@ export type MicroAnalysis = {
 export async function getWeeklyMicroAnalysis(
   mealPlanId: string,
   weekStartISO: string,
-  sex: Sex,
+  /** Sex, plus age where known: some reference intakes change with age (iron for women from 50). */
+  who: Sex | Person,
 ): Promise<MicroAnalysis | null> {
   const supabase = await createClient();
 
@@ -101,12 +104,12 @@ export async function getWeeklyMicroAnalysis(
   const partial = coveredItems < totalItems;
 
   const results: NutrientResult[] = Object.keys(UK_DRVS).map((key) => {
-    const drv = UK_DRVS[key]![sex];
+    const drv = drvFor(key, who)!;
     const weeklyValue = Number(weeklyTotals[key as keyof typeof weeklyTotals] ?? 0);
-    const baseTraffic = getTrafficLight(key, weeklyValue, sex, microContext);
+    const baseTraffic = getTrafficLight(key, weeklyValue, who, microContext);
     const traffic: TrafficLight =
       partial && drv.type === "limit" && baseTraffic === "green" ? "amber" : baseTraffic;
-    const baseLabel = getTrafficLightLabel(key, weeklyValue, sex, microContext);
+    const baseLabel = getTrafficLightLabel(key, weeklyValue, who, microContext);
 
     return {
       key,
@@ -118,8 +121,8 @@ export async function getWeeklyMicroAnalysis(
       type: drv.type,
       traffic,
       pct_label: partial ? `${baseLabel} · partial data` : baseLabel,
-      under_target: isUnderTarget(key, weeklyValue, sex),
-      above_upper: isAboveUpperLimit(key, weeklyValue, sex, microContext),
+      under_target: isUnderTarget(key, weeklyValue, who),
+      above_upper: isAboveUpperLimit(key, weeklyValue, who, microContext),
       partial,
     };
   });
