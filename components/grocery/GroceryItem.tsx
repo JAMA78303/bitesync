@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useTransition } from "react";
 import { Check, Trash2 } from "lucide-react";
 import { formatGroceryItem } from "@/lib/grocery/storeUnits";
-import { deleteGroceryItem, toggleGroceryItem } from "@/lib/supabase/grocery-actions";
+import { deleteGroceryItem } from "@/lib/supabase/grocery-actions";
+import { useGroceryTicks } from "@/components/grocery/GroceryTicks";
 import { useToast } from "@/components/ui/use-toast";
 import { tapFeedback } from "@/lib/native/bridge";
 
@@ -12,43 +13,26 @@ type Props = {
  name: string;
  quantity: number;
  unit: string;
- is_checked: boolean;
  /** A row inside a list card (the grocery page) rather than a card of its own. */
  inList?: boolean;
 };
 
+/** One item. Ticked or not comes from GroceryTicksProvider, which also saves the tick. */
 export function GroceryItem({
  id,
  name,
  quantity,
  unit,
- is_checked,
  inList = false,
 }: Props) {
- const [checked, setChecked] = useState(is_checked);
+ const ticks = useGroceryTicks();
+ const checked = ticks.isChecked(id);
  const [isPending, startTransition] = useTransition();
- const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
  const { toast } = useToast();
 
  function handleToggle() {
- const newChecked = !checked;
- setChecked(newChecked);
+ ticks.toggle(id);
  tapFeedback();
-
- if (debounceRef.current) clearTimeout(debounceRef.current);
- debounceRef.current = setTimeout(() => {
- startTransition(async () => {
- const result = await toggleGroceryItem(id, newChecked);
- if (result &&"error" in result) {
- setChecked(!newChecked);
- toast({
- title:"Failed to save",
- description:"Check your connection and try again.",
- variant:"destructive",
- });
- }
- });
- }, 300);
  }
 
  function handleDelete() {

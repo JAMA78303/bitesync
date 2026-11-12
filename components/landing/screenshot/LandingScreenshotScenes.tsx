@@ -4,6 +4,7 @@ import { Link as LinkIcon } from "lucide-react";
 import { RecipeSlotCard } from "@/components/planner/RecipeSlotCard";
 import { GenerateAIWeekPlanButton } from "@/components/planner/GenerateAIWeekPlanButton";
 import { GroceryItem } from "@/components/grocery/GroceryItem";
+import { GroceryTicksProvider } from "@/components/grocery/GroceryTicks";
 import { MicronutrientPanel } from "@/components/planner/MicronutrientPanel";
 import { TodayDashboard } from "@/components/today/TodayDashboard";
 import { ScreenshotCrop } from "@/components/landing/screenshot/ScreenshotCrop";
@@ -239,6 +240,7 @@ export function SceneNutrition() {
 }
 
 export function SceneGrocery() {
+  const groceryItems = SCREENSHOT_GROCERY_ITEMS.slice(0, 4);
   return (
     <ScreenshotCrop id="grocery" label="BiteSync grocery list preview">
       <div className="flex h-full flex-col gap-2 overflow-hidden p-3">
@@ -246,9 +248,11 @@ export function SceneGrocery() {
           <p className="text-sm font-semibold">Grocery list</p>
           <p className="text-2xs text-[var(--text-on-brand-muted)]">Mon 12 – Sun 18 May · 5 items</p>
         </div>
-        {SCREENSHOT_GROCERY_ITEMS.slice(0, 4).map((item) => (
-          <GroceryItem key={item.id} {...item} />
-        ))}
+        <GroceryTicksProvider items={groceryItems}>
+          {groceryItems.map((item) => (
+            <GroceryItem key={item.id} {...item} />
+          ))}
+        </GroceryTicksProvider>
       </div>
     </ScreenshotCrop>
   );
