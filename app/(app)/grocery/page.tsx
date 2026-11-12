@@ -2,16 +2,14 @@ import { createClient } from "@/lib/supabase/server";
 import { getMonday, toLocalISO, formatWeekLabel } from "@/lib/utils/dates";
 import { formatGrocerySubtitle } from "@/lib/utils/grocery-display";
 import { getMealPlanIdForWeek, getGroceryItems } from "@/lib/supabase/grocery";
-import { LeftoverSuggestionsPanel } from "@/components/grocery/LeftoverSuggestionsPanel";
 import { GroceryHeader } from "@/components/grocery/GroceryHeader";
-import { GroceryItem } from "@/components/grocery/GroceryItem";
+import { GroceryChecklist, GroceryDoneBanner } from "@/components/grocery/GroceryChecklist";
+import { GroceryTicksProvider } from "@/components/grocery/GroceryTicks";
 import { GroceryEmptyState } from "@/components/grocery/GroceryEmptyState";
-import { GroceryDoneState } from "@/components/grocery/GroceryDoneState";
 import { ManualGroceryAdd } from "@/components/grocery/ManualGroceryAdd";
 import { GroceryListActions } from "@/components/grocery/GroceryListActions";
 import { MEAL_TYPES } from "@/types";
 import { ds } from "@/lib/ui/classes";
-import { groupByAisle } from "@/lib/grocery/aisles";
 import { groceryShareText } from "@/lib/grocery/shareText";
 import { WeeklyHabitCard } from "@/components/habit/WeeklyHabitCard";
 import { UpgradeCard } from "@/components/billing/UpgradeCard";
@@ -99,7 +97,6 @@ export default async function GroceryPage({ searchParams }: Props) {
  .not("recipe_id","is", null);
  const total = groceryItems.length;
  const checked = groceryItems.filter((item) => item.is_checked).length;
- const allDone = total > 0 && checked === total;
  const filledDays = Array.from(new Set((entries ?? []).map((entry) => entry.day_of_week))).sort((a, b) => a - b);
  const mealTypeSet = new Set((entries ?? []).map((entry) => entry.meal_type));
  const filledMealTypes = MEAL_TYPES.filter((mealType) => mealTypeSet.has(mealType));
@@ -129,70 +126,18 @@ export default async function GroceryPage({ searchParams }: Props) {
  );
  }
 
- const uncheckedItems = groceryItems.filter((item) => !item.is_checked);
- const checkedItems = groceryItems.filter((item) => item.is_checked);
-
+ // Ticks show from the page's own state (GroceryTicksProvider), not this
+ // render: the server's copy only catches up seconds after each tick.
  return (
+ <GroceryTicksProvider items={groceryItems}>
  <div className={`${ds.mobilePage} ${ds.pageContent}`}>
  <GroceryHeader subtitle={subtitle} total={total} checked={checked} actions={headerActions} />
- {allDone ? (
- <div className={`mb-3 ${ds.mobileGutter}`}>
- <GroceryDoneState />
- </div>
- ) : null}
+ <GroceryDoneBanner />
  <div className={`${ds.mobileGutter} ${ds.overlap} space-y-2`}>
  {/* The moment someone has just planned their first week is when a
  reminder for the next one makes most sense. */}
  {params.welcome === "1" ? <WeeklyHabitCard placement="welcome" /> : null}
- {uncheckedItems.length > 0 ? (
- <div className={`${ds.card} overflow-hidden`}>
- {/* Grouped by food group, which is also roughly how a supermarket is laid out. */}
- {groupByAisle(uncheckedItems).map((group) => (
- <section key={group.id} aria-label={group.label} className="border-t border-[var(--border-subtle)] first:border-t-0">
- <h2 className="flex items-baseline justify-between px-4 pb-1.5 pt-4 font-display text-[11px] font-extrabold uppercase tracking-[0.1em] text-[var(--brand-primary)] md:px-5">
- {group.label}
- <span className="font-sans text-[11px] font-semibold normal-case tracking-normal text-[var(--text-muted)]">
- {group.items.length} {group.items.length === 1 ? "item" : "items"}
- </span>
- </h2>
- <div className="divide-y divide-[var(--border-subtle)]">
- {group.items.map((item) => (
- <GroceryItem
- key={item.id}
- id={item.id}
- name={item.name}
- quantity={item.quantity}
- unit={item.unit}
- is_checked={false}
- inList
- />
- ))}
- </div>
- </section>
- ))}
- </div>
- ) : null}
- {checkedItems.length > 0 ? (
- <>
- <div className={`${ds.card} mt-4 divide-y divide-[var(--border-subtle)] overflow-hidden`}>
- <p className="px-4 pb-2 pt-4 font-display text-[11px] font-extrabold uppercase tracking-[0.1em] text-[var(--text-muted)] md:px-5">
- In your basket ({checkedItems.length})
- </p>
- {checkedItems.map((item) => (
- <GroceryItem
- key={item.id}
- id={item.id}
- name={item.name}
- quantity={item.quantity}
- unit={item.unit}
- is_checked={true}
- inList
- />
- ))}
- </div>
-            <LeftoverSuggestionsPanel mealPlanId={mealPlanId} checkedCount={checkedItems.length} />
- </>
- ) : null}
+ <GroceryChecklist items={groceryItems} mealPlanId={mealPlanId} />
  {mealPlanId ? (
  <div className="pt-4">
  <ManualGroceryAdd mealPlanId={mealPlanId} />
@@ -200,5 +145,6 @@ export default async function GroceryPage({ searchParams }: Props) {
  ) : null}
  </div>
  </div>
+ </GroceryTicksProvider>
  );
 }

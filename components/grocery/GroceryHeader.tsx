@@ -1,15 +1,20 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { GroceryPantrySwitch } from "@/components/grocery/GroceryPantrySwitch";
+import { useGroceryCounts } from "@/components/grocery/GroceryTicks";
 import { ds } from "@/lib/ui/classes";
 
 type Props = {
  subtitle: string;
+ /** The server's counts. Above a list, the ticks made on the page replace them. */
  total: number;
  checked: number;
  actions?: ReactNode;
 };
 
-export function GroceryHeader({ subtitle, total, checked, actions }: Props) {
+export function GroceryHeader({ subtitle, actions, ...counts }: Props) {
+ const { checked, total } = useGroceryCounts(counts);
  const pct = total > 0 ? (checked / total) * 100 : 0;
 
  return (

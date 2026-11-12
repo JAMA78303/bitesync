@@ -236,6 +236,9 @@ export async function toggleGroceryItem(item_id: string, is_checked: boolean) {
   const supabase = await createClient();
   const { error } = await supabase.from("grocery_items").update({ is_checked }).eq("id", item_id);
   if (error) return { error: toUserFacingError(error, "grocery", "groceryDb") };
+  // The page shows the tick itself (GroceryTicksProvider). This refresh keeps
+  // what it doesn't show live up to date: the share text, the iPhone app's
+  // offline copy, and the page a back button returns to.
   revalidatePath("/grocery");
   return { success: true };
 }
