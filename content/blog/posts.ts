@@ -49,6 +49,7 @@ export const POST_SLUGS = [
   "eat-this-much-alternatives",
   "meal-planner-vitamin-mineral-checks",
   "meal-planner-own-recipes-macros",
+  "how-much-fibre-do-you-need",
 ] as const;
 
 export type PostSlug = (typeof POST_SLUGS)[number];
