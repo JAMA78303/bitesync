@@ -15,6 +15,8 @@ import {
  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { deleteGroceryList } from "@/lib/supabase/grocery-actions";
+import { useGroceryTicks } from "@/components/grocery/GroceryTicks";
+import { groceryShareText } from "@/lib/grocery/shareText";
 import { clearOfflineGroceryList, isNativeApp, saveOfflineGroceryList, shareNative } from "@/lib/native/bridge";
 import { getMonday, toLocalISO } from "@/lib/utils/dates";
 import type { MealType } from "@/types";
@@ -25,10 +27,10 @@ type Props = {
  weekStart: string;
  filledDays: number[];
  filledMealTypes: MealType[];
- /** Plain-text list of what's still to buy; no Share button when there's nothing. */
- shareText?: string | null;
- /** Items on the list, ticked or not; 0 means there's no list to keep offline. */
- itemCount?: number;
+ /** The list, ticked or not. Share and the offline copy use what's still to buy. */
+ items: { id: string; name: string; quantity: number; unit: string; is_checked: boolean }[];
+ /** The week, as the share text's second line. */
+ weekLabel: string;
  /**
   * Making a list from the plan (Edit list). False once a 7-day trial has
   * ended (lib/billing/access.ts: canPlan); sharing and deleting stay.
@@ -41,8 +43,8 @@ export function GroceryListActions({
  weekStart,
  filledDays,
  filledMealTypes,
- shareText,
- itemCount = 0,
+ items,
+ weekLabel,
  canGenerate = true,
 }: Props) {
  const [showSelector, setShowSelector] = useState(false);
@@ -50,6 +52,12 @@ export function GroceryListActions({
  const [isPending, startTransition] = useTransition();
  const { toast } = useToast();
  const router = useRouter();
+ const { isChecked } = useGroceryTicks();
+
+ // What's still to buy as ticked on the page; no Share button when there's nothing.
+ const toBuy = items.filter((item) => !isChecked(item.id));
+ const shareText = toBuy.length ? groceryShareText(weekLabel, toBuy) : null;
+ const itemCount = items.length;
 
  // In the iPhone app, keep the latest list on the phone for the offline page
  // (native/www/offline.html), so it still opens in a shop with no signal.
