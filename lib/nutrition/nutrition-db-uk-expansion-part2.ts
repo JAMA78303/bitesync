@@ -118,16 +118,19 @@ const ROWS: TupleRow[] = [
     156,
     1.2000000000000002
   ],
+  // Plain wholegrain rice cakes, UK label (Kallo lightly salted: 394 kcal, 8.5 g
+  // protein, 82.3 g carbs, 2.7 g fat, 0.3 g salt; fibre ~3 g, which the energy
+  // reconciles to). Was 293 kcal with 13 g sugar and 791 mg sodium.
   [
     "rice cake",
-    293,
-    12,
-    47,
-    6,
-    6,
-    13,
-    791,
-    4.6
+    394,
+    8.5,
+    82.3,
+    2.7,
+    3.1,
+    0.5,
+    120,
+    0.7
   ],
   [
     "rice cakes salted",
@@ -2241,16 +2244,17 @@ const ROWS: TupleRow[] = [
     499,
     5.4
   ],
+  // CoFID 13-426 "Beansprouts, mung, raw". Was 525 kcal and 29 g fat.
   [
     "bean sprouts fresh",
-    525,
-    9,
-    56,
-    29,
+    31,
+    2.9,
+    4,
+    0.5,
+    1.5,
+    2.2,
     5,
-    30,
-    578,
-    12.8
+    0.1
   ],
   [
     "soy bean sprouts",

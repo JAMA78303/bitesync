@@ -163,6 +163,20 @@ export function lookupPieceWeightGramsPerUnit(rawName: string): number | null {
   return null;
 }
 
+/**
+ * A size used as the unit ("2 medium" eggs, "1 large" onion): one whole piece,
+ * scaled from the table's typical (medium) weight. Ratios follow UK egg sizes —
+ * small under 53 g, medium 53–63 g, large 63–73 g, very large over 73 g — around
+ * the 58 g medium egg in the piece table.
+ */
+const SIZE_UNIT_FACTORS: Record<string, number> = {
+  small: 0.85,
+  medium: 1,
+  large: 1.15,
+  "extra large": 1.3,
+  "very large": 1.3,
+};
+
 export function isPieceLikeUnit(unit: string): boolean {
   const u = unit.toLowerCase().trim();
   return ["piece", "pieces", "whole", "unit", "units", "each", "item", "items", ""].includes(u);
@@ -214,14 +228,16 @@ function resolveGrams(
     return quantity * 5;
   }
 
-  if (isPieceLikeUnit(u)) {
+  const sizeFactor = SIZE_UNIT_FACTORS[u.replace(/\s+/g, " ")];
+  if (isPieceLikeUnit(u) || sizeFactor != null) {
+    const factor = sizeFactor ?? 1;
     if (name) {
       const tableG = lookupPieceWeightGramsPerUnit(name);
-      if (tableG != null) return quantity * tableG;
+      if (tableG != null) return quantity * tableG * factor;
     }
     const typical = nutritionEntry?.typical_piece_g;
     if (typical != null && typical > 0) {
-      return quantity * typical;
+      return quantity * typical * factor;
     }
     return null;
   }

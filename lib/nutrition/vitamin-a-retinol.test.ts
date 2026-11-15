@@ -51,11 +51,12 @@ assert(
   "retinol excess label is explicit",
 );
 
-// Iron: 237% of RNI (~20.6 mg/day) exceeds UK 17 mg upper — flag is correct
+// Iron: 237% of RNI (~20.6 mg/day) from food. The UK 17 mg is a supplement
+// level, so food iron is not flagged.
 const ironWeekly = 20.6 * 7;
 assert(
-  isAboveUpperLimit("iron_mg", ironWeekly, "male") === true,
-  "iron above 17 mg/day UK upper still flags",
+  isAboveUpperLimit("iron_mg", ironWeekly, "male") === false,
+  "iron from food is not compared with the 17 mg supplement level",
 );
 
 console.log("vitamin-a-retinol.test.ts: all assertions passed");

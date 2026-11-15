@@ -2,11 +2,39 @@ export type Sex = "male" | "female";
 
 export type DRVEntry = {
   rni: number;
+  /**
+   * Upper level for TOTAL intake, food included. The weekly check compares the
+   * plan's food against this, so only levels set for total intake belong here.
+   */
   upper?: number;
+  /**
+   * Upper level the NHS/EVM give for supplements (or folic acid) only. Not
+   * compared with food: food at these levels is normal and safe. Kept so the
+   * figure isn't re-added as `upper` by mistake.
+   */
+  supplementUpper?: number;
   unit: string;
   type: "hit" | "limit" | "both";
 };
 
+// Where each upper level comes from, and why some are supplement-only:
+//   vitamin A 1,500 µg — NHS: from food and supplements (checked on preformed retinol).
+//   vitamin D 100 µg   — EFSA tolerable upper level, total intake.
+//   zinc 25 mg         — EFSA (SCF) tolerable upper level, total intake. The NHS
+//                        gives the same figure for supplements.
+//   calcium            — NHS "1,500mg or less a day of calcium supplements" is a
+//                        supplement level (EVM). The total-intake level is EFSA's
+//                        2,500 mg.
+//   selenium           — NHS "350µg or less a day of selenium supplements" is a
+//                        supplement level; the EVM safe upper level for total
+//                        intake is 450 µg.
+//   iron               — NHS "17mg or less a day of iron supplements" is the EVM
+//                        guidance level for supplements, on top of food. There is
+//                        no UK upper level for iron from food; a pulse-heavy week
+//                        (~18.6 mg/day) was being flagged "above upper limit".
+//   folate             — the 1,000 µg level (NHS, EFSA) is for folic acid from
+//                        supplements and fortified foods. Folate in food has no
+//                        upper level.
 export const UK_DRVS: Record<string, Record<Sex, DRVEntry>> = {
   vitamin_a_mcg: {
     male: { rni: 700, upper: 1500, unit: "mcg", type: "both" },
@@ -25,16 +53,16 @@ export const UK_DRVS: Record<string, Record<Sex, DRVEntry>> = {
     female: { rni: 1.5, unit: "mcg", type: "hit" },
   },
   folate_mcg: {
-    male: { rni: 200, upper: 1000, unit: "mcg", type: "both" },
-    female: { rni: 200, upper: 1000, unit: "mcg", type: "both" },
+    male: { rni: 200, supplementUpper: 1000, unit: "mcg", type: "hit" },
+    female: { rni: 200, supplementUpper: 1000, unit: "mcg", type: "hit" },
   },
   iron_mg: {
-    male: { rni: 8.7, upper: 17, unit: "mg", type: "both" },
-    female: { rni: 14.8, upper: 17, unit: "mg", type: "both" },
+    male: { rni: 8.7, supplementUpper: 17, unit: "mg", type: "hit" },
+    female: { rni: 14.8, supplementUpper: 17, unit: "mg", type: "hit" },
   },
   calcium_mg: {
-    male: { rni: 700, upper: 1500, unit: "mg", type: "both" },
-    female: { rni: 700, upper: 1500, unit: "mg", type: "both" },
+    male: { rni: 700, upper: 2500, supplementUpper: 1500, unit: "mg", type: "both" },
+    female: { rni: 700, upper: 2500, supplementUpper: 1500, unit: "mg", type: "both" },
   },
   zinc_mg: {
     male: { rni: 9.5, upper: 25, unit: "mg", type: "both" },
@@ -49,8 +77,8 @@ export const UK_DRVS: Record<string, Record<Sex, DRVEntry>> = {
     female: { rni: 3500, unit: "mg", type: "hit" },
   },
   selenium_mcg: {
-    male: { rni: 75, upper: 350, unit: "mcg", type: "both" },
-    female: { rni: 60, upper: 350, unit: "mcg", type: "both" },
+    male: { rni: 75, upper: 450, supplementUpper: 350, unit: "mcg", type: "both" },
+    female: { rni: 60, upper: 450, supplementUpper: 350, unit: "mcg", type: "both" },
   },
   iodine_mcg: {
     male: { rni: 140, unit: "mcg", type: "hit" },
@@ -151,6 +179,10 @@ export function isUnderTarget(nutrientKey: string, weeklyTotal: number, who: Sex
   return dailyAverageFromWeekly(weeklyTotal) < drv.rni;
 }
 
+/**
+ * True when the plan's food averages over an upper level set for total intake.
+ * Supplement-only levels (`supplementUpper`) are never compared with food.
+ */
 export function isAboveUpperLimit(
   nutrientKey: string,
   weeklyTotal: number,
