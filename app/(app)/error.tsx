@@ -4,10 +4,11 @@ import { BRANDED_ERROR_MESSAGE, BRANDED_ERROR_TITLE } from "@/lib/errors/userFac
 
 type ErrorPageProps = {
   error: Error & { digest?: string };
-  reset: () => void;
+  /** Fetches the page again. `reset` only re-renders what failed, e.g. a page cut off by a dropped connection. */
+  unstable_retry: () => void;
 };
 
-export default function AppError({ error, reset }: ErrorPageProps) {
+export default function AppError({ error, unstable_retry }: ErrorPageProps) {
   console.error("[AppError]", error);
 
   return (
@@ -24,7 +25,7 @@ export default function AppError({ error, reset }: ErrorPageProps) {
         )}
         <button
           type="button"
-          onClick={reset}
+          onClick={() => unstable_retry()}
           className="rounded-xl bg-[var(--btn-primary-bg)] px-5 py-2.5 text-sm font-semibold text-[var(--btn-primary-text)] hover:bg-[var(--btn-primary-hover)]"
         >
           Try again

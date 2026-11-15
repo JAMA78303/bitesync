@@ -4,11 +4,12 @@ import { BRANDED_ERROR_MESSAGE, BRANDED_ERROR_TITLE } from "@/lib/errors/userFac
 
 type ErrorPageProps = {
   error: Error & { digest?: string };
-  reset: () => void;
+  /** Fetches the page again. `reset` only re-renders what failed, e.g. a page cut off by a dropped connection. */
+  unstable_retry: () => void;
 };
 
 /** Route error boundary — renders inside the root layout (no html/body here). */
-export default function RouteError({ error, reset }: ErrorPageProps) {
+export default function RouteError({ error, unstable_retry }: ErrorPageProps) {
   console.error("[RouteError]", error);
 
   return (
@@ -25,7 +26,7 @@ export default function RouteError({ error, reset }: ErrorPageProps) {
         )}
         <button
           type="button"
-          onClick={reset}
+          onClick={() => unstable_retry()}
           className="rounded-xl bg-[var(--btn-primary-bg)] px-5 py-2.5 text-sm font-semibold text-[var(--btn-primary-text)] hover:bg-[var(--btn-primary-hover)]"
         >
           Try again

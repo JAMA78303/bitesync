@@ -10,7 +10,6 @@ import { ManualGroceryAdd } from "@/components/grocery/ManualGroceryAdd";
 import { GroceryListActions } from "@/components/grocery/GroceryListActions";
 import { MEAL_TYPES } from "@/types";
 import { ds } from "@/lib/ui/classes";
-import { groceryShareText } from "@/lib/grocery/shareText";
 import { WeeklyHabitCard } from "@/components/habit/WeeklyHabitCard";
 import { UpgradeCard } from "@/components/billing/UpgradeCard";
 import { getAccess } from "@/lib/subscription";
@@ -100,21 +99,21 @@ export default async function GroceryPage({ searchParams }: Props) {
  const filledDays = Array.from(new Set((entries ?? []).map((entry) => entry.day_of_week))).sort((a, b) => a - b);
  const mealTypeSet = new Set((entries ?? []).map((entry) => entry.meal_type));
  const filledMealTypes = MEAL_TYPES.filter((mealType) => mealTypeSet.has(mealType));
- const toBuy = groceryItems.filter((item) => !item.is_checked);
  const headerActions = (
  <GroceryListActions
  mealPlanId={mealPlanId}
  weekStart={weekStartISO}
  filledDays={filledDays}
  filledMealTypes={filledMealTypes}
- shareText={toBuy.length ? groceryShareText(subtitle, toBuy) : null}
- itemCount={total}
+ items={groceryItems}
+ weekLabel={subtitle}
  canGenerate={canGenerate}
  />
  );
 
  if (total === 0) {
  return (
+ <GroceryTicksProvider items={groceryItems}>
  <div className={`${ds.mobilePage} ${ds.pageContent}`}>
  {/* With no list and no way to make one, Delete list is all that would be left. */}
  <GroceryHeader subtitle={subtitle} total={0} checked={0} actions={canGenerate ? headerActions : undefined} />
@@ -123,11 +122,12 @@ export default async function GroceryPage({ searchParams }: Props) {
  <ManualGroceryAdd mealPlanId={mealPlanId} />
  </div>
  </div>
+ </GroceryTicksProvider>
  );
  }
 
  // Ticks show from the page's own state (GroceryTicksProvider), not this
- // render: the server's copy only catches up seconds after each tick.
+ // render: a tick saves without re-rendering the page.
  return (
  <GroceryTicksProvider items={groceryItems}>
  <div className={`${ds.mobilePage} ${ds.pageContent}`}>
