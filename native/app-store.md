@@ -1,14 +1,14 @@
 # Getting BiteSync into the App Store
 
 Where things stand, what's left, and the text to paste into App Store Connect.
-Last updated 11 November 2026.
+Last updated 15 November 2026.
 
 ## Where things stand
 
 | | Status |
 |---|---|
 | iPhone app (Capacitor shell, reminders, share sheet, offline grocery list) | Done, live since 28 Oct |
-| Signing, archive, upload from this Mac | Works. Build 1.0 (1) uploaded 11 Nov |
+| Signing, archive, upload from this Mac | Works. Build 1.0 (1) uploaded 11 Nov; 1.0 (2) uploaded 15 Nov: loading screen while the app opens (#135). Submit build 2 for review |
 | In-app account deletion (Apple requires it) | Done |
 | Privacy manifest | Done |
 | In-app purchase for Pro (Apple requires it) | Done. Sandbox test on 11 Nov: bought, Pro unlocked, lapsed, Restore found nothing as expected |
