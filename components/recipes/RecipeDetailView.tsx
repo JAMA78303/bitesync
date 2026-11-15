@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { CookingMode } from "@/components/recipes/CookingMode";
 import { MealThumbnail } from "@/components/ui/MealThumbnail";
-import { parseRecipeSteps } from "@/lib/recipes/parseRecipeSteps";
+import { parseRecipeSteps, recipeIntroFromDescription } from "@/lib/recipes/parseRecipeSteps";
 import { getDietTag } from "@/lib/ui/dietTags";
 import { formatIngredientWeightSuffix } from "@/lib/nutrition/convert";
 import { isCookedWeightStaple } from "@/lib/recipes/cookedWeight";
@@ -69,6 +69,18 @@ export function RecipeDetailView({
    : [];
   return fromColumn.length ? fromColumn : parseRecipeSteps(recipe.description);
  }, [recipe.method_steps, recipe.description]);
+ // Generated recipes keep their method at the end of the description
+ // ("…\n\nMethod\n1. …"). Shown in one paragraph it ran together, so the intro
+ // stands alone and the steps get their own numbered list under the ingredients.
+ const intro = useMemo(
+  () =>
+   recipeIntroFromDescription(recipe.description)
+    .split("\n")
+    .filter((line) => !/^\d+[.)]\s/.test(line.trim()))
+    .join("\n")
+    .trim(),
+  [recipe.description],
+ );
 
  const kcal = nutrition?.calories ?? 0;
  const protein = nutrition?.protein_g ?? 0;
@@ -120,8 +132,8 @@ export function RecipeDetailView({
  </div>
 
  <div className="p-5 md:p-7">
- {recipe.description ? (
- <p className="mb-5 text-sm leading-relaxed text-[var(--text-secondary)]">{recipe.description}</p>
+ {intro ? (
+ <p className="mb-5 whitespace-pre-line text-sm leading-relaxed text-[var(--text-secondary)]">{intro}</p>
  ) : null}
 
  <div className="mb-6 grid grid-cols-4 gap-2">
@@ -203,6 +215,22 @@ export function RecipeDetailView({
  })
  )}
  </div>
+
+ {methodSteps.length ? (
+ <>
+ <span className={`${ds.sectionKicker} mt-6`}>METHOD</span>
+ <ol className="mt-2 space-y-3">
+ {methodSteps.map((step, i) => (
+ <li key={i} className="flex gap-3 text-sm leading-relaxed text-[var(--text-secondary)]">
+ <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--surface-brand-subtle)] font-display text-xs font-extrabold text-[var(--brand-primary)]">
+ {i + 1}
+ </span>
+ <span className="pt-0.5">{step}</span>
+ </li>
+ ))}
+ </ol>
+ </>
+ ) : null}
  </div>
  </article>
 
