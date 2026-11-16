@@ -1,17 +1,43 @@
 "use client";
 
-import { track } from "@vercel/analytics";
+import type { AppEventName, AppEventProps } from "@/lib/analytics/appEvents";
+
+/**
+ * Product events, stored in our own app_events table through /api/events and
+ * shown at /admin/events.
+ *
+ * These used to go to Vercel Analytics with track(), but Vercel only records
+ * custom events on its paid plans, so on the free plan every one of them was
+ * dropped. Page views still go to Vercel (the <Analytics /> in app/layout.tsx).
+ *
+ * keepalive lets an event fired just before a navigation (an upgrade click, a
+ * finished first run) still arrive. Failures are ignored: analytics must never
+ * break or slow the screen that sent it.
+ */
+export function sendAppEvent(name: AppEventName, props: AppEventProps = {}): void {
+  if (typeof window === "undefined") return;
+  try {
+    void fetch("/api/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, props }),
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    // Old browsers without keepalive, or a blocked request: drop the event.
+  }
+}
 
 export function trackFirstRunCompleted() {
-  track("first_run_completed");
+  sendAppEvent("first_run_completed");
 }
 
 export function trackWeekGenerated(source: "ai" | "heuristic" | "manual") {
-  track("week_generated", { source });
+  sendAppEvent("week_generated", { source });
 }
 
 export function trackFirstRunSkipped(step: number) {
-  track("first_run_skipped", { step: String(step) });
+  sendAppEvent("first_run_skipped", { step: String(step) });
 }
 
 /**
@@ -21,20 +47,20 @@ export function trackFirstRunSkipped(step: number) {
  * gap between step 1 views and step 2 views is the number that matters.
  */
 export function trackFirstRunStepViewed(step: number) {
-  track("first_run_step_viewed", { step: String(step) });
+  sendAppEvent("first_run_step_viewed", { step: String(step) });
 }
 
 /** Coming back each week: the reminder offer, add to home screen, one-tap planning. */
 export function trackReminderOffer(placement: "welcome" | "today", outcome: "on" | "not_now" | "failed") {
-  track("reminder_offer", { placement, outcome });
+  sendAppEvent("reminder_offer", { placement, outcome });
 }
 
 export function trackInstallOffer(placement: "welcome" | "today", outcome: string) {
-  track("install_offer", { placement, outcome });
+  sendAppEvent("install_offer", { placement, outcome });
 }
 
 export function trackUpcomingWeekPlanned(trigger: "card" | "reminder") {
-  track("upcoming_week_planned", { trigger });
+  sendAppEvent("upcoming_week_planned", { trigger });
 }
 
 /**
@@ -42,9 +68,9 @@ export function trackUpcomingWeekPlanned(trigger: "card" | "reminder") {
  * saw and pressed an upgrade prompt. Trial-to-paid itself comes from Stripe.
  */
 export function trackTrialStarted(source: "signup" | "legacy_opt_in") {
-  track("trial_started", { source });
+  sendAppEvent("trial_started", { source });
 }
 
 export function trackUpgradePrompt(placement: string, action: "viewed" | "clicked") {
-  track("upgrade_prompt", { placement, action });
+  sendAppEvent("upgrade_prompt", { placement, action });
 }

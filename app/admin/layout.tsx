@@ -41,6 +41,9 @@ export default async function AdminLayout({
  <Link href="/admin/halal-waitlist" className="text-[var(--text-on-brand-muted)] hover:text-[var(--text-on-brand)]">
  Halal waitlist
  </Link>
+ <Link href="/admin/events" className="text-[var(--text-on-brand-muted)] hover:text-[var(--text-on-brand)]">
+ Events
+ </Link>
  <Link href="/planner" className="text-[var(--text-on-brand-muted)] hover:text-[var(--text-on-brand)]">
  ← App
  </Link>
