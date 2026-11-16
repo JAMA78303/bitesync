@@ -736,8 +736,8 @@ import { lookupNutrition } from "@/lib/nutrition/lookup";
     ["tagliatelle", "egg pasta"],
     ["egg spaghetti", "egg pasta"],
     // Not a bare shape: left to the rows that name them.
-    ["spaghetti hoops", "spaghetti hoops"],
-    ["cooked spaghetti", "cooked spaghetti"],
+    ["spaghetti hoops", "pasta spaghetti canned"],
+    ["cooked spaghetti", "boiled spaghetti"],
     ["fresh tagliatelle", "fresh tagliatelle"],
     ["spaghetti squash", "spaghetti squash"],
     ["macaroni cheese", "macaroni cheese"],

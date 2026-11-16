@@ -256,7 +256,7 @@ function rewriteWholeQuery(q: string): string {
  * still apply.
  */
 export function cofidSearchQuery(name: string): string {
-  return rewriteWholeQuery(normalizeCofidQuery(name));
+  return rewriteWholeQuery(rewriteNamesCofidLacks(normalizeCofidQuery(name)));
 }
 
 export function isPlainWaterQuery(name: string): boolean {
@@ -1124,6 +1124,7 @@ export function scoreCofidMatch(
   if (isPlantMilkMismatch(query, foodName)) return -Infinity;
   if (isDairyFreeMismatch(query, foodName)) return -Infinity;
   if (isDifferentFoodRow(query, foodName)) return -Infinity;
+  if (isWrongFormRow(query, foodName)) return -Infinity;
 
   // Chip/roast rows for a plain staple stay selectable (CoFID may offer nothing
   // else) but must lose to any boiled/plain sibling.
@@ -1377,4 +1378,83 @@ export function cofidQueryVariants(normalised: string): string[] {
     }
   }
   return [...variants];
+}
+
+// ---------------------------------------------------------------------------
+// Names CoFID has no row for, and rows in the wrong form (16 Nov 2026 audit).
+// ---------------------------------------------------------------------------
+
+/** Bird's eye and Thai chillies are small fresh chillies; CoFID has red and green. */
+const SMALL_CHILLI_PATTERN =
+  /^(?:(red|green) )?(?:thai |(?:thai )?birds?(?: s)? eye |bird )(?:(red|green) )?chill?(?:i|is|ies|es)$/;
+/** Butter with garlic or herbs beaten in. CoFID has none; it is nearly all butter. */
+const FLAVOURED_BUTTER_PATTERN =
+  /^(?:(?:wild )?garlic|herbs?|parsley|chives?)(?: (?:and )?(?:(?:wild )?garlic|herbs?|parsley|chives?))* butter$/;
+/** Plain cooked rice. CoFID calls it boiled. */
+const PLAIN_COOKED_RICE_PATTERN =
+  /^(?:cooked|boiled|steamed|leftover|leftover cooked|plain cooked|plain boiled)(?: white)?(?: long grain)? rice$/;
+const COOKED_PASTA_PREFIX_PATTERN = /^(?:cooked|boiled|leftover|leftover cooked) (.+)$/;
+/** Spaghetti in tomato sauce from a tin, by its shop names. */
+const TINNED_SPAGHETTI_PATTERN =
+  /^(?:canned )?(?:spaghetti hoops|alphabet spaghetti|spaghetti(?: hoops)? in tomato sauce|canned spaghetti|spaghetti canned)(?: canned)?$/;
+
+/**
+ * Whole names that found nothing in CoFID, or the wrong food, rewritten to
+ * the row for the same food. Applied to the whole name, before
+ * rewriteWholeQuery.
+ */
+function rewriteNamesCofidLacks(q: string): string {
+  // "bird's eye chilli" found no row and went to the AI estimate.
+  const chilli = q.match(SMALL_CHILLI_PATTERN);
+  if (chilli) return `${chilli[1] ?? chilli[2] ?? "red"} chilli`;
+  // "garlic butter" tied with "Garlic, raw": 98 kcal per 100 g, not about 700.
+  if (FLAVOURED_BUTTER_PATTERN.test(q)) return "butter";
+  // "cooked rice" matched "Rice, egg fried, ready cooked" because only rows
+  // that say "cooked" were fetched, and CoFID says "boiled".
+  if (PLAIN_COOKED_RICE_PATTERN.test(q)) return "boiled long grain rice";
+  // CoFID's "Pasta, spaghetti, canned, in tomato sauce" (72 kcal). "spaghetti
+  // hoops" found nothing and was costed as dry spaghetti.
+  if (TINNED_SPAGHETTI_PATTERN.test(q)) return "pasta spaghetti canned";
+  // "cooked penne" found no row, and the local table costs penne dry.
+  const cooked = q.match(COOKED_PASTA_PREFIX_PATTERN);
+  const shape = cooked?.[1].match(PASTA_SHAPE_QUERY_PATTERN);
+  if (shape && !/^(?:dried|dry|uncooked)$/.test(shape[1] ?? "")) {
+    if (/^(?:wholewheat|wholemeal|brown)$/.test(shape[1] ?? "")) return "boiled wholewheat pasta";
+    return shape[2] === "spaghetti" ? "boiled spaghetti" : "boiled pasta";
+  }
+  return q;
+}
+
+/**
+ * The row is the food in a form other than the one the name asks for, and
+ * the two forms differ several-fold per 100 g. Prep scoring only nudges
+ * between forms, so when CoFID has just the wrong one it was still taken:
+ *   "dried mango"        → "Mangoes, ripe, flesh only, raw"  48 kcal (dried ~320)
+ *   "cooked quinoa"      → "Quinoa, raw"                     309 kcal (cooked ~120)
+ *   "dried rice noodles" → "Noodles, rice, fine, dried, boiled…" 89 kcal (dry ~360)
+ * Rejecting the row sends the name on to the local table.
+ */
+export function isWrongFormRow(query: string, foodName: string): boolean {
+  const q = normalizeCofidQuery(query);
+  const f = normalizeForMatch(foodName);
+  const staple = DRY_GRAIN_QUERY_PATTERN.test(q) || STAPLE_PULSE_PATTERN.test(q);
+  if (/\b(?:dried|dehydrated)\b/.test(q)) {
+    // A fresh food's raw row, for a name that asks for the dried food.
+    if (/\braw\b/.test(f) && !/\b(?:dried|dehydrated|dry)\b/.test(f)) return true;
+    // A preserve, a tin or a dish made with it: with the fresh rows gone,
+    // "dried mango" took "Chutney, mango, sweet" and "sun dried tomatoes" took
+    // "Tomatoes, stuffed with rice".
+    const made = f.match(/\b(?:chutney|jam|pickle|juice|sauce|relish|conserve|marmalade|compote|canned|tinned|stewed|syrup|stuffed|with)\b/);
+    if (made && !q.includes(made[0])) return true;
+    // A boiled or canned staple, for a name that asks for it dried.
+    if (staple && isCookedStapleForm(f)) return true;
+  }
+  // A raw or dry staple, for a name that says it is cooked.
+  if (staple && COOKED_QUERY_PATTERN.test(q) && isRawDryStapleForm(f)) return true;
+  // Dried noodles are noodles: with the boiled row gone, "dried rice noodles"
+  // took "Rice, pilau, plain, homemade". Only for names that say dried, so
+  // "flat rice noodles" keeps a dry rice row rather than CoFID's only rice
+  // noodle row, which is boiled.
+  if (/\b(?:dried|dry)\b/.test(q) && /\bnoodles?\b/.test(q) && !/\bnoodles?\b/.test(f)) return true;
+  return false;
 }

@@ -592,71 +592,83 @@ const ROWS: TupleRow[] = [
     39,
     19
   ],
+  // CoFID 11-861 "Rice, white, long grain, raw": dry, as bought, like the bare name in a recipe.
+  // Was a cooked figure (130 kcal), so the recipe-form preview read low.
   [
     "white rice",
-    130,
-    2.7,
-    28,
-    0.3,
-    0.4,
-    0,
-    5,
-    0.1
+    355,
+    6.7,
+    85.1,
+    1,
+    1.1,
+    0.2,
+    1,
+    0.25
   ],
+  // CoFID 11-868 "Rice, brown, wholegrain, raw": dry, as bought, like the bare name in a recipe.
+  // Was a cooked figure (112 kcal), so the recipe-form preview read low.
   [
     "brown rice",
-    112,
-    2.6,
-    23,
-    0.9,
-    1.8,
+    333,
+    7.7,
+    77,
+    1.5,
+    3,
+    0.7,
     0,
-    5,
-    0.2
+    0.28
   ],
+  // CoFID 11-857 "Rice, white, basmati, raw": dry, as bought, like the bare name in a recipe.
+  // Was a cooked figure (121 kcal), so the recipe-form preview read low.
   [
     "basmati rice",
-    121,
-    2.5,
-    26,
-    0.4,
-    0.6,
-    0,
+    351,
+    8.1,
+    83.7,
+    0.5,
+    1.1,
+    0.1,
     1,
-    0.1
+    0.14
   ],
+  // CoFID 11-716 "Pasta, white, dried, raw": dry, as bought, like the bare name in a recipe.
+  // Was a cooked figure (131 kcal), so the recipe-form preview read low.
   [
     "spaghetti",
-    131,
-    5,
-    25,
-    1.1,
-    1.8,
-    0.6,
-    3,
-    0.2
+    343,
+    11.3,
+    75.6,
+    1.6,
+    3.7,
+    2.1,
+    2,
+    0.23
   ],
+  // CoFID 11-716 "Pasta, white, dried, raw": dry, as bought, like the bare name in a recipe.
+  // Was a cooked figure (131 kcal), so the recipe-form preview read low.
   [
     "penne",
-    131,
-    5,
-    25,
-    1.1,
-    1.8,
-    0.6,
-    3,
-    0.2
+    343,
+    11.3,
+    75.6,
+    1.6,
+    3.7,
+    2.1,
+    2,
+    0.23
   ],
+  // CoFID 11-718 "Pasta, wholewheat, spaghetti, dried, raw": dry, as bought, like the bare name in a recipe.
+  // Was a cooked figure (124 kcal), so the recipe-form preview read low.
   [
     "wholemeal pasta",
-    124,
-    5.3,
-    23,
-    0.9,
-    3.5,
-    0.5,
-    4,
-    0.2
+    329,
+    12.6,
+    68.3,
+    2.5,
+    11.7,
+    3.9,
+    3,
+    0.4
   ],
   [
     "white bread",
@@ -713,27 +725,31 @@ const ROWS: TupleRow[] = [
     5,
     0
   ],
+  // CoFID 11-904 "Wheat, bulgur, raw": dry, as bought, like the bare name in a recipe.
+  // Was a cooked figure (83 kcal), so the recipe-form preview read low.
   [
     "bulgur wheat",
-    83,
-    3.1,
-    18,
-    0.2,
-    4.5,
-    0.1,
+    352,
+    10.6,
+    77.8,
+    2,
+    6.7,
+    1.1,
     5,
-    0
+    0.28
   ],
+  // CoFID 11-719 "Noodles, egg, dried, raw": dry, as bought, like the bare name in a recipe.
+  // Was a cooked figure (138 kcal), so the recipe-form preview read low.
   [
     "noodles",
-    138,
-    4.5,
-    25,
-    2.1,
-    1.5,
-    0.5,
-    400,
-    0.5
+    338,
+    12,
+    72.6,
+    2,
+    3.9,
+    1.7,
+    500,
+    0.31
   ],
   [
     "rice noodles",

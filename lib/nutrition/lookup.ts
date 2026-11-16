@@ -19,9 +19,12 @@ const INGREDIENT_LOOKUP_ALIASES: Record<string, string> = {
   "ground cumin": "cumin",
   cumin: "cumin",
   tabasco: "hot sauce tabasco",
-  "red chilli": "chilli flakes",
-  chilli: "chilli flakes",
-  chili: "chilli flakes",
+  // A recipe's "1 red chilli" is the fresh pod. These went to "chilli flakes"
+  // (282 kcal per 100 g, dried) when there was no fresh row.
+  "red chilli": "fresh red chilli",
+  chilli: "fresh red chilli",
+  chili: "fresh red chilli",
+  "green chilli": "fresh green chilli",
   "mixed salad": "lettuce",
   "lime juiced": "lime",
   bulgur: "bulgur wheat",
@@ -29,7 +32,8 @@ const INGREDIENT_LOOKUP_ALIASES: Record<string, string> = {
   breadcrumbs: "bread",
   breadcrumb: "bread",
   "spaghetti or tagliatelle": "spaghetti",
-  tagliatelle: "spaghetti",
+  // Ribbon pasta is sold as egg pasta; "linguine egg" is CoFID 11-715, dried.
+  tagliatelle: "linguine egg",
   "chicken stock pot": "stock cube chicken",
   "stock pot": "stock cube chicken",
   "chopped tomatoes": "tomato",
@@ -74,6 +78,24 @@ const INGREDIENT_LOOKUP_ALIASES: Record<string, string> = {
   macaroni: "macaroni elbow",
   // 100% cashew butter is ground cashews; partial matching found dairy "butter".
   "cashew butter": "cashews",
+  // Partial matching found fresh "mango" (60 kcal per 100 g) and "egg".
+  "mango dried": "dried mango",
+  "dried mango slices": "dried mango",
+  "egg noodles": "noodles",
+  "dried egg noodles": "noodles",
+  // Partial matching finds "spaghetti" (dry, 343 kcal). Tinned spaghetti is
+  // CoFID 11-735, which the "spaghetti hoops tin" row carries.
+  "spaghetti hoops": "spaghetti hoops tin",
+  "alphabet spaghetti": "alphabet spaghetti tin",
+  "tinned spaghetti": "spaghetti hoops tin",
+  "canned spaghetti": "spaghetti hoops tin",
+  "spaghetti in tomato sauce": "spaghetti hoops tin",
+  // Sold cooked, ready for the wok. Partial matching finds "noodles", which is
+  // dry as bought.
+  udon: "cooked egg noodles",
+  "udon noodles": "cooked egg noodles",
+  "straight to wok noodles": "cooked egg noodles",
+  "ready to wok noodles": "cooked egg noodles",
 };
 
 /**
@@ -98,6 +120,50 @@ const WATER_ENTRY: NutritionLookupEntry = {
 /** "almond butter", "hazelnut butter": never dairy butter. */
 const NUT_BUTTER_PATTERN =
   /\b(cashew|almond|hazelnut|peanut|walnut|pistachio|brazil|macadamia|pecan|sunflower|pumpkin|sesame|nut|seed)s?\s+butter\b/;
+
+/**
+ * "cooked rice", "boiled basmati rice", "leftover penne": the cooked row for
+ * that staple. The bare names in the table are dry, as bought, so partial
+ * matching would cost cooked weight on a dry row, about 2.5 times too high.
+ * Most specific first.
+ */
+const COOKED_STAPLE_WORD = /\b(?:cooked|boiled|steamed|leftover|pre-?cooked|microwave)\b/;
+const NOT_A_PLAIN_STAPLE = /\b(?:rice (?:cakes?|pudding|paper|vinegar|milk|flour)|fried|salad|cheese|bake)\b/;
+const COOKED_STAPLE_ROWS: [RegExp, string][] = [
+  [/\brice noodles?\b/, "cooked rice noodles"],
+  [/\bnoodles?\b/, "cooked egg noodles"],
+  [/\b(?:wholewheat|wholemeal|brown)\b.*\b(?:pasta|spaghetti|penne|fusilli|macaroni)\b/, "cooked wholewheat pasta"],
+  [
+    /\b(?:pasta|spaghetti|spaghettini|penne|fusilli|macaroni|rigatoni|farfalle|conchiglie|linguine|orzo|tagliatelle|fettuccine|pappardelle)\b/,
+    "cooked pasta",
+  ],
+  [/\bbrown\b.*\brice\b/, "cooked brown rice"],
+  [/\bbasmati\b/, "cooked basmati rice"],
+  [/\brice\b/, "cooked rice"],
+  [/\bcouscous\b/, "cooked couscous"],
+  [/\bquinoa\b/, "cooked quinoa"],
+  [/\bbulgu?r\b/, "cooked bulgur wheat"],
+];
+
+function cookedStapleEntry(normalized: string): NutritionLookupEntry | null {
+  if (!COOKED_STAPLE_WORD.test(normalized) || NOT_A_PLAIN_STAPLE.test(normalized)) return null;
+  const row = COOKED_STAPLE_ROWS.find(([pattern]) => pattern.test(normalized))?.[1];
+  return row ? (NUTRITION_DB.find((item) => item.name === row) ?? null) : null;
+}
+
+/**
+ * Bird's eye and Thai chillies are small fresh chillies. No row or alias
+ * matched them, so the recipe-form preview counted nothing.
+ */
+const SMALL_FRESH_CHILLI =
+  /^(?:(red|green) )?(?:thai |(?:thai )?bird(?:['’]?s)? ?eye |birdseye )(?:(red|green) )?chill?(?:i|is|ies|es)$/;
+
+function smallFreshChilliEntry(normalized: string): NutritionLookupEntry | null {
+  const m = normalized.match(SMALL_FRESH_CHILLI);
+  if (!m) return null;
+  const colour = m[1] ?? m[2] ?? "red";
+  return NUTRITION_DB.find((item) => item.name === `fresh ${colour} chilli`) ?? null;
+}
 
 function resolveLookupName(name: string): string {
   const normalized = normalizeName(name);
@@ -167,6 +233,11 @@ export function lookupNutrition(name: string): NutritionLookupEntry | null {
     const canonicalExact = NUTRITION_DB.find((item) => normalizeName(item.name) === canonical);
     if (canonicalExact) return canonicalExact;
   }
+
+  const cooked = cookedStapleEntry(normalized);
+  if (cooked) return cooked;
+  const smallChilli = smallFreshChilliEntry(normalized);
+  if (smallChilli) return smallChilli;
 
   // Fallback matching for user-entered variations (e.g. "alfredo sauce", "grated parmesan")
   const nutButter = NUT_BUTTER_PATTERN.test(normalized);
