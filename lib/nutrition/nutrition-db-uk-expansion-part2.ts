@@ -30,38 +30,43 @@ function fromTuple(row: TupleRow): NutritionLookupEntry {
 }
 
 const ROWS: TupleRow[] = [
+  // CoFID 17-491 "Chocolate, plain". UK plain chocolate is dark chocolate. Was 420
+  // kcal and 10 g fat.
   [
     "dark chocolate",
-    420,
-    8,
-    69,
-    10,
+    510,
     5,
-    23,
-    299,
-    5.4
+    63.5,
+    28,
+    2.5,
+    62.6,
+    6,
+    16.8
   ],
+  // CoFID 17-648 "Chocolate, milk". Was 521 kcal and 25 g fat.
   [
     "milk chocolate",
-    521,
-    7,
+    519,
+    7.3,
     56,
-    25,
-    5,
-    30,
-    378,
-    12.8
+    31.1,
+    2.3,
+    56,
+    89,
+    18.71
   ],
+  // CoFID 17-091 "Chocolate, white". CoFID gives no fibre figure (0 here). Was 61
+  // kcal and 0.2 g fat.
   [
     "white chocolate",
-    61,
-    2.2,
-    7.5,
-    0.20000000000000018,
-    4.2,
-    10,
-    61,
-    1.2000000000000002
+    529,
+    8,
+    58.3,
+    30.9,
+    0,
+    58.3,
+    110,
+    18.4
   ],
   [
     "fruit nut chocolate",
@@ -187,27 +192,29 @@ const ROWS: TupleRow[] = [
     886,
     4.6
   ],
+  // CoFID 17-644 "Tortilla chips fried in sunflower oil". Was 184 kcal and 3 g fat.
   [
     "tortilla chips",
-    184,
-    15,
-    29,
-    3,
-    5,
-    15,
-    695,
-    2
+    504,
+    7.2,
+    60.8,
+    27.4,
+    5.9,
+    2.5,
+    636,
+    2.89
   ],
+  // CoFID 17-671 "Potato crisps, fried in sunflower oil". Was 419 kcal and 11 g fat.
   [
     "potato crisps",
-    419,
-    11,
-    74,
-    11,
-    4,
-    22,
-    584,
-    5.4
+    493,
+    6.2,
+    55.8,
+    28.8,
+    4.4,
+    0.9,
+    604,
+    2.48
   ],
   [
     "cheese crisps",
@@ -220,16 +227,17 @@ const ROWS: TupleRow[] = [
     663,
     12.8
   ],
+  // CoFID 11-1023 "Prawn crackers, takeaway". Was 60 kcal and 1.2 g fat.
   [
     "prawn crackers",
-    60,
-    0,
-    12.5,
-    1.2000000000000002,
-    3.2,
-    9,
-    346,
-    1.2000000000000002
+    570,
+    0.3,
+    58.2,
+    39,
+    0.9,
+    2.2,
+    767,
+    3.64
   ],
   [
     "onion bhaji",
@@ -374,27 +382,29 @@ const ROWS: TupleRow[] = [
     469,
     5.4
   ],
+  // CoFID 12-547 "Tzatziki". Was 515 kcal and 27 g fat.
   [
     "tzatziki",
-    515,
-    7,
-    56,
-    27,
+    76,
+    3.4,
+    3.4,
+    5.5,
+    0.3,
     3,
-    28,
-    548,
-    12.8
+    369,
+    3.58
   ],
+  // CoFID 17-797 "Guacamole, homemade". Was 55 kcal and 2.2 g fat.
   [
     "guacamole",
-    55,
+    128,
+    1.4,
     2.2,
-    7.5,
-    2.2,
-    2.2,
-    8,
-    231,
-    1.2000000000000002
+    12.7,
+    2.5,
+    1.3,
+    5,
+    2.67
   ],
   [
     "salsa dip",
@@ -418,16 +428,17 @@ const ROWS: TupleRow[] = [
     675,
     2
   ],
+  // CoFID 15-635 "Coleslaw, not low calorie, retail". Was 414 kcal and 10 g fat.
   [
     "coleslaw",
-    414,
-    7,
-    74,
-    10,
-    4,
-    26,
-    564,
-    5.4
+    173,
+    0.8,
+    6,
+    16.3,
+    1.2,
+    6,
+    296,
+    1.65
   ],
   [
     "potato salad",
@@ -451,16 +462,17 @@ const ROWS: TupleRow[] = [
     326,
     1.2000000000000002
   ],
+  // CoFID 12-936 "Quiche, Lorraine, shortcrust pastry, retail". Was 244 kcal and 8 g fat.
   [
     "quiche lorraine",
-    244,
-    12,
-    47,
-    8,
-    8,
-    19,
-    961,
-    4.6
+    269,
+    9.1,
+    19.7,
+    17.6,
+    1.3,
+    3.2,
+    339,
+    8.31
   ],
   [
     "spinach quiche",
@@ -660,38 +672,41 @@ const ROWS: TupleRow[] = [
     623,
     12.8
   ],
+  // CoFID 19-494 "Pie, Cottage/Shepherd's, reheated". Was 59 kcal and 0 g fat.
   [
     "shepherds pie",
-    59,
-    3.2,
-    12.5,
-    0,
-    3.2,
-    9,
-    306,
-    1.2000000000000002
+    111,
+    4.5,
+    11.9,
+    5.4,
+    1.2,
+    1.6,
+    240,
+    2.4
   ],
+  // CoFID 19-494 "Pie, Cottage/Shepherd's, reheated". Was 240 kcal and 7 g fat.
   [
     "cottage pie",
+    111,
+    4.5,
+    11.9,
+    5.4,
+    1.2,
+    1.6,
     240,
-    14,
-    47,
-    7,
-    8,
-    15,
-    941,
-    4.6
+    2.4
   ],
+  // CoFID 19-481 "Lasagne, homemade". Was 182 kcal and 6 g fat.
   [
     "beef lasagne",
-    182,
-    12,
-    24,
-    6,
-    2,
-    12,
-    750,
-    2
+    180,
+    9.6,
+    15.2,
+    9.6,
+    1,
+    2.8,
+    235,
+    4.18
   ],
   [
     "veg lasagne",
@@ -748,16 +763,17 @@ const ROWS: TupleRow[] = [
     445,
     2
   ],
+  // CoFID 12-580 "Pudding, rice, canned". Was 418 kcal and 12 g fat.
   [
     "rice pudding",
-    418,
-    7,
-    74,
-    12,
-    6,
-    24,
-    334,
-    5.4
+    85,
+    3.3,
+    16.1,
+    1.3,
+    0.1,
+    8.7,
+    43,
+    0.76
   ],
   [
     "semolina pudding",
@@ -770,16 +786,18 @@ const ROWS: TupleRow[] = [
     413,
     12.8
   ],
+  // CoFID 12-543 "Custard, ready to eat, canned and tetra-pak". Ready to eat. Was 53 kcal
+  // and 2.2 g fat.
   [
     "custard",
-    53,
-    1.2000000000000002,
-    12.5,
-    2.2,
-    1.2,
-    11,
-    96,
-    1.2000000000000002
+    98,
+    2.7,
+    16.3,
+    2.9,
+    0,
+    12.8,
+    41,
+    1.89
   ],
   [
     "instant custard",
@@ -869,16 +887,18 @@ const ROWS: TupleRow[] = [
     524,
     5.4
   ],
+  // CoFID 11-830 "Cake, chocolate, with filling and icing, retail". Was 527
+  // kcal and 23 g fat.
   [
     "chocolate cake slice",
-    527,
-    10,
-    61,
-    23,
-    4,
-    33,
-    603,
-    12.8
+    413,
+    4.5,
+    48.6,
+    23.7,
+    2.9,
+    36.6,
+    259,
+    9.46
   ],
   [
     "lemon drizzle",
@@ -924,16 +944,17 @@ const ROWS: TupleRow[] = [
     619,
     5.4
   ],
+  // CoFID 11-815 "Biscuits, cookies, chocolate chip, standard". Was 528 kcal and 28 g fat.
   [
     "cookie chocolate chip",
-    528,
-    9,
-    56,
-    28,
-    5,
+    471,
+    5.4,
+    60,
+    24.9,
+    3,
     30,
-    698,
-    12.8
+    298,
+    12.15
   ],
   [
     "cookie oatmeal",
@@ -946,16 +967,17 @@ const ROWS: TupleRow[] = [
     381,
     1.2000000000000002
   ],
+  // CoFID 11-1127 "Brownies, chocolate, homemade". Was 291 kcal and 4 g fat.
   [
     "brownie",
-    291,
-    9,
-    42,
-    4,
-    5,
-    16,
-    1016,
-    4.6
+    506,
+    6.2,
+    54.3,
+    30.8,
+    1.7,
+    46.1,
+    187,
+    16.43
   ],
   [
     "blondie",
@@ -1001,38 +1023,43 @@ const ROWS: TupleRow[] = [
     76,
     1.2000000000000002
   ],
+  // CoFID 11-989 "Crumpets, toasted". Toasted; CoFID has no untoasted row. Was 291
+  // kcal and 9 g fat.
   [
     "crumpet",
-    291,
-    14,
-    47,
-    9,
-    6,
-    13,
-    711,
-    4.6
+    207,
+    6.9,
+    45.4,
+    1,
+    3.1,
+    3.1,
+    1029,
+    0.1
   ],
+  // CoFID 11-541 "Muffins, English style, white". Was 184 kcal and 8 g fat.
   [
     "english muffin",
-    184,
-    12,
-    24,
-    8,
-    4,
+    223,
     10,
-    520,
-    2
+    44.2,
+    1.9,
+    2.6,
+    3.4,
+    431,
+    0.38
   ],
+  // CoFID 11-970 "Bagels, plain". CoFID gives no saturated fat figure (0 here). Was 417
+  // kcal and 9 g fat.
   [
     "bagel plain",
-    417,
-    8,
-    69,
-    9,
-    7,
-    25,
-    409,
-    5.4
+    273,
+    10,
+    57.8,
+    1.8,
+    3,
+    4.8,
+    400,
+    0
   ],
   [
     "bagel sesame",
@@ -1144,38 +1171,41 @@ const ROWS: TupleRow[] = [
     599,
     5.4
   ],
+  // CoFID 11-820 "Cream crackers". Was 521 kcal and 27 g fat.
   [
     "cream crackers",
-    521,
-    5,
-    56,
-    27,
-    5,
-    34,
-    678,
-    12.8
+    445,
+    8.9,
+    69.7,
+    16.4,
+    3.9,
+    1.5,
+    384,
+    7.38
   ],
+  // CoFID 11-826 "Breadsticks, plain". Was 57 kcal and 2.2 g fat.
   [
     "breadsticks",
-    57,
-    0.20000000000000018,
-    7.5,
-    2.2,
-    4.2,
-    14,
-    361,
-    1.2000000000000002
+    389,
+    10.9,
+    72.9,
+    8.1,
+    3.7,
+    3.3,
+    817,
+    6.01
   ],
+  // CoFID 11-826 "Breadsticks, plain". Was 292 kcal and 10 g fat.
   [
     "grissini",
-    292,
-    11,
-    42,
-    10,
-    5,
-    12,
-    996,
-    4.6
+    389,
+    10.9,
+    72.9,
+    8.1,
+    3.7,
+    3.3,
+    817,
+    6.01
   ],
   [
     "melba toast",
@@ -1188,16 +1218,17 @@ const ROWS: TupleRow[] = [
     805,
     2
   ],
+  // CoFID 11-822 "Crispbread, rye". Was 412 kcal and 10 g fat.
   [
     "ryvita",
-    412,
-    11,
-    74,
-    10,
-    6,
-    24,
-    294,
-    5.4
+    284,
+    8.6,
+    63.4,
+    1.4,
+    20,
+    3.4,
+    264,
+    0.16
   ],
   [
     "crackerbread",
@@ -1232,16 +1263,17 @@ const ROWS: TupleRow[] = [
     691,
     4.6
   ],
+  // CoFID 11-969 "Bread, ciabatta". Was 178 kcal and 7 g fat.
   [
     "ciabatta",
-    178,
-    14,
-    24,
-    7,
-    4,
-    14,
-    500,
-    2
+    271,
+    10.2,
+    52,
+    3.9,
+    3.3,
+    3.1,
+    350,
+    0.57
   ],
   [
     "focaccia",
@@ -1276,16 +1308,18 @@ const ROWS: TupleRow[] = [
     151,
     1.2000000000000002
   ],
+  // CoFID 11-1016 "Pizza base, raw". CoFID gives no saturated fat figure (0 here). Was 245
+  // kcal and 6 g fat.
   [
     "pizza base fresh",
-    245,
-    9,
-    42,
-    6,
-    7,
-    14,
-    786,
-    4.6
+    290,
+    7.8,
+    57.5,
+    4.8,
+    2.5,
+    3.4,
+    400,
+    0
   ],
   [
     "pizza dough ball",
@@ -1320,16 +1354,18 @@ const ROWS: TupleRow[] = [
     563,
     12.8
   ],
+  // CoFID 11-728 "Pasta, egg, fresh, filled with cheese only, boiled in unsalted water".
+  // Boiled; CoFID has no uncooked filled-pasta row. Was 60 kcal and 3.2 g fat.
   [
     "ravioli cheese",
-    60,
-    3.2,
-    12.5,
-    3.2,
-    3.2,
-    13,
-    246,
-    1.2000000000000002
+    216,
+    10.5,
+    30.2,
+    6.7,
+    2.2,
+    2.2,
+    242,
+    3.54
   ],
   [
     "ravioli mushroom",
@@ -1353,82 +1389,91 @@ const ROWS: TupleRow[] = [
     690,
     2
   ],
+  // CoFID 11-728 "Pasta, egg, fresh, filled with cheese only, boiled in unsalted water".
+  // Boiled; CoFID has no uncooked filled-pasta row. Was 423 kcal and 11 g fat.
   [
     "tortellini cheese",
-    423,
-    8,
-    69,
-    11,
-    5,
-    23,
-    579,
-    5.4
+    216,
+    10.5,
+    30.2,
+    6.7,
+    2.2,
+    2.2,
+    242,
+    3.54
   ],
+  // CoFID 11-726 "Pasta, egg, fresh, raw". Was 524 kcal and 26 g fat.
   [
     "tagliatelle fresh",
-    524,
-    7,
-    56,
-    26,
-    5,
-    30,
-    658,
-    12.8
+    282,
+    10.6,
+    57,
+    2.9,
+    3.3,
+    2.1,
+    24,
+    0.71
   ],
+  // CoFID 11-715 "Pasta, egg, white, dried, raw". Dry, as bought. Was 58 kcal
+  // and 1.2 g fat.
   [
     "linguine egg",
-    58,
-    2.2,
-    7.5,
-    1.2000000000000002,
-    4.2,
-    10,
-    341,
-    1.2000000000000002
+    365,
+    12.9,
+    74.8,
+    3.6,
+    3.9,
+    2.1,
+    51,
+    0.89
   ],
+  // CoFID 11-716 "Pasta, white, dried, raw". Dry, as bought. Was 294 kcal and 9 g fat.
   [
     "orzo pasta",
-    294,
-    13,
-    42,
-    9,
-    5,
-    16,
-    976,
-    4.6
+    343,
+    11.3,
+    75.6,
+    1.6,
+    3.7,
+    2.1,
+    2,
+    0.23
   ],
+  // CoFID 11-716 "Pasta, white, dried, raw". Dry, as bought. Was 184 kcal and 8 g fat.
   [
     "macaroni elbow",
-    184,
-    17,
-    29,
-    8,
-    3,
-    13,
-    785,
-    2
+    343,
+    11.3,
+    75.6,
+    1.6,
+    3.7,
+    2.1,
+    2,
+    0.23
   ],
+  // CoFID 11-716 "Pasta, white, dried, raw". Dry, as bought. Was 417 kcal and 9 g fat.
   [
     "tubes pasta",
-    417,
-    7,
-    74,
-    9,
-    6,
-    28,
-    674,
-    5.4
+    343,
+    11.3,
+    75.6,
+    1.6,
+    3.7,
+    2.1,
+    2,
+    0.23
   ],
+  // CoFID 11-716 "Pasta, white, dried, raw". Dry, as bought. Was 522 kcal and 24 g fat.
   [
     "stellette pasta",
-    522,
-    6,
-    61,
-    24,
-    6,
-    35,
-    353,
-    12.8
+    343,
+    11.3,
+    75.6,
+    1.6,
+    3.7,
+    2.1,
+    2,
+    0.23
   ],
   [
     "couscous giant",
@@ -1463,16 +1508,18 @@ const ROWS: TupleRow[] = [
     480,
     2
   ],
+  // CoFID 11-002 "Barley, pearl, raw". CoFID gives no fibre or saturated fat figure (0
+  // here). Was 418 kcal and 14 g fat.
   [
     "barley pearl",
-    418,
-    12,
-    69,
-    14,
-    7,
-    25,
-    369,
-    5.4
+    360,
+    7.9,
+    83.6,
+    1.7,
+    0,
+    0,
+    3,
+    0
   ],
   [
     "spelt grain",
@@ -1507,16 +1554,18 @@ const ROWS: TupleRow[] = [
     766,
     4.6
   ],
+  // CoFID 11-006 "Buckwheat, groats". CoFID gives no saturated fat figure (0 here). Was 186
+  // kcal and 4 g fat.
   [
     "buckwheat groats",
-    186,
-    15,
-    29,
-    4,
-    5,
-    15,
-    575,
-    2
+    364,
+    8.1,
+    84.9,
+    1.5,
+    2.1,
+    0.4,
+    1,
+    0
   ],
   [
     "wild rice blend",
@@ -1529,38 +1578,42 @@ const ROWS: TupleRow[] = [
     464,
     5.4
   ],
+  // CoFID 11-875 "Rice, Thai fragrant, boiled in unsalted water". Was 526
+  // kcal and 27 g fat.
   [
     "jasmine rice cooked",
-    526,
-    10,
-    61,
-    27,
+    133,
+    2.3,
+    32.1,
+    0.4,
+    0,
+    0,
     4,
-    29,
-    543,
-    12.8
+    0.09
   ],
+  // CoFID 11-878 "Rice, white, Italian Arborio risotto, raw". Was 58 kcal and 2.2 g fat.
   [
     "arborio rice",
-    58,
-    0,
-    12.5,
-    2.2,
-    3.2,
-    9,
-    226,
-    1.2000000000000002
+    354,
+    6.4,
+    85.2,
+    1,
+    1.4,
+    0.2,
+    1,
+    0.21
   ],
+  // CoFID 11-878 "Rice, white, Italian Arborio risotto, raw". Was 241 kcal and 10 g fat.
   [
     "risotto rice",
-    241,
-    10,
-    47,
-    10,
-    8,
-    15,
-    861,
-    4.6
+    354,
+    6.4,
+    85.2,
+    1,
+    1.4,
+    0.2,
+    1,
+    0.21
   ],
   [
     "paella rice",
@@ -1617,38 +1670,41 @@ const ROWS: TupleRow[] = [
     956,
     4.6
   ],
+  // CoFID 11-855 "Pastry, filo, retail, uncooked". Was 180 kcal and 7 g fat.
   [
     "fil pastry",
-    180,
-    13,
-    29,
-    7,
-    3,
-    9,
-    765,
-    2
+    278,
+    7.6,
+    58.9,
+    2.9,
+    3.4,
+    2.4,
+    350,
+    0.32
   ],
+  // CoFID 11-851 "Pastry, shortcrust, retail, uncooked". Was 423 kcal and 15 g fat.
   [
     "shortcrust pastry",
-    423,
-    9,
-    74,
-    15,
-    6,
-    24,
-    654,
-    5.4
+    453,
+    5.7,
+    39.4,
+    31.4,
+    3.4,
+    0.9,
+    224,
+    11.68
   ],
+  // CoFID 11-852 "Pastry, flaky/puff, retail, uncooked". Was 531 kcal and 23 g fat.
   [
     "puff pastry ready rolled",
-    531,
-    8,
-    61,
-    23,
-    6,
-    31,
-    733,
-    12.8
+    384,
+    5.3,
+    33.7,
+    26.2,
+    2.8,
+    1.5,
+    337,
+    12.56
   ],
   [
     "suet pastry",
@@ -1749,148 +1805,163 @@ const ROWS: TupleRow[] = [
     444,
     5.4
   ],
+  // CoFID 17-062 "Sugar, icing". Was 518 kcal and 26 g fat.
   [
     "icing sugar",
-    518,
-    6,
-    61,
-    26,
-    4,
-    33,
-    523,
-    12.8
+    393,
+    0,
+    104.9,
+    0,
+    0,
+    103.8,
+    12,
+    0
   ],
+  // CoFID 17-063 "Sugar, white". Caster sugar is white sugar. Was 58 kcal and 1.2 g fat.
   [
     "caster sugar",
-    58,
-    1.2000000000000002,
-    12.5,
-    1.2000000000000002,
-    3.2,
-    13,
-    206,
-    1.2000000000000002
+    394,
+    0,
+    105,
+    0,
+    0,
+    105,
+    5,
+    0
   ],
+  // CoFID 17-060 "Sugar, brown". Was 246 kcal and 9 g fat.
   [
     "brown sugar light",
-    246,
-    12,
-    47,
-    9,
-    8,
-    19,
-    841,
-    4.6
+    380,
+    0.1,
+    101.3,
+    0,
+    0,
+    101.3,
+    31,
+    0
   ],
+  // CoFID 17-060 "Sugar, brown". CoFID has one brown sugar row. Was 186 kcal and 8 g fat.
   [
     "brown sugar dark",
-    186,
-    16,
-    24,
-    8,
-    2,
-    8,
-    650,
-    2
+    380,
+    0.1,
+    101.3,
+    0,
+    0,
+    101.3,
+    31,
+    0
   ],
+  // CoFID 17-059 "Molasses". Was 414 kcal and 9 g fat.
   [
     "molasses",
-    414,
-    12,
-    69,
-    9,
-    5,
-    23,
-    539,
-    5.4
+    266,
+    0,
+    68.8,
+    0.1,
+    0,
+    59.4,
+    37,
+    0
   ],
+  // CoFID 17-065 "Syrup, golden". Was 519 kcal and 24 g fat.
   [
     "golden syrup",
-    519,
-    5,
-    56,
-    24,
-    5,
-    30,
-    618,
-    12.8
+    298,
+    0.3,
+    79,
+    0,
+    0,
+    79,
+    270,
+    0
   ],
+  // CoFID 17-826 "Treacle, black". Was 59 kcal and 0 g fat.
   [
     "black treacle",
-    59,
-    0.20000000000000018,
-    7.5,
+    257,
+    1.2,
+    67.2,
     0,
-    4.2,
-    10,
-    301,
-    1.2000000000000002
+    0,
+    66.8,
+    180,
+    0
   ],
+  // CoFID 17-073 "Jam, fruit with edible seeds". CoFID gives no fibre figure (0 here). Was
+  // 243 kcal and 7 g fat.
   [
     "jam strawberry",
-    243,
-    11,
-    42,
-    7,
-    5,
-    16,
-    936,
-    4.6
+    261,
+    0.6,
+    69,
+    0,
+    0,
+    69,
+    29,
+    0
   ],
+  // CoFID 17-073 "Jam, fruit with edible seeds". CoFID gives no fibre figure (0 here). Was
+  // 183 kcal and 6 g fat.
   [
     "jam raspberry",
-    183,
-    15,
+    261,
+    0.6,
+    69,
+    0,
+    0,
+    69,
     29,
-    6,
-    3,
-    13,
-    745,
-    2
+    0
   ],
+  // CoFID 17-078 "Marmalade". Was 415 kcal and 14 g fat.
   [
     "marmalade",
-    415,
-    11,
-    74,
-    14,
-    6,
-    28,
-    634,
-    5.4
+    261,
+    0.1,
+    69.5,
+    0,
+    0.5,
+    69.5,
+    64,
+    0
   ],
+  // CoFID 17-762 "Lemon curd". Was 517 kcal and 29 g fat.
   [
     "lemon curd",
-    517,
-    10,
-    61,
-    29,
-    6,
-    35,
-    713,
-    12.8
+    266,
+    0.6,
+    58.4,
+    4.9,
+    0.2,
+    52.5,
+    65,
+    1.52
   ],
+  // CoFID 17-659 "Chocolate spread". Was 66 kcal and 0 g fat.
   [
     "nutella style spread",
-    66,
-    0,
-    12.5,
-    0,
-    1.2,
-    7,
-    396,
-    1.2000000000000002
+    575,
+    3.3,
+    59.4,
+    37.7,
+    2,
+    59.4,
+    58,
+    8.13
   ],
+  // CoFID 14-892 "Peanut butter, smooth". CoFID has smooth only. Was 250 kcal and 5 g fat.
   [
     "peanut butter crunchy",
-    250,
-    10,
-    47,
-    5,
-    6,
-    13,
-    631,
-    4.6
+    607,
+    22.8,
+    13.1,
+    51.8,
+    6.6,
+    6.7,
+    350,
+    12.78
   ],
   [
     "almond butter",
@@ -1914,38 +1985,41 @@ const ROWS: TupleRow[] = [
     329,
     5.4
   ],
+  // CoFID 14-847 "Tahini paste". Was 519 kcal and 27 g fat.
   [
     "tahini paste",
-    519,
-    9,
-    56,
-    27,
-    3,
-    32,
-    408,
-    12.8
+    607,
+    18.5,
+    0.9,
+    58.9,
+    8,
+    0.4,
+    20,
+    8.4
   ],
+  // CoFID 17-623 "Pesto, red". Was 59 kcal and 2.2 g fat.
   [
     "pesto jar red",
-    59,
-    4.2,
-    7.5,
-    2.2,
-    2.2,
-    12,
-    91,
-    1.2000000000000002
+    317,
+    5,
+    5.9,
+    30.6,
+    3.3,
+    5.2,
+    770,
+    4.68
   ],
+  // CoFID 17-622 "Pesto, green". Was 244 kcal and 10 g fat.
   [
     "pesto jar green",
-    244,
-    9,
-    42,
-    10,
-    7,
-    18,
-    726,
-    4.6
+    420,
+    5.6,
+    3.9,
+    42.5,
+    1.1,
+    2.3,
+    840,
+    6.5
   ],
   [
     "pesto vegan",
@@ -1958,27 +2032,30 @@ const ROWS: TupleRow[] = [
     535,
     2
   ],
+  // CoFID 17-709 "Tomato ketchup". Was 420 kcal and 10 g fat.
   [
     "tomato ketchup",
-    420,
-    9,
-    74,
-    10,
-    4,
-    22,
-    424,
-    5.4
+    115,
+    1.6,
+    28.6,
+    0.1,
+    0.9,
+    27.5,
+    800,
+    0
   ],
+  // CoFID 17-678 "Brown sauce, reduced salt/sugar". CoFID has the reduced salt/sugar row
+  // only. Was 518 kcal and 25 g fat.
   [
     "brown sauce",
-    518,
-    8,
-    61,
-    25,
-    4,
-    29,
-    503,
-    12.8
+    88,
+    0.7,
+    20,
+    0.1,
+    0.7,
+    14.1,
+    390,
+    0
   ],
   [
     "mayonnaise light",
@@ -1991,16 +2068,17 @@ const ROWS: TupleRow[] = [
     186,
     1.2000000000000002
   ],
+  // CoFID 17-654 "Mayonnaise, standard, retail". Was 248 kcal and 8 g fat.
   [
     "mayonnaise full fat",
-    248,
-    14,
-    47,
-    8,
-    8,
-    15,
-    821,
-    4.6
+    686,
+    1.1,
+    2.4,
+    74.8,
+    0,
+    2.4,
+    131,
+    5.65
   ],
   [
     "salad cream",
@@ -2035,27 +2113,29 @@ const ROWS: TupleRow[] = [
     598,
     12.8
   ],
+  // CoFID 17-715 "Dressing, blue cheese". Was 66 kcal and 0 g fat.
   [
     "blue cheese dressing",
-    66,
-    2.2,
-    7.5,
-    0,
-    4.2,
-    14,
-    281,
-    1.2000000000000002
+    368,
+    2,
+    9.8,
+    35.9,
+    1.3,
+    7.7,
+    840,
+    6.59
   ],
+  // CoFID 17-705 "Barbecue sauce". Was 293 kcal and 6 g fat.
   [
     "bbq sauce",
-    293,
-    13,
-    42,
-    6,
-    5,
-    12,
-    916,
-    4.6
+    140,
+    1,
+    36.1,
+    0.1,
+    1.2,
+    29.9,
+    630,
+    0
   ],
   [
     "sweet chilli sauce",
@@ -2090,27 +2170,30 @@ const ROWS: TupleRow[] = [
     693,
     12.8
   ],
+  // CoFID 17-723 "Worcestershire sauce". Was 66 kcal and 3.2 g fat.
   [
     "worcestershire sauce",
-    66,
-    1.2000000000000002,
-    12.5,
-    3.2,
-    1.2,
-    11,
-    376,
-    1.2000000000000002
+    113,
+    1.4,
+    28.3,
+    0.1,
+    0,
+    21.5,
+    1500,
+    0
   ],
+  // CoFID 17-707 "Mint sauce". CoFID gives no fibre figure (0 here). Was 294
+  // kcal and 4 g fat.
   [
     "mint sauce",
-    294,
-    12,
-    47,
-    4,
-    6,
-    17,
-    1011,
-    4.6
+    101,
+    1.6,
+    21.5,
+    0,
+    0,
+    21.5,
+    480,
+    0
   ],
   [
     "apple sauce jar",
@@ -2134,38 +2217,41 @@ const ROWS: TupleRow[] = [
     309,
     5.4
   ],
+  // CoFID 13-309 "Onions, pickled, drained". Was 521 kcal and 26 g fat.
   [
     "pickled onions",
-    521,
-    5,
-    56,
-    26,
-    3,
-    28,
-    388,
-    12.8
+    24,
+    0.9,
+    4.9,
+    0.2,
+    1.6,
+    3.5,
+    450,
+    0
   ],
+  // CoFID 13-246 "Gherkins, pickled, drained". Was 62 kcal and 1.2 g fat.
   [
     "pickled gherkins",
-    62,
-    0.20000000000000018,
-    7.5,
-    1.2000000000000002,
-    2.2,
-    8,
-    71,
-    1.2000000000000002
+    14,
+    0.9,
+    2.6,
+    0.1,
+    1.5,
+    2.4,
+    690,
+    0
   ],
+  // CoFID 13-336 "Sauerkraut". Was 243 kcal and 9 g fat.
   [
     "sauerkraut jar",
-    243,
-    11,
-    42,
     9,
-    7,
-    14,
-    706,
-    4.6
+    1.1,
+    1.1,
+    0,
+    2.2,
+    1.1,
+    590,
+    0
   ],
   [
     "kimchi jar",
@@ -2178,16 +2264,18 @@ const ROWS: TupleRow[] = [
     515,
     2
   ],
+  // CoFID 14-340 "Olives, green, in brine, drained, flesh and skin". Was 422
+  // kcal and 9 g fat.
   [
     "olives green jar",
-    422,
+    103,
+    0.9,
+    0,
     11,
-    74,
-    9,
-    4,
-    26,
-    404,
-    5.4
+    2.9,
+    0,
+    1330,
+    1.7
   ],
   [
     "olives black jar",
@@ -2366,60 +2454,67 @@ const ROWS: TupleRow[] = [
     368,
     12.8
   ],
+  // CoFID 17-364 "Mustard, smooth". Smooth mustard. CoFID gives no fibre figure (0 here).
+  // Was 59 kcal and 0.2 g fat.
   [
     "mustard dijon",
-    59,
-    2.2,
-    7.5,
-    0.20000000000000018,
-    2.2,
-    12,
-    51,
-    1.2000000000000002
+    139,
+    7.1,
+    9.7,
+    8.2,
+    0,
+    7.8,
+    2950,
+    0.5
   ],
+  // CoFID 17-364 "Mustard, smooth". Smooth mustard. CoFID gives no fibre figure (0 here).
+  // Was 244 kcal and 8 g fat.
   [
     "mustard english",
-    244,
-    13,
-    42,
-    8,
-    7,
-    18,
-    686,
-    4.6
+    139,
+    7.1,
+    9.7,
+    8.2,
+    0,
+    7.8,
+    2950,
+    0.5
   ],
+  // CoFID 17-365 "Mustard, wholegrain". Was 188 kcal and 7 g fat.
   [
     "mustard wholegrain",
-    188,
-    17,
-    29,
-    7,
-    5,
-    15,
-    495,
-    2
+    140,
+    8.2,
+    4.2,
+    10.2,
+    4.9,
+    3.9,
+    1620,
+    0.6
   ],
+  // CoFID 17-314 "Horseradish sauce". Was 423 kcal and 15 g fat.
   [
     "horseradish sauce",
-    423,
-    7,
-    74,
+    153,
+    2.5,
+    17.9,
+    8.4,
+    2.5,
     15,
-    4,
-    22,
-    384,
-    5.4
+    910,
+    1.1
   ],
+  // CoFID 17-339 "Vinegar". Was 526 kcal and 23 g fat.
   [
     "apple cider vinegar",
-    526,
-    6,
-    61,
-    23,
-    4,
-    29,
-    463,
-    12.8
+    22,
+    0.4,
+    0.6,
+    0,
+    0,
+    0.6,
+    5,
+    0
   ],
   [
     "balsamic vinegar",
@@ -2432,38 +2527,41 @@ const ROWS: TupleRow[] = [
     146,
     1.2000000000000002
   ],
+  // CoFID 17-339 "Vinegar". Was 247 kcal and 6 g fat.
   [
     "white wine vinegar",
-    247,
-    12,
-    47,
-    6,
-    8,
-    15,
-    781,
-    4.6
+    22,
+    0.4,
+    0.6,
+    0,
+    0,
+    0.6,
+    5,
+    0
   ],
+  // CoFID 17-339 "Vinegar". Was 182 kcal and 5 g fat.
   [
     "malt vinegar",
-    182,
-    16,
-    24,
+    22,
+    0.4,
+    0.6,
+    0,
+    0,
+    0.6,
     5,
-    2,
-    12,
-    590,
-    2
+    0
   ],
+  // CoFID 17-339 "Vinegar". Was 418 kcal and 13 g fat.
   [
     "rice vinegar",
-    418,
-    12,
-    69,
-    13,
+    22,
+    0.4,
+    0.6,
+    0,
+    0,
+    0.6,
     5,
-    27,
-    479,
-    5.4
+    0
   ],
   [
     "mirin",
@@ -2487,27 +2585,29 @@ const ROWS: TupleRow[] = [
     241,
     1.2000000000000002
   ],
+  // CoFID 17-755 "Wine, white, dry". Was 247 kcal and 4 g fat.
   [
     "white wine cooking",
-    247,
-    11,
-    42,
+    75,
+    0.1,
+    0.6,
+    0,
+    0,
+    0.6,
     4,
-    5,
-    12,
-    876,
-    4.6
+    0
   ],
+  // CoFID 17-752 "Wine, red". Was 186 kcal and 3 g fat.
   [
     "red wine cooking",
-    186,
-    15,
-    29,
-    3,
-    3,
-    9,
-    685,
-    2
+    76,
+    0.1,
+    0.2,
+    0,
+    0,
+    0.2,
+    7,
+    0
   ],
   [
     "brandy cooking",
@@ -2553,60 +2653,66 @@ const ROWS: TupleRow[] = [
     971,
     4.6
   ],
+  // CoFID 17-355 "Baking powder". Was 183 kcal and 8 g fat.
   [
     "baking powder",
-    183,
-    14,
-    24,
-    8,
-    4,
-    14,
-    780,
-    2
+    163,
+    5.2,
+    37.8,
+    0,
+    0,
+    0,
+    11800,
+    0
   ],
+  // CoFID 17-356 "Bicarbonate of soda". Was 422 kcal and 9 g fat.
   [
     "bicarbonate soda",
-    422,
-    10,
-    69,
-    9,
-    7,
-    29,
-    669,
-    5.4
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    27380,
+    0
   ],
+  // CoFID 17-379 "Yeast, dried". CoFID gives no fibre or saturated fat figure (0 here). Was
+  // 518 kcal and 24 g fat.
   [
     "yeast dried",
-    518,
-    9,
-    56,
-    24,
-    3,
-    28,
-    348,
-    12.8
+    169,
+    35.6,
+    3.5,
+    1.5,
+    0,
+    0,
+    50,
+    0
   ],
+  // CoFID 17-360 "Gelatine". Was 61 kcal and 0 g fat.
   [
     "gelatine powder",
-    61,
-    4.2,
-    7.5,
+    338,
+    84.4,
     0,
-    2.2,
-    8,
-    31,
-    1.2000000000000002
+    0,
+    0,
+    0,
+    330,
+    0
   ],
+  // CoFID 11-1138 "Custard powder". Was 243 kcal and 7 g fat.
   [
     "custard powder",
-    243,
-    9,
-    42,
-    7,
-    7,
-    14,
-    666,
-    4.6
+    354,
+    0.6,
+    92,
+    0.7,
+    0.1,
+    0,
+    378,
+    0.1
   ],
   [
     "cornetto style cone",
@@ -2619,16 +2725,17 @@ const ROWS: TupleRow[] = [
     475,
     2
   ],
+  // CoFID 12-508 "Ice cream, dairy, vanilla, soft scoop". Was 423 kcal and 14 g fat.
   [
     "ice cream vanilla",
-    423,
-    9,
-    74,
-    14,
-    4,
-    26,
-    364,
-    5.4
+    169,
+    3.2,
+    22,
+    8.2,
+    0.2,
+    22,
+    63,
+    5.19
   ],
   [
     "ice cream chocolate",
@@ -2663,16 +2770,18 @@ const ROWS: TupleRow[] = [
     761,
     4.6
   ],
+  // CoFID 12-393 "Sorbet, fruit". Fruit sorbet. CoFID gives no saturated fat figure (0
+  // here). Was 182 kcal and 4 g fat.
   [
     "sorbet lemon",
-    182,
-    12,
-    24,
-    4,
-    2,
-    8,
-    570,
-    2
+    97,
+    0.2,
+    24.8,
+    0.3,
+    1,
+    23.3,
+    10,
+    0
   ],
   [
     "solero style ice",
@@ -2751,38 +2860,41 @@ const ROWS: TupleRow[] = [
     633,
     12.8
   ],
+  // CoFID 12-332 "Cream, fresh, single". Was 58 kcal and 0.2 g fat.
   [
     "single cream",
-    58,
-    1.2000000000000002,
-    12.5,
-    0.20000000000000018,
-    1.2,
-    7,
-    316,
-    1.2000000000000002
+    193,
+    3.3,
+    2.2,
+    19.1,
+    0,
+    2.2,
+    29,
+    12.15
   ],
+  // CoFID 12-334 "Cream, fresh, double, including Jersey cream". Was 241 kcal and 8 g fat.
   [
     "double cream",
-    241,
-    12,
-    47,
-    8,
-    6,
-    13,
-    951,
-    4.6
+    496,
+    1.6,
+    1.7,
+    53.7,
+    0,
+    1.7,
+    22,
+    33.39
   ],
+  // CoFID 12-592 "Cream, fresh, clotted". Was 183 kcal and 7 g fat.
   [
     "clotted cream",
-    183,
-    16,
-    24,
-    7,
-    4,
-    10,
-    760,
-    2
+    586,
+    1.6,
+    2.3,
+    63.5,
+    0,
+    2.3,
+    18,
+    39.7
   ],
   [
     "mascarpone light",
@@ -2795,16 +2907,17 @@ const ROWS: TupleRow[] = [
     649,
     5.4
   ],
+  // CoFID 12-174 "Cheese, Quark". Was 519 kcal and 23 g fat.
   [
     "quark cheese",
-    519,
-    5,
-    56,
-    23,
-    3,
-    32,
-    728,
-    12.8
+    74,
+    14.6,
+    4,
+    0,
+    0,
+    4,
+    45,
+    0
   ],
   [
     "curd cheese",
@@ -2817,16 +2930,17 @@ const ROWS: TupleRow[] = [
     11,
     1.2000000000000002
   ],
+  // CoFID 12-495 "Cheese, Paneer". Was 290 kcal and 6 g fat.
   [
     "paneer",
-    290,
-    11,
-    42,
-    6,
-    7,
-    18,
-    646,
-    4.6
+    328,
+    26,
+    0.9,
+    24.5,
+    0,
+    0.9,
+    19,
+    15.43
   ],
   [
     "halloumi lite",
@@ -2883,16 +2997,17 @@ const ROWS: TupleRow[] = [
     741,
     4.6
   ],
+  // CoFID 12-540 "Cheese spread, plain". Was 193 kcal and 3 g fat.
   [
     "cheese spread triangles",
-    193,
-    14,
-    24,
-    3,
-    2,
-    12,
-    550,
-    2
+    237,
+    11.3,
+    6.5,
+    18.6,
+    0,
+    6.5,
+    730,
+    12.91
   ],
   [
     "philadelphia style spread",
@@ -2960,16 +3075,17 @@ const ROWS: TupleRow[] = [
     534,
     5.4
   ],
+  // CoFID 12-543 "Custard, ready to eat, canned and tetra-pak". Was 527 kcal and 24 g fat.
   [
     "custard carton fresh",
-    527,
-    8,
-    61,
-    24,
-    6,
-    31,
-    613,
-    12.8
+    98,
+    2.7,
+    16.3,
+    2.9,
+    0,
+    12.8,
+    41,
+    1.89
   ],
   [
     "yoghurt drink strawberry",
@@ -3136,16 +3252,18 @@ const ROWS: TupleRow[] = [
     498,
     12.8
   ],
+  // CoFID 17-498 "Drinking chocolate, powder". CoFID gives no fibre figure (0 here). Was 66
+  // kcal and 0.2 g fat.
   [
     "hot chocolate powder",
-    66,
-    0.20000000000000018,
-    7.5,
-    0.20000000000000018,
-    4.2,
-    10,
-    181,
-    1.2000000000000002
+    377,
+    6.4,
+    79.7,
+    5.8,
+    0,
+    77.7,
+    228,
+    3.41
   ],
   [
     "chai latte powder",
@@ -3158,16 +3276,17 @@ const ROWS: TupleRow[] = [
     816,
     4.6
   ],
+  // CoFID 17-158 "Coffee, powder, instant". Was 184 kcal and 7 g fat.
   [
     "instant coffee",
-    184,
-    15,
-    29,
-    7,
-    3,
-    13,
-    625,
-    2
+    75,
+    14.6,
+    4.5,
+    0,
+    0,
+    0,
+    81,
+    0
   ],
   [
     "ground coffee",
@@ -3202,71 +3321,77 @@ const ROWS: TupleRow[] = [
     276,
     1.2000000000000002
   ],
+  // CoFID 17-165 "Tea, black, infusion, average". Brewed tea. Was 242 kcal and 6 g fat.
   [
     "earl grey tea",
-    242,
-    10,
-    47,
-    6,
-    6,
-    13,
-    911,
-    4.6
+    0,
+    0.1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
   ],
+  // CoFID 17-165 "Tea, black, infusion, average". Brewed tea. Was 191 kcal and 5 g fat.
   [
     "english breakfast tea",
-    191,
-    14,
-    24,
-    5,
-    4,
-    10,
-    720,
-    2
+    0,
+    0.1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
   ],
+  // CoFID 17-171 "Tea, green, infusion". Brewed tea. Was 420 kcal and 13 g fat.
   [
     "green tea bags",
-    420,
-    10,
-    69,
-    13,
-    7,
-    25,
-    609,
-    5.4
+    0,
+    0.1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0
   ],
+  // CoFID 17-172 "Tea, herbal, infusion". Brewed tea. Was 521 kcal and 28 g fat.
   [
     "peppermint tea",
-    521,
-    9,
-    56,
-    28,
-    3,
-    32,
-    688,
-    12.8
+    1,
+    0,
+    0.2,
+    0,
+    0,
+    0,
+    0,
+    0
   ],
+  // CoFID 17-172 "Tea, herbal, infusion". Brewed tea. Was 57 kcal and 3.2 g fat.
   [
     "rooibos tea",
-    57,
-    4.2,
-    7.5,
-    3.2,
-    2.2,
-    12,
-    371,
-    1.2000000000000002
+    1,
+    0,
+    0.2,
+    0,
+    0,
+    0,
+    0,
+    0
   ],
+  // CoFID 17-172 "Tea, herbal, infusion". Brewed tea. Was 244 kcal and 4 g fat.
   [
     "fruit tea mixed",
-    244,
-    9,
-    42,
-    4,
-    7,
-    18,
-    1006,
-    4.6
+    1,
+    0,
+    0.2,
+    0,
+    0,
+    0,
+    0,
+    0
   ],
   [
     "hot chocolate sachet",
@@ -3312,60 +3437,67 @@ const ROWS: TupleRow[] = [
     66,
     1.2000000000000002
   ],
+  // CoFID 17-517 "Yeast extract". CoFID gives no saturated fat figure (0 here). Was 291
+  // kcal and 9 g fat.
   [
     "marmite",
-    291,
-    14,
-    47,
-    9,
-    8,
-    15,
-    701,
-    4.6
+    180,
+    40.7,
+    3.5,
+    0.4,
+    0,
+    1.6,
+    4300,
+    0
   ],
+  // CoFID 17-517 "Yeast extract". CoFID gives no saturated fat figure (0 here). Was 178
+  // kcal and 8 g fat.
   [
     "vegemite",
-    178,
-    12,
-    24,
-    8,
-    2,
-    12,
-    510,
-    2
+    180,
+    40.7,
+    3.5,
+    0.4,
+    0,
+    1.6,
+    4300,
+    0
   ],
+  // CoFID 17-724 "Gravy instant granules". Granules as sold. Was 428 kcal and 9 g fat.
   [
     "gravy granules chicken",
-    428,
-    8,
-    69,
-    9,
-    5,
-    27,
-    399,
-    5.4
+    407,
+    4.4,
+    65.2,
+    16.1,
+    1.6,
+    5.3,
+    5300,
+    10.66
   ],
+  // CoFID 17-724 "Gravy instant granules". Granules as sold. Was 526 kcal and 24 g fat.
   [
     "gravy granules beef",
-    526,
-    7,
-    56,
-    24,
-    5,
-    34,
-    478,
-    12.8
+    407,
+    4.4,
+    65.2,
+    16.1,
+    1.6,
+    5.3,
+    5300,
+    10.66
   ],
+  // CoFID 17-724 "Gravy instant granules". Granules as sold. Was 66 kcal and 0 g fat.
   [
     "gravy granules onion",
-    66,
-    2.2,
-    7.5,
-    0,
-    4.2,
-    14,
-    161,
-    1.2000000000000002
+    407,
+    4.4,
+    65.2,
+    16.1,
+    1.6,
+    5.3,
+    5300,
+    10.66
   ],
   [
     "stock cube vegetable",
@@ -3477,16 +3609,17 @@ const ROWS: TupleRow[] = [
     351,
     1.2000000000000002
   ],
+  // CoFID 17-625 "Sauce, pasta, carbonara type". Was 248 kcal and 10 g fat.
   [
     "carbonara sauce jar",
-    248,
-    11,
-    42,
-    10,
-    7,
-    14,
-    986,
-    4.6
+    151,
+    4.9,
+    3.8,
+    13,
+    1.3,
+    0.8,
+    340,
+    7.67
   ],
   [
     "pesto cream sauce",
@@ -3653,16 +3786,17 @@ const ROWS: TupleRow[] = [
     871,
     4.6
   ],
+  // CoFID 12-547 "Tzatziki". Was 190 kcal and 3 g fat.
   [
     "tzatziki chilled pot",
-    190,
-    12,
-    24,
+    76,
+    3.4,
+    3.4,
+    5.5,
+    0.3,
     3,
-    4,
-    10,
-    680,
-    2
+    369,
+    3.58
   ],
   [
     "houmous caramelised onion",
@@ -3708,16 +3842,17 @@ const ROWS: TupleRow[] = [
     966,
     4.6
   ],
+  // CoFID 19-496 "Ham". Was 192 kcal and 8 g fat.
   [
     "charcuterie ham slices",
-    192,
-    17,
-    29,
-    8,
-    5,
-    15,
-    775,
-    2
+    107,
+    18.4,
+    1,
+    3.3,
+    0.1,
+    1,
+    800,
+    1.1
   ],
   [
     "parma ham slices",
@@ -3730,16 +3865,17 @@ const ROWS: TupleRow[] = [
     664,
     5.4
   ],
+  // CoFID 19-517 "Salami". Was 520 kcal and 24 g fat.
   [
     "salami slices",
-    520,
-    6,
-    61,
-    24,
-    4,
-    29,
-    343,
-    12.8
+    438,
+    20.9,
+    0.5,
+    39.2,
+    0.4,
+    0.5,
+    1530,
+    14.6
   ],
   [
     "pepperoni slices",
@@ -3774,16 +3910,17 @@ const ROWS: TupleRow[] = [
     470,
     2
   ],
+  // CoFID 19-128 "Corned beef, canned". Was 421 kcal and 14 g fat.
   [
     "corned beef tin",
-    421,
-    12,
-    69,
-    14,
-    5,
-    27,
-    359,
-    5.4
+    205,
+    25.9,
+    1,
+    10.9,
+    0,
+    1,
+    860,
+    5.7
   ],
   [
     "spam lite",
@@ -3796,16 +3933,17 @@ const ROWS: TupleRow[] = [
     438,
     12.8
   ],
+  // CoFID 19-495 "Frankfurter". Was 66 kcal and 0 g fat.
   [
     "hot dogs frankfurter",
-    66,
-    0.20000000000000018,
-    7.5,
-    0,
-    4.2,
-    14,
-    121,
-    1.2000000000000002
+    287,
+    13.6,
+    1.1,
+    25.4,
+    0.1,
+    1.1,
+    730,
+    9.2
   ],
   [
     "burger bun brioche",
@@ -3829,38 +3967,41 @@ const ROWS: TupleRow[] = [
     565,
     2
   ],
+  // CoFID 11-1006 "Bread rolls, white, soft". Was 417 kcal and 12 g fat.
   [
     "hot dog bun",
-    417,
-    11,
-    74,
-    12,
-    6,
-    24,
-    454,
-    5.4
+    254,
+    9.3,
+    51.5,
+    2.6,
+    2.6,
+    2.6,
+    400,
+    0.62
   ],
+  // CoFID 11-1006 "Bread rolls, white, soft". Was 515 kcal and 27 g fat.
   [
     "sub roll",
-    515,
-    10,
-    61,
-    27,
-    6,
-    31,
-    533,
-    12.8
+    254,
+    9.3,
+    51.5,
+    2.6,
+    2.6,
+    2.6,
+    400,
+    0.62
   ],
+  // CoFID 11-1006 "Bread rolls, white, soft". Was 58 kcal and 2.2 g fat.
   [
     "finger rolls",
-    58,
-    0,
-    12.5,
-    2.2,
-    1.2,
-    11,
-    216,
-    1.2000000000000002
+    254,
+    9.3,
+    51.5,
+    2.6,
+    2.6,
+    2.6,
+    400,
+    0.62
   ],
   [
     "batch loaf",
@@ -3873,27 +4014,30 @@ const ROWS: TupleRow[] = [
     851,
     4.6
   ],
+  // CoFID 11-977 "Bread, white, farmhouse or split tin". Was 184 kcal and 2 g fat.
   [
     "farmhouse loaf",
-    184,
-    14,
-    24,
+    241,
+    9,
+    49.9,
     2,
-    4,
-    14,
-    660,
-    2
+    2.9,
+    2.9,
+    400,
+    0.49
   ],
+  // CoFID 11-923 "Bread, white, crusty bloomer, unsliced, fresh, large". Was
+  // 419 kcal and 10 g fat.
   [
     "bloomer white",
-    419,
-    10,
-    69,
-    10,
-    7,
-    29,
-    549,
-    5.4
+    247,
+    9.2,
+    52.3,
+    1.6,
+    2.8,
+    2.8,
+    400,
+    0.39
   ],
   [
     "bloomer brown",
@@ -3906,16 +4050,17 @@ const ROWS: TupleRow[] = [
     628,
     12.8
   ],
+  // CoFID 11-985 "Bread rolls, white, crusty". Was 57 kcal and 0.2 g fat.
   [
     "crusty roll",
-    57,
-    4.2,
-    7.5,
-    0.20000000000000018,
+    262,
+    9.2,
+    54.9,
     2.2,
-    8,
-    311,
-    1.2000000000000002
+    2.9,
+    2.7,
+    400,
+    0.51
   ],
   [
     "bridge roll",
@@ -4181,27 +4326,29 @@ const ROWS: TupleRow[] = [
     703,
     12.8
   ],
+  // CoFID 11-848 "Mince pies, retail". Was 55 kcal and 0 g fat.
   [
     "mince pie",
-    55,
-    0,
-    12.5,
-    0,
-    3.2,
-    9,
-    386,
-    1.2000000000000002
+    377,
+    3.8,
+    60.7,
+    14.9,
+    2.6,
+    35.5,
+    101,
+    5.97
   ],
+  // CoFID 11-1022 "Pudding, Christmas, retail". Was 252 kcal and 5 g fat.
   [
     "christmas pudding slice",
-    252,
-    10,
-    47,
-    5,
-    8,
-    15,
-    621,
-    4.6
+    285,
+    3,
+    56.3,
+    6.9,
+    4,
+    46.2,
+    100,
+    3.57
   ],
   [
     "panettone slice",
@@ -4247,38 +4394,41 @@ const ROWS: TupleRow[] = [
     81,
     1.2000000000000002
   ],
+  // CoFID 11-1028 "Tart, bakewell, homemade". Was 242 kcal and 10 g fat.
   [
     "bakewell tart",
-    242,
-    9,
-    42,
-    10,
-    5,
-    12,
-    716,
-    4.6
+    454,
+    6.9,
+    40.8,
+    30.4,
+    1.5,
+    22.7,
+    212,
+    8.8
   ],
+  // CoFID 11-846 "Jam tarts, retail". Was 178 kcal and 2 g fat.
   [
     "jam tart",
-    178,
-    13,
-    29,
-    2,
-    3,
-    9,
-    525,
-    2
+    353,
+    3.2,
+    58.2,
+    13.5,
+    1.4,
+    32.1,
+    26,
+    5.54
   ],
+  // CoFID 12-461 "Tarts, custard, individual". Was 418 kcal and 10 g fat.
   [
     "custard tart",
-    418,
-    9,
-    74,
-    10,
-    6,
-    24,
-    414,
-    5.4
+    263,
+    6.7,
+    28.7,
+    14.3,
+    1.1,
+    14.2,
+    114,
+    5.87
   ],
   [
     "lemon tart",
@@ -4291,27 +4441,29 @@ const ROWS: TupleRow[] = [
     493,
     12.8
   ],
+  // CoFID 11-1126 "Treacle tart, homemade". Was 58 kcal and 0.2 g fat.
   [
     "treacle tart",
-    58,
-    3.2,
-    12.5,
-    0.20000000000000018,
-    1.2,
-    11,
-    176,
-    1.2000000000000002
+    380,
+    3.8,
+    59.2,
+    15.9,
+    1.7,
+    33.8,
+    258,
+    5.84
   ],
+  // CoFID 12-580 "Pudding, rice, canned". Was 245 kcal and 8 g fat.
   [
     "rice pudding tin",
-    245,
-    14,
-    47,
-    8,
-    6,
-    17,
-    811,
-    4.6
+    85,
+    3.3,
+    16.1,
+    1.3,
+    0.1,
+    8.7,
+    43,
+    0.76
   ],
   [
     "spotted dick tin",
@@ -4665,16 +4817,18 @@ const ROWS: TupleRow[] = [
     679,
     5.4
   ],
+  // CoFID 13-535 "Baked beans, canned in tomato sauce, reduced sugar, reduced salt". Was
+  // 532 kcal and 25 g fat.
   [
     "baked beans reduced sugar",
-    532,
-    7,
-    56,
-    25,
+    75,
     5,
-    34,
-    358,
-    12.8
+    13.5,
+    0.5,
+    4.9,
+    3.3,
+    190,
+    0.09
   ],
   [
     "baked beans chorizo",
@@ -4687,38 +4841,42 @@ const ROWS: TupleRow[] = [
     41,
     1.2000000000000002
   ],
+  // CoFID 11-735 "Pasta, spaghetti, canned, in tomato sauce". Was 248 kcal and 8 g fat.
   [
     "spaghetti hoops tin",
-    248,
-    13,
-    42,
-    8,
-    5,
-    12,
-    676,
-    4.6
+    72,
+    2.1,
+    16.2,
+    0.3,
+    0.9,
+    5.5,
+    190,
+    0.05
   ],
+  // CoFID 11-735 "Pasta, spaghetti, canned, in tomato sauce". Was 192 kcal and 7 g fat.
   [
     "alphabet spaghetti tin",
-    192,
-    17,
-    29,
-    7,
-    3,
-    9,
-    485,
-    2
+    72,
+    2.1,
+    16.2,
+    0.3,
+    0.9,
+    5.5,
+    190,
+    0.05
   ],
+  // CoFID 11-736 "Pasta, ravioli, meat filling, canned in tomato sauce". Was
+  // 424 kcal and 15 g fat.
   [
     "ravioli tin tomato",
-    424,
-    7,
-    74,
-    15,
-    6,
-    24,
-    374,
-    5.4
+    77,
+    2.3,
+    14.8,
+    1.4,
+    1.1,
+    3.4,
+    260,
+    0.46
   ],
   [
     "macaroni cheese tin",
@@ -4731,16 +4889,17 @@ const ROWS: TupleRow[] = [
     453,
     12.8
   ],
+  // CoFID 19-208 "Chilli con carne, retail, reheated". Was 66 kcal and 0 g fat.
   [
     "chilli con carne tin",
-    66,
-    1.2000000000000002,
-    12.5,
-    0,
-    1.2,
-    11,
-    136,
-    1.2000000000000002
+    96,
+    7.7,
+    7.1,
+    4.3,
+    1.4,
+    2.7,
+    310,
+    1.9
   ],
   [
     "hot dog tin",
@@ -4764,27 +4923,29 @@ const ROWS: TupleRow[] = [
     580,
     2
   ],
+  // CoFID 17-652 "Soup, cream of tomato, canned". Was 430 kcal and 13 g fat.
   [
     "cream of tomato soup tin",
-    430,
-    12,
-    69,
-    13,
-    7,
-    29,
-    469,
-    5.4
+    51,
+    0.9,
+    7.8,
+    2,
+    0.6,
+    5.5,
+    245,
+    0.27
   ],
+  // CoFID 17-695 "Soup, chicken, cream of, canned". Was 523 kcal and 28 g fat.
   [
     "chicken soup tin",
-    523,
-    5,
-    56,
-    28,
-    3,
-    28,
-    548,
-    12.8
+    58,
+    1.7,
+    4.5,
+    3.8,
+    0,
+    1.1,
+    240,
+    0.6
   ],
   [
     "mushroom soup tin",
@@ -4808,27 +4969,30 @@ const ROWS: TupleRow[] = [
     866,
     4.6
   ],
+  // CoFID 17-711 "Soup, minestrone, canned". Was 184 kcal and 3 g fat.
   [
     "minestrone tin",
-    184,
-    15,
-    29,
-    3,
-    5,
-    11,
-    675,
-    2
+    31,
+    1.1,
+    6.6,
+    0.2,
+    0.9,
+    1.8,
+    200,
+    0.1
   ],
+  // CoFID 17-698 "Soup, lentil, canned". CoFID gives no saturated fat figure (0 here). Was
+  // 421 kcal and 11 g fat.
   [
     "lentil soup tin",
-    421,
-    11,
-    74,
-    11,
-    4,
-    26,
-    564,
-    5.4
+    46,
+    3.1,
+    8.5,
+    0.2,
+    1.2,
+    1.2,
+    200,
+    0
   ],
   [
     "pea ham soup tin",
@@ -4852,16 +5016,17 @@ const ROWS: TupleRow[] = [
     326,
     1.2000000000000002
   ],
+  // CoFID 17-700 "Soup, oxtail, canned". Was 244 kcal and 9 g fat.
   [
     "oxtail soup tin",
-    244,
-    10,
-    47,
-    9,
-    8,
-    19,
-    961,
-    4.6
+    44,
+    2.4,
+    5.1,
+    1.7,
+    0.1,
+    0.9,
+    220,
+    0.6
   ],
   [
     "gazpacho chilled",
@@ -4896,16 +5061,17 @@ const ROWS: TupleRow[] = [
     738,
     12.8
   ],
+  // CoFID 12-547 "Tzatziki". Was 66 kcal and 0 g fat.
   [
     "tzatziki dip chilled",
-    66,
-    4.2,
-    7.5,
-    0,
-    4.2,
-    10,
-    21,
-    1.2000000000000002
+    76,
+    3.4,
+    3.4,
+    5.5,
+    0.3,
+    3,
+    369,
+    3.58
   ],
   [
     "guacamole snack pot",
@@ -5237,27 +5403,30 @@ const ROWS: TupleRow[] = [
     191,
     1.2000000000000002
   ],
+  // CoFID 18-170 "Lamb, shoulder, raw, lean and fat". Was 248 kcal and 9 g fat.
   [
     "lamb shoulder diced",
-    248,
-    9,
-    42,
-    9,
-    7,
-    14,
-    826,
-    4.6
+    235,
+    17.6,
+    0,
+    18.3,
+    0,
+    0,
+    63,
+    8.5
   ],
+  // CoFID 18-077 "Beef, stewing steak, raw, lean and fat". Shin is sold as stewing steak.
+  // Was 185 kcal and 8 g fat.
   [
     "beef shin diced",
-    185,
-    13,
-    29,
-    8,
-    5,
-    11,
-    635,
-    2
+    146,
+    22.1,
+    0,
+    6.4,
+    0,
+    0,
+    66,
+    2.6
   ],
   [
     "ox cheek diced",
@@ -5303,16 +5472,17 @@ const ROWS: TupleRow[] = [
     921,
     4.6
   ],
+  // CoFID 18-411 "Liver, chicken, raw". Was 183 kcal and 6 g fat.
   [
     "chicken liver",
-    183,
-    12,
-    24,
-    6,
-    2,
-    8,
-    730,
-    2
+    92,
+    17.7,
+    0,
+    2.3,
+    0,
+    0,
+    76,
+    0.7
   ],
   [
     "duck liver",
@@ -5413,16 +5583,18 @@ const ROWS: TupleRow[] = [
     711,
     4.6
   ],
+  // CoFID 19-113 "Black pudding, raw". CoFID gives no fibre figure (0 here). Was 189
+  // kcal and 2 g fat.
   [
     "black pudding slice",
-    189,
-    16,
-    24,
-    2,
-    4,
-    10,
-    520,
-    2
+    277,
+    9.1,
+    14.8,
+    20.6,
+    0,
+    0.2,
+    830,
+    7.7
   ],
   [
     "white pudding slice",
@@ -5435,16 +5607,17 @@ const ROWS: TupleRow[] = [
     409,
     5.4
   ],
+  // CoFID 19-132 "Haggis, boiled". Was 519 kcal and 25 g fat.
   [
     "haggis slice",
-    519,
-    5,
-    56,
-    25,
-    3,
-    32,
-    488,
-    12.8
+    310,
+    10.7,
+    19.2,
+    21.7,
+    0.2,
+    0,
+    770,
+    7.6
   ],
   [
     "morning rolls batch",
@@ -5457,38 +5630,42 @@ const ROWS: TupleRow[] = [
     171,
     1.2000000000000002
   ],
+  // CoFID 11-544 "Scotch pancakes, retail". Was 243 kcal and 8 g fat.
   [
     "scotch pancake",
-    243,
-    11,
-    42,
-    8,
-    7,
-    18,
-    806,
-    4.6
+    270,
+    5.6,
+    43,
+    9.6,
+    1.9,
+    21.5,
+    418,
+    0.74
   ],
+  // CoFID 11-544 "Scotch pancakes, retail". A drop scone is a Scotch pancake. Was 180
+  // kcal and 7 g fat.
   [
     "drop scone",
-    180,
-    15,
-    29,
-    7,
-    5,
-    15,
-    615,
-    2
+    270,
+    5.6,
+    43,
+    9.6,
+    1.9,
+    21.5,
+    418,
+    0.74
   ],
+  // CoFID 11-1131 "Welsh cakes, homemade". Was 416 kcal and 15 g fat.
   [
     "welsh cake",
-    416,
-    11,
-    74,
-    15,
-    4,
-    22,
-    504,
-    5.4
+    432,
+    5.5,
+    61.9,
+    17.8,
+    1.7,
+    31.5,
+    238,
+    10.8
   ],
   [
     "bara brith slice",
@@ -5512,16 +5689,17 @@ const ROWS: TupleRow[] = [
     266,
     1.2000000000000002
   ],
+  // CoFID 11-838 "Eccles cakes, retail". Was 240 kcal and 6 g fat.
   [
     "eccles cake",
-    240,
-    10,
-    47,
-    6,
-    8,
-    15,
-    901,
-    4.6
+    365,
+    4.4,
+    48.8,
+    18.3,
+    3.6,
+    34,
+    221,
+    9.4
   ],
   [
     "bakewell pudding",
@@ -5545,16 +5723,17 @@ const ROWS: TupleRow[] = [
     599,
     5.4
   ],
+  // CoFID 11-823 "Oatcakes, plain, retail". Was 523 kcal and 28 g fat.
   [
     "oatcake scottish",
-    523,
-    9,
-    56,
-    28,
-    5,
-    34,
-    678,
-    12.8
+    453,
+    9.3,
+    62.8,
+    20,
+    9.4,
+    3.2,
+    796,
+    5.67
   ],
   [
     "water biscuit cheese selection",
@@ -6040,38 +6219,41 @@ const ROWS: TupleRow[] = [
     654,
     5.4
   ],
+  // CoFID 13-340 "Seaweed, nori, dried, raw". Was 524 kcal and 24 g fat.
   [
     "nori sheets sushi",
-    524,
-    6,
-    61,
-    24,
-    6,
-    31,
-    733,
-    12.8
+    136,
+    30.7,
+    0,
+    1.5,
+    44.4,
+    0,
+    790,
+    0.4
   ],
+  // CoFID 13-341 "Seaweed, wakame, dried, raw". Was 58 kcal and 0 g fat.
   [
     "wakame dried",
-    58,
-    1.2000000000000002,
-    12.5,
+    71,
+    12.4,
     0,
-    1.2,
-    11,
-    16,
-    1.2000000000000002
+    2.4,
+    47.1,
+    0,
+    3220,
+    0.3
   ],
+  // CoFID 13-339 "Seaweed, kombu, dried, raw". Was 240 kcal and 7 g fat.
   [
     "kombu dried",
-    240,
-    12,
-    47,
-    7,
-    6,
-    17,
-    651,
-    4.6
+    43,
+    7.1,
+    0,
+    1.6,
+    58.7,
+    0,
+    1830,
+    0.5
   ],
   [
     "miso paste white",
