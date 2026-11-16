@@ -859,3 +859,116 @@ import { lookupNutrition } from "@/lib/nutrition/lookup";
   if (local("hazelnut butter") === "butter") throw new Error("local: hazelnut butter is not dairy butter");
 }
 console.log("OK: 15–16 Nov 2026 audit matches");
+
+// --- 16 Nov 2026: sauces, peppers, teas and water ---
+// Rows are real CoFID names; each query used to take the first one listed.
+import {
+  isSalsaMismatch,
+  isSauceMismatch,
+  isSourCreamDipMismatch,
+  isSpicePepperMismatch,
+  isTeaDrinkMismatch,
+  isWaterFoodMismatch,
+} from "@/lib/nutrition/cofidMatch";
+{
+  const row = (food_code: string, food_name: string, matchKind: "partial" | "fulltext" = "partial"): CofidCandidate => ({
+    food_code,
+    food_name,
+    food_group: null,
+    matchKind,
+  });
+  const pick = (query: string, rows: CofidCandidate[]) => pickBestCofidCandidate(normalizeCofidQuery(query), rows);
+  const expectPick = (query: string, rows: CofidCandidate[], code: string | null) => {
+    const best = pick(query, rows);
+    if ((best?.food_code ?? null) !== code) {
+      throw new Error(`"${query}" picked ${best ? `${best.food_code} ${best.food_name}` : "nothing"}; expected ${code ?? "nothing"}`);
+    }
+  };
+
+  const sauceRows = [
+    row("19-577", "Sauce, duck a l'orange"),
+    row("17-628", "Sauce, Chinese cook in, sweet & sour"),
+    row("17-625", "Sauce, pasta, carbonara type"),
+    row("17-619", "Sauce, pasta, tomato based, napoletana"),
+    row("17-631", "Sauce, traditional cook in, white sauce based"),
+    row("17-626", "Sauce, Indian cook in, korma/tikka masala"),
+    row("12-593", "Sauce, cheese, packet mix, dry"),
+    row("17-719", "Chilli sauce", "fulltext"),
+    row("17-705", "Barbecue sauce", "fulltext"),
+    row("16-260", "Oysters, raw", "fulltext"),
+    row("13-563", "Beans, butter, canned, re-heated, drained", "fulltext"),
+    row("19-534", "Curry, chicken, made with cook-in sauce", "fulltext"),
+    row("11-1065", "Pasta and sauce mixes, dried, raw", "fulltext"),
+  ];
+  // No CoFID row: the local table answers.
+  for (const q of ["teriyaki sauce", "hoisin sauce", "hot sauce", "pizza sauce jar", "oyster sauce", "black bean sauce", "fish sauce", "sweet chilli sauce"]) {
+    expectPick(q, sauceRows, null);
+  }
+  expectPick("bbq sauce", sauceRows, "17-705");
+  expectPick("chilli sauce", sauceRows, "17-719");
+  expectPick("carbonara sauce jar", sauceRows, "17-625");
+  expectPick("white sauce jar", sauceRows, "17-631");
+  expectPick("tikka masala sauce", sauceRows, "17-626");
+  expectPick("korma sauce", sauceRows, "17-626");
+  expectPick("pasta sauce", sauceRows, "17-619");
+  expectPick("cheese sauce packet mix", sauceRows, "12-593");
+  if (!isSauceMismatch("curry sauce", "Curry, chicken, made with cook-in sauce")) throw new Error("sauce: a curry dish is not curry sauce");
+  if (!isSauceMismatch("cheese sauce", "Sauce, cheese, packet mix, dry")) throw new Error("sauce: dry mix not asked for");
+  if (isSauceMismatch("reduced salt soy sauce", "Soy sauce, light and dark varieties")) throw new Error("sauce: salt level is not a different sauce");
+  // A food in a sauce is the food.
+  if (isSauceMismatch("sardines in tomato sauce", "Sardines, canned in tomato sauce, whole contents")) throw new Error("sauce: food in sauce");
+
+  const pepperRows = [
+    row("13-880", "Pepper, black"),
+    row("13-524", "Pepper, capsicum, red, raw"),
+    row("13-318", "Peppers, capsicum, green, raw"),
+  ];
+  expectPick("bell pepper", pepperRows, "13-524");
+  expectPick("black pepper", pepperRows, "13-880");
+  expectPick("ground black pepper", pepperRows, "13-880");
+  expectPick("peppercorns", pepperRows, "13-880");
+  if (!isSpicePepperMismatch("roasted peppers jar", "Pepper, black")) throw new Error("pepper: roasted peppers are capsicum");
+  if (normalizeCofidQuery("pink peppercorns") !== "pink peppercorns") throw new Error("pepper: pink peppercorns aren't black pepper");
+
+  const teaRows = [
+    row("17-171", "Tea, green, infusion"),
+    row("17-165", "Tea, black, infusion, average"),
+    row("17-172", "Tea, herbal, infusion"),
+    row("11-797", "Biscuits, semi-sweet", "fulltext"),
+    row("11-1009", "Currant buns, retail", "fulltext"),
+  ];
+  expectPick("rich tea biscuit", teaRows, "11-797");
+  expectPick("tea cake", teaRows, "11-1009");
+  expectPick("earl grey tea", teaRows, "17-165");
+  expectPick("peppermint tea", teaRows, "17-172");
+  expectPick("green tea", teaRows, "17-171");
+  if (!isTeaDrinkMismatch("tea loaf", "Tea, black, infusion, average")) throw new Error("tea: tea loaf is a cake");
+
+  // "Water" in front of another word names a different food.
+  const chestnutRows = [
+    row("14-813", "Chestnuts, kernel only, raw"),
+    row("13-394", "Water chestnuts, raw"),
+    row("11-794", "Biscuits, cheese flavoured", "fulltext"),
+  ];
+  expectPick("water chestnuts tin", chestnutRows, "13-394");
+  expectPick("chestnuts", chestnutRows, "14-813");
+  expectPick("water biscuit", chestnutRows, null);
+  if (isWaterFoodMismatch("tuna in water", "Tuna, canned in brine, drained")) throw new Error("water: packing liquid");
+  if (isWaterFoodMismatch("watercress", "Watercress, raw")) throw new Error("water: watercress is one word");
+
+  if (!isSourCreamDipMismatch("salsa dip", "Dips, sour-cream based, assorted flavours")) throw new Error("dip: salsa");
+  if (isSourCreamDipMismatch("sour cream dip", "Dips, sour-cream based, assorted flavours")) throw new Error("dip: sour cream");
+  if (!isSalsaMismatch("tomato salsa", "Tomatoes, cherry, raw")) throw new Error("salsa: CoFID has none");
+
+  const refriedRows = [
+    row("13-108", "Beans, pinto, re-fried beans"),
+    row("15-854", "Re-fried beans"),
+    row("13-045", "Beans, butter, canned, re-heated, drained"),
+  ];
+  expectPick("refried beans tin", refriedRows, "13-108");
+  expectPick("refried beans", refriedRows, "13-108");
+  expectPick("homemade refried beans", refriedRows, "15-854");
+  if (normalizeCofidQuery("pinto refried beans") !== "pinto re-fried beans") throw new Error("refried: pinto doubled");
+  if (normalizeCofidQuery("black coffee") !== "coffee infusion") throw new Error("coffee: black coffee is not Irish");
+}
+console.log("OK: 16 Nov 2026 sauces, peppers, teas and water");

@@ -187,7 +187,30 @@ function rewriteToCofidVocabulary(query: string): string {
   // CoFID says "canned" and "vegetables": "mushroom soup tin" is "Soup, mushroom,
   // cream of, canned"; "frozen mixed veg" is "Vegetables, mixed, frozen, …".
   q = q.replace(/\btins? of\b/g, "canned").replace(/\b(?:tinned|tins?)\b/g, "canned");
+  // Re-fried beans come in a tin: CoFID's "Beans, pinto, re-fried beans"
+  // (107 kcal, 1.1 g fat). "Re-fried beans" is a homemade dish fried in fat
+  // (169 kcal, 8.6 g fat), and "canned" pulled in "Beans, butter, canned".
+  if (!/\bhomemade\b/.test(q)) {
+    q = q.replace(/\b(?:canned )?(?<!pinto )re-fried beans?(?: canned)?\b/g, "pinto re-fried beans");
+  }
   q = q.replace(/\b(?:veg|veggies)\b/g, "vegetables");
+  q = q.replace(/\bbbq\b/g, "barbecue");
+  // A plain jar of pasta sauce is tomato based; it took "Sauce, pasta, carbonara type".
+  q = q.replace(/^(?:jarred |tomato )?pasta sauce(?: jar)?$/, "sauce pasta tomato based napoletana");
+  // Sweet peppers are CoFID's "Pepper, capsicum, …"; "bell pepper" took
+  // "Pepper, black". Peppercorns are black pepper ("peppercorns" took sweetcorn).
+  q = q.replace(/\bbell peppers?\b/g, "pepper capsicum");
+  q = q.replace(/(?<!\b(?:pink|green|sichuan|szechuan)\s)\b(?:black\s+)?peppercorns?\b/g, "black pepper");
+  // Rich tea is CoFID's "Biscuits, semi-sweet"; a teacake is a currant bun. Both
+  // took "Tea, green, infusion" (0 kcal).
+  q = q.replace(/\brich tea biscuits?\b/g, "semi-sweet biscuits");
+  q = q.replace(/\btea ?cakes?\b/g, "currant buns");
+  // Named teas: CoFID has black, green and herbal infusions, and "earl grey tea"
+  // took green.
+  q = q.replace(/\b(?:earl grey|english breakfast|breakfast|builders?|assam|darjeeling|ceylon)\s+tea\b/g, "black tea");
+  q = q.replace(/\b(?:peppermint|mint|fruit|herbal|camomile|chamomile|rooibos|redbush|ginger)\s+tea\b/g, "herbal tea");
+  // "black coffee" took "Coffee, Irish" (125 kcal, with whisky and cream).
+  q = q.replace(/\bblack coffee\b/g, "coffee infusion");
   // CoFID files the nut as "Cashew nuts, …". Bare "cashews" scored "Cashew fruit,
   // flesh only" higher (33 kcal per 100 g instead of about 600).
   q = q.replace(/\bcashews?\b(?!\s+(?:nuts?|fruit|apples?|butter|milk|cream|drink))/g, "cashew nuts");
@@ -964,6 +987,108 @@ export function isNutButterMismatch(query: string, foodName: string): boolean {
   return !ruleTokens(foodName).includes(canonicalToken(nut));
 }
 
+const SAUCE_QUERY_PATTERN = /\bsauces?\b/;
+const SAUCE_ROW_PATTERN = /\b(sauces?|ketchup|pesto|dressing|gravy|relish|chutney|mayonnaise|puree|paste)\b/;
+const DRY_MIX_PATTERN = /\b(packet|mix|mixes|dry|dried|powder|granules)\b/;
+/** Words that say how a sauce is sold or made, not which sauce it is. */
+const SAUCE_NEUTRAL_WORDS = new Set(
+  [
+    ...VARIETY_NEUTRAL_WORDS,
+    "sauce",
+    "jar",
+    "bottle",
+    "bottled",
+    "squeezy",
+    "pot",
+    "sachet",
+    "ready",
+    "made",
+    "readymade",
+    "shop",
+    "bought",
+    "chilled",
+    "classic",
+    "original",
+    "smooth",
+    "thick",
+    "chunky",
+    "salt",
+    "sugar",
+    "sodium",
+  ].map(canonicalToken),
+);
+
+/**
+ * A sauce must be that sauce. CoFID has no row for most bottled sauces, and
+ * "teriyaki sauce", "hot sauce", "pizza sauce jar" and a dozen others took
+ * "Sauce, duck a l'orange"; "oyster sauce" took "Oysters, raw", "black bean
+ * sauce" canned butter beans, "pasta sauce" a dried pasta-and-sauce mix (358
+ * kcal) and "sweet chilli sauce" "Sauce, Chinese cook in, sweet & sour". The
+ * row has to be a sauce, carry every word that says which sauce, and not be a
+ * dry mix unless asked for. A food in a sauce ("sardines in tomato sauce") is
+ * left to the other rules: its row is the food.
+ */
+export function isSauceMismatch(query: string, foodName: string): boolean {
+  const q = normalizeCofidQuery(query);
+  if (!SAUCE_QUERY_PATTERN.test(q) || /\bin\b/.test(q)) return false;
+  // The row's own name, before the first comma, must be a sauce: "Curry,
+  // chicken, made with cook-in sauce" is a curry.
+  if (!SAUCE_ROW_PATTERN.test(normalizeForMatch(primaryFoodName(foodName)))) return true;
+  const f = normalizeForMatch(foodName);
+  if (DRY_MIX_PATTERN.test(f) && !DRY_MIX_PATTERN.test(q)) return true;
+  const row = new Set(ruleTokens(foodName));
+  return ruleTokens(q).some((w) => !SAUCE_NEUTRAL_WORDS.has(w) && !row.has(w));
+}
+
+const SPICE_PEPPER_ROW_PATTERN = /^pepper, (black|white|cayenne)\b/;
+const SPICE_PEPPER_QUERY_PATTERN = /\b(black|white|cayenne|ground|cracked|seasoning)\b/;
+
+/** Sweet peppers aren't the spice: "roasted peppers jar" took "Pepper, black" (277 kcal). */
+export function isSpicePepperMismatch(query: string, foodName: string): boolean {
+  if (!SPICE_PEPPER_ROW_PATTERN.test(normalizeForMatch(foodName))) return false;
+  return !SPICE_PEPPER_QUERY_PATTERN.test(normalizeCofidQuery(query));
+}
+
+const BAKED_GOOD_PATTERN = /\b(biscuits?|cakes?|teacakes?|loaf|bread|buns?|scones?|brack)\b/;
+
+/** A tea biscuit or tea loaf is not the drink ("Tea, green, infusion", 0 kcal). */
+export function isTeaDrinkMismatch(query: string, foodName: string): boolean {
+  if (!/^tea\b/.test(normalizeForMatch(foodName))) return false;
+  return BAKED_GOOD_PATTERN.test(normalizeCofidQuery(query));
+}
+
+/**
+ * "Water" in front of another word names a different food: water chestnuts
+ * took "Chestnuts, kernel only, raw" (170 kcal, not 46) and a water biscuit
+ * took "Biscuits, cheese flavoured". Those rows must name "water" and the
+ * word after it ("Water chestnuts, raw"). "In water" and "made up with water"
+ * say how something was cooked or packed, so they don't count on either side.
+ * A water itself ("coconut water") is isVarietyMismatch's.
+ */
+export function isWaterFoodMismatch(query: string, foodName: string): boolean {
+  const queryText = normalizeCofidQuery(query).replace(PREP_LIQUID_PATTERN, " ");
+  const words = ruleTokens(queryText).filter((t) => !VARIETY_NEUTRAL_WORDS.has(t));
+  const at = words.indexOf("water");
+  if (at === -1 || at === words.length - 1) return false;
+  const rowText = normalizeForMatch(foodName).replace(PREP_LIQUID_PATTERN, " ");
+  const row = new Set(ruleTokens(rowText));
+  const singular = (w: string) => w.replace(/s$/, "");
+  const next = singular(words[at + 1]);
+  return !(row.has("water") && [...row].some((t) => singular(t) === next));
+}
+
+/** "Salsa dip" and "tzatziki dip" took "Dips, sour-cream based" (360 kcal). */
+export function isSourCreamDipMismatch(query: string, foodName: string): boolean {
+  if (!/\bsour-cream based\b/.test(normalizeForMatch(foodName))) return false;
+  return !/\bsour[ -]?cream\b/.test(normalizeCofidQuery(query));
+}
+
+/** CoFID has no salsa; "tomato salsa" took "Tomatoes, cherry, raw". */
+export function isSalsaMismatch(query: string, foodName: string): boolean {
+  if (!/\bsalsa\b/.test(normalizeCofidQuery(query))) return false;
+  return !/\bsalsa\b/.test(normalizeForMatch(foodName));
+}
+
 /** Any of the rules above: the row is a different food, so it must never be picked. */
 export function isDifferentFoodRow(query: string, foodName: string): boolean {
   return (
@@ -973,7 +1098,13 @@ export function isDifferentFoodRow(query: string, foodName: string): boolean {
     isStockConcentrateMismatch(query, foodName) ||
     isFatLevelMismatch(query, foodName) ||
     isChilliDishMismatch(query, foodName) ||
-    isNutButterMismatch(query, foodName)
+    isNutButterMismatch(query, foodName) ||
+    isSauceMismatch(query, foodName) ||
+    isSpicePepperMismatch(query, foodName) ||
+    isTeaDrinkMismatch(query, foodName) ||
+    isWaterFoodMismatch(query, foodName) ||
+    isSourCreamDipMismatch(query, foodName) ||
+    isSalsaMismatch(query, foodName)
   );
 }
 

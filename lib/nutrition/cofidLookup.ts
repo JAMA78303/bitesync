@@ -113,7 +113,7 @@ function overrideLookupKeys(name: string): string[] {
 }
 
 function rowToNutrition(row: CofidDbRow, matched_by: CoFIDMatchKind): CoFIDNutrition {
-  // Spices CoFID lists without an energy figure would otherwise cost 0 kcal.
+  // Rows CoFID lists without an energy figure would otherwise cost 0 kcal.
   return { ...fillCofidEnergyGap(row), matched_by };
 }
 
@@ -233,6 +233,23 @@ async function collectCofidCandidates(
         );
       }
     }
+  }
+
+  // CoFID files most sauces as "Sauce, …" (24 rows). The 10-row word lookup
+  // above never reached "Sauce, traditional cook in, white sauce based" or
+  // "Sauce, Indian cook in, korma/tikka masala", so sauces fetch them all.
+  // The patterns are quoted because a bare comma separates or() conditions.
+  if (/\bsauces?\b/.test(normalised)) {
+    pending.push(
+      Promise.resolve(
+        supabase
+          .from("cofid_foods")
+          .select(COFID_CANDIDATE_SELECT)
+          .or('food_name.ilike."Sauce,%",food_name.ilike."Sauces,%"')
+          .limit(40)
+          .then(({ data }) => ({ kind: "partial" as const, data })),
+      ),
+    );
   }
 
   const results = await Promise.all(pending);

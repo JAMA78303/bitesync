@@ -2056,16 +2056,19 @@ const ROWS: TupleRow[] = [
     592,
     6.37
   ],
+  // CoFID 11-1009 "Currant buns, retail": a Yorkshire teacake is a currant
+  // bun, and CoFID has no teacake row. Was 518 kcal with 6 g protein and 35 g
+  // fat.
   [
     "tea cake",
-    518,
-    6,
-    50,
-    35,
-    3,
-    12,
-    485,
-    15
+    280,
+    8,
+    52.6,
+    5.6,
+    2.9,
+    16,
+    230,
+    1.86
   ],
   // CoFID 11-1084 "Hot cross buns, homemade". CoFID has no retail row. Was 540
   // kcal and 30 g fat.

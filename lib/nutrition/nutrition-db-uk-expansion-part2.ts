@@ -406,16 +406,18 @@ const ROWS: TupleRow[] = [
     5,
     2.67
   ],
+  // Jar salsa figures (Old El Paso mild, see "salsa mild jar"). Was 293 kcal
+  // with 13 g protein and 10 g fat.
   [
     "salsa dip",
-    293,
-    13,
-    42,
-    10,
-    7,
-    14,
-    866,
-    4.6
+    37,
+    1,
+    6.9,
+    0.5,
+    2.2,
+    5,
+    0,
+    0
   ],
   [
     "sour cream dip",
@@ -1138,16 +1140,18 @@ const ROWS: TupleRow[] = [
     266,
     1.2000000000000002
   ],
+  // M&S High Bake Water Biscuits label, per 100 g (salt 1.03 g). CoFID has no
+  // water biscuit. Was 242 kcal with 12 g protein (template row).
   [
     "water biscuit",
-    242,
-    12,
-    47,
-    5,
-    8,
-    15,
-    901,
-    4.6
+    405,
+    9.6,
+    76.1,
+    6.2,
+    3.1,
+    2.1,
+    412,
+    2.7
   ],
   [
     "cheese crackers",
@@ -1750,16 +1754,19 @@ const ROWS: TupleRow[] = [
     349,
     5.4
   ],
+  // Dry mix as sold: Schwartz Luxury Bread Sauce Mix label, per 100 g (salt
+  // 5.53 g; sugars, fibre and saturates not listed, so 0). Was 525 kcal with
+  // 28 g fat (template row).
   [
     "bread sauce packet",
-    525,
-    7,
-    56,
-    28,
-    3,
-    28,
-    428,
-    12.8
+    375,
+    10.7,
+    71.3,
+    4,
+    0,
+    0,
+    2212,
+    0
   ],
   [
     "bread crumbs fresh",
@@ -2137,38 +2144,47 @@ const ROWS: TupleRow[] = [
     630,
     0
   ],
+  // Blue Dragon Sweet Chilli Dipping Sauce label (Tesco), per 100 ml: 230
+  // kcal, 55.1 g carbohydrate (54.7 g sugars), 4.3 g salt. Protein and fat
+  // aren't listed; 0.5 g each. Was 188 kcal with 17 g protein and 5 g fat.
   [
     "sweet chilli sauce",
-    188,
-    17,
-    29,
-    5,
-    3,
-    9,
-    725,
-    2
+    230,
+    0.5,
+    55.1,
+    0.5,
+    0,
+    54.7,
+    1720,
+    0
   ],
+  // Flying Goose Sriracha, per 100 g (Fitatu listing; the brand's NZ label
+  // states 140 kcal from 7 g carbohydrate, which doesn't add up). Salt isn't
+  // listed. Was 420 kcal with 7 g protein and 13 g fat.
   [
     "sriracha sauce",
-    420,
-    7,
-    74,
-    13,
-    6,
-    24,
-    614,
-    5.4
+    122,
+    1.8,
+    23,
+    1.3,
+    0,
+    18,
+    0,
+    0
   ],
+  // Tabasco Original label (Ocado, Tesco), per 100 ml: 16 kcal, 0.7 g fat;
+  // 1.6 g carbohydrate and 1 g protein from other retailer listings. Salt
+  // isn't listed. Was 524 kcal with 6 g protein and 28 g fat.
   [
     "hot sauce tabasco",
-    524,
-    6,
-    61,
-    28,
-    6,
-    31,
-    693,
-    12.8
+    16,
+    1,
+    1.6,
+    0.7,
+    0,
+    0,
+    0,
+    0
   ],
   // CoFID 17-723 "Worcestershire sauce". Was 66 kcal and 3.2 g fat.
   [
@@ -2195,27 +2211,33 @@ const ROWS: TupleRow[] = [
     480,
     0
   ],
+  // Colman's Bramley Apple Sauce label (Tesco, Sainsbury's), per 100 g: 115
+  // kcal, 28 g carbohydrate (26 g sugars), protein and fat under 0.5 g. Was
+  // 185 kcal with 16 g protein and 3 g fat.
   [
     "apple sauce jar",
-    185,
-    16,
-    24,
-    3,
-    4,
-    14,
-    420,
-    2
+    115,
+    0,
+    28,
+    0,
+    0,
+    26,
+    0,
+    0
   ],
+  // Ocean Spray Smooth Cranberry Sauce label, per 100 g: 150 kcal, 37 g
+  // carbohydrate (33 g sugars), fat and fibre under 0.5 g. Was 425 kcal with
+  // 12 g protein and 11 g fat.
   [
     "cranberry sauce jar",
-    425,
-    12,
-    69,
-    11,
-    7,
-    29,
-    309,
-    5.4
+    150,
+    0,
+    37,
+    0,
+    0,
+    33,
+    0,
+    0
   ],
   // CoFID 13-309 "Onions, pickled, drained". Was 521 kcal and 26 g fat.
   [
@@ -2366,27 +2388,31 @@ const ROWS: TupleRow[] = [
     896,
     4.6
   ],
+  // Blue Dragon Black Bean Stir Fry Sauce label, per 100 g. Was 195 kcal with
+  // 13 g protein (template row).
   [
     "stir fry sauce black bean",
-    195,
-    13,
-    29,
-    4,
-    3,
-    13,
-    705,
-    2
+    123,
+    2.1,
+    24,
+    2.1,
+    0,
+    20,
+    520,
+    0.2
   ],
+  // Blue Dragon Sweet & Sour Stir Fry Sauce label, per 100 g (salt 1.2 g).
+  // Was 431 kcal with 9 g protein and 12 g fat (template row).
   [
     "stir fry sauce sweet sour",
-    431,
-    9,
-    74,
-    12,
-    6,
-    28,
-    594,
-    5.4
+    132,
+    0.2,
+    32.7,
+    0.1,
+    0,
+    28.2,
+    480,
+    0
   ],
   [
     "curry paste red thai",
@@ -3499,38 +3525,47 @@ const ROWS: TupleRow[] = [
     5300,
     10.66
   ],
+  // CoFID 17-727 "Stock cubes, vegetable", with the carbohydrate CoFID left
+  // unmeasured filled by difference (see cofidEnergyGaps.ts). CoFID gives no
+  // saturated fat. Was 249 kcal with 13 g protein and 7 g fat.
   [
     "stock cube vegetable",
-    249,
-    13,
-    42,
-    7,
-    5,
-    12,
-    796,
-    4.6
+    292,
+    13.5,
+    19.7,
+    17.3,
+    1.8,
+    0,
+    16800,
+    0
   ],
+  // CoFID 17-515 "Stock cubes, beef", with the carbohydrate CoFID left
+  // unmeasured filled by difference (see cofidEnergyGaps.ts). Was 185 kcal
+  // with 17 g protein and 6 g fat.
   [
     "stock cube beef",
-    185,
-    17,
-    29,
-    6,
-    3,
-    9,
-    605,
-    2
+    276,
+    16.8,
+    31.5,
+    9.2,
+    0,
+    0,
+    14560,
+    3.51
   ],
+  // CoFID 17-726 "Stock cubes, chicken", with the carbohydrate CoFID left
+  // unmeasured filled by difference (see cofidEnergyGaps.ts). CoFID gives no
+  // saturated fat. Was 424 kcal with 7 g protein and 14 g fat.
   [
     "stock cube chicken",
-    424,
-    7,
-    74,
-    14,
-    6,
-    24,
-    494,
-    5.4
+    289,
+    15.4,
+    22,
+    15.4,
+    0.6,
+    0,
+    16300,
+    0
   ],
   [
     "bouillon powder",
@@ -3565,16 +3600,19 @@ const ROWS: TupleRow[] = [
     891,
     4.6
   ],
+  // Dry mix as sold: Colman's White Sauce Mix label, per 100 g unprepared
+  // (salt 9.2 g; fibre not listed, so 0). Was 188 kcal with 16 g protein
+  // (template row).
   [
     "white sauce packet",
-    188,
-    16,
-    24,
-    4,
-    4,
-    14,
-    700,
-    2
+    413,
+    8.1,
+    55,
+    17,
+    0,
+    8.4,
+    3680,
+    9.8
   ],
   [
     "cheese sauce packet",
@@ -3587,16 +3625,18 @@ const ROWS: TupleRow[] = [
     589,
     5.4
   ],
+  // CoFID 17-631 "Sauce, traditional cook in, white sauce based". Was 522
+  // kcal with 5 g protein and 27 g fat.
   [
     "white sauce jar",
-    522,
-    5,
-    56,
-    27,
-    3,
-    28,
-    668,
-    12.8
+    105,
+    1.6,
+    5.7,
+    8.6,
+    2.3,
+    2.8,
+    370,
+    1.69
   ],
   [
     "bechamel jar",
@@ -3632,60 +3672,72 @@ const ROWS: TupleRow[] = [
     795,
     2
   ],
+  // Heinz Tomato & Vodka pasta sauce label (Waitrose), per 100 g: 66 kcal, 2
+  // g protein, 4.9 g carbohydrate (3.8 g sugars), 3.3 g fat. Salt isn't
+  // listed. Was 421 kcal with 11 g protein and 10 g fat.
   [
     "vodka sauce jar",
-    421,
-    11,
-    74,
-    10,
-    4,
-    26,
-    284,
-    5.4
+    66,
+    2,
+    4.9,
+    3.3,
+    0,
+    3.8,
+    0,
+    0
   ],
+  // CoFID 17-619 "Sauce, pasta, tomato based, napoletana": arrabbiata is
+  // napoletana with chilli. Was 527 kcal with 10 g protein and 25 g fat.
   [
     "arrabbiata sauce jar",
-    527,
-    10,
-    61,
-    25,
-    4,
-    33,
-    363,
-    12.8
+    65,
+    1.5,
+    6.5,
+    3.8,
+    2.3,
+    6.3,
+    290,
+    0.54
   ],
+  // CoFID 17-619 "Sauce, pasta, tomato based, napoletana". Was 62 kcal with 0
+  // g protein and 0.20000000000000018 g fat.
   [
     "napoli sauce jar",
-    62,
-    0,
-    12.5,
-    0.20000000000000018,
-    3.2,
-    13,
-    46,
-    1.2000000000000002
+    65,
+    1.5,
+    6.5,
+    3.8,
+    2.3,
+    6.3,
+    290,
+    0.54
   ],
+  // CoFID 17-619 "Sauce, pasta, tomato based, napoletana": pizza sauce is the
+  // same tomato-and-oil sauce. Was 244 kcal with 10 g protein and 8 g fat.
   [
     "pizza sauce jar",
-    244,
-    10,
-    47,
-    8,
-    8,
-    19,
-    681,
-    4.6
+    65,
+    1.5,
+    6.5,
+    3.8,
+    2.3,
+    6.3,
+    290,
+    0.54
   ],
+  // Old El Paso Mild Enchilada Sauce label (Australia), per 100 g: 38 kcal, 1
+  // g protein, 7.2 g carbohydrate (6.2 g sugars), 1 g fat, 1.2 g fibre. Salt
+  // isn't listed. Was 185 kcal with 14 g protein and 7 g fat.
   [
     "enchilada sauce",
-    185,
-    14,
-    24,
-    7,
-    2,
-    8,
-    490,
-    2
+    38,
+    1,
+    7.2,
+    1,
+    1.2,
+    6.2,
+    0,
+    0
   ],
   [
     "taco seasoning packet",
@@ -3731,27 +3783,33 @@ const ROWS: TupleRow[] = [
     776,
     4.6
   ],
+  // Old El Paso Chunky Salsa (mild) label, 238 g bottle, per 100 g: 37 kcal,
+  // 6.9 g carbohydrate (5 g sugars), 2.2 g fibre; 0.5 g fat from the 226 g
+  // jar. Protein and salt aren't listed; 1 g protein, as in tomatoes. Was 184
+  // kcal with 13 g protein and 5 g fat.
   [
     "salsa mild jar",
-    184,
-    13,
-    29,
+    37,
+    1,
+    6.9,
+    0.5,
+    2.2,
     5,
-    3,
-    13,
-    585,
-    2
+    0,
+    0
   ],
+  // Old El Paso Thick 'N' Chunky Hot Salsa (Sainsbury's): 35 kcal per 100 g;
+  // other figures as the mild. Was 419 kcal with 9 g protein and 13 g fat.
   [
     "salsa hot jar",
-    419,
-    9,
-    74,
-    13,
-    6,
-    28,
-    474,
-    5.4
+    35,
+    1,
+    6.9,
+    0.5,
+    2.2,
+    5,
+    0,
+    0
   ],
   [
     "refried beans tin",
@@ -5084,16 +5142,18 @@ const ROWS: TupleRow[] = [
     656,
     4.6
   ],
+  // Jar salsa figures (Old El Paso mild, see "salsa mild jar"). Was 185 kcal
+  // with 13 g protein and 6 g fat.
   [
     "salsa snack pot",
-    185,
-    13,
-    29,
-    6,
-    3,
-    13,
-    465,
-    2
+    37,
+    1,
+    6.9,
+    0.5,
+    2.2,
+    5,
+    0,
+    0
   ],
   [
     "baby cucumber snack",
@@ -5735,16 +5795,18 @@ const ROWS: TupleRow[] = [
     796,
     5.67
   ],
+  // Jacob's Biscuits for Cheese selection, Waitrose listing per 100 g (salt
+  // 1.4 g; fibre, sugars and saturates not listed, so 0). Was 25 kcal.
   [
     "water biscuit cheese selection",
-    25,
-    4.2,
-    7.5,
-    3.2,
-    4.2,
-    14,
-    361,
-    1.2000000000000002
+    479,
+    8.9,
+    63.1,
+    20.4,
+    0,
+    0,
+    560,
+    0
   ],
   [
     "cracker selection festive",
@@ -6131,16 +6193,19 @@ const ROWS: TupleRow[] = [
     226,
     1.2000000000000002
   ],
+  // Water chestnuts, canned, drained (McCance & Widdowson via patient.info):
+  // fat trace; fibre and sodium not given, so 0. Was 248 kcal with 14 g
+  // protein (template row).
   [
     "water chestnuts tin",
-    248,
-    14,
-    47,
-    4,
-    8,
-    15,
-    861,
-    4.6
+    31,
+    0.9,
+    7.4,
+    0,
+    0,
+    3.4,
+    0,
+    0
   ],
   [
     "bamboo shoots tin",
@@ -6164,16 +6229,19 @@ const ROWS: TupleRow[] = [
     559,
     5.4
   ],
+  // USDA SR Legacy 169301 water spinach (water convolvulus), raw: 3.1 g total
+  // carbohydrate less 2.1 g fibre. No canned figure; sodium not taken, so 0.
+  // Was 524 kcal with 26 g fat (template row).
   [
     "water spinach tin",
-    524,
-    7,
-    56,
-    26,
-    5,
-    34,
-    638,
-    12.8
+    19,
+    2.6,
+    1,
+    0.2,
+    2.1,
+    0,
+    0,
+    0
   ],
   [
     "lotus root slices",
@@ -6288,49 +6356,62 @@ const ROWS: TupleRow[] = [
     428,
     12.8
   ],
+  // Kikkoman Ponzu (lemon) label (UK retailer), per 100 ml: 122 kcal, 3.3 g
+  // protein, 23 g carbohydrate (all sugars), no fat, 6.6 g salt. Was 57 kcal
+  // with 0.20000000000000018 g protein and 0 g fat.
   [
     "ponzu sauce",
-    57,
-    0.20000000000000018,
-    7.5,
+    122,
+    3.3,
+    23,
     0,
-    2.2,
-    8,
-    111,
-    1.2000000000000002
+    0,
+    23,
+    2640,
+    0
   ],
+  // Kikkoman Teriyaki Marinade label (Sainsbury's), per 100 ml: 99 kcal, 6.7
+  // g protein, 12 g carbohydrate (11 g sugars), under 0.1 g fat, 10.2 g salt.
+  // Its wine carries the energy the macros don't. Was 250 kcal with 11 g
+  // protein and 5 g fat.
   [
     "teriyaki sauce bottle",
-    250,
+    99,
+    6.7,
+    12,
+    0.1,
+    0,
     11,
-    42,
-    5,
-    7,
-    14,
-    746,
-    4.6
+    4080,
+    0
   ],
+  // Otafuku Yakisoba Sauce (Japanese food retailer listing), per 100 g: 133
+  // kcal, 1.7 g protein, 31.4 g carbohydrate, 0.1 g fat. Sugars and salt
+  // aren't listed. Was 184 kcal with 15 g protein and 4 g fat.
   [
     "yakisoba sauce",
-    184,
-    15,
-    29,
-    4,
-    5,
-    11,
-    555,
-    2
+    133,
+    1.7,
+    31.4,
+    0.1,
+    0,
+    0,
+    0,
+    0
   ],
+  // Otafuku Okonomi Sauce (Fitatu listing), per 100 g: 152 kcal, 2.5 g
+  // protein, 35 g carbohydrate (30 g sugars). Fat and salt aren't listed. Was
+  // 423 kcal with 11 g protein and 12 g fat.
   [
     "okonomiyaki sauce",
-    423,
-    11,
-    74,
-    12,
-    4,
-    26,
-    444,
-    5.4
+    152,
+    2.5,
+    35,
+    0,
+    0,
+    30,
+    0,
+    0
   ],
   [
     "bulgogi marinade",
@@ -6782,6 +6863,88 @@ const ROWS: TupleRow[] = [
     33,
     483,
     12.8
+  ],
+  // Lee Kum Kee Hoisin Sauce label, 210 g jar (Dunnes Stores; salt from
+  // Colruyt), per 100 g: 228 kcal, 1.8 g protein, 53 g carbohydrate (47 g
+  // sugars), 0.7 g fat, 6.4 g salt.
+  [
+    "hoisin sauce",
+    228,
+    1.8,
+    53,
+    0.7,
+    0,
+    47,
+    2560,
+    0.1
+  ],
+  // Lee Kum Kee Panda Oyster Sauce label (Sainsbury's), per 100 g: 113 kcal,
+  // 1.2 g protein, 27 g carbohydrate (21 g sugars), fat under 0.5 g, 11.5 g
+  // salt.
+  [
+    "oyster sauce",
+    113,
+    1.2,
+    27,
+    0,
+    0,
+    21,
+    4600,
+    0
+  ],
+  // Blue Dragon Fish Sauce label (Tesco), per 100 ml: 73 kcal, 6.6 g protein,
+  // 11.6 g carbohydrate (9.1 g sugars), 0.5 g fat, 26.7 g salt.
+  [
+    "fish sauce",
+    73,
+    6.6,
+    11.6,
+    0.5,
+    0,
+    9.1,
+    10680,
+    0
+  ],
+  // Blue Dragon Black Bean Stir Fry Sauce label (Dunnes Stores, Tesco), per
+  // 100 g: 123 kcal, 2.1 g protein, 24 g carbohydrate (20 g sugars), 2.1 g
+  // fat, 1.3 g salt.
+  [
+    "black bean sauce",
+    123,
+    2.1,
+    24,
+    2.1,
+    0,
+    20,
+    520,
+    0.2
+  ],
+  // Lee Kum Kee Plum Sauce (Albion Fine Foods listing), per 100 g: 60 g
+  // carbohydrate (all sugars), 3 g salt. Energy isn't listed: 240 kcal from
+  // the carbohydrate.
+  [
+    "plum sauce",
+    240,
+    0,
+    60,
+    0,
+    0,
+    60,
+    1200,
+    0
+  ],
+  // Vita Coco Original label (Ocado, Waitrose), per 100 ml: 18 kcal, 4.5 g
+  // carbohydrate (4 g sugars), no fat or protein.
+  [
+    "coconut water",
+    18,
+    0,
+    4.5,
+    0,
+    0,
+    4,
+    0,
+    0
   ]
 ];
 
