@@ -20,6 +20,7 @@
 import { loadEnvFiles } from "@/lib/supabase/loadEnv";
 import { setCofidLookupSupabase } from "@/lib/nutrition/cofidLookup";
 import { createServiceClient } from "@/lib/supabase/service";
+import { selectAllPages } from "@/lib/supabase/selectAllPages";
 import { getRecipeNutritionTotals } from "@/lib/nutrition/recipeNutritionTotals";
 import type { RecipeIngredientInput } from "@/lib/nutrition/calculate";
 
@@ -78,16 +79,29 @@ async function main() {
   }
 
   const ids = recipes.map((r) => r.id as string);
-  const [{ data: ingredientRows }, { data: nutritionRows }] = await Promise.all([
-    supabase.from("recipe_ingredients").select("recipe_id,name,quantity,unit").in("recipe_id", ids),
-    supabase
-      .from("recipe_nutrition")
-      .select("recipe_id,calories,protein_g,carbs_g,fat_g")
-      .in("recipe_id", ids),
+  // Paged: one select stops at 1,000 rows without saying so, which reported 32
+  // recipes as having "no ingredients".
+  const [ingredientRows, nutritionRows] = await Promise.all([
+    selectAllPages((from, to) =>
+      supabase
+        .from("recipe_ingredients")
+        .select("recipe_id,name,quantity,unit")
+        .in("recipe_id", ids)
+        .order("id", { ascending: true })
+        .range(from, to),
+    ),
+    selectAllPages((from, to) =>
+      supabase
+        .from("recipe_nutrition")
+        .select("recipe_id,calories,protein_g,carbs_g,fat_g")
+        .in("recipe_id", ids)
+        .order("recipe_id", { ascending: true })
+        .range(from, to),
+    ),
   ]);
 
   const byRecipe = new Map<string, RecipeIngredientInput[]>();
-  for (const row of ingredientRows ?? []) {
+  for (const row of ingredientRows) {
     const list = byRecipe.get(row.recipe_id as string) ?? [];
     list.push({
       name: String(row.name ?? ""),
@@ -96,7 +110,7 @@ async function main() {
     });
     byRecipe.set(row.recipe_id as string, list);
   }
-  const nutritionById = new Map(nutritionRows?.map((n) => [n.recipe_id as string, n]) ?? []);
+  const nutritionById = new Map(nutritionRows.map((n) => [n.recipe_id as string, n]));
 
   const findings: Finding[] = [];
   let audited = 0;
