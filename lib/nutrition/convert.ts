@@ -207,6 +207,80 @@ export function shouldShowApproxWeightHint(unit: string): boolean {
   );
 }
 
+/** Units that measure volume. Mass units (g, kg, oz, lb, mg) never use cup weights. */
+const VOLUME_UNITS = new Set(["ml", "l", "cl", "tsp", "tbsp", "cup", "fl oz", "fl_oz"]);
+
+/**
+ * Grams in one cup for foods far from water's density, from King Arthur
+ * Baking's ingredient weight chart (kingarthurbaking.com/learn/ingredient-weight-chart),
+ * scaled to one cup where the chart gives ½ or ¼ cup. Every volume unit uses
+ * them in proportion (a tablespoon is 1/16 cup, a teaspoon 1/48): before,
+ * every cup was 240 g, so "1 cup dry oats" was costed at 240 g instead of 89 g
+ * and "1 tbsp cocoa" at 15 g instead of about 5. Foods not listed, and all
+ * liquids, keep water's 240 g per cup. Most specific first; matched on the
+ * name before any comma or bracket.
+ */
+const CUP_WEIGHTS_G: [RegExp, number][] = [
+  // Flours and starches.
+  [/^(?:almond flour|ground almonds?)$/, 96],
+  [/^coconut flour$/, 128],
+  [/^oat flour$/, 92],
+  [/^(?:white )?rice flour$/, 142],
+  [/^(?:cornflour|cornstarch|corn starch)$/, 112],
+  [/^(?:self[- ]raising|self[- ]rising)(?: white)? flour$/, 113],
+  [/^(?:wholemeal|whole ?wheat|wholewheat)(?: bread)? flour$/, 113],
+  [/^(?:(?:plain|all[- ]purpose|strong|bread|white)\s+)*flour$/, 120],
+  [/^(?:unsweetened |raw )?cocoa(?: powder)?$/, 84],
+  // Sugars and syrups.
+  [/^(?:light |dark )?(?:soft )?brown sugar$/, 213],
+  [/^(?:icing|confectioners'?|powdered) sugar$/, 113],
+  [/^(?:granulated |white |granulated white )?sugar$/, 198],
+  [/^(?:runny |clear )?honey$/, 336],
+  [/^(?:pure )?maple syrup$/, 312],
+  [/^molasses$/, 340],
+  [/^(?:smooth |crunchy |creamy )?peanut butter$/, 270],
+  // Grains, dry.
+  [/^steel[- ]cut oats$/, 140],
+  [/^(?:(?:rolled|porridge|old[- ]fashioned|quick|quick[- ]cooking|jumbo|dry)\s+)*oats$/, 89],
+  // The chart's long grain dry rice; used for the other dry white rices too.
+  [/^(?:(?:uncooked|dry|white|long[- ]grain|basmati|jasmine)\s+)*rice$/, 198],
+  [/^cooked brown rice$/, 170],
+  [/^(?:(?:uncooked|dry|white|red|black|tri[- ]colou?r)\s+)*quinoa$/, 177],
+  [/^(?:uncooked |dry )?bulgu?r(?: wheat)?$/, 152],
+  // Nuts, seeds and dried fruit.
+  [/^(?:sliced|flaked) almonds?$/, 86],
+  [/^(?:whole )?almonds?$/, 142],
+  [/^(?:chopped )?walnuts?$/, 113],
+  [/^(?:chopped |diced )?pecans?$/, 114],
+  [/^(?:roasted |unsalted )?peanuts$/, 142],
+  [/^cashews?(?: nuts?)?$/, 113],
+  [/^pumpkin seeds$/, 160],
+  [/^sunflower seeds$/, 140],
+  [/^chia seeds$/, 148],
+  [/^(?:flax meal|flaxseed meal|ground flaxseeds?|ground linseeds?|milled flaxseeds?|milled linseeds?)$/, 100],
+  [/^sesame seeds$/, 142],
+  [/^(?:desiccated|shredded)(?: unsweetened| sweetened)? coconut$/, 85],
+  [/^(?:dark |milk |white |semi[- ]sweet )?chocolate chips$/, 170],
+  [/^raisins$/, 149],
+  [/^dried cranberries$/, 114],
+  // Breadcrumbs and cheese.
+  [/^panko(?: breadcrumbs)?$/, 50],
+  [/^(?:dried|dry) breadcrumbs$/, 112],
+  [/^fresh breadcrumbs$/, 84],
+  [/^(?:grated )?parmesan(?: cheese)?$/, 100],
+  [/^(?:grated |shredded )?(?:cheddar|mozzarella|swiss|monterey jack)(?: cheese)?$/, 113],
+  // Dairy close to water, listed so a cup is the chart's figure.
+  [/^(?:(?:unsalted|salted|softened|melted)\s+)?butter$/, 226],
+  [/^cottage cheese$/, 226],
+];
+
+/** Grams in one cup of this food, or null to use water's density. */
+export function gramsPerCup(rawName: string): number | null {
+  const name = rawName.toLowerCase().split(/[,(]/)[0]!.replace(/\s+/g, " ").trim();
+  if (!name) return null;
+  return CUP_WEIGHTS_G.find(([pattern]) => pattern.test(name))?.[1] ?? null;
+}
+
 function resolveGrams(
   quantity: number,
   unit: string,
@@ -262,6 +336,10 @@ function resolveGrams(
 
   const std = STANDARD_UNIT_TO_GRAMS_PER_UNIT[u];
   if (std != null) {
+    if (VOLUME_UNITS.has(u)) {
+      const perCup = gramsPerCup(name);
+      if (perCup != null) return quantity * std * (perCup / STANDARD_UNIT_TO_GRAMS_PER_UNIT.cup!);
+    }
     if (/\boil\b/i.test(name) && (u === "tbsp" || u === "tsp")) {
       return quantity * (u === "tbsp" ? 13.5 : 4.5);
     }
