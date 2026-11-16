@@ -15,6 +15,7 @@ const INGREDIENT_LOOKUP_ALIASES: Record<string, string> = {
   "flour tortillas": "flour tortilla",
   salsa: "salsa mild jar",
   "fresh salsa": "salsa mild jar",
+  "tomato salsa": "salsa mild jar",
   "ground cumin": "cumin",
   cumin: "cumin",
   tabasco: "hot sauce tabasco",

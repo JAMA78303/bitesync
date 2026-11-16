@@ -8,9 +8,7 @@
  * (a full report) and `tableEnergy.test.ts` (a ratchet on energy).
  */
 import type { NutritionLookupEntry } from "@/types";
-
-/** UK label factors, kcal per g: protein 4, carbohydrate 4, fat 9, fibre 2. */
-const KCAL_PER_G = { protein: 4, carbs: 4, fat: 9, fibre: 2 } as const;
+import { UK_LABEL_KCAL_PER_G as KCAL_PER_G } from "@/lib/nutrition/cofidEnergyGaps";
 
 /** Expected energy when carbohydrate excludes fibre (UK / CoFID convention). */
 export function atwaterKcal(entry: NutritionLookupEntry): number {
