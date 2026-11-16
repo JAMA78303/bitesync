@@ -234,9 +234,15 @@ const CUP_WEIGHTS_G: [RegExp, number][] = [
   // Sugars and syrups.
   [/^(?:light |dark )?(?:soft )?brown sugar$/, 213],
   [/^(?:icing|confectioners'?|powdered) sugar$/, 113],
+  // The chart's "superfine sugar, castor sugar".
+  [/^(?:golden |white )?(?:caster|castor|superfine) sugar$/, 190],
+  [/^demerara(?: sugar)?$/, 220],
   [/^(?:granulated |white |granulated white )?sugar$/, 198],
   [/^(?:runny |clear )?honey$/, 336],
   [/^(?:pure )?maple syrup$/, 312],
+  [/^(?:light |dark )?corn syrup$/, 312],
+  // Not on the chart: Lyle's Golden Syrup label, 21 g a tablespoon (USDA FDC 2027743).
+  [/^golden syrup$/, 336],
   [/^molasses$/, 340],
   [/^(?:smooth |crunchy |creamy )?peanut butter$/, 270],
   // Grains, dry.
@@ -247,6 +253,17 @@ const CUP_WEIGHTS_G: [RegExp, number][] = [
   [/^cooked brown rice$/, 170],
   [/^(?:(?:uncooked|dry|white|red|black|tri[- ]colou?r)\s+)*quinoa$/, 177],
   [/^(?:uncooked |dry )?bulgu?r(?: wheat)?$/, 152],
+  [/^(?:uncooked |dry )?pearl barley$/, 213],
+  [/^(?:uncooked |dry )?millet(?: grain)?$/, 206],
+  [/^(?:(?:dry|instant|quick[- ]cook)\s+)?polenta$/, 163],
+  [/^(?:yellow |fine )?cornmeal$/, 156],
+  [/^semolina(?: flour)?$/, 163],
+  // Not on the chart: USDA SR Legacy portions. Couscous, dry 169699; lentils,
+  // raw 172420 (192 g) and boiled 172421 (198 g). A bare "lentils" is costed
+  // as the drained tin, so it takes the cooked figure.
+  [/^(?:(?:uncooked|dry|wholewheat|whole wheat)\s+)*couscous$/, 173],
+  [/^(?:(?:dried|dry|uncooked)\s+)+(?:(?:red|green|brown|puy|black|beluga|yellow|split)\s+)*lentils$/, 192],
+  [/^(?:(?:cooked|tinned|canned|drained|red|green|brown|puy|black|beluga|yellow|split)\s+)*lentils$/, 198],
   // Nuts, seeds and dried fruit.
   [/^(?:sliced|flaked) almonds?$/, 86],
   [/^(?:whole )?almonds?$/, 142],

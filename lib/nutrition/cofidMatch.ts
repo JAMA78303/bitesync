@@ -217,6 +217,15 @@ function rewriteToCofidVocabulary(query: string): string {
   if (/\bcheddar\b/.test(q)) q = rewriteCheddar(q);
   // One spelling, so the rules for dried foods see "dried" in "sundried".
   q = q.replace(/\bsun[- ]?dried\b/g, "sun dried");
+  // Red pesto is the sun-dried tomato one: CoFID's "Pesto, red". "sun dried
+  // tomato pesto" took grilled tomatoes (17 kcal) and "tomato pesto" took green.
+  // "basil pesto" took "Basil, fresh" (40 kcal against 420).
+  q = q.replace(/\b(?:sun dried )?tomato pesto\b|\bpesto rosso\b/g, "red pesto");
+  q = q.replace(/\bbasil pesto\b|\bpesto genovese\b/g, "green pesto");
+  // CoFID writes "Chinese 5 spice"; "chinese five spice" found nothing (0 kcal).
+  // Cassia is the cinnamon most shops sell.
+  q = q.replace(/\b(?:chinese )?(?:five|5)[- ]spice(?: powder)?\b/g, "chinese 5 spice");
+  q = q.replace(/\bcassia(?: bark)?\b/g, "cinnamon");
   return q.replace(/\s+/g, " ").trim();
 }
 
@@ -938,7 +947,7 @@ export function isPuffedCakeMismatch(query: string, foodName: string): boolean {
   return !row.includes(grain) || !row.includes("cake");
 }
 
-const STOCK_QUERY_PATTERN = /\b(stock|broth)\b/;
+const STOCK_QUERY_PATTERN = /\b(stock|broth|bouillon)\b/;
 const STOCK_CONCENTRATE_QUERY_PATTERN = /\b(cubes?|pots?|powder|granules|concentrate|gel|paste|bouillon|dried|dry)\b/;
 const STOCK_CONCENTRATE_ROW_PATTERN = /\b(cubes?|gel|powder|granules|concentrate|dried)\b/;
 
@@ -953,8 +962,12 @@ export function isStockConcentrateMismatch(query: string, foodName: string): boo
   if (!STOCK_QUERY_PATTERN.test(q)) return false;
   const f = normalizeForMatch(foodName);
   if (!/\b(stock|broth|bouillon)\b/.test(f)) return true;
-  if (STOCK_CONCENTRATE_QUERY_PATTERN.test(q)) return false;
-  return STOCK_CONCENTRATE_ROW_PATTERN.test(f) && !/\bmade up\b/.test(f);
+  const madeUp = /\bmade up\b/.test(f);
+  // A cube, powder or pot is the concentrate: "vegetable stock powder" took
+  // "Stock, chicken, ready made" (12 kcal against about 250), and "vegetable
+  // bouillon" took mixed frozen vegetables.
+  if (STOCK_CONCENTRATE_QUERY_PATTERN.test(q)) return !STOCK_CONCENTRATE_ROW_PATTERN.test(f) || madeUp;
+  return STOCK_CONCENTRATE_ROW_PATTERN.test(f) && !madeUp;
 }
 
 const REDUCED_FAT_QUERY_PATTERN = /\b(fat free|low fat|reduced fat|half fat)\b/;

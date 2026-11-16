@@ -139,7 +139,50 @@ const INGREDIENT_LOOKUP_ALIASES: Record<string, string> = {
   "dry borlotti beans": "dried borlotti beans",
   "borlotti beans dried": "dried borlotti beans",
   "dried borlotti": "dried borlotti beans",
+  // Plain pesto is the basil one, as in CoFID. Partial matching found the red row.
+  pesto: "pesto jar green",
+  "green pesto": "pesto jar green",
+  "basil pesto": "pesto jar green",
+  "pesto genovese": "pesto jar green",
+  "chinese five spice": "five spice powder",
+  "chinese 5 spice": "five spice powder",
+  "5 spice": "five spice powder",
+  cassia: "cassia bark",
+  // Names for the sourced template rows that partial matching missed.
+  "white miso": "miso paste white",
+  "white miso paste": "miso paste white",
+  "shiro miso": "miso paste white",
+  "red miso": "miso paste red",
+  "red miso paste": "miso paste red",
+  "aka miso": "miso paste red",
+  "rose harissa": "harissa paste jar",
+  "rose harissa paste": "harissa paste jar",
+  "za'atar": "zaatar blend",
+  "zaatar": "zaatar blend",
+  cornstarch: "corn starch",
+  "vegetable bouillon": "bouillon powder",
+  "vegetable bouillon powder": "bouillon powder",
+  "swiss vegetable bouillon": "bouillon powder",
+  // Stock powders are the dry concentrate, not the made-up "vegetable stock" (7 kcal).
+  "vegetable stock powder": "bouillon powder",
+  "veg stock powder": "bouillon powder",
+  "stock powder": "bouillon powder",
+  "chicken stock powder": "stock cube chicken",
+  "chicken bouillon": "stock cube chicken",
+  "chicken bouillon powder": "stock cube chicken",
+  "beef stock powder": "stock cube beef",
+  "beef bouillon": "stock cube beef",
+  "pigs trotters": "trotters pig",
+  "pig trotters": "trotters pig",
+  "pig's trotters": "trotters pig",
+  flatbreads: "flatbread",
 };
+
+/**
+ * Red pesto is made with sun-dried tomatoes. Partial matching found fresh
+ * "tomato" (18 kcal per 100 g) for these, against 317 for CoFID's red pesto.
+ */
+const RED_PESTO = /^(?:(?:(?:sun[- ]?)?dried\s+)?tomato\s+pesto|red\s+pesto|pesto\s+rosso)$/;
 
 /**
  * Sun-dried tomatoes, however spelt: partial matching found fresh "tomato"
@@ -222,6 +265,7 @@ function smallFreshChilliEntry(normalized: string): NutritionLookupEntry | null 
 function resolveLookupName(name: string): string {
   const normalized = normalizeName(name).replace(CHEDDAR_FORM_WORDS, "");
   if (SUN_DRIED_TOMATOES.test(normalized)) return "sun dried tomatoes jar";
+  if (RED_PESTO.test(normalized)) return "pesto jar red";
   return (
     INGREDIENT_LOOKUP_ALIASES[normalized] ??
     INGREDIENT_LOOKUP_ALIASES[canonicalIngredientPhrase(normalized)] ??
