@@ -9,6 +9,8 @@ import { MacroBar } from "@/components/today/MacroBar";
 import { getGoalStatus } from "@/lib/today/goal-status";
 import { TodayMealCard } from "@/components/today/TodayMealCard";
 import { MealThumbnail } from "@/components/ui/MealThumbnail";
+import { SnapMealButton } from "@/components/today/SnapMealButton";
+import type { Person } from "@/lib/nutrition/drv";
 import type { TodayMeal, TodayTotals } from "@/lib/planner/today";
 import type { UserNutritionTargets } from "@/lib/utils/nutrition-targets";
 import { MEAL_LABELS, type MealType } from "@/types";
@@ -30,6 +32,8 @@ type Props = {
  dateLabel?: string;
  /** Cards above today's meals: planning the coming week, reminders. */
  extras?: React.ReactNode;
+ /** Set when photo logging is on for this account (lib/photoMeal/access.ts). */
+ photoPerson?: Person | null;
 };
 
 export function TodayDashboard({
@@ -41,6 +45,7 @@ export function TodayDashboard({
  compactHero = false,
  dateLabel,
  extras,
+ photoPerson = null,
 }: Props) {
  const remaining = Math.max(0, targets.kcal - totals.kcal);
  const calorieStatus = getGoalStatus("kcal", totals.kcal, targets.kcal);
@@ -152,12 +157,15 @@ export function TodayDashboard({
  <span className={ds.sectionKicker}>TODAY&apos;S MEALS</span>
  <h2 className={ds.sectionTitle}>Meals for {weekdayName}</h2>
  </div>
+ <div className="flex flex-wrap gap-2">
+ {photoPerson ? <SnapMealButton person={photoPerson} /> : null}
  {meals.length > 0 ? (
  <Link href="/grocery" className={`${ds.secondaryBtn} min-h-10 gap-1.5 px-3.5 py-2 text-xs`}>
  <ShoppingBasket className="h-3.5 w-3.5" aria-hidden />
  Grocery list
  </Link>
  ) : null}
+ </div>
  </div>
 
  {meals.length === 0 ? (
@@ -172,7 +180,12 @@ export function TodayDashboard({
  ) : (
  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
  {orderedMeals.map((meal) => (
- <TodayMealCard key={meal.id} meal={meal} dietaryPreferences={dietaryPreferences} />
+ <TodayMealCard
+ key={meal.id}
+ meal={meal}
+ dietaryPreferences={dietaryPreferences}
+ photoPerson={photoPerson}
+ />
  ))}
  </div>
  )}

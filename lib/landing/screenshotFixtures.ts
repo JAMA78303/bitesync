@@ -61,6 +61,7 @@ export const SCREENSHOT_TODAY_MEALS: TodayMeal[] = [
     servingLabel: null,
     quickAddName: null,
     quickAddCalories: null,
+    loggedMeal: null,
     recipe: {
       id: "r1",
       name: "Oats & berries",
@@ -83,6 +84,7 @@ export const SCREENSHOT_TODAY_MEALS: TodayMeal[] = [
     servingLabel: null,
     quickAddName: null,
     quickAddCalories: null,
+    loggedMeal: null,
     recipe: {
       id: "r2",
       name: "Quinoa bowl",
@@ -105,6 +107,7 @@ export const SCREENSHOT_TODAY_MEALS: TodayMeal[] = [
     servingLabel: null,
     quickAddName: null,
     quickAddCalories: null,
+    loggedMeal: null,
     recipe: {
       id: "r3",
       name: "Salmon bake",
@@ -127,6 +130,7 @@ export const SCREENSHOT_TODAY_MEALS: TodayMeal[] = [
     servingLabel: null,
     quickAddName: null,
     quickAddCalories: null,
+    loggedMeal: null,
     recipe: {
       id: "r4",
       name: "Greek yoghurt",

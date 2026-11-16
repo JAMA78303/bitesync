@@ -21,6 +21,7 @@ const meal = (
   recipe: { id: `r-${id}`, name: id, kcal, protein, carbs: 0, fat: 0, fibre: 0, imageUrl: null },
   quickAddName: null,
   quickAddCalories: null,
+  loggedMeal: null,
 });
 
 /**
@@ -60,6 +61,30 @@ const meal = (
   ];
   const t = sumTodayTotals(replaced);
   assert(t.kcal === 620, `"ate something else" should count the replacement only; got ${t.kcal}`);
+}
+
+{
+  // A photo-logged meal counts its macros too; a typed quick-add stays calories-only.
+  const photo: TodayMeal = {
+    ...meal("ph", "planned", 0, 0),
+    recipe: null,
+    quickAddName: "Chicken wrap and salad",
+    quickAddCalories: 540,
+    loggedMeal: { protein: 38, carbs: 52, fat: 18, fibre: 7, coveragePct: 100 },
+  };
+  const typed: TodayMeal = {
+    ...meal("ty", "planned", 0, 0),
+    recipe: null,
+    quickAddName: "Biscuits",
+    quickAddCalories: 200,
+  };
+  const t = sumTodayTotals([meal("a", "planned", 500, 30), photo, typed]);
+  assert(
+    t.kcal === 1240 && t.protein === 68 && t.carbs === 52 && t.fat === 18 && t.fibre === 7,
+    `photo meal macros should count; got ${JSON.stringify(t)}`,
+  );
+  const skipped = sumTodayTotals([{ ...photo, status: "skipped" }]);
+  assert(skipped.kcal === 0 && skipped.protein === 0, `a skipped photo meal must count nothing; got ${JSON.stringify(skipped)}`);
 }
 
 console.log("today-totals.test.ts: all assertions passed");

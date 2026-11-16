@@ -2,15 +2,21 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Loader2 } from "lucide-react";
+import { Camera, Check, Loader2 } from "lucide-react";
 import { replaceMealEntry, setMealEntryStatus } from "@/lib/supabase/meal-plan-actions";
+import { PhotoMealSheet } from "@/components/today/PhotoMealSheet";
 import { useToast } from "@/components/ui/use-toast";
+import type { Person } from "@/lib/nutrition/drv";
 import type { TodayMealStatus } from "@/lib/planner/today";
+import type { MealType } from "@/types";
 
 type Props = {
   entryId: string;
   status: TodayMealStatus;
   mealName: string;
+  mealType: MealType;
+  /** Set when photo logging is on for this account: "Ate something else" can take a photo. */
+  photoPerson?: Person | null;
 };
 
 /**
@@ -22,11 +28,12 @@ type Props = {
  * Tapping the circle toggles eaten. That is a confirmation, not a change in
  * totals — a planned meal already counts. Skip is what removes it.
  */
-export function TodayMealActions({ entryId, status, mealName }: Props) {
+export function TodayMealActions({ entryId, status, mealName, mealType, photoPerson = null }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [replacing, setReplacing] = useState(false);
+  const [snapping, setSnapping] = useState(false);
   const [replacementName, setReplacementName] = useState("");
   const [replacementKcal, setReplacementKcal] = useState("");
 
@@ -143,6 +150,20 @@ export function TodayMealActions({ entryId, status, mealName }: Props) {
             inputMode="numeric"
             className="h-8 rounded-lg border border-[var(--border-default)] bg-[var(--surface-card)] px-2 text-xs text-[var(--text-primary)]"
           />
+          {photoPerson ? (
+            <button
+              type="button"
+              onClick={() => {
+                setReplacing(false);
+                setSnapping(true);
+              }}
+              disabled={isPending}
+              className="inline-flex items-center justify-center gap-1 rounded-lg border border-[var(--border-default)] py-1 text-2xs font-semibold text-[var(--text-link)]"
+            >
+              <Camera className="h-3 w-3" aria-hidden />
+              Or snap a photo
+            </button>
+          ) : null}
           <div className="flex justify-end gap-2">
             <button
               type="button"
@@ -161,6 +182,14 @@ export function TodayMealActions({ entryId, status, mealName }: Props) {
             </button>
           </div>
         </form>
+      ) : null}
+
+      {snapping && photoPerson ? (
+        <PhotoMealSheet
+          person={photoPerson}
+          replace={{ entryId, mealType, mealName }}
+          onClose={() => setSnapping(false)}
+        />
       ) : null}
     </div>
   );

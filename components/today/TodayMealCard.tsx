@@ -4,15 +4,18 @@ import { getDietTagStyle } from "@/lib/ui/dietTagStyles";
 import { MealThumbnail } from "@/components/ui/MealThumbnail";
 import { TodayMealActions } from "@/components/today/TodayMealActions";
 import { ds } from "@/lib/ui/classes";
+import type { Person } from "@/lib/nutrition/drv";
 import type { TodayMeal } from "@/lib/planner/today";
 import { MEAL_LABELS } from "@/types";
 
 type Props = {
  meal: TodayMeal;
  dietaryPreferences?: string[];
+ /** Set when photo logging is on: "Ate something else" can take a photo. */
+ photoPerson?: Person | null;
 };
 
-export function TodayMealCard({ meal, dietaryPreferences = [] }: Props) {
+export function TodayMealCard({ meal, dietaryPreferences = [], photoPerson = null }: Props) {
  const name = meal.recipe?.name ?? meal.quickAddName ??"Meal";
  const recipe = meal.recipe;
 
@@ -75,7 +78,13 @@ export function TodayMealCard({ meal, dietaryPreferences = [] }: Props) {
  </div>
 
  <div className="flex-shrink-0">
- <TodayMealActions entryId={meal.id} status={meal.status} mealName={name} />
+ <TodayMealActions
+ entryId={meal.id}
+ status={meal.status}
+ mealName={name}
+ mealType={meal.mealType}
+ photoPerson={photoPerson}
+ />
  </div>
  </div>
  );

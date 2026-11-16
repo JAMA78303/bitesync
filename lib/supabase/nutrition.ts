@@ -11,6 +11,7 @@ import {
   type TrafficLight,
 } from "@/lib/nutrition/drv";
 import { aggregateWeeklyMicrosFromPlan } from "@/lib/nutrition/weeklyMicroTotals";
+import { loggedMealsForWeeklyMicros } from "@/lib/photoMeal/weekly";
 import { createClient } from "@/lib/supabase/server";
 import { isSkippedEntry } from "@/types";
 
@@ -68,29 +69,31 @@ export async function getWeeklyMicroAnalysis(
     entries = (legacy.data ?? []) as EntryRow[];
   }
 
-  if (!entries?.length) return null;
-
-  const eaten = entries.filter((e) => !isSkippedEntry(e));
-  if (!eaten.length) return null;
-
+  const eaten = (entries ?? []).filter((e) => !isSkippedEntry(e));
   const recipeIds = [...new Set(eaten.map((e) => e.recipe_id).filter(Boolean).map(String))];
-  if (!recipeIds.length) return null;
 
-  const { data: ingredients } = await supabase
-    .from("recipe_ingredients")
-    .select("recipe_id, name, quantity, unit")
-    .in("recipe_id", recipeIds);
+  // Meals logged from a photo count too: their foods are stored like a recipe's.
+  const [recipeIngredients, logged] = await Promise.all([
+    recipeIds.length
+      ? supabase.from("recipe_ingredients").select("recipe_id, name, quantity, unit").in("recipe_id", recipeIds)
+      : Promise.resolve({ data: [] as { recipe_id: string; name: string | null; quantity: number | null; unit: string | null }[] }),
+    loggedMealsForWeeklyMicros(supabase, mealPlanId),
+  ]);
+  const ingredients = recipeIngredients.data ?? [];
 
-  if (!ingredients?.length) return null;
+  if (!ingredients.length && !logged.ingredients.length) return null;
 
   const aggregated = aggregateWeeklyMicrosFromPlan(
-    eaten.map((e) => ({ recipe_id: String(e.recipe_id) })),
-    ingredients.map((ing) => ({
-      recipe_id: String(ing.recipe_id),
-      name: String(ing.name ?? ""),
-      quantity: Number(ing.quantity ?? 0),
-      unit: String(ing.unit ?? ""),
-    })),
+    [...eaten.map((e) => ({ recipe_id: String(e.recipe_id) })), ...logged.entries],
+    [
+      ...ingredients.map((ing) => ({
+        recipe_id: String(ing.recipe_id),
+        name: String(ing.name ?? ""),
+        quantity: Number(ing.quantity ?? 0),
+        unit: String(ing.unit ?? ""),
+      })),
+      ...logged.ingredients,
+    ],
   );
 
   if (!aggregated) return null;
