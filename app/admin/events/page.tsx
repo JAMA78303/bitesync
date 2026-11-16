@@ -22,7 +22,12 @@ function describeProps(props: Record<string, unknown> | null): string {
   return entries.length ? entries.map(([k, v]) => `${k}=${String(v)}`).join(" · ") : "(no details)";
 }
 
-export default async function AdminEventsPage() {
+/**
+ * The last 30 days of events, and the moment they were read. The clock is
+ * read here rather than in the page body: React's purity lint rejects
+ * Date.now() during render (same pattern as the AI visits page).
+ */
+async function loadEvents() {
   const now = Date.now();
   const { data, error } = await createServiceClient()
     .from("app_events")
@@ -30,6 +35,11 @@ export default async function AdminEventsPage() {
     .gte("created_at", new Date(now - 30 * DAY_MS).toISOString())
     .order("created_at", { ascending: false })
     .limit(20000);
+  return { data, error, now };
+}
+
+export default async function AdminEventsPage() {
+  const { data, error, now } = await loadEvents();
 
   if (error) {
     return (
