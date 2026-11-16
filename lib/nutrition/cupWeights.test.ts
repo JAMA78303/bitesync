@@ -40,6 +40,21 @@ for (const [qty, unit, name, grams] of [
   [1, "cup", "grated cheddar", 113],
   [1, "cup", "panko breadcrumbs", 50],
   [3, "tsp", "chia seeds", 9.25],
+  // UK sugars and syrups, and grains and pulses the first chart pass missed.
+  [1, "cup", "caster sugar", 190],
+  [1, "cup", "golden caster sugar", 190],
+  [1, "cup", "demerara sugar", 220],
+  [1, "tbsp", "golden syrup", 21],
+  [0.5, "cup", "corn syrup", 156],
+  [1, "cup", "couscous", 173],
+  [1, "cup", "dried red lentils", 192],
+  [1, "cup", "dry green lentils", 192],
+  [1, "cup", "lentils", 198],
+  [1, "cup", "red lentils", 198],
+  [1, "cup", "pearl barley", 213],
+  [0.5, "cup", "millet", 103],
+  [1, "cup", "polenta", 163],
+  [1, "cup", "semolina", 163],
   // Unlisted foods and liquids keep water's density.
   [1, "cup", "milk", 240],
   [1, "cup", "water", 240],
@@ -59,7 +74,7 @@ for (const [qty, unit, name, grams] of [
   assert(near(got, grams), `${qty} ${unit} ${name}: ${got} g, expected ${grams}`);
 }
 
-for (const name of ["peanuts", "cocoa butter", "peanut", "brown rice", "oatmeal cookies", "rice noodles", "flour tortilla"]) {
+for (const name of ["peanuts", "cocoa butter", "peanut", "brown rice", "oatmeal cookies", "rice noodles", "flour tortilla", "giant couscous", "lentil soup", "caster sugar syrup"]) {
   const perCup = gramsPerCup(name);
   if (name === "peanuts") assert(perCup === 142, "peanuts are listed");
   else assert(perCup === null, `${name} is not in the cup table (got ${perCup})`);

@@ -1165,3 +1165,45 @@ import { isTexturedSoyaMismatch } from "@/lib/nutrition/cofidMatch";
   if (local("sun dried tomato pesto")?.name === "sun dried tomatoes jar") throw new Error("local: pesto is not the tomatoes");
 }
 console.log("OK: 16 Nov 2026 soya, sun-dried tomatoes, rice noodles, dried borlotti");
+
+// 16 Nov 2026: pesto, five spice and cassia, and the template rows a new
+// recipe would reach. "sun dried tomato pesto" took grilled tomatoes (17 kcal),
+// "tomato pesto" took green pesto, "basil pesto" took fresh basil (40 kcal) and
+// "chinese five spice" found nothing at all.
+{
+  if (cofidSearchQuery("sun dried tomato pesto") !== "red pesto") throw new Error("pesto: sun-dried tomato pesto is red pesto");
+  for (const query of ["sundried tomato pesto", "sun-dried tomato pesto", "tomato pesto", "pesto rosso"]) {
+    if (cofidSearchQuery(query) !== "red pesto") throw new Error(`pesto: "${query}" → "${cofidSearchQuery(query)}"`);
+  }
+  for (const query of ["basil pesto", "pesto genovese"]) {
+    if (cofidSearchQuery(query) !== "green pesto") throw new Error(`pesto: "${query}" → "${cofidSearchQuery(query)}"`);
+  }
+  if (cofidSearchQuery("pesto") !== "pesto") throw new Error("pesto: bare pesto is unchanged");
+  for (const query of ["chinese five spice", "five spice powder", "five-spice"]) {
+    if (cofidSearchQuery(query) !== "chinese 5 spice") throw new Error(`five spice: "${query}" → "${cofidSearchQuery(query)}"`);
+  }
+  if (cofidSearchQuery("cassia bark") !== "cinnamon") throw new Error("cassia is cinnamon");
+
+  const local = (name: string) => lookupNutrition(name);
+  for (const [name, expected, minKcal] of [
+    ["sun dried tomato pesto", "pesto jar red", 300],
+    ["sundried tomato pesto", "pesto jar red", 300],
+    ["red pesto", "pesto jar red", 300],
+    ["pesto", "pesto jar green", 400],
+    ["basil pesto", "pesto jar green", 400],
+    ["chinese five spice", "five spice powder", 300],
+    ["cornflour", "cornflour", 340],
+    ["mirin", "mirin", 250],
+    ["panko breadcrumbs", "panko breadcrumbs", 340],
+    ["gochujang paste", "gochujang paste", 200],
+    ["white miso paste", "miso paste white", 150],
+    ["balsamic vinegar", "balsamic vinegar", 100],
+  ] as const) {
+    const entry = local(name);
+    if (entry?.name !== expected) throw new Error(`local: "${name}" → ${entry?.name ?? null}, expected ${expected}`);
+    if (entry.per_100g.calories < minKcal) throw new Error(`local: "${name}" is ${entry.per_100g.calories} kcal`);
+  }
+  // Fresh tomatoes are not pesto.
+  if (local("tomatoes")?.name?.includes("pesto")) throw new Error("local: tomatoes are not pesto");
+}
+console.log("OK: 16 Nov 2026 pesto, five spice, cassia and sourced template rows");

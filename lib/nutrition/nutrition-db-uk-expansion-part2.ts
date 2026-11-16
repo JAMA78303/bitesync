@@ -101,16 +101,17 @@ const ROWS: TupleRow[] = [
     394,
     5.4
   ],
+  // Grenade protein bar label (Ocado 622636011), per 100 g. Was 518 kcal and 23 g fat.
   [
     "protein bar",
-    518,
-    6,
-    61,
-    23,
-    6,
+    346,
     35,
-    473,
-    12.8
+    31,
+    13,
+    4.5,
+    2.3,
+    164,
+    6
   ],
   [
     "cereal bar",
@@ -148,16 +149,18 @@ const ROWS: TupleRow[] = [
     600,
     2
   ],
+  // Snack a Jacks Caramel Jumbo Rice Cakes label (Tesco 317208034), per 100 g. Was 424
+  // kcal and 13 g fat.
   [
     "rice cakes caramel",
-    424,
-    12,
-    69,
-    13,
-    7,
-    25,
-    489,
-    5.4
+    387,
+    6.1,
+    86,
+    1.7,
+    11,
+    19,
+    196,
+    0.3
   ],
   [
     "popcorn sweet",
@@ -181,16 +184,18 @@ const ROWS: TupleRow[] = [
     251,
     1.2000000000000002
   ],
+  // Penn State Sea Salted Pretzels label (Tesco 254168775), per 100 g. Was 292 kcal and 4
+  // g fat.
   [
     "pretzels",
-    292,
-    11,
-    42,
-    4,
-    7,
-    18,
-    886,
-    4.6
+    397,
+    9.8,
+    77,
+    4.9,
+    3.2,
+    2.7,
+    1000,
+    0.6
   ],
   // CoFID 17-644 "Tortilla chips fried in sunflower oil". Was 184 kcal and 3 g fat.
   [
@@ -338,16 +343,17 @@ const ROWS: TupleRow[] = [
     453,
     12.8
   ],
+  // Tesco Steak Slice label (Tesco 320789147), per 100 g. Was 57 kcal and 0 g fat.
   [
     "steak slice",
-    57,
-    3.2,
-    12.5,
-    0,
-    1.2,
-    11,
-    136,
-    1.2000000000000002
+    267,
+    8.7,
+    26.3,
+    13.8,
+    1.7,
+    2.5,
+    172,
+    6.5
   ],
   [
     "chicken slice",
@@ -520,16 +526,18 @@ const ROWS: TupleRow[] = [
     21,
     1.2000000000000002
   ],
+  // Tesco Hash Browns label (Tesco 282059931), per 100 g oven cooked. Was 247 kcal and 6 g
+  // fat.
   [
     "hash brown patties",
-    247,
-    11,
-    42,
-    6,
-    5,
-    16,
-    656,
-    4.6
+    176,
+    2.7,
+    22.4,
+    7.9,
+    2.2,
+    0.3,
+    172,
+    0.9
   ],
   [
     "waffle potato",
@@ -542,16 +550,18 @@ const ROWS: TupleRow[] = [
     465,
     2
   ],
+  // Tesco Curly Fries label (Tesco 282059879), per 100 g oven cooked. Was 417 kcal and 13
+  // g fat.
   [
     "curly fries",
-    417,
-    11,
-    74,
-    13,
-    6,
-    28,
-    354,
-    5.4
+    209,
+    3.3,
+    32.7,
+    6.1,
+    4.8,
+    0.6,
+    120,
+    0.7
   ],
   [
     "sweet potato fries",
@@ -597,27 +607,31 @@ const ROWS: TupleRow[] = [
     560,
     2
   ],
+  // Tesco Halloumi Fries label (Tesco 309482756), per 100 g cooked. Was 420 kcal and 11 g
+  // fat.
   [
     "halloumi fries",
-    420,
-    10,
-    69,
-    11,
-    7,
-    25,
-    449,
-    5.4
+    343,
+    14.2,
+    22.4,
+    21.6,
+    0.9,
+    2.2,
+    788,
+    9.7
   ],
+  // Tesco Mozzarella Sticks label (Tesco 304401781), per 100 g cooked. Was 524 kcal and 26
+  // g fat.
   [
     "mozzarella sticks",
-    524,
-    9,
-    56,
-    26,
-    3,
-    32,
-    528,
-    12.8
+    301,
+    14.4,
+    24,
+    16.1,
+    1.5,
+    1.5,
+    420,
+    6.8
   ],
   [
     "chicken kiev",
@@ -721,16 +735,18 @@ const ROWS: TupleRow[] = [
     639,
     5.4
   ],
+  // CoFID 19-524 "Spaghetti bolognese, retail, reheated, with spaghetti". Was 537 kcal and
+  // 29 g fat.
   [
     "spaghetti bolognese ready meal",
-    537,
-    7,
-    56,
-    29,
-    5,
-    34,
-    718,
-    12.8
+    126,
+    6.6,
+    20,
+    2.8,
+    1.2,
+    1.9,
+    182,
+    1.06
   ],
   [
     "chicken tikka masala ready meal",
@@ -812,16 +828,18 @@ const ROWS: TupleRow[] = [
     731,
     4.6
   ],
+  // CoFID 12-584 "Instant dessert powder, made up with whole milk". As made up with whole
+  // milk. CoFID gives no fibre figure (0 here). Was 183 kcal and 2 g fat.
   [
     "angel delight",
-    183,
-    16,
-    24,
-    2,
-    4,
-    14,
-    540,
-    2
+    121,
+    3.2,
+    14.3,
+    6,
+    0,
+    10.9,
+    228,
+    4.69
   ],
   [
     "jelly orange",
@@ -867,16 +885,18 @@ const ROWS: TupleRow[] = [
     826,
     4.6
   ],
+  // CoFID 11-831 "Cake, sponge, with jam and butter cream, retail". Was 185 kcal and 7 g
+  // fat.
   [
     "victoria sponge",
-    185,
-    15,
-    29,
-    7,
-    5,
-    11,
-    635,
-    2
+    354,
+    3.7,
+    55.1,
+    14.8,
+    1.2,
+    37.6,
+    220,
+    6.96
   ],
   [
     "carrot cake",
@@ -913,16 +933,17 @@ const ROWS: TupleRow[] = [
     286,
     1.2000000000000002
   ],
+  // Tesco Sliced Fruit Loaf label (Tesco 254946102), per 100 g. Was 294 kcal and 6 g fat.
   [
     "fruit loaf",
-    294,
-    10,
-    47,
-    6,
-    8,
-    19,
-    921,
-    4.6
+    281,
+    7.9,
+    52.6,
+    3.6,
+    3.2,
+    18.7,
+    164,
+    0.9
   ],
   [
     "tea biscuit chocolate",
@@ -935,16 +956,18 @@ const ROWS: TupleRow[] = [
     730,
     2
   ],
+  // CoFID 11-803 "Biscuits, digestive, with oats, plain". Hobnobs are oat biscuits. Was
+  // 412 kcal and 13 g fat.
   [
     "hobnob",
-    412,
-    10,
-    69,
-    13,
-    5,
-    23,
-    619,
-    5.4
+    480,
+    6.4,
+    66.4,
+    22.9,
+    7.2,
+    25.9,
+    328,
+    5.94
   ],
   // CoFID 11-815 "Biscuits, cookies, chocolate chip, standard". Was 528 kcal and 28 g fat.
   [
@@ -958,16 +981,18 @@ const ROWS: TupleRow[] = [
     298,
     12.15
   ],
+  // CoFID 11-803 "Biscuits, digestive, with oats, plain". The oat biscuit row. Was 60 kcal
+  // and 3.2 g fat.
   [
     "cookie oatmeal",
-    60,
-    4.2,
-    7.5,
-    3.2,
-    4.2,
-    10,
-    381,
-    1.2000000000000002
+    480,
+    6.4,
+    66.4,
+    22.9,
+    7.2,
+    25.9,
+    328,
+    5.94
   ],
   // CoFID 11-1127 "Brownies, chocolate, homemade". Was 291 kcal and 4 g fat.
   [
@@ -981,27 +1006,31 @@ const ROWS: TupleRow[] = [
     187,
     16.43
   ],
+  // Mr Kipling Vanilla & White Chocolate Blondie label (Tesco 316950780), per 100 g as
+  // baked. Was 177 kcal and 3 g fat.
   [
     "blondie",
-    177,
-    13,
-    29,
-    3,
-    3,
-    13,
-    425,
-    2
+    398,
+    4,
+    60.1,
+    15.4,
+    1.7,
+    46,
+    44,
+    9.3
   ],
+  // CoFID 11-837 "Shortcake, caramel, chocolate covered, retail". Was 428 kcal and 11 g
+  // fat.
   [
     "millionaire shortbread",
-    428,
-    9,
-    74,
-    11,
-    6,
-    28,
-    314,
-    5.4
+    466,
+    4.7,
+    53.6,
+    27.3,
+    2.3,
+    36.2,
+    258,
+    15.18
   ],
   [
     "rock cake",
@@ -1107,27 +1136,31 @@ const ROWS: TupleRow[] = [
     615,
     2
   ],
+  // Tesco Greek Style Folded Flatbreads label (Tesco 313742138), per 100 g. Was 415 kcal
+  // and 14 g fat.
   [
     "flatbread",
-    415,
-    7,
-    74,
-    14,
-    4,
-    22,
-    504,
-    5.4
+    284,
+    9.5,
+    49.4,
+    4.4,
+    4.2,
+    2.8,
+    252,
+    0.6
   ],
+  // Tesco Finest Durum Wheat Piadinas label (Tesco 323928993), per 100 g. Was 514 kcal and
+  // 29 g fat.
   [
     "piadina",
-    514,
-    6,
-    61,
-    29,
-    4,
-    29,
-    583,
-    12.8
+    290,
+    9,
+    51.4,
+    5.2,
+    1.2,
+    1.8,
+    392,
+    1.2
   ],
   [
     "matzo crackers",
@@ -1211,16 +1244,17 @@ const ROWS: TupleRow[] = [
     817,
     6.01
   ],
+  // Trimlyne Melba Toast label (Tesco 330771394), per 100 g. Was 181 kcal and 2 g fat.
   [
     "melba toast",
-    181,
-    15,
-    29,
-    2,
-    3,
-    9,
-    805,
-    2
+    384,
+    12,
+    77,
+    2.4,
+    3.9,
+    3.2,
+    520,
+    1.3
   ],
   // CoFID 11-822 "Crispbread, rye". Was 412 kcal and 10 g fat.
   [
@@ -1234,27 +1268,30 @@ const ROWS: TupleRow[] = [
     264,
     0.16
   ],
+  // Ryvita Crackerbread label (Tesco 254926368), per 100 g. Was 519 kcal and 25 g fat.
   [
     "crackerbread",
-    519,
-    10,
-    61,
-    25,
-    6,
-    31,
-    373,
-    12.8
+    390,
+    10.5,
+    77.5,
+    3.7,
+    2.5,
+    1.2,
+    352,
+    0.6
   ],
+  // Biona Organic Pumpernickel label (Ocado 51387011), per 100 g. Was 58 kcal and 0.2 g
+  // fat.
   [
     "pumpernickel",
-    58,
-    0,
-    12.5,
-    0.20000000000000018,
-    1.2,
-    11,
-    56,
-    1.2000000000000002
+    196,
+    4.6,
+    36,
+    1.7,
+    9.6,
+    4,
+    400,
+    0.2
   ],
   [
     "rye bread",
@@ -1279,16 +1316,18 @@ const ROWS: TupleRow[] = [
     350,
     0.57
   ],
+  // Tesco Finest Rosemary & Sea Salt Focaccia label (Tesco 322997888), per 100 g. Was 414
+  // kcal and 15 g fat.
   [
     "focaccia",
-    414,
-    10,
-    69,
-    15,
-    7,
-    29,
-    389,
-    5.4
+    309,
+    9.2,
+    46.3,
+    9.1,
+    2.2,
+    1.8,
+    420,
+    1.2
   ],
   [
     "focaccia rosemary",
@@ -1490,16 +1529,18 @@ const ROWS: TupleRow[] = [
     36,
     1.2000000000000002
   ],
+  // Belazu Cracked Freekeh label (Ocado 448125011), per 100 g dry. Was 291 kcal and 7 g
+  // fat.
   [
     "freekeh",
-    291,
-    12,
-    47,
-    7,
-    6,
-    13,
-    671,
-    4.6
+    368,
+    13.1,
+    63,
+    5.8,
+    5.9,
+    0,
+    40,
+    0.6
   ],
   [
     "farro",
@@ -1536,16 +1577,18 @@ const ROWS: TupleRow[] = [
     448,
     12.8
   ],
+  // Minton & Donello Millet Grain label (Ocado 656610011), per 100 g dry. Was 58 kcal and
+  // 0 g fat.
   [
     "millet grain",
-    58,
-    0.20000000000000018,
-    7.5,
-    0,
-    2.2,
-    12,
-    131,
-    1.2000000000000002
+    378,
+    11,
+    72.1,
+    4.5,
+    8.8,
+    0.8,
+    4,
+    0.8
   ],
   [
     "amaranth grain",
@@ -1779,38 +1822,42 @@ const ROWS: TupleRow[] = [
     111,
     1.2000000000000002
   ],
+  // Yutaka Panko Breadcrumbs label (Ocado 408222011), per 100 g. Fibre isn't listed. Was
+  // 246 kcal and 4 g fat.
   [
     "panko breadcrumbs",
-    246,
-    13,
-    42,
-    4,
-    7,
-    14,
-    746,
-    4.6
+    362,
+    15,
+    70,
+    1.7,
+    0,
+    3.8,
+    308,
+    0.4
   ],
+  // CoFID 11-1045 "Flour, corn". UK cornflour is the starch. Was 179 kcal and 3 g fat.
   [
     "cornflour",
-    179,
-    17,
-    29,
-    3,
-    5,
+    354,
+    0.6,
+    92,
+    0.7,
+    0.1,
+    0,
     11,
-    555,
-    2
+    0.1
   ],
+  // CoFID 11-1045 "Flour, corn". Was 417 kcal and 11 g fat.
   [
     "corn starch",
-    417,
-    7,
-    74,
+    354,
+    0.6,
+    92,
+    0.7,
+    0.1,
+    0,
     11,
-    4,
-    26,
-    444,
-    5.4
+    0.1
   ],
   // CoFID 17-062 "Sugar, icing". Was 518 kcal and 26 g fat.
   [
@@ -2275,16 +2322,18 @@ const ROWS: TupleRow[] = [
     590,
     0
   ],
+  // Blueville Mat Korean Cabbage Kimchi label (Ocado 675710011), per 100 g. Was 180 kcal
+  // and 8 g fat.
   [
     "kimchi jar",
-    180,
-    15,
-    29,
-    8,
-    5,
-    11,
-    515,
-    2
+    38,
+    2.1,
+    7.2,
+    0.6,
+    2.3,
+    2.2,
+    760,
+    0.2
   ],
   // CoFID 14-340 "Olives, green, in brine, drained, flesh and skin". Was 422
   // kcal and 9 g fat.
@@ -2310,16 +2359,18 @@ const ROWS: TupleRow[] = [
     483,
     12.8
   ],
+  // Cooks&Co Capers label (Ocado 701927011), per 100 g drained; fat is "<0.5 g". Was 56
+  // kcal and 0 g fat.
   [
     "capers jar",
-    56,
+    26,
+    2,
+    2.4,
+    0.4,
+    3,
     0,
-    12.5,
-    0,
-    3.2,
-    13,
-    166,
-    1.2000000000000002
+    2252,
+    0.1
   ],
   // Tesco Sun Dried Tomatoes 285 g jar in sunflower and olive oil (drained
   // 145 g), label per 100 g "as sold, drained" (tesco.com product 265335941,
@@ -2463,16 +2514,18 @@ const ROWS: TupleRow[] = [
     800,
     2
   ],
+  // CoFID 13-829 "Garam masala". CoFID gives no fibre or sugars or saturated fat figure (0
+  // here). Was 425 kcal and 10 g fat.
   [
     "garam masala powder",
-    425,
-    8,
-    69,
-    10,
-    7,
-    25,
-    289,
-    5.4
+    379,
+    15.6,
+    45.2,
+    15.1,
+    0,
+    0,
+    97,
+    0
   ],
   [
     "curry leaves dried",
@@ -2547,16 +2600,18 @@ const ROWS: TupleRow[] = [
     5,
     0
   ],
+  // Filippo Berio Balsamic Vinegar label (Ocado 75692011), per 100 ml. Was 62 kcal and 0 g
+  // fat.
   [
     "balsamic vinegar",
-    62,
-    1.2000000000000002,
-    12.5,
+    126,
     0,
-    3.2,
-    9,
-    146,
-    1.2000000000000002
+    27,
+    0,
+    0,
+    27,
+    20,
+    0
   ],
   // CoFID 17-339 "Vinegar". Was 247 kcal and 6 g fat.
   [
@@ -2594,27 +2649,31 @@ const ROWS: TupleRow[] = [
     5,
     0
   ],
+  // Blue Dragon Mirin label (Ocado 207601011), per 100 ml; protein and fat are "<0.5 g".
+  // Was 512 kcal and 28 g fat.
   [
     "mirin",
-    512,
-    5,
-    56,
-    28,
-    5,
-    34,
-    558,
-    12.8
+    272,
+    0.4,
+    68,
+    0.4,
+    0,
+    35,
+    4,
+    0.05
   ],
+  // Hinode Ryorishu Cooking Sake label (Ocado 491295011), per 100 ml. Its energy is the
+  // alcohol. Was 58 kcal and 3.2 g fat.
   [
     "cooking sake",
-    58,
-    0.20000000000000018,
-    7.5,
-    3.2,
-    4.2,
-    14,
-    241,
-    1.2000000000000002
+    84,
+    0.4,
+    1.6,
+    0,
+    0,
+    0.9,
+    800,
+    0
   ],
   // CoFID 17-755 "Wine, white, dry". Was 247 kcal and 4 g fat.
   [
@@ -2640,16 +2699,18 @@ const ROWS: TupleRow[] = [
     7,
     0
   ],
+  // CoFID 17-247 "Spirits, 40% volume". Its energy is the alcohol. Was 420 kcal and 11 g
+  // fat.
   [
     "brandy cooking",
-    420,
-    11,
-    74,
-    11,
-    6,
-    24,
-    574,
-    5.4
+    222,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
   ],
   [
     "rum essence",
@@ -2662,16 +2723,18 @@ const ROWS: TupleRow[] = [
     653,
     12.8
   ],
+  // Dr. Oetker Madagascan Vanilla Extract label (Ocado 388825011), per 100 ml. Was 61 kcal
+  // and 1.2 g fat.
   [
     "vanilla extract",
-    61,
+    287,
     0,
-    12.5,
-    1.2000000000000002,
-    1.2,
-    11,
-    336,
-    1.2000000000000002
+    72,
+    0,
+    0,
+    55,
+    12,
+    0
   ],
   [
     "almond extract",
@@ -2745,16 +2808,17 @@ const ROWS: TupleRow[] = [
     378,
     0.1
   ],
+  // CoFID 12-507 "Cornetto type ice cream cone". Was 189 kcal and 6 g fat.
   [
     "cornetto style cone",
-    189,
-    13,
-    29,
-    6,
-    5,
-    11,
-    475,
-    2
+    292,
+    3.5,
+    39.6,
+    14.4,
+    1.2,
+    27.9,
+    90,
+    11.04
   ],
   // CoFID 12-508 "Ice cream, dairy, vanilla, soft scoop". Was 423 kcal and 14 g fat.
   [
@@ -2779,16 +2843,17 @@ const ROWS: TupleRow[] = [
     443,
     12.8
   ],
+  // Remeo Pistachio Gelato label (Ocado 349403011), per 100 ml. Was 62 kcal and 0 g fat.
   [
     "gelato pistachio",
-    62,
-    3.2,
-    12.5,
-    0,
-    3.2,
+    132,
+    2.8,
+    17,
+    5.6,
+    0.5,
     13,
-    126,
-    1.2000000000000002
+    80,
+    2.3
   ],
   [
     "frozen yoghurt",
@@ -2814,16 +2879,17 @@ const ROWS: TupleRow[] = [
     10,
     0
   ],
+  // CoFID 12-390 "Lollies, containing ice-cream". Was 422 kcal and 12 g fat.
   [
     "solero style ice",
-    422,
-    8,
-    69,
-    12,
-    5,
-    23,
-    459,
-    5.4
+    118,
+    1.4,
+    20.9,
+    3.8,
+    0,
+    20.9,
+    31,
+    2.07
   ],
   [
     "mini milk ice",
@@ -2836,16 +2902,18 @@ const ROWS: TupleRow[] = [
     538,
     12.8
   ],
+  // CoFID 12-510 "Ice cream bars/choc ices, chocolate coated, luxury". Was 63 kcal and 2.2
+  // g fat.
   [
     "mini magnum style",
-    63,
-    2.2,
-    7.5,
-    2.2,
-    4.2,
-    10,
-    221,
-    1.2000000000000002
+    336,
+    3.9,
+    34.9,
+    21.1,
+    0,
+    32.9,
+    64,
+    14.21
   ],
   [
     "plant cream",
@@ -2880,16 +2948,18 @@ const ROWS: TupleRow[] = [
     554,
     5.4
   ],
+  // CoFID 12-336 "Creme fraiche, half fat". Creme legere is light creme fraiche. Was 519
+  // kcal and 25 g fat.
   [
     "creme legere",
-    519,
-    6,
-    61,
-    25,
-    6,
-    35,
-    633,
-    12.8
+    162,
+    2.7,
+    4.4,
+    15,
+    0,
+    3,
+    36,
+    10.16
   ],
   // CoFID 12-332 "Cream, fresh, single". Was 58 kcal and 0.2 g fat.
   [
@@ -2973,16 +3043,18 @@ const ROWS: TupleRow[] = [
     19,
     15.43
   ],
+  // M&S Light Cypriot Grilling Cheese label (Ocado 552746011), per 100 g. Was 183 kcal and
+  // 5 g fat.
   [
     "halloumi lite",
-    183,
-    15,
-    29,
-    5,
-    5,
-    15,
-    455,
-    2
+    236,
+    25.5,
+    0.8,
+    14.5,
+    0,
+    0.6,
+    932,
+    9.7
   ],
   [
     "smoked cheese",
@@ -3040,27 +3112,29 @@ const ROWS: TupleRow[] = [
     730,
     12.91
   ],
+  // CoFID 12-551 "Cheese, spreadable, full fat, soft, white". Was 431 kcal and 11 g fat.
   [
     "philadelphia style spread",
-    431,
-    10,
-    69,
-    11,
-    5,
-    27,
-    439,
-    5.4
+    252,
+    5.3,
+    3,
+    24.4,
+    0,
+    3,
+    260,
+    15.97
   ],
+  // CoFID 12-540 "Cheese spread, plain". Was 525 kcal and 26 g fat.
   [
     "laughing cow style",
-    525,
-    9,
-    56,
-    26,
-    5,
-    34,
-    518,
-    12.8
+    237,
+    11.3,
+    6.5,
+    18.6,
+    0,
+    6.5,
+    730,
+    12.91
   ],
   [
     "primula cheese tube",
@@ -3162,38 +3236,42 @@ const ROWS: TupleRow[] = [
     629,
     5.4
   ],
+  // CoFID 17-747 "Smoothies". Was 529 kcal and 29 g fat.
   [
     "smoothie berry bottled",
-    529,
-    7,
-    56,
-    29,
-    3,
-    28,
-    708,
-    12.8
+    49,
+    0.5,
+    12.2,
+    0.1,
+    1,
+    11.6,
+    0,
+    0
   ],
+  // CoFID 17-747 "Smoothies". Was 25 kcal and 0 g fat.
   [
     "smoothie green bottled",
-    25,
-    2.2,
-    7.5,
+    49,
+    0.5,
+    12.2,
+    0.1,
+    1,
+    11.6,
     0,
-    2.2,
-    8,
-    391,
-    1.2000000000000002
+    0
   ],
+  // UFIT Vanilla Protein Milkshake label (Ocado 343978011), per 100 ml. Was 250 kcal and 5
+  // g fat.
   [
     "protein shake bottled",
-    250,
-    13,
-    42,
-    5,
-    7,
-    14,
-    626,
-    4.6
+    56,
+    10,
+    3.6,
+    0.1,
+    0,
+    3.6,
+    60,
+    0.1
   ],
   [
     "meal replacement shake",
@@ -3228,16 +3306,17 @@ const ROWS: TupleRow[] = [
     403,
     12.8
   ],
+  // M&S Vitamin Water label (Ocado 648764011), per 100 ml. Was 59 kcal and 2.2 g fat.
   [
     "vitamin water",
-    59,
-    1.2000000000000002,
-    12.5,
-    2.2,
-    3.2,
-    13,
-    86,
-    1.2000000000000002
+    20,
+    0,
+    4.9,
+    0,
+    0,
+    4.9,
+    0,
+    0
   ],
   [
     "flavoured sparkling lemon",
@@ -3457,16 +3536,18 @@ const ROWS: TupleRow[] = [
     383,
     12.8
   ],
+  // CoFID 17-514 "Beef extract". Bovril is a beef extract. CoFID gives no saturated fat
+  // figure (0 here). Was 52 kcal and 1.2 g fat.
   [
     "bovril",
-    52,
+    179,
+    40.4,
     3.2,
-    12.5,
-    1.2000000000000002,
-    3.2,
-    9,
-    66,
-    1.2000000000000002
+    0.6,
+    0,
+    0.4,
+    4370,
+    0
   ],
   // CoFID 17-517 "Yeast extract". CoFID gives no saturated fat figure (0 here). Was 291
   // kcal and 9 g fat.
@@ -3572,16 +3653,18 @@ const ROWS: TupleRow[] = [
     16300,
     0
   ],
+  // Marigold Swiss Vegetable Bouillon Powder label (Ocado 71131011), per 100 g dry. Fibre
+  // isn't listed. Was 522 kcal and 29 g fat.
   [
     "bouillon powder",
-    522,
-    6,
-    61,
-    29,
-    6,
-    31,
-    573,
-    12.8
+    240,
+    9.6,
+    30.8,
+    8.3,
+    0,
+    4,
+    17520,
+    0.9
   ],
   [
     "demi glace paste",
@@ -3643,16 +3726,18 @@ const ROWS: TupleRow[] = [
     370,
     1.69
   ],
+  // CoFID 17-631 "Sauce, traditional cook in, white sauce based". Was 58 kcal and 2.2 g
+  // fat.
   [
     "bechamel jar",
-    58,
-    0.20000000000000018,
-    7.5,
-    2.2,
-    2.2,
-    8,
-    351,
-    1.2000000000000002
+    105,
+    1.6,
+    5.7,
+    8.6,
+    2.3,
+    2.8,
+    370,
+    1.69
   ],
   // CoFID 17-625 "Sauce, pasta, carbonara type". Was 248 kcal and 10 g fat.
   [
@@ -3744,16 +3829,18 @@ const ROWS: TupleRow[] = [
     0,
     0
   ],
+  // Santa Maria Taco Seasoning Mix label (Ocado 632700011), per 100 g. Was 427 kcal and 15
+  // g fat.
   [
     "taco seasoning packet",
-    427,
+    297,
     10,
-    69,
-    15,
-    5,
-    23,
-    379,
-    5.4
+    44,
+    6,
+    12,
+    20,
+    6320,
+    0.7
   ],
   [
     "fajita seasoning",
@@ -3777,16 +3864,17 @@ const ROWS: TupleRow[] = [
     141,
     1.2000000000000002
   ],
+  // Doritos Nacho Cheese Dip label (Ocado 56366011), per 100 g. Was 247 kcal and 6 g fat.
   [
     "nacho cheese sauce",
-    247,
-    9,
-    42,
-    6,
-    5,
-    16,
-    776,
-    4.6
+    206,
+    2.8,
+    8.9,
+    18,
+    0.5,
+    3.1,
+    360,
+    3.2
   ],
   // Old El Paso Chunky Salsa (mild) label, 238 g bottle, per 100 g: 37 kcal,
   // 6.9 g carbohydrate (5 g sugars), 2.2 g fibre; 0.5 g fat from the 226 g
@@ -3940,16 +4028,18 @@ const ROWS: TupleRow[] = [
     1530,
     14.6
   ],
+  // Unearthed Italian Pepperoni label (Ocado 528380011), per 100 g. Was 62 kcal and 0 g
+  // fat.
   [
     "pepperoni slices",
-    62,
-    1.2000000000000002,
-    12.5,
+    425,
+    24,
+    0.4,
+    37,
     0,
-    3.2,
-    9,
-    26,
-    1.2000000000000002
+    0.4,
+    1160,
+    15
   ],
   [
     "pastrami beef",
@@ -4066,16 +4156,18 @@ const ROWS: TupleRow[] = [
     400,
     0.62
   ],
+  // CoFID 11-980 "Bread, white, sliced". A batch loaf is a white loaf. Was 294 kcal and 10
+  // g fat.
   [
     "batch loaf",
-    294,
-    10,
-    47,
-    10,
-    6,
-    17,
-    851,
-    4.6
+    219,
+    7.9,
+    46.1,
+    1.6,
+    2.5,
+    3.4,
+    400,
+    0.29
   ],
   // CoFID 11-977 "Bread, white, farmhouse or split tin". Was 184 kcal and 2 g fat.
   [
@@ -4102,16 +4194,17 @@ const ROWS: TupleRow[] = [
     400,
     0.39
   ],
+  // CoFID 11-971 "Bread, brown, average". Was 520 kcal and 25 g fat.
   [
     "bloomer brown",
-    520,
-    9,
-    56,
-    25,
-    3,
-    28,
-    628,
-    12.8
+    207,
+    7.9,
+    42.1,
+    2,
+    5,
+    3.4,
+    400,
+    0.43
   ],
   // CoFID 11-985 "Bread rolls, white, crusty". Was 57 kcal and 0.2 g fat.
   [
@@ -4125,16 +4218,17 @@ const ROWS: TupleRow[] = [
     400,
     0.51
   ],
+  // CoFID 11-1006 "Bread rolls, white, soft". Was 240 kcal and 8 g fat.
   [
     "bridge roll",
-    240,
-    9,
-    42,
-    8,
-    7,
-    14,
-    946,
-    4.6
+    254,
+    9.3,
+    51.5,
+    2.6,
+    2.6,
+    2.6,
+    400,
+    0.62
   ],
   [
     "scotch bun",
@@ -4191,27 +4285,29 @@ const ROWS: TupleRow[] = [
     641,
     4.6
   ],
+  // CoFID 11-808 "Biscuits, iced". Was 181 kcal and 5 g fat.
   [
     "party rings",
-    181,
-    12,
-    24,
-    5,
-    2,
-    8,
-    450,
-    2
+    406,
+    4.8,
+    77.1,
+    10.8,
+    0.6,
+    44.6,
+    274,
+    4.98
   ],
+  // CoFID 11-808 "Biscuits, iced". Was 415 kcal and 13 g fat.
   [
     "iced gems",
-    415,
-    8,
-    69,
-    13,
-    5,
-    23,
-    339,
-    5.4
+    406,
+    4.8,
+    77.1,
+    10.8,
+    0.6,
+    44.6,
+    274,
+    4.98
   ],
   [
     "chocolate fingers",
@@ -4224,60 +4320,65 @@ const ROWS: TupleRow[] = [
     418,
     12.8
   ],
+  // CoFID 17-690 "Chocolate, fancy and filled". Was 57 kcal and 3.2 g fat.
   [
     "matchmakers",
-    57,
-    2.2,
-    7.5,
-    3.2,
-    4.2,
-    10,
-    101,
-    1.2000000000000002
+    447,
+    4.9,
+    62.9,
+    21.3,
+    1.3,
+    60,
+    88,
+    11.3
   ],
+  // CoFID 17-690 "Chocolate, fancy and filled". Was 251 kcal and 4 g fat.
   [
     "quality street generic",
-    251,
-    13,
-    42,
-    4,
-    5,
-    16,
-    736,
-    4.6
+    447,
+    4.9,
+    62.9,
+    21.3,
+    1.3,
+    60,
+    88,
+    11.3
   ],
+  // CoFID 17-690 "Chocolate, fancy and filled". Was 190 kcal and 3 g fat.
   [
     "celebrations generic",
-    190,
-    17,
-    29,
-    3,
-    3,
-    13,
-    545,
-    2
+    447,
+    4.9,
+    62.9,
+    21.3,
+    1.3,
+    60,
+    88,
+    11.3
   ],
+  // CoFID 17-690 "Chocolate, fancy and filled". Was 420 kcal and 11 g fat.
   [
     "heroes generic",
-    420,
-    7,
-    74,
-    11,
-    6,
-    28,
-    434,
-    5.4
+    447,
+    4.9,
+    62.9,
+    21.3,
+    1.3,
+    60,
+    88,
+    11.3
   ],
+  // CoFID 17-690 "Chocolate, fancy and filled". Was 520 kcal and 26 g fat.
   [
     "roses generic",
-    520,
-    6,
-    61,
-    26,
-    6,
-    35,
-    513,
-    12.8
+    447,
+    4.9,
+    62.9,
+    21.3,
+    1.3,
+    60,
+    88,
+    11.3
   ],
   [
     "fruit pastilles",
@@ -4334,60 +4435,68 @@ const ROWS: TupleRow[] = [
     608,
     12.8
   ],
+  // CoFID 17-096 "Smartie-type sweets". CoFID gives no fibre figure (0 here). Was 62 kcal
+  // and 0 g fat.
   [
     "m and ms generic",
-    62,
-    0.20000000000000018,
-    7.5,
+    456,
+    5.4,
+    73.9,
+    17.5,
     0,
-    2.2,
-    12,
-    291,
-    1.2000000000000002
+    70.8,
+    58,
+    10.4
   ],
+  // CoFID 17-096 "Smartie-type sweets". CoFID gives no fibre figure (0 here). Was 245 kcal
+  // and 7 g fat.
   [
     "smarties generic",
-    245,
-    11,
-    42,
-    7,
-    7,
-    18,
-    926,
-    4.6
+    456,
+    5.4,
+    73.9,
+    17.5,
+    0,
+    70.8,
+    58,
+    10.4
   ],
+  // CoFID 17-096 "Smartie-type sweets". CoFID gives no fibre figure (0 here). Was 187 kcal
+  // and 6 g fat.
   [
     "minstrels generic",
-    187,
-    15,
-    29,
-    6,
-    5,
-    15,
-    735,
-    2
+    456,
+    5.4,
+    73.9,
+    17.5,
+    0,
+    70.8,
+    58,
+    10.4
   ],
+  // CoFID 17-651 "Maltesers and similar products". Was 420 kcal and 14 g fat.
   [
     "revels generic",
-    420,
-    11,
-    74,
-    14,
-    4,
-    22,
-    624,
-    5.4
+    476,
+    7.6,
+    63,
+    23.3,
+    1.7,
+    55.5,
+    156,
+    14.16
   ],
+  // CoFID 17-651 "Maltesers and similar products". Was 524 kcal and 29 g fat.
   [
     "maltesers generic",
-    524,
-    10,
-    61,
-    29,
-    4,
-    29,
-    703,
-    12.8
+    476,
+    7.6,
+    63,
+    23.3,
+    1.7,
+    55.5,
+    156,
+    14.16
   ],
   // CoFID 11-848 "Mince pies, retail". Was 55 kcal and 0 g fat.
   [
@@ -4413,27 +4522,30 @@ const ROWS: TupleRow[] = [
     100,
     3.57
   ],
+  // M&S Classic Panettone label (Ocado 528933011), per 100 g. Was 185 kcal and 4 g fat.
   [
     "panettone slice",
-    185,
-    14,
-    24,
-    4,
-    2,
-    12,
-    430,
-    2
+    364,
+    7.4,
+    51.5,
+    13.7,
+    2.4,
+    27.6,
+    152,
+    8
   ],
+  // M&S Collection Stollen Slices label (Ocado 566772011), per 100 g. Was 419 kcal and 12
+  // g fat.
   [
     "stollen slice",
-    419,
-    10,
-    69,
-    12,
-    5,
-    27,
-    319,
-    5.4
+    350,
+    5.1,
+    51.6,
+    11.9,
+    3.1,
+    40.7,
+    132,
+    4.1
   ],
   [
     "hot cross bun chocolate",
@@ -4528,16 +4640,18 @@ const ROWS: TupleRow[] = [
     43,
     0.76
   ],
+  // CoFID 11-1122 "Pudding, spotted dick, homemade". CoFID has no tinned figure. Was 186
+  // kcal and 7 g fat.
   [
     "spotted dick tin",
-    186,
-    12,
-    24,
-    7,
-    4,
-    14,
-    620,
-    2
+    344,
+    4.5,
+    48.3,
+    16.1,
+    1.2,
+    19.1,
+    226,
+    9.02
   ],
   [
     "bread pudding slice",
@@ -4572,16 +4686,17 @@ const ROWS: TupleRow[] = [
     271,
     1.2000000000000002
   ],
+  // M&S Rocky Road label (Ocado 510667011), per 100 g. Was 245 kcal and 6 g fat.
   [
     "rocky road slice",
-    245,
-    13,
-    42,
-    6,
-    7,
-    14,
-    906,
-    4.6
+    425,
+    5.4,
+    66,
+    14.9,
+    2.6,
+    58.6,
+    52,
+    9
   ],
   [
     "flapjack oats syrup",
@@ -4627,16 +4742,18 @@ const ROWS: TupleRow[] = [
     366,
     1.2000000000000002
   ],
+  // CoFID 14-849 "Trail mix". CoFID gives no saturated fat figure (0 here). Was 244 kcal
+  // and 4 g fat.
   [
     "trail mix fruit",
-    244,
-    12,
-    47,
-    4,
-    8,
-    19,
-    1001,
-    4.6
+    432,
+    9.1,
+    37.2,
+    28.5,
+    5.1,
+    37.1,
+    27,
+    0
   ],
   [
     "sun maid raisins snack",
@@ -4869,16 +4986,17 @@ const ROWS: TupleRow[] = [
     790,
     2
   ],
+  // Heinz Spaghetti Hoops label (Ocado 412783011), per 100 g. Was 431 kcal and 10 g fat.
   [
     "microwave spaghetti hoops",
-    431,
-    8,
-    69,
-    10,
-    5,
-    27,
-    679,
-    5.4
+    52,
+    1.7,
+    10.6,
+    0.2,
+    0.6,
+    3.9,
+    160,
+    0.05
   ],
   // CoFID 13-535 "Baked beans, canned in tomato sauce, reduced sugar, reduced salt". Was
   // 532 kcal and 25 g fat.
@@ -5068,16 +5186,18 @@ const ROWS: TupleRow[] = [
     643,
     12.8
   ],
+  // CoFID 17-835 "Scotch broth, homemade". CoFID has no tinned figure. Was 62 kcal and 1.2
+  // g fat.
   [
     "scotch broth tin",
-    62,
-    0,
-    12.5,
-    1.2000000000000002,
-    3.2,
-    13,
-    326,
-    1.2000000000000002
+    74,
+    6.8,
+    4,
+    3.5,
+    0.9,
+    1.6,
+    22,
+    1.6
   ],
   // CoFID 17-700 "Soup, oxtail, canned". Was 244 kcal and 9 g fat.
   [
@@ -5091,27 +5211,30 @@ const ROWS: TupleRow[] = [
     220,
     0.6
   ],
+  // CoFID 17-795 "Soup, gazpacho, homemade". Was 186 kcal and 8 g fat.
   [
     "gazpacho chilled",
-    186,
-    14,
-    24,
-    8,
-    2,
-    8,
-    770,
-    2
+    46,
+    0.8,
+    2.9,
+    3.6,
+    0.7,
+    2.5,
+    128,
+    0.5
   ],
+  // CoFID 17-831 "Soup, potato and leek, homemade". Vichyssoise is potato and leek soup.
+  // Was 425 kcal and 9 g fat.
   [
     "vichyssoise chilled",
-    425,
-    10,
-    69,
-    9,
-    5,
-    23,
-    659,
-    5.4
+    56,
+    1.5,
+    6.2,
+    2.2,
+    0.8,
+    1.5,
+    47,
+    1.32
   ],
   [
     "salmorejo chilled",
@@ -5193,16 +5316,18 @@ const ROWS: TupleRow[] = [
     116,
     1.2000000000000002
   ],
+  // CoFID 14-336 "Fruit cocktail, canned in juice, whole contents". Was 247 kcal and 5 g
+  // fat.
   [
     "fruit pot tropical",
-    247,
-    14,
-    47,
-    5,
-    6,
-    13,
-    751,
-    4.6
+    45,
+    0.4,
+    11.7,
+    0,
+    1,
+    11.7,
+    3,
+    0
   ],
   [
     "fruit salad pot",
@@ -5358,16 +5483,18 @@ const ROWS: TupleRow[] = [
     401,
     1.2000000000000002
   ],
+  // CoFID 11-939 "Breakfast cereal, crunchy/crispy muesli type cereal, with nuts,
+  // unfortified". Was 251 kcal and 6 g fat.
   [
     "yoghurt granola topper",
-    251,
-    11,
-    42,
-    6,
-    5,
-    12,
-    636,
-    4.6
+    450,
+    8.4,
+    61.9,
+    20.5,
+    7.9,
+    23.1,
+    138,
+    4.61
   ],
   [
     "overnight oats pot",
@@ -5493,16 +5620,18 @@ const ROWS: TupleRow[] = [
     66,
     2.6
   ],
+  // The Butcher's Board Beef Cheeks label (Ocado 708120011), per 100 g raw. Was 420 kcal
+  // and 9 g fat.
   [
     "ox cheek diced",
-    420,
-    9,
-    74,
-    9,
-    4,
-    26,
-    524,
-    5.4
+    123,
+    20.9,
+    0.1,
+    4.3,
+    0,
+    0.1,
+    80,
+    1.8
   ],
   [
     "bone marrow beef",
@@ -5515,16 +5644,18 @@ const ROWS: TupleRow[] = [
     603,
     12.8
   ],
+  // CoFID 18-429 "Pork, trotters and tails, boiled with added salt". CoFID gives no
+  // saturated fat figure (0 here). Was 58 kcal and 0 g fat.
   [
     "trotters pig",
-    58,
-    3.2,
-    12.5,
+    280,
+    19.8,
     0,
-    3.2,
-    13,
-    286,
-    1.2000000000000002
+    22.3,
+    0,
+    0,
+    1620,
+    0
   ],
   [
     "chicken feet",
@@ -5684,16 +5815,17 @@ const ROWS: TupleRow[] = [
     770,
     7.6
   ],
+  // CoFID 11-1006 "Bread rolls, white, soft". Was 65 kcal and 0.2 g fat.
   [
     "morning rolls batch",
-    65,
-    0.20000000000000018,
-    7.5,
-    0.20000000000000018,
-    2.2,
-    12,
-    171,
-    1.2000000000000002
+    254,
+    9.3,
+    51.5,
+    2.6,
+    2.6,
+    2.6,
+    400,
+    0.62
   ],
   // CoFID 11-544 "Scotch pancakes, retail". Was 243 kcal and 8 g fat.
   [
@@ -5879,16 +6011,17 @@ const ROWS: TupleRow[] = [
     691,
     4.6
   ],
+  // CoFID 17-683 "Fudge, homemade". Tablet is a firm fudge. Was 185 kcal and 8 g fat.
   [
     "tablet scottish",
-    185,
-    12,
-    24,
-    8,
-    4,
-    14,
-    500,
-    2
+    435,
+    3.4,
+    80.8,
+    13.1,
+    0,
+    80.8,
+    156,
+    8.29
   ],
   [
     "coconut ice",
@@ -5923,38 +6056,41 @@ const ROWS: TupleRow[] = [
     151,
     1.2000000000000002
   ],
+  // CoFID 17-122 "Turkish delight, without nuts". Was 249 kcal and 7 g fat.
   [
     "turkish delight rose",
-    249,
-    13,
-    42,
-    7,
-    7,
-    14,
-    786,
-    4.6
+    295,
+    0.6,
+    77.9,
+    0,
+    0,
+    68.6,
+    31,
+    0
   ],
+  // CoFID 17-593 "Turkish delight, with nuts, homemade". Was 185 kcal and 6 g fat.
   [
     "lokum pistachio",
-    185,
-    17,
-    29,
-    6,
-    5,
-    11,
-    595,
-    2
+    348,
+    4.1,
+    82,
+    2.6,
+    0.3,
+    81.8,
+    85,
+    0.35
   ],
+  // CoFID 11-842 "Pastries, Greek, baklava, retail". Was 419 kcal and 14 g fat.
   [
     "baklava piece",
-    419,
-    7,
-    74,
-    14,
-    4,
-    26,
-    484,
-    5.4
+    456,
+    6.7,
+    54.1,
+    25.1,
+    2,
+    29,
+    163,
+    9.65
   ],
   [
     "kanafeh slice",
@@ -6011,16 +6147,18 @@ const ROWS: TupleRow[] = [
     579,
     5.4
   ],
+  // Green Origins Vanilla Matcha drink powder label (Ocado 686179011), per 100 g. Was 526
+  // kcal and 27 g fat.
   [
     "matcha latte powder",
-    526,
-    5,
-    56,
-    27,
-    5,
-    30,
-    658,
-    12.8
+    341,
+    6.8,
+    71,
+    0,
+    15,
+    28,
+    84,
+    0
   ],
   [
     "turmeric latte powder",
@@ -6044,16 +6182,17 @@ const ROWS: TupleRow[] = [
     976,
     4.6
   ],
+  // Freja Chicken Bone Broth label (Ocado 622691011), per 100 g. Was 187 kcal and 2 g fat.
   [
     "bone broth liquid",
-    187,
-    15,
-    29,
-    2,
-    3,
     13,
-    785,
-    2
+    3.2,
+    0.2,
+    0,
+    0,
+    0.2,
+    240,
+    0
   ],
   [
     "bone broth powder",
@@ -6088,38 +6227,43 @@ const ROWS: TupleRow[] = [
     36,
     1.2000000000000002
   ],
+  // CoFID 17-488 "Oil, cod liver". Fish oil. Was 256 kcal and 8 g fat.
   [
     "omega 3 capsules",
-    256,
-    10,
-    47,
-    8,
-    6,
-    13,
-    671,
-    4.6
+    899,
+    0,
+    0,
+    99.9,
+    0,
+    0,
+    0,
+    21.1
   ],
+  // Naturya Organic Spirulina Powder label (Ocado 87735011), per 100 g. Was 186 kcal and 7
+  // g fat.
   [
     "spirulina powder",
-    186,
-    14,
-    24,
-    7,
-    4,
-    10,
+    345,
+    67,
+    15,
+    0.9,
+    3.5,
+    0.4,
     480,
-    2
+    0.4
   ],
+  // Naturya Organic Wheatgrass Powder label (Ocado 87736011), per 100 g. Was 423 kcal and
+  // 15 g fat.
   [
     "wheatgrass powder",
-    423,
-    10,
-    69,
-    15,
-    7,
-    25,
-    369,
-    5.4
+    266,
+    20,
+    20,
+    1.4,
+    47,
+    5,
+    76,
+    0.2
   ],
   [
     "brewers yeast flakes",
@@ -6220,27 +6364,30 @@ const ROWS: TupleRow[] = [
     0,
     0
   ],
+  // Kingfisher Bamboo Shoots in Water label (Ocado 56488011), per 100 g drained. Was 187
+  // kcal and 3 g fat.
   [
     "bamboo shoots tin",
-    187,
-    12,
-    24,
-    3,
-    2,
-    12,
-    670,
-    2
+    13,
+    1.5,
+    0.7,
+    0,
+    1.4,
+    0.7,
+    0,
+    0
   ],
+  // CoFID 13-634 "Sweetcorn, baby, boiled in unsalted water". Was 419 kcal and 11 g fat.
   [
     "baby corn tin",
-    419,
-    8,
-    69,
-    11,
-    5,
-    27,
-    559,
-    5.4
+    31,
+    2.2,
+    4.6,
+    0.6,
+    2.4,
+    3.8,
+    0,
+    0.13
   ],
   // USDA SR Legacy 169301 water spinach (water convolvulus), raw: 3.1 g total
   // carbohydrate less 2.1 g fibre. No canned figure; sodium not taken, so 0.
@@ -6256,27 +6403,31 @@ const ROWS: TupleRow[] = [
     0,
     0
   ],
+  // CoFID 13-271 "Lotus tubers, raw". CoFID gives no fibre figure (0 here). Was 63 kcal
+  // and 1.2 g fat.
   [
     "lotus root slices",
-    63,
-    2.2,
-    7.5,
-    1.2000000000000002,
-    4.2,
-    14,
-    321,
-    1.2000000000000002
+    51,
+    2.1,
+    11,
+    0.1,
+    0,
+    5.5,
+    29,
+    0
   ],
+  // CoFID 13-667 "Beans, edamame, frozen, boiled in unsalted water". The shelled beans.
+  // Was 248 kcal and 9 g fat.
   [
     "edamame pods frozen",
-    248,
-    13,
-    42,
-    9,
+    142,
+    12.2,
+    6.5,
+    7.6,
+    5.9,
+    2.6,
     5,
-    12,
-    956,
-    4.6
+    0.85
   ],
   [
     "edamame salted snack",
@@ -6336,38 +6487,43 @@ const ROWS: TupleRow[] = [
     1830,
     0.5
   ],
+  // Miso Tasty Shiro White Miso label (Ocado 339642011), per 100 g. Was 186 kcal and 6 g
+  // fat.
   [
     "miso paste white",
-    186,
-    16,
-    24,
-    6,
-    4,
-    14,
-    460,
-    2
+    189,
+    10.3,
+    18,
+    6.2,
+    4.9,
+    13.6,
+    4600,
+    1
   ],
+  // Miso Tasty Red Aka Miso label (Ocado 339643011), per 100 g. Was 420 kcal and 14 g fat.
   [
     "miso paste red",
-    420,
-    12,
-    69,
-    14,
-    7,
-    29,
-    349,
-    5.4
+    208,
+    10,
+    25.3,
+    5.6,
+    4.1,
+    13.6,
+    4680,
+    0.9
   ],
+  // Blue Dragon Mirin label (Ocado 207601011), per 100 ml; protein and fat are "<0.5 g".
+  // Was 522 kcal and 29 g fat.
   [
     "mirin seasoning",
-    522,
-    5,
-    56,
-    29,
-    3,
-    28,
-    428,
-    12.8
+    272,
+    0.4,
+    68,
+    0.4,
+    0,
+    35,
+    4,
+    0.05
   ],
   // Kikkoman Ponzu (lemon) label (UK retailer), per 100 ml: 122 kcal, 3.3 g
   // protein, 23 g carbohydrate (all sugars), no fat, 6.6 g salt. Was 57 kcal
@@ -6426,49 +6582,56 @@ const ROWS: TupleRow[] = [
     0,
     0
   ],
+  // Sempio Gochujang Bulgogi Sauce label (Ocado 689826011), per 100 g. Was 523 kcal and 27
+  // g fat.
   [
     "bulgogi marinade",
-    523,
-    10,
-    61,
-    27,
-    4,
-    33,
-    523,
-    12.8
+    169,
+    2,
+    38.7,
+    0.5,
+    0,
+    29,
+    2200,
+    0.1
   ],
+  // Sempio Gochujang label (Ocado 675677011), per 100 g. Fibre isn't listed. Was 61 kcal
+  // and 2.2 g fat.
   [
     "gochujang paste",
-    61,
-    0,
-    12.5,
+    233,
+    5,
+    42,
     2.2,
-    3.2,
-    13,
-    206,
-    1.2000000000000002
+    0,
+    25,
+    2640,
+    0.5
   ],
+  // Korean Gochugaru Red Pepper Powder label (Ocado 675685011), per 100 g. The label's
+  // 56.1 g carbohydrate includes the 34.4 g fibre. Was 245 kcal and 10 g fat.
   [
     "gochugaru flakes",
-    245,
-    10,
-    47,
-    10,
-    8,
-    19,
-    841,
-    4.6
+    275,
+    14.7,
+    21.7,
+    6.8,
+    34.4,
+    13.1,
+    280,
+    1.7
   ],
+  // Sempio Doenjang label (Ocado 677281011), per 100 g. Was 184 kcal and 2 g fat.
   [
     "doenjang paste",
-    184,
+    154,
     14,
-    24,
-    2,
-    2,
-    8,
-    650,
-    2
+    6.8,
+    6.4,
+    0,
+    3.5,
+    4800,
+    1.7
   ],
   [
     "kimchi paste",
@@ -6481,16 +6644,17 @@ const ROWS: TupleRow[] = [
     539,
     5.4
   ],
+  // Sempio Ssamjang label (Ocado 675675011), per 100 g. Was 521 kcal and 25 g fat.
   [
     "ssamjang paste",
-    521,
-    9,
-    56,
-    25,
-    5,
-    30,
-    618,
-    12.8
+    204,
+    7,
+    32.3,
+    4.5,
+    0,
+    21.4,
+    2240,
+    0.6
   ],
   [
     "rice vinegar seasoned",
@@ -6558,16 +6722,19 @@ const ROWS: TupleRow[] = [
     396,
     1.2000000000000002
   ],
+  // CoFID 13-813 "Chinese 5 spice". CoFID gives no carbohydrate, fibre, sugars or
+  // saturated fat figure: carbohydrate and energy as filled in cofidEnergyGaps.ts
+  // (Schwartz label). Was 246 kcal and 6 g fat.
   [
     "five spice powder",
-    246,
-    14,
-    47,
-    6,
-    6,
-    13,
-    631,
-    4.6
+    332,
+    9.5,
+    54,
+    8.7,
+    0,
+    0,
+    63,
+    0
   ],
   [
     "szechuan peppercorns",
@@ -6591,16 +6758,18 @@ const ROWS: TupleRow[] = [
     329,
     5.4
   ],
+  // CoFID 13-874 "Cinnamon, ground": cassia is the cinnamon most shops sell. Energy as
+  // filled in cofidEnergyGaps.ts (USDA). Was 518 kcal and 28 g fat.
   [
     "cassia bark",
-    518,
-    7,
-    56,
-    28,
-    3,
-    32,
-    408,
-    12.8
+    247,
+    4,
+    27.5,
+    1.2,
+    53.1,
+    2.2,
+    10,
+    0.4
   ],
   [
     "fennel seeds whole",
@@ -6679,27 +6848,30 @@ const ROWS: TupleRow[] = [
     821,
     4.6
   ],
+  // Schwartz Za'atar Seasoning label (Ocado 484746011), per 100 g. Fibre isn't listed. Was
+  // 182 kcal and 8 g fat.
   [
     "zaatar blend",
-    182,
-    16,
-    24,
-    8,
-    2,
-    12,
-    630,
-    2
+    470,
+    14,
+    26.7,
+    31.2,
+    0,
+    2.1,
+    2656,
+    4.5
   ],
+  // Belazu Rose Harissa label (Ocado 279413011), per 100 g. Was 423 kcal and 9 g fat.
   [
     "harissa paste jar",
-    423,
-    12,
-    69,
-    9,
-    5,
-    27,
-    519,
-    5.4
+    459,
+    2.9,
+    9.5,
+    44.2,
+    7.3,
+    4.1,
+    1600,
+    11
   ],
   [
     "ras el hanout",
@@ -6745,16 +6917,17 @@ const ROWS: TupleRow[] = [
     725,
     2
   ],
+  // AMA's Jerk Marinade label (Ocado 694687011), per 100 g. Was 426 kcal and 14 g fat.
   [
     "jerk marinade bottle",
-    426,
-    11,
-    74,
-    14,
-    6,
-    24,
-    614,
-    5.4
+    160,
+    2.7,
+    13.8,
+    10,
+    3.6,
+    9.2,
+    1404,
+    1.9
   ],
   [
     "curry goat seasoning",
@@ -6833,16 +7006,18 @@ const ROWS: TupleRow[] = [
     71,
     1.2000000000000002
   ],
+  // CoFID 14-826 "Melon seeds". Egusi is melon seed. CoFID gives no fibre or sugars figure
+  // (0 here). Was 247 kcal and 10 g fat.
   [
     "egusi seeds ground",
-    247,
-    9,
-    42,
-    10,
-    7,
-    14,
-    706,
-    4.6
+    583,
+    28.5,
+    9.9,
+    47.7,
+    0,
+    0,
+    99,
+    12
   ],
   [
     "palm oil red",
