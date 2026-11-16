@@ -1,5 +1,6 @@
 import { attachRetinolToMicroEntry } from "@/lib/nutrition/vitamin-a-retinol";
 import { MICRO_ALIAS_EXPANSION, MICRO_DB_EXPANSION } from "@/lib/nutrition/micros-expansion";
+import { canonicalIngredientPhrase } from "@/lib/nutrition/ingredientPhrase";
 
 export type MicroEntry = {
   vitamin_a_mcg: number;
@@ -600,6 +601,23 @@ export const MICRO_DB: Record<string, MicroEntry> = {
   granola: {
     vitamin_a_mcg: 0, vitamin_c_mg: 0, vitamin_d_mcg: 0, vitamin_b12_mcg: 0, folate_mcg: 30, iron_mg: 3, calcium_mg: 50, zinc_mg: 2, magnesium_mg: 90, potassium_mg: 340, selenium_mcg: 12, iodine_mcg: 2, saturated_fat_g: 3, salt_g: 0.1, sugar_g: 15,
   },
+  // CoFID 12-533 "Yogurt, virtually fat free/diet, plain". Also stands in for
+  // fat-free Greek-style yoghurt and skyr, which used to take full-fat Greek
+  // yoghurt's 3.2 g saturated fat per 100 g.
+  "fat free yoghurt": {
+    vitamin_a_mcg: 0, vitamin_c_mg: 1, vitamin_d_mcg: 0, vitamin_b12_mcg: 0.3, folate_mcg: 18, iron_mg: 0.13, calcium_mg: 160, zinc_mg: 0.6, magnesium_mg: 16, potassium_mg: 247, selenium_mcg: 2, iodine_mcg: 53, saturated_fat_g: 0.1, salt_g: 0.18, sugar_g: 7.9,
+  },
+  // CoFID 12-379 "Yogurt, low fat, plain".
+  "low fat yoghurt": {
+    vitamin_a_mcg: 8, vitamin_c_mg: 1, vitamin_d_mcg: 0.1, vitamin_b12_mcg: 0.3, folate_mcg: 18, iron_mg: 0.08, calcium_mg: 162, zinc_mg: 0.6, magnesium_mg: 16, potassium_mg: 228, selenium_mcg: 2, iodine_mcg: 34, saturated_fat_g: 0.66, salt_g: 0.16, sugar_g: 7.5,
+  },
+  // CoFID 13-574 "Quorn, pieces, as purchased" (mycoprotein, the same base as Quorn
+  // mince). The Quorn label declares no vitamins or minerals. CoFID has no value for
+  // calcium, selenium or iodine, so those are 0 here (unknown, not measured as zero).
+  // Quorn mince used to fall through to beef mince: B12 2.5 µg and iron 2.5 mg per 100 g.
+  quorn: {
+    vitamin_a_mcg: 0, vitamin_c_mg: 0, vitamin_d_mcg: 0, vitamin_b12_mcg: 0.3, folate_mcg: 21, iron_mg: 0.6, calcium_mg: 0, zinc_mg: 7, magnesium_mg: 37, potassium_mg: 120, selenium_mcg: 0, iodine_mcg: 0, saturated_fat_g: 0.4, salt_g: 0.75, sugar_g: 0.4,
+  },
 };
 
 /** Maps common name variants (plurals, regional spellings, cuts) onto a canonical MICRO_DB key. */
@@ -608,9 +626,20 @@ const MICRO_ALIASES: Record<string, string> = {
   "greek yogurt": "greek yoghurt",
   "natural yogurt": "greek yoghurt",
   "natural yoghurt": "greek yoghurt",
-  "low fat yoghurt": "greek yoghurt",
-  "low fat yogurt": "greek yoghurt",
-  skyr: "greek yoghurt",
+  skyr: "fat free yoghurt",
+  "fat free greek yoghurt": "fat free yoghurt",
+  "fat free greek style yoghurt": "fat free yoghurt",
+  "fat free natural yoghurt": "fat free yoghurt",
+  "low fat greek yoghurt": "low fat yoghurt",
+  "low fat greek style yoghurt": "low fat yoghurt",
+  "low fat natural yoghurt": "low fat yoghurt",
+  // cheese
+  feta: "feta cheese",
+  cheddar: "cheddar cheese",
+  // meat-free
+  "quorn mince": "quorn",
+  "quorn pieces": "quorn",
+  "quorn chicken pieces": "quorn",
   "bell pepper": "red pepper",
   peppers: "red pepper",
   "red peppers": "red pepper",
@@ -643,6 +672,14 @@ const MICRO_ALIASES: Record<string, string> = {
   noodles: "pasta",
   "porridge oats": "oats",
   "rolled oats": "oats",
+  "rice cakes": "rice cake",
+  // CoFID has no wholemeal pitta; wholemeal bread is the nearest per-100 g profile.
+  "wholemeal pitta": "wholemeal bread",
+  "wholewheat pitta": "wholemeal bread",
+  pitta: "pitta bread",
+  // Dry wholewheat noodles are wholewheat flour and water.
+  "wholewheat noodles": "wholemeal flour",
+  "wholemeal noodles": "wholemeal flour",
   // dairy & milks
   "whole milk": "milk",
   "skimmed milk": "milk",
@@ -660,6 +697,12 @@ const MICRO_ALIASES: Record<string, string> = {
   "red lentils": "lentils",
   lentil: "lentils",
   chickpea: "chickpeas",
+  "black turtle beans": "black beans",
+  "turtle beans": "black beans",
+  // Frozen soya beans are edamame.
+  "soya beans": "edamame",
+  "soy beans": "edamame",
+  "edamame beans": "edamame",
   // seafood
   prawns: "shrimp",
   prawn: "shrimp",
@@ -693,8 +736,17 @@ function resolveMicroEntry(target: string): MicroEntry | null {
   return MICRO_DB[target] ?? (MICRO_ALIASES[target] ? (MICRO_DB[MICRO_ALIASES[target]] ?? null) : null);
 }
 
+/** Names that say the food is not meat or fish ("Quorn mince", "vegan mince"). */
+const MEAT_FREE_NAME_PATTERN =
+  /\b(quorn|vegan|vegetarian|veggie|meat[- ]?free|plant[- ]?based|soya|soy|mycoprotein|tofu|seitan|tempeh)\b/;
+/** Table entries for meat or fish, which a meat-free name must never borrow. */
+const MEAT_OR_FISH_KEY_PATTERN =
+  /\b(beef|pork|lamb|chicken|turkey|bacon|ham|sausages?|mince|steak|gammon|duck|chorizo|salami|liver|salmon|tuna|cod|haddock|mackerel|sardines?|trout|prawns?|shrimp|fish)\b/;
+
 export function lookupMicros(name: string): MicroEntry | null {
-  const key = name.toLowerCase().trim();
+  // "0% greek yoghurt", "fat-free Greek yogurt" → "fat free greek yoghurt".
+  const key = canonicalIngredientPhrase(name.trim());
+  const meatFree = MEAT_FREE_NAME_PATTERN.test(key);
   let entry: MicroEntry | null = null;
   if (MICRO_DB[key]) entry = MICRO_DB[key];
   else {
@@ -712,6 +764,10 @@ export function lookupMicros(name: string): MicroEntry | null {
     for (const { phrase, target } of FUZZY_KEYS) {
       const isMultiWord = phrase.includes(" ");
       if (!isMultiWord && phrase !== lastWord) continue;
+      // "vegan mince" ends in "mince", which is aliased to beef mince.
+      if (meatFree && (MEAT_OR_FISH_KEY_PATTERN.test(target) || MEAT_OR_FISH_KEY_PATTERN.test(phrase))) {
+        continue;
+      }
       const re = new RegExp(`\\b${phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`);
       if (re.test(key)) {
         const resolved = resolveMicroEntry(target);

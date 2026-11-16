@@ -1169,6 +1169,86 @@ const NUTRITION_DB_CORE: NutritionLookupEntry[] = [
       saturated_fat_g: 3,
     },
   },
+  // --- Foods CoFID has no row for, or files where a bare name can't reach. ---
+  // Each one used to fall through to a wrong food (15 Nov 2026): the sources are noted.
+  // CoFID 13-559 "Beans, butter, canned, re-heated, drained". Without this entry the
+  // local fallback for "butter beans" was "butter" (717 kcal/100 g).
+  {
+    name: "butter beans",
+    per_100g: {
+      calories: 77,
+      protein_g: 5.9,
+      carbs_g: 13,
+      fat_g: 0.5,
+      fibre_g: 4.6,
+      sugar_g: 1.1,
+      sodium_mg: 0,
+      saturated_fat_g: 0.1,
+    },
+  },
+  // Fat-free Greek-style strained yoghurt, UK label (Fage Total 0%). CoFID's only
+  // fat-free yogurt is unstrained (5.4 g protein), half the protein of strained.
+  {
+    name: "fat free greek yoghurt",
+    per_100g: {
+      calories: 54,
+      protein_g: 10.3,
+      carbs_g: 3,
+      fat_g: 0,
+      fibre_g: 0,
+      sugar_g: 3,
+      sodium_mg: 40,
+      saturated_fat_g: 0,
+    },
+  },
+  // Low-fat (2%) Greek-style strained yoghurt, UK label (Fage Total 2%).
+  {
+    name: "low fat greek yoghurt",
+    per_100g: {
+      calories: 70,
+      protein_g: 9.9,
+      carbs_g: 3,
+      fat_g: 2,
+      fibre_g: 0,
+      sugar_g: 3,
+      sodium_mg: 40,
+      saturated_fat_g: 1.3,
+    },
+  },
+  // Tesco wholemeal pitta label (241 kcal, 10.3 g protein, 1.2 g fat, 9.7 g fibre,
+  // 0.59 g salt); carbs and sugars from the same product, and the macros add up to
+  // the stated energy. CoFID has white pitta only.
+  {
+    name: "wholemeal pitta",
+    typical_piece_g: 56,
+    per_100g: {
+      calories: 241,
+      protein_g: 10.3,
+      carbs_g: 42.3,
+      fat_g: 1.2,
+      fibre_g: 9.7,
+      sugar_g: 2.8,
+      sodium_mg: 236,
+      saturated_fat_g: 0.2,
+    },
+  },
+  // Dry, as bought. CoFID has no wholewheat noodle; its dry wholewheat spaghetti
+  // (11-718) is the same wholewheat flour and water, and sits within the range of
+  // UK wholewheat noodle labels (about 340–360 kcal dry). "noodles" in this table
+  // is a cooked figure, which costed dry noodles at under half their energy.
+  {
+    name: "wholewheat noodles",
+    per_100g: {
+      calories: 329,
+      protein_g: 12.6,
+      carbs_g: 68.3,
+      fat_g: 2.5,
+      fibre_g: 11.7,
+      sugar_g: 3.9,
+      sodium_mg: 3,
+      saturated_fat_g: 0.4,
+    },
+  },
 ];
 
 export const NUTRITION_DB = mergeNutritionEntriesUnique(

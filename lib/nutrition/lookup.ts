@@ -1,5 +1,6 @@
 import type { NutritionLookupEntry } from "@/types";
 import { NUTRITION_DB } from "@/lib/nutrition/nutrition-db";
+import { canonicalIngredientPhrase } from "@/lib/nutrition/ingredientPhrase";
 
 function normalizeName(value: string): string {
   return value.toLowerCase().trim();
@@ -31,11 +32,51 @@ const INGREDIENT_LOOKUP_ALIASES: Record<string, string> = {
   "stock pot": "stock cube chicken",
   "chopped tomatoes": "tomato",
   "tin chopped tomatoes": "tomato",
+  // Black turtle beans are black beans; neither is in CoFID.
+  "black turtle beans": "black beans",
+  "turtle beans": "black beans",
+  "butter bean": "butter beans",
+  // Without these, partial matching found "rice" (raw grain) and "rice cakes salted".
+  "rice cakes": "rice cake",
+  "plain rice cakes": "rice cake",
+  // The "rice cake" row is Kallo lightly salted; the old "rice cakes salted" row
+  // had 187 kcal and 16 g protein per 100 g.
+  "rice cakes salted": "rice cake",
+  "salted rice cakes": "rice cake",
+  "lightly salted rice cakes": "rice cake",
+  // Made-up stock is a few kcal per 100 ml whatever the flavour. CoFID has no
+  // made-up beef or lamb stock (only the dry cube, which is per 100 g of cube),
+  // so these use the vegetable stock figures.
+  "beef stock": "vegetable stock",
+  "lamb stock": "vegetable stock",
+  "wholemeal pittas": "wholemeal pitta",
+  "wholemeal pitta bread": "wholemeal pitta",
+  "wholewheat pitta": "wholemeal pitta",
+  "wholewheat pitta bread": "wholemeal pitta",
+  "wholemeal noodles": "wholewheat noodles",
+  "wholewheat noodle": "wholewheat noodles",
+  "bean sprouts": "bean sprouts fresh",
+  beansprouts: "bean sprouts fresh",
+  // Frozen soya beans are edamame.
+  "soya beans": "edamame",
+  "soy beans": "edamame",
+  "frozen soya beans": "edamame",
+  "frozen soy beans": "edamame",
+  "edamame beans": "edamame",
+  "frozen edamame": "edamame",
+  "fat free greek style yoghurt": "fat free greek yoghurt",
+  "low fat greek style yoghurt": "low fat greek yoghurt",
+  "fat free skyr": "skyr",
+  "natural skyr": "skyr",
 };
 
 function resolveLookupName(name: string): string {
   const normalized = normalizeName(name);
-  return INGREDIENT_LOOKUP_ALIASES[normalized] ?? normalized;
+  return (
+    INGREDIENT_LOOKUP_ALIASES[normalized] ??
+    INGREDIENT_LOOKUP_ALIASES[canonicalIngredientPhrase(normalized)] ??
+    normalized
+  );
 }
 
 /** Display hints for autocomplete (whole foods / common count units). Keys lowercase. */
@@ -87,6 +128,14 @@ export function lookupNutrition(name: string): NutritionLookupEntry | null {
   const normalized = resolveLookupName(name);
   const exact = NUTRITION_DB.find((item) => normalizeName(item.name) === normalized);
   if (exact) return exact;
+
+  // "0% greek yoghurt", "fat-free Greek yogurt" → "fat free greek yoghurt". Tried
+  // before partial matching, which would otherwise find full-fat "greek yoghurt".
+  const canonical = canonicalIngredientPhrase(normalized);
+  if (canonical !== normalized) {
+    const canonicalExact = NUTRITION_DB.find((item) => normalizeName(item.name) === canonical);
+    if (canonicalExact) return canonicalExact;
+  }
 
   // Fallback matching for user-entered variations (e.g. "alfredo sauce", "grated parmesan")
   const partial = NUTRITION_DB.find((item) => {

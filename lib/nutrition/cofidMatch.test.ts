@@ -467,3 +467,194 @@ import { isBareMeatOrFishQuery, isCookedMeatRow } from "@/lib/nutrition/cofidMat
   }
 }
 console.log("OK: meat and fish costed raw");
+
+// --- 15 Nov 2026: wrong matches found while writing the vegetarian meal plan ---
+// Rows are real CoFID names, as the lookup collects them for each query.
+import {
+  isCompositeDishMismatch,
+  isPuffedCakeMismatch,
+  isFatLevelMismatch,
+  isStockConcentrateMismatch,
+  isVarietyMismatch,
+  normalizeCofidQuery,
+} from "@/lib/nutrition/cofidMatch";
+{
+  const row = (food_code: string, food_name: string, food_group: string, matchKind: "partial" | "fulltext" = "partial"): CofidCandidate => ({
+    food_code,
+    food_name,
+    food_group,
+    matchKind,
+  });
+  /** As the lookup calls it: on the normalised key. */
+  const pick = (query: string, rows: CofidCandidate[]) => pickBestCofidCandidate(normalizeCofidQuery(query), rows);
+  const expectPick = (query: string, rows: CofidCandidate[], code: string) => {
+    const best = pick(query, rows);
+    if (best?.food_code !== code) {
+      throw new Error(`"${query}" picked ${best ? `${best.food_code} ${best.food_name}` : "nothing"}; expected ${code}`);
+    }
+  };
+  const expectNone = (query: string, rows: CofidCandidate[]) => {
+    const best = pick(query, rows);
+    if (best) throw new Error(`"${query}" should find no CoFID row (local DB answers); picked ${best.food_name}`);
+  };
+
+  // Black beans are not in CoFID. Every row the lookup finds is another bean
+  // or a dish, so it must hand over to the local DB.
+  const blackBeanRows = [
+    row("15-735", "Curry, black gram, whole and red kidney bean, homemade", "DR", "fulltext"),
+    row("15-738", "Curry, black-eye bean, homemade", "DR", "fulltext"),
+    row("19-570", "Chicken, stir-fried with peppers in black bean sauce, homemade", "MR", "fulltext"),
+    row("13-063", "Beans, blackeye, whole, dried, boiled in unsalted water", "DB"),
+    row("13-559", "Beans, butter, canned, re-heated, drained", "DB"),
+    row("13-067", "Beans, broad, dried, raw", "DB"),
+    row("13-042", "Beans, aduki, whole, dried, boiled in unsalted water", "DB"),
+  ];
+  expectNone("black beans", blackBeanRows);
+  expectNone("canned black beans", blackBeanRows);
+  expectNone("black turtle beans", blackBeanRows);
+
+  // Frozen soya beans are edamame, not raw broad beans.
+  if (normalizeCofidQuery("frozen soya beans") !== "frozen edamame beans") {
+    throw new Error(`soya beans rewrite: ${normalizeCofidQuery("frozen soya beans")}`);
+  }
+  expectPick("frozen soya beans", [
+    row("13-067", "Beans, broad, dried, raw", "DB"),
+    row("13-042", "Beans, aduki, whole, dried, boiled in unsalted water", "DB"),
+    row("13-667", "Beans, edamame, frozen, boiled in unsalted water", "DB", "fulltext"),
+  ], "13-667");
+
+  // Bean sprouts are CoFID's "Beansprouts, mung", not broad beans.
+  if (normalizeCofidQuery("bean sprouts") !== "beansprouts") throw new Error("bean sprouts rewrite");
+  const sprout = pick("bean sprouts", [
+    row("13-067", "Beans, broad, dried, raw", "DB"),
+    row("13-426", "Beansprouts, mung, raw", "DB"),
+    row("13-580", "Beansprouts, mung, boiled in unsalted water", "DB"),
+  ]);
+  if (!sprout?.food_name.startsWith("Beansprouts, mung")) throw new Error(`bean sprouts → ${sprout?.food_name}`);
+
+  // Butter beans: canned or boiled, never dried raw (3× the calories).
+  const butter = pick("butter beans", [
+    row("13-070", "Beans, butter, dried, raw", "DB", "fulltext"),
+    row("13-559", "Beans, butter, canned, re-heated, drained", "DB", "fulltext"),
+    row("13-663", "Beans, butter, dried, boiled in unsalted water", "DB", "fulltext"),
+    row("17-685", "Butter, salted", "OA"),
+  ]);
+  if (!butter || /dried, raw|^Butter,/.test(butter.food_name)) throw new Error(`butter beans → ${butter?.food_name}`);
+
+  // Vegetable stock in ml is the made-up liquid, not 100 g of dry cube; with no
+  // vegetable stock liquid in CoFID it goes to the local DB.
+  const stockRows = [
+    row("17-727", "Stock cubes, vegetable", "WY", "fulltext"),
+    row("13-543", "Vegetables, mixed, frozen, boiled in unsalted water", "DG"),
+    row("15-621", "Vegetables, mixed, cooked with onion, spice and tomatoes, homemade", "DR"),
+    row("17-681", "Stock, chicken, ready made, retail", "WY"),
+  ];
+  expectNone("vegetable stock", stockRows);
+  expectPick("vegetable stock cube", stockRows, "17-727");
+  const chickenStock = pick("chicken stock", [
+    row("17-726", "Stock cubes, chicken", "WY", "fulltext"),
+    row("17-774", "Stock cubes, chicken, made up with water", "WY", "fulltext"),
+    row("17-681", "Stock, chicken, ready made, retail", "WY", "fulltext"),
+    row("18-488", "Chicken, meat, average, raw", "MCA"),
+  ]);
+  if (!chickenStock || !/made up|ready made/.test(chickenStock.food_name)) {
+    throw new Error(`chicken stock → ${chickenStock?.food_name}`);
+  }
+  if (!isStockConcentrateMismatch("vegetable stock", "Stock cubes, vegetable")) throw new Error("stock vs cube");
+  if (isStockConcentrateMismatch("chicken stock cube", "Stock cubes, chicken")) throw new Error("cube query keeps cube");
+
+  // Fat-free, 0% and low-fat Greek yoghurt never take a full-fat row.
+  for (const q of ["fat-free greek yoghurt", "0% greek yoghurt", "0% fat greek yogurt", "nonfat greek yogurt", "low fat greek yoghurt"]) {
+    if (!/\b(fat free|low fat)\b/.test(normalizeCofidQuery(q))) throw new Error(`fat level lost: "${q}" → "${normalizeCofidQuery(q)}"`);
+    expectNone(q, [
+      row("12-555", "Yogurt, Greek style, plain", "BN", "fulltext"),
+      row("12-374", "Yogurt, whole milk, plain", "BN", "fulltext"),
+    ]);
+  }
+  if (!isFatLevelMismatch("0% greek yoghurt", "Yogurt, Greek style, plain")) throw new Error("0% vs full fat");
+  if (isFatLevelMismatch("greek yoghurt", "Yogurt, Greek style, plain")) throw new Error("plain greek is fine");
+  // "200g yoghurt" style quantities still strip; "0%" is a fat level, not a quantity.
+  if (normalizeCofidQuery("0% greek yoghurt") !== "fat free greek yoghurt") {
+    throw new Error(`0% rewrite: ${normalizeCofidQuery("0% greek yoghurt")}`);
+  }
+  // Low fat yoghurt is the plain one, not fruit or toffee.
+  expectPick("low fat yoghurt", [
+    row("12-380", "Yogurt, low fat, fruit", "BN", "fulltext"),
+    row("12-904", "Yogurt, low fat, hazelnut", "BNH", "fulltext"),
+    row("12-379", "Yogurt, low fat, plain", "BN", "fulltext"),
+    row("12-905", "Yogurt, low fat, toffee", "BNH", "fulltext"),
+  ], "12-379");
+
+  // Wholemeal pasta is CoFID's wholewheat pasta, not pasta salad with mayonnaise.
+  expectPick("wholemeal pasta", [
+    row("15-294", "Salad, wholemeal pasta, with vegetables and mayonnaise", "DR"),
+    row("11-729", "Pasta, egg, fresh, filled with cheese and tomato, boiled in unsalted water", "AD"),
+    row("11-718", "Pasta, wholewheat, spaghetti, dried, raw", "AD", "fulltext"),
+    row("11-723", "Pasta, wholewheat, spaghetti, dried, boiled in unsalted water", "AD", "fulltext"),
+  ], "11-718");
+  // Wholewheat noodles are not egg or rice noodles.
+  expectNone("wholewheat noodles", [
+    row("11-719", "Noodles, egg, dried, raw", "AD"),
+    row("11-724", "Noodles, egg, medium, dried, boiled in unsalted water", "AD"),
+    row("11-725", "Noodles, rice, fine, dried, boiled in unsalted water", "AD"),
+  ]);
+
+  // Mushrooms are white mushrooms, not cooked shiitake.
+  const mushroomRows = [
+    row("13-295", "Mushrooms, shiitake, cooked", "DG"),
+    row("13-288", "Mushrooms, Chinese, dried, raw", "DG"),
+    row("13-505", "Mushrooms, white, raw", "DG"),
+    row("13-506", "Mushrooms, white, stewed in unsalted water", "DG"),
+    row("19-569", "Chicken, stir-fried with mushrooms and cashew nuts, homemade", "MR"),
+  ];
+  expectPick("mushrooms", mushroomRows, "13-505");
+  expectPick("button mushrooms", mushroomRows, "13-505");
+  expectPick("chestnut mushrooms", mushroomRows, "13-505");
+  expectPick("shiitake mushrooms", mushroomRows, "13-295");
+
+  // Rice cakes are not raw rice, Rice Krispie cakes or fudge cake.
+  const riceCakeRows = [
+    row("11-866", "Rice, brown, basmati, raw", "AC"),
+    row("11-867", "Rice, brown, basmati, boiled in unsalted water", "AC"),
+    row("11-868", "Rice, brown, wholegrain, raw", "AC"),
+    row("11-990", "Cakes, crispie, homemade", "AN"),
+    row("11-839", "Cakes, fancy iced, individual, retail", "AN"),
+    row("11-527", "Cake, chocolate fudge", "AN"),
+  ];
+  expectNone("rice cakes", riceCakeRows);
+  expectNone("rice cake", riceCakeRows);
+  expectPick("chocolate fudge cake", riceCakeRows, "11-527");
+  if (!isPuffedCakeMismatch("rice cakes", "Rice, brown, basmati, raw")) throw new Error("rice cakes vs rice");
+  if (!isPuffedCakeMismatch("rice cakes salted", "Cakes, crispie, homemade")) throw new Error("rice cakes vs crispie");
+  if (isPuffedCakeMismatch("rice cakes", "Rice cakes, plain")) throw new Error("a rice cake row is fine");
+  // Pasta shapes are the same food: orzo is not vetoed off CoFID's dried pasta.
+  if (isVarietyMismatch("orzo pasta", "Pasta, white, dried, raw")) throw new Error("orzo is pasta");
+  // CoFID files black-eyed beans as "Beans, blackeye".
+  if (normalizeCofidQuery("black-eyed beans") !== "blackeye beans") throw new Error(`blackeye: ${normalizeCofidQuery("black-eyed beans")}`);
+  expectPick("black-eyed beans", [
+    row("15-736", "Rice and black-eye beans", "DR"),
+    row("13-063", "Beans, blackeye, whole, dried, boiled in unsalted water", "DB"),
+    row("13-062", "Beans, blackeye, whole, dried, raw", "DB"),
+  ], "13-063");
+
+  // An apple is an eating apple as bought (flesh and skin), not a cooking apple
+  // or a weight that includes the core.
+  expectPick("apple", [
+    row("14-321", "Apples, cooking, raw, flesh only", "FA"),
+    row("14-346", "Apples, eating, raw, flesh and skin, weighed with core", "FA"),
+    row("14-319", "Apples, eating, raw, flesh and skin", "FA"),
+    row("14-320", "Apples, cooking, stewed without sugar, flesh only", "FA"),
+  ], "14-319");
+  expectPick("bramley apple", [
+    row("14-321", "Apples, cooking, raw, flesh only", "FA"),
+    row("14-319", "Apples, eating, raw, flesh and skin", "FA"),
+  ], "14-321");
+
+  // The rules on their own.
+  if (!isVarietyMismatch("black beans", "Beans, butter, canned, re-heated, drained")) throw new Error("variety: butter");
+  if (isVarietyMismatch("black beans", "Beans, black, canned")) throw new Error("variety: black ok");
+  if (!isCompositeDishMismatch("black beans", "Curry, black gram, whole and red kidney bean, homemade")) throw new Error("dish: curry");
+  if (isCompositeDishMismatch("tuna", "Tuna, canned in brine, drained")) throw new Error("dish: brine is prep");
+  if (isCompositeDishMismatch("chicken stock", "Stock cubes, chicken, made up with water")) throw new Error("dish: made up with water");
+}
+console.log("OK: 15 Nov 2026 vegetarian plan matches");

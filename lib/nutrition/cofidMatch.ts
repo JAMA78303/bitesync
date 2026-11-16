@@ -1,4 +1,5 @@
 import { asksForNonDairy, isDairyIngredient } from "@/lib/dietary/dairy";
+import { canonicalFatAndGrainPhrase } from "@/lib/nutrition/ingredientPhrase";
 export type CoFIDMatchKind = "exact" | "fulltext" | "partial";
 
 export type CofidCandidate = {
@@ -155,12 +156,54 @@ export function normalizeIngredientForMatch(value: string): string {
   return normalizeForMatch(value);
 }
 
+/**
+ * Everyday names for foods CoFID files under another name. Each is the same
+ * food, not a stand-in:
+ *   "bean sprouts"                      → CoFID "Beansprouts, mung, …"
+ *   "soya beans" (frozen, not dried)    → CoFID "Beans, edamame, frozen, …"
+ *   button / chestnut / closed-cup mushrooms are all Agaricus bisporus,
+ *                                       → CoFID "Mushrooms, white, …"
+ */
+function rewriteToCofidVocabulary(query: string): string {
+  let q = query.replace(/\bbean ?sprouts?\b/g, "beansprouts");
+  if (!/\bdried\b/.test(q)) q = q.replace(/\b(?:soya|soy)\s+beans?\b/g, "edamame beans");
+  q = q.replace(/\b(?:button|chestnut|closed[ -]cup)\s+mushrooms?\b/g, "white mushrooms");
+  // CoFID files these as "Beans, blackeye, …" and "Beans, pinto, re-fried beans".
+  q = q.replace(/\bblack[- ]?eyed?\b(?=\s+(?:beans?|peas?)\b)/g, "blackeye");
+  q = q.replace(/\brefried\b/g, "re-fried");
+  // CoFID says "canned" and "vegetables": "mushroom soup tin" is "Soup, mushroom,
+  // cream of, canned"; "frozen mixed veg" is "Vegetables, mixed, frozen, …".
+  q = q.replace(/\btins? of\b/g, "canned").replace(/\b(?:tinned|tins?)\b/g, "canned");
+  q = q.replace(/\b(?:veg|veggies)\b/g, "vegetables");
+  return q.replace(/\s+/g, " ").trim();
+}
+
 /** Normalise an ingredient name before CoFID lookup / override resolution. */
 export function normalizeCofidQuery(name: string): string {
-  return normalizeForMatch(name)
+  const base = normalizeForMatch(canonicalFatAndGrainPhrase(name))
     .replace(/^\d+(?:\.\d+)?\s*(?:g|kg|ml|l|oz|lb)\s+/i, "")
     .replace(/^\d+(?:\.\d+)?\s+/, "")
     .trim();
+  return rewriteToCofidVocabulary(base);
+}
+
+/**
+ * Extra full-text queries for words CoFID spells differently: "wholemeal pasta"
+ * finds nothing, but CoFID files it as "Pasta, wholewheat, …"; "yoghurt" is
+ * "Yogurt" there.
+ */
+export function cofidSynonymQueries(normalised: string): string[] {
+  const swaps: [RegExp, string][] = [
+    [/\bwholemeal\b/g, "wholewheat"],
+    [/\bwholewheat\b/g, "wholemeal"],
+    [/\byoghurts?\b/g, "yogurt"],
+  ];
+  const out = new Set<string>();
+  for (const [from, to] of swaps) {
+    const alt = normalised.replace(from, to);
+    if (alt !== normalised) out.add(alt);
+  }
+  return [...out];
 }
 
 function tokenize(value: string): string[] {
@@ -185,26 +228,28 @@ function singularForm(token: string): string {
   const t = token.toLowerCase();
   if (t.endsWith("ies") && t.length > 4) return `${t.slice(0, -3)}y`;
   if (t.endsWith("oes") && t.length > 4) return t.slice(0, -2);
-  if (
-    t.endsWith("es") &&
-    t.length > 4 &&
-    !t.endsWith("ses") &&
-    !t.endsWith("les") &&
-    !t.endsWith("pes") &&
-    !t.endsWith("ges") &&
-    !t.endsWith("nes") &&
-    !t.endsWith("res") &&
-    !t.endsWith("tes")
-  ) {
-    return t.slice(0, -2);
-  }
+  // -es is a plural ending only after ch, sh, x, z or ss ("peaches", "boxes").
+  // Elsewhere the e belongs to the word: "cakes" → "cake", "olives" → "olive"
+  // (this used to give "cak" and "oliv", which matched neither singular).
+  if (/(?:ch|sh|x|z|ss)es$/.test(t) && t.length > 4) return t.slice(0, -2);
   if (t.endsWith("s") && t.length > 3 && !t.endsWith("ss")) return t.slice(0, -1);
   return t;
 }
 
+/** Words CoFID spells differently from most recipes; same food either way. */
+const TOKEN_SYNONYMS: Record<string, string> = {
+  wholemeal: "wholewheat",
+  yoghurt: "yogurt",
+};
+
+function canonicalToken(token: string): string {
+  const s = singularForm(token);
+  return TOKEN_SYNONYMS[s] ?? s;
+}
+
 function tokenMatches(queryToken: string, foodToken: string): boolean {
-  const q = singularForm(queryToken);
-  const f = singularForm(foodToken);
+  const q = canonicalToken(queryToken);
+  const f = canonicalToken(foodToken);
   return q.length >= 2 && f.length >= 2 && q === f;
 }
 
@@ -257,7 +302,7 @@ const BREADCRUMB_QUERY_PATTERN = /\bbreadcrumbs?\b/i;
 const MUSHROOM_QUERY_PATTERN = /\bmushrooms?\b/i;
 const PLAIN_OIL_QUERY_PATTERN = /\b(rapeseed|canola|vegetable|sunflower|olive|groundnut|peanut)\s+oil\b/i;
 const STAPLE_PULSE_PATTERN =
-  /\b(kidney\s*beans?|black\s*beans?|baked\s*beans?|cannellini|red\s*kidney|chickpeas?|lentils?)\b/i;
+  /\b(kidney\s*beans?|black\s*beans?|baked\s*beans?|butter\s*beans?|cannellini|borlotti|haricot|pinto\s*beans?|flageolet|black[- ]?eyed?\s*beans?|blackeye\s*beans?|aduki|adzuki|mung\s*beans?|red\s*kidney|chickpeas?|lentils?)\b/i;
 
 const RAW_DRY_PREP_PATTERN = /\b(raw|dried|dry|uncooked)\b/;
 const COOKED_PREP_PATTERN = /\b(boiled|steamed|poached|cooked|re-heated|reheated)\b/;
@@ -347,6 +392,28 @@ function sameFoodPrepAdjustment(query: string, normalisedFood: string): number {
   // Prefer the plain cooked form when one exists — except for grains, bought dry.
   if (isCookedStapleForm(normalisedFood) && !isDryGrainQuery(query)) adj += 60;
   adj += staplePrepAdjustment(query, normalisedFood);
+  adj += asBoughtFormAdjustment(query, normalisedFood);
+  return adj;
+}
+
+/**
+ * Two kinds of same-name row a bare name does not mean:
+ *   - a "cooking" variety ("Apples, cooking, …" is Bramley, about half the
+ *     sugar of an eating apple) unless the query says cooking or Bramley;
+ *   - a "weighed with skin and core" row, which is per 100 g of the whole
+ *     fruit including the parts nobody eats, unless the query asks for that.
+ * "apple" used to tie across every "Apples, …" row and land on cooking apple
+ * weighed with core (27 kcal/100 g against 51 for an eating apple).
+ */
+function asBoughtFormAdjustment(query: string, normalisedFood: string): number {
+  let adj = 0;
+  if (/\bcooking\b/.test(normalisedFood) && !/\b(cooking|bramley)\b/.test(query)) adj -= 400;
+  if (
+    /\bweighed with\b/.test(normalisedFood) &&
+    !/\b(whole|weighed|with (skin|core|bones?|stones?|shells?))\b/.test(query)
+  ) {
+    adj -= 150;
+  }
   return adj;
 }
 
@@ -390,12 +457,23 @@ function breadcrumbQueryAdjustment(query: string, foodName: string): number {
   return 0;
 }
 
-/** Bare "mushrooms" → white/button, not oyster unless the query says oyster. */
+/** Mushroom varieties a bare "mushrooms" does not mean. */
+const NAMED_MUSHROOM_PATTERN = /\b(oyster|shiitake|chinese|jew s ear|porcini|enoki|chanterelle|morel)\b/;
+
+/**
+ * Bare "mushrooms" → white/button, raw. Not oyster or shiitake unless the query
+ * names them: "mushrooms" was landing on "Mushrooms, shiitake, cooked" (55
+ * kcal/100 g, eight times white mushrooms) because the cooked-form nudge broke
+ * the tie between same-name rows.
+ */
 function mushroomQueryAdjustment(query: string, foodName: string): number {
   if (!MUSHROOM_QUERY_PATTERN.test(normalizeCofidQuery(query))) return 0;
   const q = normalizeForMatch(query);
   const f = normalizeForMatch(foodName);
-  if (/\boyster\b/.test(f) && !/\boyster\b/.test(q)) return -900;
+  const named = f.match(NAMED_MUSHROOM_PATTERN)?.[1];
+  if (named && !new RegExp(`\\b${named}\\b`).test(q)) return named === "oyster" ? -900 : -600;
+  // Dried mushrooms are about 20 times the energy of fresh by weight.
+  if (/\bdried\b/.test(f) && !/\bdried\b/.test(q)) return -600;
   if (/\b(fried in|roasted in|stewed in|with)\b/.test(f)) return -450;
   if (/\bwhite\b/.test(f) && /\braw\b/.test(f)) return 180;
   return 0;
@@ -593,6 +671,190 @@ export function isDairyFreeMismatch(query: string, foodName: string): boolean {
   return isDairyIngredient(foodName);
 }
 
+// ---------------------------------------------------------------------------
+// Rows that are a different food from the one asked for.
+//
+// Scoring ranks candidates, so when CoFID has no row for the food at all, the
+// "best" one is still some other food: black beans became a black gram curry,
+// canned black beans became butter beans, wholewheat noodles became egg
+// noodles, rice cakes became raw rice. Each rule below rejects a row outright;
+// when every candidate is rejected the lookup returns nothing and the local
+// table (which has these foods) answers instead.
+// ---------------------------------------------------------------------------
+
+/** Tokens for the rules below: hyphenated words compare part by part ("semi-skimmed", "Stir-fry"). */
+function ruleTokens(value: string): string[] {
+  return normalizeForMatch(value)
+    .split(/[\s,/-]+/)
+    .filter((t) => t.length > 1)
+    .map(canonicalToken);
+}
+
+/** Query words that describe a form, size or fat level rather than which food it is. */
+const VARIETY_NEUTRAL_WORDS = new Set(
+  [
+    ...GENERIC_FOOD_DESCRIPTORS,
+    "natural",
+    "organic",
+    "british",
+    "free",
+    "range",
+    "large",
+    "small",
+    "extra",
+    "fat",
+    "low",
+    "reduced",
+    "half",
+    "skinless",
+    "boneless",
+    "ground",
+    "or",
+    "of",
+    "for",
+    "the",
+    "in",
+  ].map(canonicalToken),
+);
+
+/**
+ * Foods whose varieties differ enough that another variety is a different food:
+ * black beans vs butter or broad beans, wholewheat vs egg noodles, vegetable vs
+ * chicken stock. Not apples, onions, lentils or rice, where CoFID's generic row
+ * is a fair stand-in for a named variety ("bramley apple" → "Apples, cooking"),
+ * and not pasta, whose shapes are the same food ("orzo" → "Pasta, … dried").
+ */
+const VARIETY_SENSITIVE_HEADS = new Set(["bean", "noodle", "stock", "broth"].map(canonicalToken));
+
+/**
+ * The row is the same kind of food but a different variety: "black beans" vs
+ * "Beans, butter, …" or "Beans, blackeye, …"; "wholewheat noodles" vs
+ * "Noodles, egg, …"; "black turtle beans" vs "Beans, broad, …". Fires when the
+ * row contains the query's head noun but none of the words that say which one.
+ */
+export function isVarietyMismatch(query: string, foodName: string): boolean {
+  const words = ruleTokens(normalizeCofidQuery(query)).filter((t) => !VARIETY_NEUTRAL_WORDS.has(t));
+  if (words.length < 2) return false;
+  const head = words[words.length - 1];
+  if (!VARIETY_SENSITIVE_HEADS.has(head)) return false;
+  const row = new Set(ruleTokens(foodName));
+  if (!row.has(head)) return false;
+  return !words.slice(0, -1).some((w) => row.has(w));
+}
+
+/** Rows that are a prepared dish, whatever is in them. */
+const DISH_LEAD_WORDS = new Set(
+  [
+    "curry",
+    "salad",
+    "soup",
+    "stew",
+    "casserole",
+    "pie",
+    "pizza",
+    "sandwich",
+    "lasagne",
+    "risotto",
+    "korma",
+    "biryani",
+    "bhaji",
+    "samosa",
+    "pasty",
+    "quiche",
+    "omelette",
+    "kebab",
+    "burger",
+    "dhal",
+    "dal",
+    "stir",
+    "moussaka",
+    "hotpot",
+    "goulash",
+  ].map(canonicalToken),
+);
+
+/** Cooking liquids that describe how a single food was prepared, not a second food. */
+const PREP_LIQUID_PATTERN = /\bin (?:unsalted |salted )?(?:water|brine)\b|\bmade up with water\b|\bweighed with [\w ]+?(?=,|$)|\bwith(?:out)? (?:skin|bones?)\b|\bwith added \w+\b/g;
+
+/**
+ * The row is a dish the query food is one ingredient of: "Curry, black gram …
+ * and red kidney bean", "Salad, wholemeal pasta, with vegetables and
+ * mayonnaise", "Chicken, stir-fried with peppers in black bean sauce", "Rice
+ * and black-eye beans". The row's lead word is not one of the query's words,
+ * and it is either a dish word or joins several foods with "with", "in" or "and".
+ */
+export function isCompositeDishMismatch(query: string, foodName: string): boolean {
+  const queryWords = new Set(ruleTokens(normalizeCofidQuery(query)));
+  const lead = ruleTokens(primaryFoodName(foodName))[0];
+  if (!lead || queryWords.has(lead)) return false;
+  if (DISH_LEAD_WORDS.has(lead)) return true;
+  const rest = normalizeForMatch(foodName).replace(PREP_LIQUID_PATTERN, " ");
+  return /\b(with|in|and)\b/.test(rest);
+}
+
+const PUFFED_CAKE_PATTERN = /\b(rice|corn)\s+cakes?\b/;
+
+/**
+ * Rice and corn cakes are puffed grain, not cake and not raw grain: "rice cake"
+ * took "Cake, chocolate fudge", "rice cakes" took "Rice, brown, basmati, raw"
+ * and then "Cakes, crispie". The row has to name both the grain and the cake.
+ */
+export function isPuffedCakeMismatch(query: string, foodName: string): boolean {
+  const grain = normalizeCofidQuery(query).match(PUFFED_CAKE_PATTERN)?.[1];
+  if (!grain) return false;
+  const row = ruleTokens(foodName);
+  return !row.includes(grain) || !row.includes("cake");
+}
+
+const STOCK_QUERY_PATTERN = /\b(stock|broth)\b/;
+const STOCK_CONCENTRATE_QUERY_PATTERN = /\b(cubes?|pots?|powder|granules|concentrate|gel|paste|bouillon|dried|dry)\b/;
+const STOCK_CONCENTRATE_ROW_PATTERN = /\b(cubes?|gel|powder|granules|concentrate|dried)\b/;
+
+/**
+ * "Vegetable stock" in millilitres is the made-up liquid. CoFID's "Stock cubes,
+ * vegetable" is per 100 g of dry cube (13.5 g protein, 17.3 g fat): 300 ml of
+ * stock costed on it came to 40 g protein and 52 g fat. It must also be a stock
+ * row at all — with the cube ruled out, "Vegetables, mixed, frozen" was next.
+ */
+export function isStockConcentrateMismatch(query: string, foodName: string): boolean {
+  const q = normalizeCofidQuery(query);
+  if (!STOCK_QUERY_PATTERN.test(q)) return false;
+  const f = normalizeForMatch(foodName);
+  if (!/\b(stock|broth|bouillon)\b/.test(f)) return true;
+  if (STOCK_CONCENTRATE_QUERY_PATTERN.test(q)) return false;
+  return STOCK_CONCENTRATE_ROW_PATTERN.test(f) && !/\bmade up\b/.test(f);
+}
+
+const REDUCED_FAT_QUERY_PATTERN = /\b(fat free|low fat|reduced fat|half fat)\b/;
+const REDUCED_FAT_ROW_PATTERN =
+  /\b(fat free|low fat|reduced fat|half fat|lighter|light|lite|diet|skimmed|semi-skimmed)\b/;
+
+/** "0% Greek yoghurt" must not take a full-fat row (133 kcal and 10 g fat per 100 g). */
+export function isFatLevelMismatch(query: string, foodName: string): boolean {
+  if (!REDUCED_FAT_QUERY_PATTERN.test(normalizeCofidQuery(query))) return false;
+  return !REDUCED_FAT_ROW_PATTERN.test(normalizeForMatch(foodName));
+}
+
+/**
+ * "Low fat yoghurt" means plain: CoFID files "Yogurt, low fat, fruit",
+ * "…, hazelnut" and "…, toffee" beside "…, plain", and they tie on words.
+ */
+function plainYogurtAdjustment(query: string, f: string): number {
+  if (!/\byogh?urt\b/.test(f) || !/\b(plain|natural)\b/.test(f)) return 0;
+  return /\b(plain|natural)\b/.test(query) ? 0 : 40;
+}
+
+/** Any of the rules above: the row is a different food, so it must never be picked. */
+export function isDifferentFoodRow(query: string, foodName: string): boolean {
+  return (
+    isCompositeDishMismatch(query, foodName) ||
+    isVarietyMismatch(query, foodName) ||
+    isPuffedCakeMismatch(query, foodName) ||
+    isStockConcentrateMismatch(query, foodName) ||
+    isFatLevelMismatch(query, foodName)
+  );
+}
+
 /** Score how well a CoFID row matches the user's ingredient name (higher = better). */
 export function scoreCofidMatch(
   query: string,
@@ -608,6 +870,7 @@ export function scoreCofidMatch(
   // outrank the correct plant row. Push them below any real candidate.
   if (isPlantMilkMismatch(query, foodName)) return -Infinity;
   if (isDairyFreeMismatch(query, foodName)) return -Infinity;
+  if (isDifferentFoodRow(query, foodName)) return -Infinity;
 
   // Chip/roast rows for a plain staple stay selectable (CoFID may offer nothing
   // else) but must lose to any boiled/plain sibling.
@@ -624,7 +887,13 @@ export function scoreCofidMatch(
     // Keep a strong base, then nudge toward the plain cooked form the user means.
     // Meat and fish still prefer raw here — single-word queries ("bacon", "cod")
     // take this branch, and it is where cod found "poached in milk and butter".
-    return 9000 + sameFoodPrepAdjustment(q, f) - fatAddedPenalty + rawMeatAdjustment(q, foodName);
+    return (
+      9000 +
+      sameFoodPrepAdjustment(q, f) -
+      fatAddedPenalty +
+      rawMeatAdjustment(q, foodName) +
+      mushroomQueryAdjustment(q, foodName)
+    );
   }
 
   let score = matchKindBonus(matchKind);
@@ -700,6 +969,8 @@ export function scoreCofidMatch(
   score += mushroomQueryAdjustment(q, foodName);
   score += rawMeatAdjustment(q, foodName);
   score += plainOilQueryAdjustment(q, foodName);
+  score += asBoughtFormAdjustment(q, f);
+  score += plainYogurtAdjustment(q, f);
 
   return score;
 }

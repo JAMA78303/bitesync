@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   cofidQueryVariants,
+  cofidSynonymQueries,
   normalizeCofidQuery,
   pickBestCofidCandidate,
   type CofidCandidate,
@@ -196,8 +197,11 @@ async function collectCofidCandidates(
     );
   }
 
-  const ftsQuery = normalised.replace(/\s+/g, " & ");
-  if (ftsQuery.length >= 2) {
+  // The query as written, plus CoFID's own spelling where it differs
+  // ("wholemeal pasta" is filed as "Pasta, wholewheat, …").
+  for (const phrase of [normalised, ...cofidSynonymQueries(normalised)]) {
+    const ftsQuery = phrase.replace(/\s+/g, " & ");
+    if (ftsQuery.length < 2) continue;
     pending.push(
       Promise.resolve(
         supabase

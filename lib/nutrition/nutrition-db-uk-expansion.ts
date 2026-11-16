@@ -2693,16 +2693,18 @@ const ROWS: TupleRow[] = [
     210,
     0.03
   ],
+  // Mean of CoFID raw strawberries, raspberries, blackberries and blueberries
+  // (14-324, 14-375, 14-388, 14-325). Was 54 kcal with 0 g fibre and 227 mg sodium.
   [
     "mixed berries",
-    54,
-    1,
-    13,
+    31,
+    0.9,
+    6.5,
     0.3,
-    0,
-    0,
-    227,
-    0.03
+    3.1,
+    6.5,
+    1,
+    0.04
   ],
   [
     "redcurrants",
@@ -2836,16 +2838,18 @@ const ROWS: TupleRow[] = [
     176,
     2.3
   ],
+  // Arla Skyr Natural UK label (61 kcal, 10 g protein, 0.2 g fat, 4 g sugars,
+  // 0.14 g salt). Was a copy of halloumi: 290 kcal and 23 g fat.
   [
     "skyr",
-    290,
-    18,
-    3,
-    23,
+    61,
+    10,
+    4,
+    0.2,
     0,
-    0,
-    193,
-    2.3
+    4,
+    56,
+    0.1
   ]
 ];
 
