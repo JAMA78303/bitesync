@@ -157,6 +157,19 @@ export function normalizeIngredientForMatch(value: string): string {
 }
 
 /**
+ * Plain water, however a recipe describes it: "water", "cold water", "boiling
+ * water", "tap water". Not sparkling, tonic, coconut or rose water, and not
+ * water chestnuts or water biscuits.
+ */
+const PLAIN_WATER_PATTERN =
+  /^(?:(?:cold|hot|warm|boiling|boiled|freshly|just|tap|filtered|still|iced|ice|ice-cold|lukewarm|tepid|chilled|plain|drinking|extra)\s+)*water$/;
+
+/** A bare pasta shape, optionally "dried", "white", "egg" or "wholewheat" — not cooked, fresh or tinned. */
+const PASTA_SHAPE_QUERY_PATTERN =
+  /^(?:(dried|dry|uncooked|white|egg|wholewheat|wholemeal|brown) )?(spaghetti|spaghettini|penne|fusilli|macaroni|rigatoni|farfalle|conchiglie|linguine|orzo|orecchiette|bucatini|ditalini|paccheri|casarecce|gemelli|cavatappi|tagliatelle|fettuccine|fettucine|pappardelle)(?: pasta)?$/;
+const RIBBON_PASTA_PATTERN = /^(?:tagliatelle|fettuccine|fettucine|pappardelle)$/;
+
+/**
  * Everyday names for foods CoFID files under another name. Each is the same
  * food, not a stand-in:
  *   "bean sprouts"                      → CoFID "Beansprouts, mung, …"
@@ -179,6 +192,52 @@ function rewriteToCofidVocabulary(query: string): string {
   // flesh only" higher (33 kcal per 100 g instead of about 600).
   q = q.replace(/\bcashews?\b(?!\s+(?:nuts?|fruit|apples?|butter|milk|cream|drink))/g, "cashew nuts");
   return q.replace(/\s+/g, " ").trim();
+}
+
+/**
+ * What a whole ingredient name means, in CoFID's terms. Applied to the whole
+ * name only, never to one word of a longer name: "spaghetti" alone is dried
+ * pasta, but "spaghetti hoops" is not "pasta hoops".
+ */
+function rewriteWholeQuery(q: string): string {
+  // "boiling water" scored "Turnip, boiled in unsalted water" (12 kcal per 100 g).
+  if (PLAIN_WATER_PATTERN.test(q)) return "water";
+  // Bare "coriander" in a recipe is the fresh herb ("a handful of coriander");
+  // the spice is written "ground coriander" or "coriander seeds". CoFID scored
+  // "Coriander seeds" first for bare "coriander", and found nothing at all for
+  // "ground coriander".
+  if (q === "coriander") return "fresh coriander";
+  if (/^(?:ground coriander(?: seeds?)?|(?:ground )?coriander (?:seeds?|powder))$/.test(q)) return "coriander seeds";
+  // Oregano is the other way round: a recipe's "1 tsp oregano" is dried, and
+  // fresh is written "fresh oregano". CoFID's fresh row has no energy figure.
+  if (q === "oregano") return "dried oregano";
+  // CoFID has smooth peanut butter only; crunchy is the same with nut pieces.
+  // "crunchy peanut butter" found no peanut butter row and took "Butter, salted".
+  if (/^crunchy peanut butter$/.test(q)) return "peanut butter";
+  // A pasta shape is the same food per 100 g dry. CoFID has a dried row for
+  // plain pasta but not for each shape: "fusilli" found only the boiled row,
+  // "macaroni" found macaroni cheese, "spaghetti" the wholewheat one, and
+  // "penne" nothing. Ribbon pastas are sold as egg pasta.
+  const shape = q.match(PASTA_SHAPE_QUERY_PATTERN);
+  if (shape) {
+    const form = shape[1] ?? "";
+    if (/^(?:wholewheat|wholemeal|brown)$/.test(form)) return "wholewheat pasta";
+    return form === "egg" || RIBBON_PASTA_PATTERN.test(shape[2]) ? "egg pasta" : "pasta";
+  }
+  return q;
+}
+
+/**
+ * The query CoFID is searched and scored with. Overrides and the lookup cache
+ * stay keyed on normalizeCofidQuery, so an override for "spaghetti" would
+ * still apply.
+ */
+export function cofidSearchQuery(name: string): string {
+  return rewriteWholeQuery(normalizeCofidQuery(name));
+}
+
+export function isPlainWaterQuery(name: string): boolean {
+  return PLAIN_WATER_PATTERN.test(normalizeForMatch(name));
 }
 
 /** Normalise an ingredient name before CoFID lookup / override resolution. */
@@ -389,13 +448,30 @@ function sameFoodPrepAdjustment(query: string, normalisedFood: string): number {
   if (DENSE_PREP_PATTERN.test(normalisedFood) && !DENSE_PREP_PATTERN.test(query)) {
     adj -= 250;
   }
+  const dryGrain = isDryGrainQuery(query);
   for (const modifier of PROCESSED_MODIFIERS) {
+    // Grains and pasta are bought dried: for them it's the plain form, not processing.
+    if (modifier === "dried" && dryGrain) continue;
     if (normalisedFood.includes(modifier) && !query.includes(modifier)) adj -= 40;
   }
   // Prefer the plain cooked form when one exists — except for grains, bought dry.
-  if (isCookedStapleForm(normalisedFood) && !isDryGrainQuery(query)) adj += 60;
+  if (isCookedStapleForm(normalisedFood) && !dryGrain) adj += 60;
   adj += staplePrepAdjustment(query, normalisedFood);
   adj += asBoughtFormAdjustment(query, normalisedFood);
+  adj += plainPastaAdjustment(query, normalisedFood);
+  return adj;
+}
+
+/**
+ * Bare "pasta" means plain dried pasta. "Pasta, egg, fresh, raw" used to win:
+ * every "Pasta, …" row ties on the name, and "dried" counted as processing.
+ */
+function plainPastaAdjustment(query: string, normalisedFood: string): number {
+  if (!PASTA_SHAPE_PATTERN.test(query)) return 0;
+  let adj = 0;
+  for (const word of ["fresh", "egg", "wholewheat", "coloured", "flavoured", "filled"]) {
+    if (new RegExp(`\\b${word}\\b`).test(normalisedFood) && !new RegExp(`\\b${word}\\b`).test(query)) adj -= 60;
+  }
   return adj;
 }
 
@@ -411,6 +487,9 @@ function sameFoodPrepAdjustment(query: string, normalisedFood: string): number {
 function asBoughtFormAdjustment(query: string, normalisedFood: string): number {
   let adj = 0;
   if (/\bcooking\b/.test(normalisedFood) && !/\b(cooking|bramley)\b/.test(query)) adj -= 400;
+  // "Mango, unripe, green flesh, raw" tied with "Mangoes, ripe, flesh only, raw"
+  // and won on row order. A recipe's mango is ripe unless it says green.
+  if (/\bunripe\b/.test(normalisedFood) && !/\b(unripe|green)\b/.test(query)) adj -= 400;
   if (
     /\bweighed with\b/.test(normalisedFood) &&
     !/\b(whole|weighed|with (skin|core|bones?|stones?|shells?))\b/.test(query)
@@ -727,7 +806,14 @@ const VARIETY_NEUTRAL_WORDS = new Set(
  * is a fair stand-in for a named variety ("bramley apple" → "Apples, cooking"),
  * and not pasta, whose shapes are the same food ("orzo" → "Pasta, … dried").
  */
-const VARIETY_SENSITIVE_HEADS = new Set(["bean", "noodle", "stock", "broth"].map(canonicalToken));
+const VARIETY_SENSITIVE_HEADS = new Set(["bean", "noodle", "stock", "broth", "water"].map(canonicalToken));
+
+/**
+ * Heads where a row without the head word is a different food too. CoFID has
+ * no coconut water, and "coconut water" took "Coconut, desiccated" (604 kcal
+ * per 100 g, against about 20).
+ */
+const HEAD_REQUIRED = new Set(["water"].map(canonicalToken));
 
 /**
  * The row is the same kind of food but a different variety: "black beans" vs
@@ -741,7 +827,7 @@ export function isVarietyMismatch(query: string, foodName: string): boolean {
   const head = words[words.length - 1];
   if (!VARIETY_SENSITIVE_HEADS.has(head)) return false;
   const row = new Set(ruleTokens(foodName));
-  if (!row.has(head)) return false;
+  if (!row.has(head)) return HEAD_REQUIRED.has(head);
   return !words.slice(0, -1).some((w) => row.has(w));
 }
 
@@ -847,6 +933,37 @@ function plainYogurtAdjustment(query: string, f: string): number {
   return /\b(plain|natural)\b/.test(query) ? 0 : 40;
 }
 
+/** Words that make a "chilli" query the dish rather than the pepper. */
+const CHILLI_DISH_QUERY_PATTERN =
+  /\b(con carne|quorn|beans?|lentils?|vegetable|veggie|vegan|vegetarian|mince|beef|turkey|meal)\b/;
+
+/**
+ * CoFID files chilli con carne and its bean, Quorn and vegetable versions as
+ * "Chilli, …" and "Chilli con carne, …". In an ingredient list "chilli" or
+ * "chilli flakes" is the pepper: "chilli flakes" was costed as Quorn chilli
+ * (83 kcal per 100 g), and bare "chilli" as bean and lentil chilli.
+ */
+export function isChilliDishMismatch(query: string, foodName: string): boolean {
+  const primary = normalizeForMatch(primaryFoodName(foodName));
+  if (!/^chilli(?: con carne)?$/.test(primary)) return false;
+  return !CHILLI_DISH_QUERY_PATTERN.test(normalizeCofidQuery(query));
+}
+
+const NUT_BUTTER_QUERY_PATTERN =
+  /\b(cashew|almond|hazelnut|peanut|walnut|pistachio|brazil|macadamia|pecan|sunflower|pumpkin|sesame)s?\s+(?:nut\s+|seed\s+)?butter\b/;
+
+/**
+ * A nut or seed butter is that nut, ground, so the row must name the nut.
+ * "cashew butter" took "Butter, salted" (dairy: 744 kcal and 52 g saturated
+ * fat per 100 g). CoFID has peanut butter; for other nuts the nut itself is
+ * the closest row ("Cashew nuts, kernel only, plain").
+ */
+export function isNutButterMismatch(query: string, foodName: string): boolean {
+  const nut = normalizeCofidQuery(query).match(NUT_BUTTER_QUERY_PATTERN)?.[1];
+  if (!nut) return false;
+  return !ruleTokens(foodName).includes(canonicalToken(nut));
+}
+
 /** Any of the rules above: the row is a different food, so it must never be picked. */
 export function isDifferentFoodRow(query: string, foodName: string): boolean {
   return (
@@ -854,7 +971,9 @@ export function isDifferentFoodRow(query: string, foodName: string): boolean {
     isVarietyMismatch(query, foodName) ||
     isPuffedCakeMismatch(query, foodName) ||
     isStockConcentrateMismatch(query, foodName) ||
-    isFatLevelMismatch(query, foodName)
+    isFatLevelMismatch(query, foodName) ||
+    isChilliDishMismatch(query, foodName) ||
+    isNutButterMismatch(query, foodName)
   );
 }
 

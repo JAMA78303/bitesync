@@ -1,6 +1,7 @@
 import type { NutritionLookupEntry } from "@/types";
 import { NUTRITION_DB } from "@/lib/nutrition/nutrition-db";
 import { canonicalIngredientPhrase } from "@/lib/nutrition/ingredientPhrase";
+import { isPlainWaterQuery } from "@/lib/nutrition/cofidMatch";
 
 function normalizeName(value: string): string {
   return value.toLowerCase().trim();
@@ -68,7 +69,34 @@ const INGREDIENT_LOOKUP_ALIASES: Record<string, string> = {
   "low fat greek style yoghurt": "low fat greek yoghurt",
   "fat free skyr": "skyr",
   "natural skyr": "skyr",
+  // Partial matching found "macaroni cheese ready meal" (196 kcal, 17 g protein).
+  macaroni: "macaroni elbow",
+  // 100% cashew butter is ground cashews; partial matching found dairy "butter".
+  "cashew butter": "cashews",
 };
+
+/**
+ * Plain water. Kept out of NUTRITION_DB so partial matching can't land on it:
+ * "water biscuits" must still find "water biscuit". Figures: CoFID 17-377
+ * "Water, distilled", which is 0 for everything.
+ */
+const WATER_ENTRY: NutritionLookupEntry = {
+  name: "water",
+  per_100g: {
+    calories: 0,
+    protein_g: 0,
+    carbs_g: 0,
+    fat_g: 0,
+    fibre_g: 0,
+    sugar_g: 0,
+    sodium_mg: 0,
+    saturated_fat_g: 0,
+  },
+};
+
+/** "almond butter", "hazelnut butter": never dairy butter. */
+const NUT_BUTTER_PATTERN =
+  /\b(cashew|almond|hazelnut|peanut|walnut|pistachio|brazil|macadamia|pecan|sunflower|pumpkin|sesame|nut|seed)s?\s+butter\b/;
 
 function resolveLookupName(name: string): string {
   const normalized = normalizeName(name);
@@ -125,6 +153,8 @@ export function getIngredientAutocompleteLabel(name: string): string {
 
 /** Local curated DB (sync). UK CoFID lookup runs server-side in async recipe nutrition (see cofidLookup.ts). */
 export function lookupNutrition(name: string): NutritionLookupEntry | null {
+  // "water" partially matched "watermelon" (30 kcal per 100 g).
+  if (isPlainWaterQuery(name)) return WATER_ENTRY;
   const normalized = resolveLookupName(name);
   const exact = NUTRITION_DB.find((item) => normalizeName(item.name) === normalized);
   if (exact) return exact;
@@ -138,11 +168,13 @@ export function lookupNutrition(name: string): NutritionLookupEntry | null {
   }
 
   // Fallback matching for user-entered variations (e.g. "alfredo sauce", "grated parmesan")
+  const nutButter = NUT_BUTTER_PATTERN.test(normalized);
   const partial = NUTRITION_DB.find((item) => {
     const dbName = normalizeName(item.name);
     if (dbName.length <= 4 && normalized.includes(" and ") && !normalized.startsWith(`${dbName} `)) {
       return false;
     }
+    if (nutButter && dbName === "butter") return false;
     return normalized.includes(dbName) || dbName.includes(normalized);
   });
   const entry = partial;
