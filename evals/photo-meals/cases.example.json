@@ -1,0 +1,29 @@
+[
+  {
+    "id": "chicken-rice-01",
+    "photo": "photos/chicken-rice-01.jpg",
+    "kind": "home-cooked plate",
+    "foods": [
+      { "name": "Chicken breast, grilled", "grams": 142, "accept": ["chicken"] },
+      { "name": "Rice, white, boiled", "grams": 186, "accept": ["rice"] },
+      { "name": "Broccoli, boiled", "grams": 74 }
+    ]
+  },
+  {
+    "id": "meal-deal-sandwich-01",
+    "photo": "photos/meal-deal-sandwich-01.jpg",
+    "kind": "sandwich",
+    "foods": [{ "name": "Chicken and bacon sandwich", "grams": 197, "accept": ["sandwich", "chicken"] }],
+    "kcal": 456,
+    "protein": 28.9
+  },
+  {
+    "id": "lamb-biryani-01",
+    "photo": "photos/lamb-biryani-01.jpg",
+    "kind": "mixed dish",
+    "foods": [
+      { "name": "Lamb biryani", "grams": 410, "accept": ["biryani"] },
+      { "name": "Raita", "grams": 60, "accept": ["raita", "yogurt", "yoghurt"] }
+    ]
+  }
+]

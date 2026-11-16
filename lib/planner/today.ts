@@ -36,7 +36,49 @@ export type TodayMeal = {
   } | null;
   quickAddName: string | null;
   quickAddCalories: number | null;
+  /**
+   * A quick-add logged from a photo carries its full macros (logged_meals),
+   * not just calories. Null for typed quick-adds and planned recipes.
+   */
+  loggedMeal: { protein: number; carbs: number; fat: number; fibre: number; coveragePct: number } | null;
 };
+
+type LoggedMealRow = {
+  meal_plan_entry_id: string;
+  protein_g: number | string | null;
+  carbs_g: number | string | null;
+  fat_g: number | string | null;
+  fibre_g: number | string | null;
+  coverage_pct: number | string | null;
+};
+
+/**
+ * Macros for photo-logged quick-adds (sql/2026-11-16_logged_meals.sql). Until
+ * that migration runs the table doesn't exist: the query fails and every
+ * quick-add stays calories-only, exactly as before.
+ */
+async function loggedMealMacros(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  entryIds: string[],
+): Promise<Map<string, NonNullable<TodayMeal["loggedMeal"]>>> {
+  const map = new Map<string, NonNullable<TodayMeal["loggedMeal"]>>();
+  if (!entryIds.length) return map;
+  const { data, error } = await supabase
+    .from("logged_meals")
+    .select("meal_plan_entry_id, protein_g, carbs_g, fat_g, fibre_g, coverage_pct")
+    .in("meal_plan_entry_id", entryIds);
+  if (error || !data) return map;
+  for (const row of data as LoggedMealRow[]) {
+    map.set(String(row.meal_plan_entry_id), {
+      protein: Math.round(Number(row.protein_g ?? 0)),
+      carbs: Math.round(Number(row.carbs_g ?? 0)),
+      fat: Math.round(Number(row.fat_g ?? 0)),
+      fibre: Math.round(Number(row.fibre_g ?? 0)),
+      coveragePct: Number(row.coverage_pct ?? 0),
+    });
+  }
+  return map;
+}
 
 type EntryRow = {
   id: string | number;
@@ -56,7 +98,7 @@ function isMissingStatusColumns(message?: string | null): boolean {
   return message.includes("eaten_at") || message.includes("skipped_at");
 }
 
-function todayDayOfWeek(): number {
+export function todayDayOfWeek(): number {
   const day = new Date().getDay();
   return day === 0 ? 6 : day - 1;
 }
@@ -138,7 +180,11 @@ export async function getTodaysMeals(userId: string): Promise<TodayMeal[]> {
   const recipeIds = entries
     .map((e) => e.recipe_id)
     .filter((id): id is string => typeof id === "string" && id.length > 0);
-  const nutritionMap = recipeIds.length ? await fetchRecipeNutritionMap(supabase, recipeIds) : new Map();
+  const quickAddIds = entries.filter((e) => !e.recipe_id && e.quick_add_name).map((e) => String(e.id));
+  const [nutritionMap, loggedMap] = await Promise.all([
+    recipeIds.length ? fetchRecipeNutritionMap(supabase, recipeIds) : Promise.resolve(new Map()),
+    loggedMealMacros(supabase, quickAddIds),
+  ]);
 
   const meals: TodayMeal[] = [];
 
@@ -169,8 +215,11 @@ export async function getTodaysMeals(userId: string): Promise<TodayMeal[]> {
     }
 
     const kcal = recipe?.kcal ?? (entry.quick_add_calories != null ? Math.round(Number(entry.quick_add_calories)) : 0);
+    const loggedMeal = recipe ? null : (loggedMap.get(String(entry.id)) ?? null);
     const servingLabel = hasQuickAdd
-      ? `${Math.round(Number(entry.quick_add_calories ?? 0))} kcal · quick add`
+      ? loggedMeal
+        ? `${Math.round(Number(entry.quick_add_calories ?? 0))} kcal · ${loggedMeal.protein}g protein · from a photo`
+        : `${Math.round(Number(entry.quick_add_calories ?? 0))} kcal · quick add`
       : recipe
         ? `${kcal} kcal`
         : null;
@@ -190,6 +239,7 @@ export async function getTodaysMeals(userId: string): Promise<TodayMeal[]> {
       quickAddName: entry.quick_add_name as string | null,
       quickAddCalories:
         entry.quick_add_calories != null ? Math.round(Number(entry.quick_add_calories)) : null,
+      loggedMeal,
     });
   }
 
@@ -228,9 +278,13 @@ export function sumTodayTotals(meals: TodayMeal[]): TodayTotals {
           fibre: acc.fibre + meal.recipe.fibre,
         };
       }
+      // A photo-logged meal carries its macros; a typed quick-add only calories.
       return {
-        ...acc,
         kcal: acc.kcal + (meal.quickAddCalories ?? 0),
+        protein: acc.protein + (meal.loggedMeal?.protein ?? 0),
+        carbs: acc.carbs + (meal.loggedMeal?.carbs ?? 0),
+        fat: acc.fat + (meal.loggedMeal?.fat ?? 0),
+        fibre: acc.fibre + (meal.loggedMeal?.fibre ?? 0),
       };
     },
     { kcal: 0, protein: 0, carbs: 0, fat: 0, fibre: 0 },

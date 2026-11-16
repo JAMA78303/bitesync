@@ -13,6 +13,7 @@ import { getProfile } from "@/lib/supabase/profile";
 import { createClient } from "@/lib/supabase/server";
 import { getAccess } from "@/lib/subscription";
 import { nativeWithoutPurchases } from "@/lib/native/server";
+import { photoLoggingVisible } from "@/lib/photoMeal/access";
 import { summariseWeek } from "@/lib/today/week-stats";
 import { getMonday, toLocalISO } from "@/lib/utils/dates";
 import { deriveNutritionTargets } from "@/lib/utils/nutrition-targets";
@@ -44,7 +45,7 @@ export default async function TodayPage({ searchParams }: Props) {
   return computeWeeklyMacrosFromEntries(entries ?? [], weekStart).days;
  };
 
- const [meals, profile, upcoming, weekDays, params, access, native] = await Promise.all([
+ const [meals, profile, upcoming, weekDays, params, access, native, photoLogging] = await Promise.all([
   getTodaysMeals(user.id).catch((error) => {
    console.error("[today] getTodaysMeals failed", error);
    return [];
@@ -64,6 +65,7 @@ export default async function TodayPage({ searchParams }: Props) {
   searchParams,
   getAccess(),
   nativeWithoutPurchases(),
+  photoLoggingVisible(user.id).catch(() => false),
  ]);
  const targets = deriveNutritionTargets(profile);
  const totals = sumTodayTotals(meals);
@@ -72,6 +74,10 @@ export default async function TodayPage({ searchParams }: Props) {
  // week, no auto-plan from the Sunday reminder link, and no offer of a
  // reminder to plan: the trial card says why instead.
  const canPlan = access?.canPlan !== false;
+ // Snap a meal: the reference intakes behind its vitamin and mineral summary.
+ const photoPerson = photoLogging
+  ? { sex: profile?.sex === "female" ? ("female" as const) : ("male" as const), age: profile?.age ?? null }
+  : null;
 
  return (
  <TodayDashboard
@@ -79,6 +85,7 @@ export default async function TodayPage({ searchParams }: Props) {
  totals={totals}
  targets={targets}
  dietaryPreferences={dietaryPreferences}
+ photoPerson={photoPerson}
  extras={
  <>
  {access ? <TrialStatusCard access={access} native={native} /> : null}
