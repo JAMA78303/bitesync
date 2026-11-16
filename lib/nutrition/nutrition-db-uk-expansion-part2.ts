@@ -2321,16 +2321,21 @@ const ROWS: TupleRow[] = [
     166,
     1.2000000000000002
   ],
+  // Tesco Sun Dried Tomatoes 285 g jar in sunflower and olive oil (drained
+  // 145 g), label per 100 g "as sold, drained" (tesco.com product 265335941,
+  // read 16 Nov 2026). Salt 2.58 g = 1,032 mg sodium. CoFID has no dried
+  // tomato. Every sun-dried tomato name finds this row (lookup.ts). Was 251
+  // kcal, 10 g protein and 47 g carbohydrate.
   [
     "sun dried tomatoes jar",
-    251,
-    10,
-    47,
+    183,
+    3,
     7,
-    8,
-    19,
-    801,
-    4.6
+    14.1,
+    7.9,
+    6.4,
+    1032,
+    1.6
   ],
   [
     "roasted peppers jar",
@@ -6138,38 +6143,46 @@ const ROWS: TupleRow[] = [
     131,
     1.2000000000000002
   ],
+  // Clearspring Organic Soya Mince 250 g, dried (organic textured soya meal),
+  // label per 100 g (ocado.com product 424750011, read 16 Nov 2026). Salt
+  // <0.01 g, so sodium is under 4 mg. TVP is the same textured soya. Was 255
+  // kcal and 9 g protein.
   [
     "textured vegetable protein",
-    255,
-    9,
-    42,
-    6,
-    7,
-    18,
-    766,
-    4.6
-  ],
-  [
-    "soya mince dried",
-    186,
-    13,
-    29,
-    5,
-    5,
-    15,
-    575,
+    369,
+    50,
+    21,
+    8.5,
+    5.5,
+    8,
+    4,
     2
   ],
+  // Clearspring Organic Soya Mince, as above. Was 186 kcal and 13 g protein.
+  [
+    "soya mince dried",
+    369,
+    50,
+    21,
+    8.5,
+    5.5,
+    8,
+    4,
+    2
+  ],
+  // Clearspring Organic Soya Chunks 200 g, dried (organic textured soya meal),
+  // label per 100 g (ocado.com product 424749011, read 16 Nov 2026). Salt
+  // 0.02 g = 8 mg sodium. Was 423 kcal and 9 g protein.
   [
     "soya chunks dried",
-    423,
-    9,
-    74,
-    13,
-    4,
-    22,
-    464,
-    5.4
+    399,
+    52,
+    17,
+    11,
+    17,
+    7.7,
+    8,
+    2.3
   ],
   [
     "jackfruit tin young",

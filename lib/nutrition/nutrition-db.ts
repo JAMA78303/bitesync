@@ -1471,6 +1471,41 @@ const NUTRITION_DB_CORE: NutritionLookupEntry[] = [
       saturated_fat_g: 0.1,
     },
   },
+  // USDA SR Legacy "Beans, cranberry (roman), mature seeds, raw" (FDC 175189):
+  // borlotti are cranberry beans. Carbohydrate is less fibre (60 − 24.7); USDA
+  // has no sugars figure, so 0. UK supermarkets sell borlotti only in tins, and
+  // "dried borlotti beans" found the tin row (101 kcal). After "borlotti
+  // beans", so bare "borlotti" still finds the tin.
+  {
+    name: "dried borlotti beans",
+    per_100g: {
+      calories: 335,
+      protein_g: 23,
+      carbs_g: 35.3,
+      fat_g: 1.23,
+      fibre_g: 24.7,
+      sugar_g: 0,
+      sodium_mg: 6,
+      saturated_fat_g: 0.32,
+    },
+  },
+  // Blue Dragon Pad Thai Rice Noodles 200 g (rice flour 90%, water), dry, label
+  // per 100 g (tesco.com product 317312083, read 16 Nov 2026). Salt 0.05 g =
+  // 20 mg sodium. For names that only come dry (lookup.ts); "dried rice
+  // noodles" found "rice", the grain. Bare "rice noodles" stays the cooked row.
+  {
+    name: "dried rice noodles",
+    per_100g: {
+      calories: 363,
+      protein_g: 7.1,
+      carbs_g: 81,
+      fat_g: 0.9,
+      fibre_g: 1.1,
+      sugar_g: 0,
+      sodium_mg: 20,
+      saturated_fat_g: 0.4,
+    },
+  },
   // Biona Organic Seitan Pieces 350 g jar (water, wheat gluten, wheat flour,
   // tamari), label per 100 g (ocado.com product 269975011, read 16 Nov 2026).
   // Salt 0.5 g = 200 mg sodium. CoFID has no seitan.

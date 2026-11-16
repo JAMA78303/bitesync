@@ -107,7 +107,47 @@ const INGREDIENT_LOOKUP_ALIASES: Record<string, string> = {
   "meat-free mince": "meat free mince",
   "plant-based mince": "meat free mince",
   "plant based mince": "meat free mince",
+  // Textured soya protein is sold dry. What UK shops sell as "soya mince" is the
+  // dried kind (Clearspring); frozen packs are "meat free mince".
+  tvp: "textured vegetable protein",
+  "tvp mince": "soya mince dried",
+  "textured soya protein": "textured vegetable protein",
+  "textured soy protein": "textured vegetable protein",
+  "soya mince": "soya mince dried",
+  "soy mince": "soya mince dried",
+  "dried soya mince": "soya mince dried",
+  "dry soya mince": "soya mince dried",
+  "soya chunks": "soya chunks dried",
+  "soy chunks": "soya chunks dried",
+  "dried soya chunks": "soya chunks dried",
+  // Rice noodles that only come dry. Partial matching found "rice" (the
+  // grain) for these. Fresh and ready-to-wok packs are cooked.
+  "rice noodle": "rice noodles",
+  "dry rice noodles": "dried rice noodles",
+  "flat rice noodles": "dried rice noodles",
+  "pad thai noodles": "dried rice noodles",
+  "pad thai rice noodles": "dried rice noodles",
+  "rice stick noodles": "dried rice noodles",
+  "rice sticks": "dried rice noodles",
+  "rice vermicelli": "dried rice noodles",
+  "rice vermicelli noodles": "dried rice noodles",
+  "vermicelli rice noodles": "dried rice noodles",
+  "fresh rice noodles": "cooked rice noodles",
+  "straight to wok rice noodles": "cooked rice noodles",
+  "ready to wok rice noodles": "cooked rice noodles",
+  // The tin row is "borlotti beans"; partial matching found it for these.
+  "dry borlotti beans": "dried borlotti beans",
+  "borlotti beans dried": "dried borlotti beans",
+  "dried borlotti": "dried borlotti beans",
 };
+
+/**
+ * Sun-dried tomatoes, however spelt: partial matching found fresh "tomato"
+ * (18 kcal per 100 g, against 183 drained from a jar). Not a sun-dried tomato
+ * pesto or paste, which is a different food.
+ */
+const SUN_DRIED_TOMATOES =
+  /^(?:(?:chopped|sliced|drained|jar(?: of)?|jarred)\s+)*(?:sun[- ]?)?dried\s+(?:cherry\s+)?tomato(?:es)?(?:\s+in\s+(?:olive\s+|sunflower\s+)?oil)?(?:\s+jar)?$/;
 
 /** Grating, maturity and strength don't change cheddar per 100 g: "grated mature cheddar" is cheddar. */
 const CHEDDAR_FORM_WORDS = /\b(?:grated|shredded|mild|medium|mature|extra|vintage|strong|sharp)\s+(?=(?:\w+\s+)*cheddar\b)/g;
@@ -181,6 +221,7 @@ function smallFreshChilliEntry(normalized: string): NutritionLookupEntry | null 
 
 function resolveLookupName(name: string): string {
   const normalized = normalizeName(name).replace(CHEDDAR_FORM_WORDS, "");
+  if (SUN_DRIED_TOMATOES.test(normalized)) return "sun dried tomatoes jar";
   return (
     INGREDIENT_LOOKUP_ALIASES[normalized] ??
     INGREDIENT_LOOKUP_ALIASES[canonicalIngredientPhrase(normalized)] ??

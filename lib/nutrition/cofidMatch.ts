@@ -215,6 +215,8 @@ function rewriteToCofidVocabulary(query: string): string {
   // flesh only" higher (33 kcal per 100 g instead of about 600).
   q = q.replace(/\bcashews?\b(?!\s+(?:nuts?|fruit|apples?|butter|milk|cream|drink))/g, "cashew nuts");
   if (/\bcheddar\b/.test(q)) q = rewriteCheddar(q);
+  // One spelling, so the rules for dried foods see "dried" in "sundried".
+  q = q.replace(/\bsun[- ]?dried\b/g, "sun dried");
   return q.replace(/\s+/g, " ").trim();
 }
 
@@ -1107,9 +1109,23 @@ export function isSalsaMismatch(query: string, foodName: string): boolean {
   return !/\bsalsa\b/.test(normalizeForMatch(foodName));
 }
 
+const TEXTURED_SOYA_QUERY_PATTERN =
+  /\b(?:textured (?:vegetable|soya?) protein|tvp|soya? (?:mince|chunks?|pieces))\b/;
+
+/**
+ * Textured soya protein (TVP, dried soya mince and chunks) is about 370 kcal
+ * and 50 g protein per 100 g. CoFID has none, and "textured vegetable
+ * protein" took "Vegetables, mixed, frozen, boiled" (42 kcal, 3 g protein).
+ */
+export function isTexturedSoyaMismatch(query: string, foodName: string): boolean {
+  if (!TEXTURED_SOYA_QUERY_PATTERN.test(normalizeCofidQuery(query))) return false;
+  return !/\b(?:textured|tvp)\b/.test(normalizeForMatch(foodName));
+}
+
 /** Any of the rules above: the row is a different food, so it must never be picked. */
 export function isDifferentFoodRow(query: string, foodName: string): boolean {
   return (
+    isTexturedSoyaMismatch(query, foodName) ||
     isCompositeDishMismatch(query, foodName) ||
     isVarietyMismatch(query, foodName) ||
     isPuffedCakeMismatch(query, foodName) ||
@@ -1466,13 +1482,30 @@ export function isWrongFormRow(query: string, foodName: string): boolean {
     if (made && !q.includes(made[0])) return true;
     // A boiled or canned staple, for a name that asks for it dried.
     if (staple && isCookedStapleForm(f)) return true;
+    // Any undried tomato row, for dried tomatoes: with the raw rows gone,
+    // "sun dried tomatoes" took "Tomatoes, standard, grilled" (17 kcal per
+    // 100 g, against about 180 drained from a jar). CoFID has no dried tomato.
+    if (DRIED_TOMATO_QUERY_PATTERN.test(q) && !/\b(?:dried|dehydrated|dry)\b/.test(f)) return true;
   }
   // A raw or dry staple, for a name that says it is cooked.
   if (staple && COOKED_QUERY_PATTERN.test(q) && isRawDryStapleForm(f)) return true;
   // Dried noodles are noodles: with the boiled row gone, "dried rice noodles"
-  // took "Rice, pilau, plain, homemade". Only for names that say dried, so
-  // "flat rice noodles" keeps a dry rice row rather than CoFID's only rice
-  // noodle row, which is boiled.
+  // took "Rice, pilau, plain, homemade".
   if (/\b(?:dried|dry)\b/.test(q) && /\bnoodles?\b/.test(q) && !/\bnoodles?\b/.test(f)) return true;
+  // Rice noodles are rice noodles: "flat rice noodles" and "rice vermicelli"
+  // took raw rice grain. Names that only come dry (vermicelli, rice sticks,
+  // pad thai, flat) can't take CoFID's only rice noodle row either, which is
+  // boiled (89 kcal per 100 g, against about 360 dry), so the local table
+  // answers. Bare "rice noodles" keeps the boiled row: Tesco's own "Rice
+  // Noodles" are a ready-to-wok pack.
+  if (RICE_NOODLE_QUERY_PATTERN.test(q)) {
+    if (!/\bnoodles?\b/.test(f) || !/\brice\b/.test(f)) return true;
+    if (DRY_RICE_NOODLE_QUERY_PATTERN.test(q) && !COOKED_QUERY_PATTERN.test(q) && isCookedStapleForm(f)) return true;
+  }
   return false;
 }
+
+/** "sun dried tomatoes", "dried cherry tomatoes": the tomatoes themselves, not a pesto or paste. */
+const DRIED_TOMATO_QUERY_PATTERN = /\bdried (?:cherry )?tomato(?:es)?(?: in (?:olive |sunflower )?oil)?$/;
+const RICE_NOODLE_QUERY_PATTERN = /\brice (?:noodles?|vermicelli|sticks?)\b|\bvermicelli rice\b/;
+const DRY_RICE_NOODLE_QUERY_PATTERN = /\b(?:dried|dry|flat|vermicelli|sticks?|pad thai)\b/;

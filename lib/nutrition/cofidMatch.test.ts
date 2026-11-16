@@ -1066,3 +1066,102 @@ console.log("OK: 16 Nov 2026 sauces, peppers, teas and water");
   }
 }
 console.log("OK: 16 Nov 2026 names that found no row");
+
+// --- 16 Nov 2026: soya, sun-dried tomatoes, rice noodles, dried borlotti ---
+// Each was costed as another food or form. Rows are real CoFID names.
+import { isTexturedSoyaMismatch } from "@/lib/nutrition/cofidMatch";
+{
+  const row = (food_code: string, food_name: string, matchKind: "partial" | "fulltext" = "partial"): CofidCandidate => ({
+    food_code,
+    food_name,
+    food_group: null,
+    matchKind,
+  });
+  const expectPick = (query: string, rows: CofidCandidate[], code: string | null) => {
+    const best = pickBestCofidCandidate(cofidSearchQuery(query), rows);
+    if ((best?.food_code ?? null) !== code) {
+      throw new Error(`"${query}" picked ${best ? `${best.food_code} ${best.food_name}` : "nothing"}; expected ${code ?? "nothing"}`);
+    }
+  };
+
+  // CoFID has no textured soya; "textured vegetable protein" took mixed veg (42 kcal).
+  const vegRows = [
+    row("13-543", "Vegetables, mixed, frozen, boiled in unsalted water"),
+    row("15-364", "Vegetables, stir-fried, takeaway"),
+    row("13-115", "Beans, soya, dried, raw", "fulltext"),
+  ];
+  for (const query of ["textured vegetable protein", "tvp", "soya mince", "dried soya mince", "soya chunks"]) {
+    expectPick(query, vegRows, null);
+  }
+  if (isTexturedSoyaMismatch("soya beans", "Beans, soya, dried, raw")) throw new Error("soya: beans are not TVP");
+
+  // CoFID has no dried tomato; "sun dried tomatoes" took grilled (17 kcal).
+  const tomatoRows = [
+    row("13-518", "Tomatoes, standard, grilled, flesh and seeds only"),
+    row("13-603", "Tomatoes, standard, fried in corn oil"),
+    row("13-519", "Tomatoes, cherry, raw"),
+    row("13-517", "Tomatoes, standard, raw"),
+    row("15-321", "Tomatoes, stuffed with rice"),
+    row("13-530", "Tomatoes, canned, whole contents"),
+  ];
+  for (const query of ["sun dried tomatoes", "sundried tomatoes", "sun-dried tomatoes in oil", "dried cherry tomatoes"]) {
+    expectPick(query, tomatoRows, null);
+  }
+  if (normalizeCofidQuery("sundried tomatoes") !== "sun dried tomatoes") throw new Error("sun dried: one spelling");
+  if (!pickBestCofidCandidate(cofidSearchQuery("tomatoes"), tomatoRows)) throw new Error("sun dried: fresh tomatoes still match");
+
+  // Names that only come dry can't take CoFID's only rice noodle row, which is
+  // boiled; flat noodles and vermicelli took raw rice grain. Bare "rice
+  // noodles" keeps the boiled row (Tesco's own are ready to wok).
+  const noodleRows = [
+    row("11-725", "Noodles, rice, fine, dried, boiled in unsalted water", "fulltext"),
+    row("11-866", "Rice, brown, basmati, raw"),
+    row("11-968", "Rice, pilau, plain, homemade"),
+    row("11-719", "Noodles, egg, dried, raw"),
+  ];
+  for (const query of ["dried rice noodles", "flat rice noodles", "rice vermicelli", "rice sticks", "pad thai rice noodles"]) {
+    expectPick(query, noodleRows, null);
+  }
+  for (const query of ["rice noodles", "cooked rice noodles", "fresh rice noodles", "straight to wok rice noodles"]) {
+    expectPick(query, noodleRows, "11-725");
+  }
+  expectPick("egg noodles", noodleRows, "11-719");
+  expectPick("rice", noodleRows, "11-866");
+
+  // The local table: sourced rows, reached by every everyday name.
+  const local = (name: string) => lookupNutrition(name);
+  for (const [name, expected, minKcal] of [
+    ["soya mince", "soya mince dried", 350],
+    ["dried soya mince", "soya mince dried", 350],
+    ["tvp", "textured vegetable protein", 350],
+    ["textured vegetable protein", "textured vegetable protein", 350],
+    ["soya chunks", "soya chunks dried", 350],
+    ["sun dried tomatoes", "sun dried tomatoes jar", 150],
+    ["sundried tomatoes", "sun dried tomatoes jar", 150],
+    ["sun-dried tomatoes in oil", "sun dried tomatoes jar", 150],
+    ["chopped sun dried tomatoes", "sun dried tomatoes jar", 150],
+    ["dried rice noodles", "dried rice noodles", 340],
+    ["dry rice noodles", "dried rice noodles", 340],
+    ["flat rice noodles", "dried rice noodles", 340],
+    ["rice vermicelli", "dried rice noodles", 340],
+    ["pad thai noodles", "dried rice noodles", 340],
+    ["rice noodle", "rice noodles", 80],
+    ["fresh rice noodles", "cooked rice noodles", 80],
+    ["cooked rice noodles", "cooked rice noodles", 80],
+    ["dried borlotti beans", "dried borlotti beans", 300],
+    ["dry borlotti beans", "dried borlotti beans", 300],
+    ["borlotti", "borlotti beans", 90],
+    ["tinned borlotti beans", "borlotti beans", 90],
+  ] as const) {
+    const entry = local(name);
+    if (entry?.name !== expected) throw new Error(`local: "${name}" → ${entry?.name ?? null}, expected ${expected}`);
+    if (entry.per_100g.calories < minKcal) throw new Error(`local: "${name}" is ${entry.per_100g.calories} kcal`);
+  }
+  for (const name of ["soya mince", "tvp", "soya chunks"]) {
+    if ((local(name)?.per_100g.protein_g ?? 0) < 45) throw new Error(`local: "${name}" is textured soya, about 50 g protein`);
+  }
+  // Fresh tomatoes and sun-dried tomato pesto are other foods.
+  if (local("tomatoes")?.name === "sun dried tomatoes jar") throw new Error("local: fresh tomatoes");
+  if (local("sun dried tomato pesto")?.name === "sun dried tomatoes jar") throw new Error("local: pesto is not the tomatoes");
+}
+console.log("OK: 16 Nov 2026 soya, sun-dried tomatoes, rice noodles, dried borlotti");
