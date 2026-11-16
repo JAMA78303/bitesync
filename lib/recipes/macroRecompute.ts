@@ -6,6 +6,7 @@ import {
   parseIngredientLine,
   parsedIngredientToInput,
 } from "@/lib/recipes/parseIngredient";
+import { selectAllPages } from "@/lib/supabase/selectAllPages";
 
 export const DEFAULT_OUTLIER_THRESHOLD = 0.4;
 
@@ -262,34 +263,43 @@ export async function loadRecipesForRecompute(
   supabase: SupabaseClient,
   userId?: string,
 ): Promise<RecipeRecord[]> {
-  let recipeQuery = supabase
-    .from("recipes")
-    .select("id,user_id,name")
-    .is("archived_at", null)
-    .order("created_at", { ascending: true });
-
-  if (userId) recipeQuery = recipeQuery.eq("user_id", userId);
-
-  const { data: recipes, error } = await recipeQuery;
-  if (error) throw new Error(error.message);
-  if (!recipes?.length) return [];
+  // Every query here is paged: one select stops at 1,000 rows without saying so.
+  const recipes = await selectAllPages((from, to) => {
+    let query = supabase
+      .from("recipes")
+      .select("id,user_id,name")
+      .is("archived_at", null)
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true });
+    if (userId) query = query.eq("user_id", userId);
+    return query.range(from, to);
+  });
+  if (!recipes.length) return [];
 
   const ids = recipes.map((r) => r.id);
-  const [{ data: ingredientRows }, { data: nutritionRows }] = await Promise.all([
-    supabase
-      .from("recipe_ingredients")
-      .select("id,recipe_id,name,quantity,unit,cofid_food_name,cofid_matched_by")
-      .in("recipe_id", ids),
-    supabase
-      .from("recipe_nutrition")
-      .select(
-        "recipe_id,calories,protein_g,carbs_g,fat_g,fibre_g,sugar_g,sodium_mg,saturated_fat_g,coverage_pct",
-      )
-      .in("recipe_id", ids),
+  const [ingredientRows, nutritionRows] = await Promise.all([
+    selectAllPages((from, to) =>
+      supabase
+        .from("recipe_ingredients")
+        .select("id,recipe_id,name,quantity,unit,cofid_food_name,cofid_matched_by")
+        .in("recipe_id", ids)
+        .order("id", { ascending: true })
+        .range(from, to),
+    ),
+    selectAllPages((from, to) =>
+      supabase
+        .from("recipe_nutrition")
+        .select(
+          "recipe_id,calories,protein_g,carbs_g,fat_g,fibre_g,sugar_g,sodium_mg,saturated_fat_g,coverage_pct",
+        )
+        .in("recipe_id", ids)
+        .order("recipe_id", { ascending: true })
+        .range(from, to),
+    ),
   ]);
 
   const ingredientsByRecipe = new Map<string, StoredIngredientRow[]>();
-  for (const row of ingredientRows ?? []) {
+  for (const row of ingredientRows) {
     const list = ingredientsByRecipe.get(row.recipe_id) ?? [];
     list.push({
       id: row.id,
@@ -303,7 +313,7 @@ export async function loadRecipesForRecompute(
   }
 
   const nutritionByRecipe = new Map<string, StoredNutritionRow>();
-  for (const row of nutritionRows ?? []) {
+  for (const row of nutritionRows) {
     nutritionByRecipe.set(row.recipe_id, {
       calories: row.calories,
       protein_g: row.protein_g,

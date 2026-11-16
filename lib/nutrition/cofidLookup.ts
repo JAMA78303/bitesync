@@ -2,12 +2,14 @@ import { createClient } from "@/lib/supabase/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   cofidQueryVariants,
+  cofidSearchQuery,
   cofidSynonymQueries,
   normalizeCofidQuery,
   pickBestCofidCandidate,
   type CofidCandidate,
   type CoFIDMatchKind,
 } from "@/lib/nutrition/cofidMatch";
+import { fillCofidEnergyGap } from "@/lib/nutrition/cofidEnergyGaps";
 
 export type { CoFIDMatchKind };
 
@@ -111,7 +113,8 @@ function overrideLookupKeys(name: string): string[] {
 }
 
 function rowToNutrition(row: CofidDbRow, matched_by: CoFIDMatchKind): CoFIDNutrition {
-  return { ...row, matched_by };
+  // Spices CoFID lists without an energy figure would otherwise cost 0 kcal.
+  return { ...fillCofidEnergyGap(row), matched_by };
 }
 
 async function getOverrideFoodCode(normalised: string): Promise<string | null> {
@@ -268,8 +271,9 @@ export async function lookupCoFID(foodName: string): Promise<CoFIDNutrition | nu
     }
   }
 
-  const candidates = await collectCofidCandidates(supabase, normalised);
-  const best = pickBestCofidCandidate(normalised, candidates);
+  const search = cofidSearchQuery(normalised);
+  const candidates = await collectCofidCandidates(supabase, search);
+  const best = pickBestCofidCandidate(search, candidates);
 
   if (best) {
     const { data: food } = await supabase

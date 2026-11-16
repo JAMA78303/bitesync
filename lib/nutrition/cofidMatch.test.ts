@@ -471,13 +471,19 @@ console.log("OK: meat and fish costed raw");
 // --- 15 Nov 2026: wrong matches found while writing the vegetarian meal plan ---
 // Rows are real CoFID names, as the lookup collects them for each query.
 import {
+  cofidSearchQuery,
+  isChilliDishMismatch,
   isCompositeDishMismatch,
+  isNutButterMismatch,
+  isPlainWaterQuery,
   isPuffedCakeMismatch,
   isFatLevelMismatch,
   isStockConcentrateMismatch,
+  isUnaskedDriedForm,
   isVarietyMismatch,
   normalizeCofidQuery,
 } from "@/lib/nutrition/cofidMatch";
+import { lookupNutrition } from "@/lib/nutrition/lookup";
 {
   const row = (food_code: string, food_name: string, food_group: string, matchKind: "partial" | "fulltext" = "partial"): CofidCandidate => ({
     food_code,
@@ -485,8 +491,8 @@ import {
     food_group,
     matchKind,
   });
-  /** As the lookup calls it: on the normalised key. */
-  const pick = (query: string, rows: CofidCandidate[]) => pickBestCofidCandidate(normalizeCofidQuery(query), rows);
+  /** As the lookup calls it: on the search query. */
+  const pick = (query: string, rows: CofidCandidate[]) => pickBestCofidCandidate(cofidSearchQuery(query), rows);
   const expectPick = (query: string, rows: CofidCandidate[], code: string) => {
     const best = pick(query, rows);
     if (best?.food_code !== code) {
@@ -656,5 +662,200 @@ import {
   if (!isCompositeDishMismatch("black beans", "Curry, black gram, whole and red kidney bean, homemade")) throw new Error("dish: curry");
   if (isCompositeDishMismatch("tuna", "Tuna, canned in brine, drained")) throw new Error("dish: brine is prep");
   if (isCompositeDishMismatch("chicken stock", "Stock cubes, chicken, made up with water")) throw new Error("dish: made up with water");
+
+  // 16 Nov 2026: 29 stored recipes costed "green beans" on dried green beans
+  // (246 kcal per 100 g), and "cashews" took cashew fruit (33 kcal).
+  const greenBeanRows = [
+    row("13-608", "Green beans, dried", "DI"),
+    row("13-514", "Beans, green, raw", "DB", "fulltext"),
+    row("13-515", "Beans, green, boiled in unsalted water", "DB", "fulltext"),
+    row("15-024", "Bhaji, green bean", "DR", "fulltext"),
+  ];
+  expectPick("green beans", greenBeanRows, "13-514");
+  expectPick("dried green beans", greenBeanRows, "13-608");
+  // With no fresh row, the dried one still answers.
+  expectPick("mixed herbs", [row("13-884", "Mixed herbs, dried", "H")], "13-884");
+  expectPick("basil", [row("13-805", "Basil, dried, ground", "H"), row("13-804", "Basil, fresh", "H")], "13-804");
+  expectPick("dried basil", [row("13-805", "Basil, dried, ground", "H"), row("13-804", "Basil, fresh", "H")], "13-805");
+  // Pasta is still bought dry.
+  expectPick("pasta", [
+    row("11-1129", "Pasta, white, dried, boiled in unsalted water", "AD"),
+    row("11-716", "Pasta, white, dried, raw", "AD"),
+  ], "11-716");
+  if (!isUnaskedDriedForm("green beans", "Green beans, dried")) throw new Error("dried: green beans");
+  if (isUnaskedDriedForm("dried green beans", "Green beans, dried")) throw new Error("dried: asked for");
+  if (isUnaskedDriedForm("pasta", "Pasta, white, dried, raw")) throw new Error("dried: pasta is bought dry");
+  if (isUnaskedDriedForm("lentils", "Lentils, red, split, dried, raw")) throw new Error("dried: pulses use the staple rules");
+
+  const cashewRows = [
+    row("14-060", "Cashew fruit, flesh only", "FA", "fulltext"),
+    row("14-811", "Cashew nuts, kernel only, plain", "GA", "fulltext"),
+    row("14-812", "Cashew nuts, kernel only, roasted and salted", "GA", "fulltext"),
+  ];
+  expectPick("cashews", cashewRows, "14-811");
+  expectPick("cashew", cashewRows, "14-811");
+  expectPick("salted cashews", cashewRows, "14-812");
+  for (const [query, expected] of [
+    ["cashews", "cashew nuts"],
+    ["roasted cashews", "roasted cashew nuts"],
+    ["cashew nuts", "cashew nuts"],
+    ["cashew butter", "cashew butter"],
+    ["cashew milk", "cashew milk"],
+    ["cashew fruit", "cashew fruit"],
+  ]) {
+    if (normalizeCofidQuery(query) !== expected) {
+      throw new Error(`cashew rewrite: "${query}" → "${normalizeCofidQuery(query)}", expected "${expected}"`);
+    }
+  }
+
+  // 16 Nov 2026, the rest of the audit's wrong matches. Rows in the order the
+  // live lookup returned them, so ties resolve as they did in production.
+  // Pasta: every "Pasta, …" row tied on the name and "dried" counted as
+  // processing, so fresh egg pasta won.
+  const pastaRows = [
+    row("11-726", "Pasta, egg, fresh, raw", "AD"),
+    row("11-715", "Pasta, egg, white, dried, raw", "AD"),
+    row("11-716", "Pasta, white, dried, raw", "AD"),
+    row("11-718", "Pasta, wholewheat, spaghetti, dried, raw", "AD"),
+    row("11-735", "Pasta, spaghetti, canned, in tomato sauce", "AD"),
+    row("11-1129", "Pasta, white, dried, boiled in unsalted water", "AD"),
+    row("11-727", "Pasta, egg, white, tagliatelle, fresh, boiled in unsalted water", "AD"),
+  ];
+  for (const shape of ["pasta", "dried pasta", "spaghetti", "penne", "fusilli", "macaroni", "linguine", "orzo"]) {
+    expectPick(shape, pastaRows, "11-716");
+  }
+  expectPick("tagliatelle", pastaRows, "11-715");
+  expectPick("egg pasta", pastaRows, "11-715");
+  expectPick("wholewheat penne", pastaRows, "11-718");
+  for (const [query, expected] of [
+    ["spaghetti", "pasta"],
+    ["dried fusilli", "pasta"],
+    ["penne pasta", "pasta"],
+    ["wholewheat penne", "wholewheat pasta"],
+    ["wholemeal spaghetti", "wholewheat pasta"],
+    ["tagliatelle", "egg pasta"],
+    ["egg spaghetti", "egg pasta"],
+    // Not a bare shape: left to the rows that name them.
+    ["spaghetti hoops", "spaghetti hoops"],
+    ["cooked spaghetti", "cooked spaghetti"],
+    ["fresh tagliatelle", "fresh tagliatelle"],
+    ["spaghetti squash", "spaghetti squash"],
+    ["macaroni cheese", "macaroni cheese"],
+    // Water.
+    ["boiling water", "water"],
+    ["cold water", "water"],
+    ["coconut water", "coconut water"],
+    ["water chestnuts", "water chestnuts"],
+    // Herbs and spices.
+    ["coriander", "fresh coriander"],
+    ["ground coriander", "coriander seeds"],
+    ["coriander powder", "coriander seeds"],
+    ["fresh coriander", "fresh coriander"],
+    ["carrot and coriander soup", "carrot and coriander soup"],
+    ["oregano", "dried oregano"],
+    ["fresh oregano", "fresh oregano"],
+    ["crunchy peanut butter", "peanut butter"],
+  ]) {
+    if (cofidSearchQuery(query) !== expected) {
+      throw new Error(`search query: "${query}" → "${cofidSearchQuery(query)}", expected "${expected}"`);
+    }
+  }
+  // Overrides and the cache stay on the name as written.
+  if (normalizeCofidQuery("spaghetti") !== "spaghetti") throw new Error("override key: spaghetti");
+  if (normalizeCofidQuery("coriander") !== "coriander") throw new Error("override key: coriander");
+
+  // Mango: unripe and ripe tied on the name.
+  const mangoRows = [
+    row("13-273", "Mango, unripe, green flesh, raw", "DG"),
+    row("14-378", "Mangoes, ripe, flesh only, raw", "FA"),
+    row("14-379", "Mangoes, ripe, flesh only, raw, weighed with skin and stone", "FA"),
+  ];
+  expectPick("mango", mangoRows, "14-378");
+  expectPick("mangoes", mangoRows, "14-378");
+  expectPick("green mango", mangoRows, "13-273");
+
+  // Chilli: CoFID's "Chilli, …" rows are the dish.
+  const chilliRows = [
+    row("15-720", "Chilli, Quorn, homemade", "DR"),
+    row("15-640", "Chilli, vegetable, homemade", "DR"),
+    row("15-719", "Chilli, bean and lentil, homemade", "DR"),
+    row("19-478", "Chilli con carne, homemade", "MR"),
+    row("13-316", "Peppers, capsicum, chilli, green, raw", "DG", "fulltext"),
+    row("13-317", "Peppers, capsicum, chilli, red, raw", "DG", "fulltext"),
+  ];
+  expectNone("chilli flakes", chilliRows.slice(0, 3));
+  expectPick("red chilli", chilliRows, "13-317");
+  if (!/^Peppers, capsicum, chilli/.test(pick("chilli", chilliRows)?.food_name ?? "")) throw new Error("chilli: the pepper");
+  expectPick("chilli con carne", chilliRows, "19-478");
+  if (isChilliDishMismatch("vegetarian chilli", "Chilli, vegetable, homemade")) throw new Error("chilli: veggie dish asked for");
+  if (!isChilliDishMismatch("chilli flakes", "Chilli, Quorn, homemade")) throw new Error("chilli: flakes");
+  if (isChilliDishMismatch("chilli powder", "Chilli powder")) throw new Error("chilli: powder row is the spice");
+
+  // Coriander: bare means the fresh leaf.
+  const corianderRows = [
+    row("13-875", "Coriander seeds", "H"),
+    row("13-888", "Coriander leaves, fresh", "H"),
+    row("13-818", "Coriander leaves, dried", "H"),
+  ];
+  expectPick("coriander", corianderRows, "13-888");
+  expectPick("ground coriander", corianderRows, "13-875");
+  expectPick("coriander seeds", corianderRows, "13-875");
+
+  // Nut butters: never dairy butter.
+  const butterRows = [
+    row("17-685", "Butter, salted", "OB"),
+    row("17-661", "Butter, unsalted", "OB"),
+    row("17-655", "Butter, spreadable (75-80% fat)", "OB"),
+    row("14-892", "Peanut butter, smooth", "GA", "fulltext"),
+    row("14-811", "Cashew nuts, kernel only, plain", "GA", "fulltext"),
+    row("14-812", "Cashew nuts, kernel only, roasted and salted", "GA", "fulltext"),
+  ];
+  expectPick("cashew butter", butterRows, "14-811");
+  expectPick("peanut butter", butterRows, "14-892");
+  expectPick("butter", butterRows, "17-685");
+  expectPick("unsalted butter", butterRows, "17-661");
+  // The dairy rows are all the lookup fetches for "softened butter".
+  if (!pick("softened butter", butterRows.slice(0, 3))?.food_name.startsWith("Butter,")) {
+    throw new Error("butter: softened is still butter");
+  }
+  if (!isNutButterMismatch("almond butter", "Peanut butter, smooth")) throw new Error("nut butter: other nut");
+  if (isNutButterMismatch("almond butter", "Almonds, toasted")) throw new Error("nut butter: the nut itself");
+  if (isNutButterMismatch("garlic butter", "Butter, salted")) throw new Error("nut butter: garlic butter is butter");
+
+  // Water: plain water is water; a named water must be that drink.
+  const waterRows = [
+    row("14-873", "Coconut, desiccated", "GA"),
+    row("17-377", "Water, distilled", "PA"),
+    row("14-816", "Coconut, flesh only, fresh", "GA"),
+    row("13-391", "Turnip, boiled in unsalted water", "DG", "fulltext"),
+    row("13-669", "Watercress, raw", "DG"),
+  ];
+  expectNone("coconut water", waterRows);
+  expectPick("water", waterRows, "17-377");
+  expectPick("boiling water", waterRows, "17-377");
+  for (const name of ["water", "Cold water", "boiling water", "tap water", "ice-cold water", "warm water"]) {
+    if (!isPlainWaterQuery(name)) throw new Error(`plain water: ${name}`);
+  }
+  for (const name of ["coconut water", "sparkling water", "tonic water", "water chestnuts", "water biscuits", "watermelon"]) {
+    if (isPlainWaterQuery(name)) throw new Error(`not plain water: ${name}`);
+  }
+
+  // The local table, which the live recipe preview uses on its own.
+  const local = (name: string) => lookupNutrition(name)?.name ?? null;
+  for (const [name, expected] of [
+    ["water", "water"],
+    ["boiling water", "water"],
+    ["water biscuits", "water biscuit"],
+    ["watermelon", "watermelon"],
+    ["sparkling water", "sparkling water"],
+    ["cashew butter", "cashews"],
+    ["butter", "butter"],
+    ["peanut butter", "peanut butter"],
+    ["macaroni", "macaroni elbow"],
+  ] as const) {
+    if (local(name) !== expected) throw new Error(`local: "${name}" → ${local(name)}, expected ${expected}`);
+  }
+  if (lookupNutrition("water")?.per_100g.calories !== 0) throw new Error("local: water is 0 kcal");
+  if (local("hazelnut butter") === "butter") throw new Error("local: hazelnut butter is not dairy butter");
 }
-console.log("OK: 15 Nov 2026 vegetarian plan matches");
+console.log("OK: 15–16 Nov 2026 audit matches");
