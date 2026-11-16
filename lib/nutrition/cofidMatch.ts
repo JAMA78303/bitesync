@@ -175,6 +175,9 @@ function rewriteToCofidVocabulary(query: string): string {
   // cream of, canned"; "frozen mixed veg" is "Vegetables, mixed, frozen, …".
   q = q.replace(/\btins? of\b/g, "canned").replace(/\b(?:tinned|tins?)\b/g, "canned");
   q = q.replace(/\b(?:veg|veggies)\b/g, "vegetables");
+  // CoFID files the nut as "Cashew nuts, …". Bare "cashews" scored "Cashew fruit,
+  // flesh only" higher (33 kcal per 100 g instead of about 600).
+  q = q.replace(/\bcashews?\b(?!\s+(?:nuts?|fruit|apples?|butter|milk|cream|drink))/g, "cashew nuts");
   return q.replace(/\s+/g, " ").trim();
 }
 
@@ -975,6 +978,20 @@ export function scoreCofidMatch(
   return score;
 }
 
+const DRIED_ROW_PATTERN = /\b(dried|dehydrated)\b/;
+const DRIED_QUERY_PATTERN = /\b(dried|dry|dehydrated|powder|powdered|ground|flakes)\b/;
+
+/**
+ * A dried row for a name that doesn't ask for dried. Grains and pulses are
+ * excluded: their dry and cooked forms are steered by the staple rules above.
+ */
+export function isUnaskedDriedForm(query: string, foodName: string): boolean {
+  const q = normalizeCofidQuery(query);
+  if (DRIED_QUERY_PATTERN.test(q)) return false;
+  if (isDryGrainQuery(q) || isStaplePulseQuery(q)) return false;
+  return DRIED_ROW_PATTERN.test(normalizeForMatch(foodName));
+}
+
 /** Pick the best CoFID row from candidates for an ingredient query. */
 export function pickBestCofidCandidate(
   query: string,
@@ -1022,6 +1039,29 @@ export function pickBestCofidCandidate(
       }
     }
     if (bestCooked) return bestCooked;
+  }
+
+  // Dried-form trap: "green beans" is a primary-name match for "Green beans,
+  // dried" (246 kcal per 100 g), which outranks "Beans, green, raw" (24). A name
+  // that doesn't say dried means the fresh food when CoFID has one.
+  if (best && isUnaskedDriedForm(query, best.food_name)) {
+    let bestFresh: CofidCandidate | null = null;
+    let bestFreshScore = -Infinity;
+    for (const candidate of candidates) {
+      if (isUnaskedDriedForm(query, candidate.food_name)) continue;
+      if (!stapleFoodMatchesQuery(candidate.food_name, query)) continue;
+      const score = scoreCofidMatch(
+        query,
+        candidate.food_name,
+        candidate.matchKind,
+        candidate.food_group,
+      );
+      if (score > bestFreshScore) {
+        bestFreshScore = score;
+        bestFresh = candidate;
+      }
+    }
+    if (bestFresh) return bestFresh;
   }
 
   // Spaghetti squash trap: bare pasta names must not resolve to the vegetable.

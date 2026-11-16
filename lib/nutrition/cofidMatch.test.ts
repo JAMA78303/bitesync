@@ -475,6 +475,7 @@ import {
   isPuffedCakeMismatch,
   isFatLevelMismatch,
   isStockConcentrateMismatch,
+  isUnaskedDriedForm,
   isVarietyMismatch,
   normalizeCofidQuery,
 } from "@/lib/nutrition/cofidMatch";
@@ -656,5 +657,50 @@ import {
   if (!isCompositeDishMismatch("black beans", "Curry, black gram, whole and red kidney bean, homemade")) throw new Error("dish: curry");
   if (isCompositeDishMismatch("tuna", "Tuna, canned in brine, drained")) throw new Error("dish: brine is prep");
   if (isCompositeDishMismatch("chicken stock", "Stock cubes, chicken, made up with water")) throw new Error("dish: made up with water");
+
+  // 16 Nov 2026: 29 stored recipes costed "green beans" on dried green beans
+  // (246 kcal per 100 g), and "cashews" took cashew fruit (33 kcal).
+  const greenBeanRows = [
+    row("13-608", "Green beans, dried", "DI"),
+    row("13-514", "Beans, green, raw", "DB", "fulltext"),
+    row("13-515", "Beans, green, boiled in unsalted water", "DB", "fulltext"),
+    row("15-024", "Bhaji, green bean", "DR", "fulltext"),
+  ];
+  expectPick("green beans", greenBeanRows, "13-514");
+  expectPick("dried green beans", greenBeanRows, "13-608");
+  // With no fresh row, the dried one still answers.
+  expectPick("mixed herbs", [row("13-884", "Mixed herbs, dried", "H")], "13-884");
+  expectPick("basil", [row("13-805", "Basil, dried, ground", "H"), row("13-804", "Basil, fresh", "H")], "13-804");
+  expectPick("dried basil", [row("13-805", "Basil, dried, ground", "H"), row("13-804", "Basil, fresh", "H")], "13-805");
+  // Pasta is still bought dry.
+  expectPick("pasta", [
+    row("11-1129", "Pasta, white, dried, boiled in unsalted water", "AD"),
+    row("11-716", "Pasta, white, dried, raw", "AD"),
+  ], "11-716");
+  if (!isUnaskedDriedForm("green beans", "Green beans, dried")) throw new Error("dried: green beans");
+  if (isUnaskedDriedForm("dried green beans", "Green beans, dried")) throw new Error("dried: asked for");
+  if (isUnaskedDriedForm("pasta", "Pasta, white, dried, raw")) throw new Error("dried: pasta is bought dry");
+  if (isUnaskedDriedForm("lentils", "Lentils, red, split, dried, raw")) throw new Error("dried: pulses use the staple rules");
+
+  const cashewRows = [
+    row("14-060", "Cashew fruit, flesh only", "FA", "fulltext"),
+    row("14-811", "Cashew nuts, kernel only, plain", "GA", "fulltext"),
+    row("14-812", "Cashew nuts, kernel only, roasted and salted", "GA", "fulltext"),
+  ];
+  expectPick("cashews", cashewRows, "14-811");
+  expectPick("cashew", cashewRows, "14-811");
+  expectPick("salted cashews", cashewRows, "14-812");
+  for (const [query, expected] of [
+    ["cashews", "cashew nuts"],
+    ["roasted cashews", "roasted cashew nuts"],
+    ["cashew nuts", "cashew nuts"],
+    ["cashew butter", "cashew butter"],
+    ["cashew milk", "cashew milk"],
+    ["cashew fruit", "cashew fruit"],
+  ]) {
+    if (normalizeCofidQuery(query) !== expected) {
+      throw new Error(`cashew rewrite: "${query}" → "${normalizeCofidQuery(query)}", expected "${expected}"`);
+    }
+  }
 }
 console.log("OK: 15 Nov 2026 vegetarian plan matches");
