@@ -22,6 +22,8 @@ const config: CapacitorConfig = {
   // Lets the site tell in-app visits apart (lib/native/app.ts), e.g. to hide
   // web checkout, which Apple doesn't allow inside an iOS app.
   appendUserAgent: "BiteSyncApp",
+  // Behind the page before it has drawn anything; iOS's default is black in dark mode.
+  backgroundColor: "#0d2923",
   ios: {
     contentInset: "never",
   },
@@ -31,11 +33,10 @@ const config: CapacitorConfig = {
       style: "DARK",
       overlaysWebView: true,
     },
+    // Off: its logo went after a fixed 0.6 s, loaded or not. The app's own
+    // loading screen (ios/App/App/AppViewController.swift) stays until the page is there.
     SplashScreen: {
-      launchShowDuration: 600,
-      launchAutoHide: true,
-      backgroundColor: "#0d2923",
-      showSpinner: false,
+      launchShowDuration: 0,
     },
   },
 };

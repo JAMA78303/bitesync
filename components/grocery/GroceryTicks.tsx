@@ -15,18 +15,31 @@ type GroceryTicks = {
 
 const GroceryTicksContext = createContext<GroceryTicks | null>(null);
 
+// Taps since the site was opened, by item id. Kept outside React so they
+// outlive the page: the back button brings /grocery back from Next's cache as
+// it was before them, because a tick doesn't refresh the page.
+const tapsSinceOpen = new Map<string, boolean>();
+
 /**
  * Which items on the grocery page are ticked, as the person taps them.
  *
- * The page itself is rendered on the server, and a save only reaches it once
- * Next.js has re-rendered the whole page in reply. Server actions run one at a
- * time, so while someone ticks their way round a shop the server's copy lags
- * by several seconds. Taps made here count straight away instead: the
- * header's count and progress bar, the basket count and "All done" read them.
+ * A tick only saves; it doesn't re-render the page. That reply would be the
+ * whole page, and a connection that drops halfway through it (common in a
+ * shop) left a half-received page that showed "Load failed" in place of the
+ * list. Everything that shows ticks reads them from here instead: the header's
+ * count and progress bar, the basket count, "All done", and the share text and
+ * offline copy.
  */
 export function GroceryTicksProvider({ items, children }: { items: TickableItem[]; children: ReactNode }) {
-  // Taps on this page, by item id. They win over `items`, which only catches up later.
-  const [taps, setTaps] = useState<Record<string, boolean>>({});
+  // They win over `items`, the server's copy as of when the page was rendered.
+  const [taps, setTaps] = useState<Record<string, boolean>>(() => Object.fromEntries(tapsSinceOpen));
+  // A fresh copy from the server (after adding or deleting an item) drops the
+  // taps that failed to save, so it shows what the server has now.
+  const [itemsShown, setItemsShown] = useState(items);
+  if (items !== itemsShown) {
+    setItemsShown(items);
+    setTaps(Object.fromEntries(tapsSinceOpen));
+  }
   const saveTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const { toast } = useToast();
 
@@ -34,11 +47,15 @@ export function GroceryTicksProvider({ items, children }: { items: TickableItem[
   const isChecked = (id: string) => taps[id] ?? fromServer.get(id) ?? false;
 
   function setTap(id: string, value: boolean) {
+    tapsSinceOpen.set(id, value);
     setTaps((current) => ({ ...current, [id]: value }));
   }
 
   function failed(id: string, value: boolean) {
-    // Put it back, unless it has been tapped again since.
+    // Put it back, unless it has been tapped again since. The tap is forgotten
+    // rather than kept as "not ticked": if only the reply was lost, the save
+    // went through, and the next fresh copy of the page should show that.
+    if (tapsSinceOpen.get(id) === value) tapsSinceOpen.delete(id);
     setTaps((current) => (current[id] === value ? { ...current, [id]: !value } : current));
     toast({
       title: "Failed to save",

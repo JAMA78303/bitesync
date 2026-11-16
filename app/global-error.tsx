@@ -4,11 +4,12 @@ import { BRANDED_ERROR_MESSAGE, BRANDED_ERROR_TITLE } from "@/lib/errors/userFac
 
 type ErrorPageProps = {
   error: Error & { digest?: string };
-  reset: () => void;
+  /** Fetches the page again. `reset` only re-renders what failed, e.g. a page cut off by a dropped connection. */
+  unstable_retry: () => void;
 };
 
 /** Root-layout error boundary — must render its own html/body. */
-export default function GlobalError({ error, reset }: ErrorPageProps) {
+export default function GlobalError({ error, unstable_retry }: ErrorPageProps) {
   console.error("[GlobalError]", error);
 
   return (
@@ -50,7 +51,7 @@ export default function GlobalError({ error, reset }: ErrorPageProps) {
           )}
           <button
             type="button"
-            onClick={reset}
+            onClick={() => unstable_retry()}
             style={{
               borderRadius: "0.75rem",
               background: "#3a5a40",
