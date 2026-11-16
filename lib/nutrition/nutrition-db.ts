@@ -454,6 +454,22 @@ const NUTRITION_DB_CORE: NutritionLookupEntry[] = [
       saturated_fat_g: 0.1,
     },
   },
+  // USDA SR Legacy "Mango, dried, sweetened" (FDC 169091), carbohydrate less
+  // fibre. CoFID has no dried mango; "dried mango" was costed as fresh (48 kcal
+  // per 100 g). Before "mango" so partial matches find it first.
+  {
+    name: "dried mango",
+    per_100g: {
+      calories: 319,
+      protein_g: 2.45,
+      carbs_g: 76.2,
+      fat_g: 1.18,
+      fibre_g: 2.4,
+      sugar_g: 66.3,
+      sodium_mg: 162,
+      saturated_fat_g: 0.29,
+    },
+  },
   {
     name: "mango",
     typical_piece_g: 207,
@@ -1247,6 +1263,180 @@ const NUTRITION_DB_CORE: NutritionLookupEntry[] = [
       sugar_g: 3.9,
       sodium_mg: 3,
       saturated_fat_g: 0.4,
+    },
+  },
+  // Cooked staples, reached only by names that say cooked, boiled, steamed or
+  // leftover (cookedStapleEntry in lookup.ts). The bare names are dry.
+  // CoFID 11-862 "Rice, white, long grain, boiled in unsalted water".
+  {
+    name: "cooked rice",
+    per_100g: {
+      calories: 131,
+      protein_g: 2.8,
+      carbs_g: 31.1,
+      fat_g: 0.4,
+      fibre_g: 0.5,
+      sugar_g: 0,
+      sodium_mg: 11,
+      saturated_fat_g: 0.09,
+    },
+  },
+  // CoFID 11-869 "Rice, brown, wholegrain, boiled in unsalted water".
+  {
+    name: "cooked brown rice",
+    per_100g: {
+      calories: 132,
+      protein_g: 3.6,
+      carbs_g: 29.2,
+      fat_g: 0.9,
+      fibre_g: 1.5,
+      sugar_g: 0.1,
+      sodium_mg: 4,
+      saturated_fat_g: 0.17,
+    },
+  },
+  // CoFID 11-858 "Rice, white, basmati, boiled in unsalted water".
+  {
+    name: "cooked basmati rice",
+    per_100g: {
+      calories: 117,
+      protein_g: 2.8,
+      carbs_g: 26.5,
+      fat_g: 0.7,
+      fibre_g: 0.6,
+      sugar_g: 0,
+      sodium_mg: 4,
+      saturated_fat_g: 0.16,
+    },
+  },
+  // CoFID 11-1129 "Pasta, white, dried, boiled in unsalted water".
+  {
+    name: "cooked pasta",
+    per_100g: {
+      calories: 169,
+      protein_g: 5.5,
+      carbs_g: 37.2,
+      fat_g: 0.8,
+      fibre_g: 2.5,
+      sugar_g: 1.1,
+      sodium_mg: 1,
+      saturated_fat_g: 0.11,
+    },
+  },
+  // CoFID 11-723 "Pasta, wholewheat, spaghetti, dried, boiled in unsalted water".
+  {
+    name: "cooked wholewheat pasta",
+    per_100g: {
+      calories: 134,
+      protein_g: 5.2,
+      carbs_g: 27.5,
+      fat_g: 1.1,
+      fibre_g: 4.2,
+      sugar_g: 0,
+      sodium_mg: 5,
+      saturated_fat_g: 0.17,
+    },
+  },
+  // CoFID 11-941 "Noodles, egg, fine, dried, boiled in unsalted water".
+  {
+    name: "cooked egg noodles",
+    per_100g: {
+      calories: 129,
+      protein_g: 4.7,
+      carbs_g: 27.5,
+      fat_g: 0.8,
+      fibre_g: 2.3,
+      sugar_g: 0,
+      sodium_mg: 109,
+      saturated_fat_g: 0.12,
+    },
+  },
+  // CoFID 11-725 "Noodles, rice, fine, dried, boiled in unsalted water".
+  {
+    name: "cooked rice noodles",
+    per_100g: {
+      calories: 89,
+      protein_g: 1.9,
+      carbs_g: 21.3,
+      fat_g: 0.2,
+      fibre_g: 1.1,
+      sugar_g: 0,
+      sodium_mg: 4,
+      saturated_fat_g: 0.05,
+    },
+  },
+  // CoFID 11-902 "Couscous, plain, cooked".
+  {
+    name: "cooked couscous",
+    per_100g: {
+      calories: 178,
+      protein_g: 7.2,
+      carbs_g: 37.5,
+      fat_g: 1,
+      fibre_g: 2.2,
+      sugar_g: 1,
+      sodium_mg: 4,
+      saturated_fat_g: 0.18,
+    },
+  },
+  // USDA SR Legacy "Quinoa, cooked" (FDC 168917), carbohydrate less fibre.
+  // CoFID has raw quinoa only, so "cooked quinoa" was costed raw (309 kcal).
+  {
+    name: "cooked quinoa",
+    per_100g: {
+      calories: 120,
+      protein_g: 4.4,
+      carbs_g: 18.5,
+      fat_g: 1.92,
+      fibre_g: 2.8,
+      sugar_g: 0.87,
+      sodium_mg: 7,
+      saturated_fat_g: 0.23,
+    },
+  },
+  // USDA SR Legacy "Bulgur, cooked" (FDC 170287), carbohydrate less fibre.
+  // CoFID has raw bulgur only, so "cooked bulgur wheat" was costed raw (352 kcal).
+  {
+    name: "cooked bulgur wheat",
+    per_100g: {
+      calories: 83,
+      protein_g: 3.08,
+      carbs_g: 14.1,
+      fat_g: 0.24,
+      fibre_g: 4.5,
+      sugar_g: 0.1,
+      sodium_mg: 5,
+      saturated_fat_g: 0.04,
+    },
+  },
+  // CoFID 13-317 "Peppers, capsicum, chilli, red, raw". CoFID gives no fibre
+  // figure, so 0; the macros account for the 26 kcal without it.
+  {
+    name: "fresh red chilli",
+    per_100g: {
+      calories: 26,
+      protein_g: 1.8,
+      carbs_g: 4.2,
+      fat_g: 0.3,
+      fibre_g: 0,
+      sugar_g: 4.2,
+      sodium_mg: 12,
+      saturated_fat_g: 0.01,
+    },
+  },
+  // CoFID 13-316 "Peppers, capsicum, chilli, green, raw". No fibre or
+  // saturated fat figure in CoFID, so 0.
+  {
+    name: "fresh green chilli",
+    per_100g: {
+      calories: 20,
+      protein_g: 2.9,
+      carbs_g: 0.7,
+      fat_g: 0.6,
+      fibre_g: 0,
+      sugar_g: 0.7,
+      sodium_mg: 7,
+      saturated_fat_g: 0,
     },
   },
 ];

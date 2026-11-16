@@ -155,9 +155,17 @@ export function lookupPieceWeightGramsPerUnit(rawName: string): number | null {
   }
 
   const keys = Object.keys(PIECE_WEIGHTS_G).sort((a, b) => b.length - a.length);
-  for (const key of keys) {
-    if (phraseBoundaryRegex(key).test(name)) {
-      return PIECE_WEIGHTS_G[key]!;
+  // A plural last word hid the key from the whole-word match: "green chillies"
+  // and "bird's eye chillies" never matched "chilli", so they had no grams and
+  // fell to the AI estimate.
+  const forms = [name];
+  if (name.endsWith("es") && name.length > 4) forms.push(name.slice(0, -2));
+  if (name.endsWith("s") && name.length > 3) forms.push(name.slice(0, -1));
+  for (const form of forms) {
+    for (const key of keys) {
+      if (phraseBoundaryRegex(key).test(form)) {
+        return PIECE_WEIGHTS_G[key]!;
+      }
     }
   }
   return null;
