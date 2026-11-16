@@ -972,3 +972,97 @@ import {
   if (normalizeCofidQuery("black coffee") !== "coffee infusion") throw new Error("coffee: black coffee is not Irish");
 }
 console.log("OK: 16 Nov 2026 sauces, peppers, teas and water");
+
+// --- 16 Nov 2026: names that found no row at all ---
+// With AI estimates off, these cost 0 kcal. Rows are real CoFID names.
+{
+  const row = (food_code: string, food_name: string, matchKind: "partial" | "fulltext" = "partial"): CofidCandidate => ({
+    food_code,
+    food_name,
+    food_group: null,
+    matchKind,
+  });
+  const expectPick = (query: string, rows: CofidCandidate[], code: string | null) => {
+    const best = pickBestCofidCandidate(cofidSearchQuery(query), rows);
+    if ((best?.food_code ?? null) !== code) {
+      throw new Error(`"${query}" picked ${best ? `${best.food_code} ${best.food_name}` : "nothing"}; expected ${code ?? "nothing"}`);
+    }
+  };
+
+  // Cheddar is "Cheese, Cheddar, …" in CoFID, so only "%cheddar%" on the whole
+  // name or full text on every word reached it: "grated cheddar" found nothing.
+  for (const [query, expected] of [
+    ["grated cheddar", "cheddar"],
+    ["mature cheddar", "cheddar"],
+    ["extra mature cheddar", "cheddar"],
+    ["grated mild cheddar cheese", "cheddar cheese"],
+    ["reduced fat cheddar", "cheddar 30 less fat"],
+    ["reduced-fat mature cheddar", "cheddar 30 less fat"],
+    ["lighter cheddar", "cheddar 30 less fat"],
+    ["30% less fat cheddar", "cheddar 30 less fat"],
+    ["low fat cheddar", "half fat cheddar"],
+    ["half fat cheddar", "half fat cheddar"],
+    ["cheddar", "cheddar"],
+  ] as const) {
+    const q = normalizeCofidQuery(query);
+    if (q !== expected) throw new Error(`cheddar: "${query}" → "${q}", expected "${expected}"`);
+    if (normalizeCofidQuery(q) !== q) throw new Error(`cheddar: "${q}" changes when normalised again`);
+  }
+  // Grated and strength words only go for cheddar.
+  if (normalizeCofidQuery("grated carrot") !== "grated carrot") throw new Error("cheddar: grated carrot untouched");
+  if (normalizeCofidQuery("medium egg") !== "medium egg") throw new Error("cheddar: medium egg untouched");
+
+  const cheddarRows = [
+    row("11-963", "Sandwich, white bread, cheddar cheese and pickle"),
+    row("12-548", "Cheese, Cheddar type, '30% less fat'"),
+    row("12-348", "Cheese, Cheddar type, half fat"),
+    row("12-346", "Cheese, Cheddar, English"),
+  ];
+  expectPick("cheddar", cheddarRows, "12-346");
+  expectPick("grated cheddar", cheddarRows, "12-346");
+  expectPick("mature cheddar", cheddarRows, "12-346");
+  expectPick("reduced fat cheddar", cheddarRows, "12-548");
+  expectPick("half fat cheddar", cheddarRows, "12-348");
+  expectPick("low fat cheddar", cheddarRows, "12-348");
+
+  // CoFID has no borlotti beans, and the other varieties are different foods,
+  // so the lookup returns nothing and the local row answers.
+  const beanRows = [
+    row("13-042", "Beans, aduki, whole, dried, boiled in unsalted water"),
+    row("13-063", "Beans, blackeye, whole, dried, boiled in unsalted water"),
+    row("13-559", "Beans, butter, canned, re-heated, drained"),
+    row("13-107", "Beans, pinto, dried, boiled in unsalted water"),
+    row("13-665", "Beans, haricot, canned, re-heated, drained"),
+  ];
+  expectPick("borlotti beans", beanRows, null);
+  expectPick("tinned borlotti beans", beanRows, null);
+
+  // The local table, which the recipe preview uses on its own and the full
+  // chain falls back to.
+  const local = (name: string) => lookupNutrition(name)?.name ?? null;
+  for (const [name, expected] of [
+    ["grated cheddar", "cheddar cheese"],
+    ["mature cheddar", "cheddar cheese"],
+    ["extra mature cheddar", "cheddar cheese"],
+    ["grated cheddar cheese", "cheddar cheese"],
+    ["cheddar", "cheddar cheese"],
+    ["reduced fat cheddar", "reduced fat cheddar"],
+    ["reduced-fat mature cheddar", "reduced fat cheddar"],
+    ["lighter cheddar", "reduced fat cheddar"],
+    ["borlotti beans", "borlotti beans"],
+    ["tinned borlotti beans", "borlotti beans"],
+    ["seitan", "seitan"],
+    ["vegan mince", "meat free mince"],
+    ["plant-based mince", "meat free mince"],
+    ["plant based mince", "meat free mince"],
+    ["meat-free mince", "meat free mince"],
+    ["mince", "beef mince"],
+  ] as const) {
+    if (local(name) !== expected) throw new Error(`local: "${name}" → ${local(name)}, expected ${expected}`);
+  }
+  for (const name of ["borlotti beans", "seitan", "vegan mince", "reduced fat cheddar"]) {
+    const kcal = lookupNutrition(name)?.per_100g.calories ?? 0;
+    if (kcal <= 0) throw new Error(`local: "${name}" costs ${kcal} kcal`);
+  }
+}
+console.log("OK: 16 Nov 2026 names that found no row");

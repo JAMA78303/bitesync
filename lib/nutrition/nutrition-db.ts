@@ -1439,6 +1439,74 @@ const NUTRITION_DB_CORE: NutritionLookupEntry[] = [
       saturated_fat_g: 0,
     },
   },
+  // CoFID 12-548 "Cheese, Cheddar type, '30% less fat'". "Reduced fat" on a UK
+  // cheddar label means at least 30% less fat than standard.
+  {
+    name: "reduced fat cheddar",
+    per_100g: {
+      calories: 314,
+      protein_g: 27.9,
+      carbs_g: 0.8,
+      fat_g: 22.1,
+      fibre_g: 0,
+      sugar_g: 0.1,
+      sodium_mg: 720,
+      saturated_fat_g: 13.8,
+    },
+  },
+  // Tesco Borlotti Beans In Water 400 g (drained 246 g), label per 100 g "as
+  // sold, drained" (tesco.com product 262489966, read 16 Nov 2026). Salt <0.01 g,
+  // so sodium is under 4 mg. CoFID has no borlotti beans, and its other bean
+  // varieties are different foods. Like every bare pulse name, this is the tin.
+  {
+    name: "borlotti beans",
+    per_100g: {
+      calories: 101,
+      protein_g: 7.3,
+      carbs_g: 13.2,
+      fat_g: 0.6,
+      fibre_g: 6.9,
+      sugar_g: 0.4,
+      sodium_mg: 4,
+      saturated_fat_g: 0.1,
+    },
+  },
+  // Biona Organic Seitan Pieces 350 g jar (water, wheat gluten, wheat flour,
+  // tamari), label per 100 g (ocado.com product 269975011, read 16 Nov 2026).
+  // Salt 0.5 g = 200 mg sodium. CoFID has no seitan.
+  {
+    name: "seitan",
+    per_100g: {
+      calories: 101,
+      protein_g: 17,
+      carbs_g: 7.2,
+      fat_g: 0.5,
+      fibre_g: 0.7,
+      sugar_g: 0.1,
+      sodium_mg: 200,
+      saturated_fat_g: 0.1,
+    },
+  },
+  // Tesco Plant Chef Meat Free Mince 454 g, frozen, 95% rehydrated textured soya
+  // protein (tesco.com product 307743774, read 16 Nov 2026). The label is per
+  // 100 g cooked: 126 kcal, protein 17.1 g, carbohydrate 9.9 g, fat 1.7 g
+  // (saturates 0.3 g), fibre 1.4 g, sugars 2.2 g, salt 0.49 g. It says 454 g
+  // cooks to 420 g, so per 100 g as sold is the cooked figure × 420/454 (0.925),
+  // which is what a recipe's weight from the pack needs. CoFID has no meat-free
+  // mince ("Quorn, pieces" is mycoprotein, not soya).
+  {
+    name: "meat free mince",
+    per_100g: {
+      calories: 117,
+      protein_g: 15.8,
+      carbs_g: 9.2,
+      fat_g: 1.6,
+      fibre_g: 1.3,
+      sugar_g: 2,
+      sodium_mg: 181,
+      saturated_fat_g: 0.3,
+    },
+  },
 ];
 
 export const NUTRITION_DB = mergeNutritionEntriesUnique(
