@@ -96,7 +96,21 @@ const INGREDIENT_LOOKUP_ALIASES: Record<string, string> = {
   "udon noodles": "cooked egg noodles",
   "straight to wok noodles": "cooked egg noodles",
   "ready to wok noodles": "cooked egg noodles",
+  // Cheddar after its grating and strength words are dropped (see resolveLookupName).
+  cheddar: "cheddar cheese",
+  "light cheddar": "reduced fat cheddar",
+  "lighter cheddar": "reduced fat cheddar",
+  "reduced fat cheddar cheese": "reduced fat cheddar",
+  // Soya-based meat-free mince, whatever the pack calls it. Neither CoFID nor
+  // this table had any of these, so they cost 0 kcal without an AI estimate.
+  "vegan mince": "meat free mince",
+  "meat-free mince": "meat free mince",
+  "plant-based mince": "meat free mince",
+  "plant based mince": "meat free mince",
 };
+
+/** Grating, maturity and strength don't change cheddar per 100 g: "grated mature cheddar" is cheddar. */
+const CHEDDAR_FORM_WORDS = /\b(?:grated|shredded|mild|medium|mature|extra|vintage|strong|sharp)\s+(?=(?:\w+\s+)*cheddar\b)/g;
 
 /**
  * Plain water. Kept out of NUTRITION_DB so partial matching can't land on it:
@@ -166,7 +180,7 @@ function smallFreshChilliEntry(normalized: string): NutritionLookupEntry | null 
 }
 
 function resolveLookupName(name: string): string {
-  const normalized = normalizeName(name);
+  const normalized = normalizeName(name).replace(CHEDDAR_FORM_WORDS, "");
   return (
     INGREDIENT_LOOKUP_ALIASES[normalized] ??
     INGREDIENT_LOOKUP_ALIASES[canonicalIngredientPhrase(normalized)] ??

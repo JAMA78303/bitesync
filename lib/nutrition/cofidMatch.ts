@@ -214,7 +214,25 @@ function rewriteToCofidVocabulary(query: string): string {
   // CoFID files the nut as "Cashew nuts, …". Bare "cashews" scored "Cashew fruit,
   // flesh only" higher (33 kcal per 100 g instead of about 600).
   q = q.replace(/\bcashews?\b(?!\s+(?:nuts?|fruit|apples?|butter|milk|cream|drink))/g, "cashew nuts");
+  if (/\bcheddar\b/.test(q)) q = rewriteCheddar(q);
   return q.replace(/\s+/g, " ").trim();
+}
+
+/**
+ * CoFID files cheddar as "Cheese, Cheddar, English", "Cheese, Cheddar type,
+ * half fat" and "Cheese, Cheddar type, '30% less fat'". Only a query whose
+ * whole name appears in the row ("cheddar") or whose every word does ("half
+ * fat cheddar") reaches them, so "grated cheddar", "mature cheddar" and
+ * "reduced fat cheddar" found no row at all. Grating, maturity and strength
+ * don't change cheddar per 100 g. A reduced-fat, lighter or light cheddar is
+ * the 30%-less-fat kind ("reduced fat" means at least 30% less on a UK label);
+ * "low fat" asks for the leanest, which is half fat.
+ */
+function rewriteCheddar(q: string): string {
+  return q
+    .replace(/\b(?:grated|shredded|mild|medium|mature|extra|vintage|strong|sharp)\s+/g, "")
+    .replace(/\b(?:reduced fat|lower fat|less fat|lighter|light)\s+cheddar\b/g, "cheddar 30 less fat")
+    .replace(/\blow fat\s+cheddar\b/g, "half fat cheddar");
 }
 
 /**
