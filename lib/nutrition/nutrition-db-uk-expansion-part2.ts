@@ -266,38 +266,44 @@ const ROWS: TupleRow[] = [
     790,
     2
   ],
+  // CoFID 19-327 "Spring rolls, meat, takeaway", the row CoFID answers spring rolls with.
+  // Was 417 kcal and 69 g carbohydrate.
   [
     "spring roll",
-    417,
-    10,
-    69,
-    9,
-    5,
-    27,
-    679,
-    5.4
+    242,
+    6.5,
+    18.2,
+    16.4,
+    2,
+    1.8,
+    485,
+    3.81
   ],
+  // M&S 12 Vegetable Spring Rolls label (Ocado 511519011), per 100 g. CoFID's only spring
+  // roll is meat. Was 528 kcal and 24 g fat.
   [
     "vegetable spring roll",
-    528,
-    9,
-    56,
-    24,
-    5,
-    34,
-    358,
-    12.8
+    218,
+    4.2,
+    28.5,
+    9.1,
+    2.7,
+    4.4,
+    400,
+    1.4
   ],
+  // CoFID 19-327 "Spring rolls, meat, takeaway". Was 62 kcal and 14 g sugar in 7.5 g
+  // carbohydrate.
   [
     "duck spring roll",
-    62,
-    4.2,
-    7.5,
-    0,
-    4.2,
-    14,
-    41,
-    1.2000000000000002
+    242,
+    6.5,
+    18.2,
+    16.4,
+    2,
+    1.8,
+    485,
+    3.81
   ],
   [
     "mini sausage roll",
@@ -752,16 +758,17 @@ const ROWS: TupleRow[] = [
     182,
     1.06
   ],
+  // CoFID 19-296 "Curry, chicken tikka masala, retail, reheated". Was 25 kcal and 0 g fat.
   [
     "chicken tikka masala ready meal",
-    25,
-    2.2,
-    7.5,
-    0,
-    4.2,
-    14,
-    401,
-    1.2000000000000002
+    156,
+    12.4,
+    4.9,
+    9.8,
+    1.4,
+    3.6,
+    220,
+    3.3
   ],
   [
     "beef stew ready meal",
@@ -3026,16 +3033,19 @@ const ROWS: TupleRow[] = [
     45,
     0
   ],
+  // Piatnica Semi-Fat Curd Cheese label (Tesco 314593807), per 100 g; the label gives no
+  // fibre figure (0 here). CoFID has no curd cheese. Was 57 kcal and 12 g sugar in 7.5 g
+  // carbohydrate.
   [
     "curd cheese",
-    57,
-    0.20000000000000018,
-    7.5,
+    115,
+    16,
+    3.8,
+    4,
     0,
-    2.2,
-    12,
-    11,
-    1.2000000000000002
+    3.8,
+    44,
+    2.4
   ],
   // CoFID 12-495 "Cheese, Paneer". Was 290 kcal and 6 g fat.
   [
@@ -3142,16 +3152,17 @@ const ROWS: TupleRow[] = [
     730,
     12.91
   ],
+  // CoFID 12-540 "Cheese spread, plain". Was 65 kcal and 14 g sugar in 7.5 g carbohydrate.
   [
     "primula cheese tube",
-    65,
-    4.2,
-    7.5,
-    1.2000000000000002,
-    4.2,
-    14,
-    201,
-    1.2000000000000002
+    237,
+    11.3,
+    6.5,
+    18.6,
+    0,
+    6.5,
+    730,
+    12.91
   ],
   [
     "squirty cream",
@@ -3860,8 +3871,8 @@ const ROWS: TupleRow[] = [
     12.8
   ],
   // Old El Paso Garlic & Paprika Taco Seasoning Mix label (Ocado 380863011), per 100 g.
-  // No UK supermarket sells a burrito-named mix; this is the same kind of sachet. Was 63
-  // kcal and 10 g sugar in 7.5 g carbohydrate.
+  // Tesco, Sainsbury's and Ocado sell no burrito-named mix; this is the same kind of
+  // sachet. Was 63 kcal and 10 g sugar in 7.5 g carbohydrate.
   [
     "burrito seasoning",
     291,
@@ -4567,16 +4578,18 @@ const ROWS: TupleRow[] = [
     398,
     12.8
   ],
+  // CoFID 11-991 "Cake, fruit, rich, iced, homemade"; simnel cake is a rich fruit cake
+  // with marzipan. Was 57 kcal and 14 g sugar in 7.5 g carbohydrate.
   [
     "simnel cake",
-    57,
-    4.2,
-    7.5,
-    2.2,
-    4.2,
-    14,
-    81,
-    1.2000000000000002
+    355,
+    3.7,
+    67,
+    9.6,
+    1.3,
+    58.9,
+    98,
+    4.53
   ],
   // CoFID 11-1028 "Tart, bakewell, homemade". Was 242 kcal and 10 g fat.
   [
@@ -4797,16 +4810,18 @@ const ROWS: TupleRow[] = [
     378,
     12.8
   ],
+  // Minton & Donello Yoghurt Coated Peanuts label (Tesco 330696073), per 100 g. Was 65
+  // kcal and 1.2 g fat.
   [
     "yoghurt coated nuts",
-    65,
-    0.20000000000000018,
-    7.5,
-    1.2000000000000002,
-    4.2,
-    10,
-    61,
-    1.2000000000000002
+    554,
+    12.6,
+    41.7,
+    36.4,
+    4.5,
+    36.2,
+    72,
+    11.9
   ],
   [
     "dark chocolate almonds",
@@ -5020,16 +5035,20 @@ const ROWS: TupleRow[] = [
     190,
     0.09
   ],
+  // Heinz Baked Beans & Richmond Sausages label (Ocado 639922011), per 100 g; Tesco and
+  // Ocado sell no beans with chorizo. CoFID 13-579 (beans with pork sausages, 98 kcal)
+  // answers for this name and has no saturated-fat figure, which this row supplies. Was 65
+  // kcal and 14 g sugar in 7.5 g carbohydrate.
   [
     "baked beans chorizo",
-    65,
-    2.2,
-    7.5,
-    0.20000000000000018,
-    4.2,
-    14,
-    41,
-    1.2000000000000002
+    79,
+    4,
+    11,
+    2.1,
+    0.9,
+    3.9,
+    320,
+    0.7
   ],
   // CoFID 11-735 "Pasta, spaghetti, canned, in tomato sauce". Was 248 kcal and 8 g fat.
   [
@@ -5371,16 +5390,18 @@ const ROWS: TupleRow[] = [
     528,
     12.8
   ],
+  // CoFID 12-346 "Cheese, Cheddar, English"; snack cubes are cheddar. Was 64 kcal and 2.2
+  // g fat.
   [
     "cheese cubes snack",
-    64,
-    2.2,
-    7.5,
-    2.2,
-    2.2,
-    12,
-    211,
-    1.2000000000000002
+    416,
+    25.4,
+    0.1,
+    34.9,
+    0,
+    0.1,
+    723,
+    21.68
   ],
   [
     "cheese ham skewer snack",
@@ -5481,16 +5502,18 @@ const ROWS: TupleRow[] = [
     718,
     12.8
   ],
+  // Dairylea Lunchers Ham and Cheese Snacks label (Ocado 654952011), per 100 g. Was 25
+  // kcal and 0 g fat.
   [
     "cracker cheese ham snack",
-    25,
-    0.20000000000000018,
-    7.5,
-    0,
-    4.2,
-    14,
-    401,
-    1.2000000000000002
+    289,
+    16,
+    26,
+    13,
+    1.4,
+    2.4,
+    480,
+    6
   ],
   // CoFID 11-939 "Breakfast cereal, crunchy/crispy muesli type cereal, with nuts,
   // unfortified". Was 251 kcal and 6 g fat.
@@ -5711,16 +5734,18 @@ const ROWS: TupleRow[] = [
     698,
     12.8
   ],
+  // CoFID 18-349 "Turkey, light meat, raw"; escalopes are sliced breast. Was 62 kcal and
+  // 7.5 g carbohydrate.
   [
     "turkey escalopes",
-    62,
-    2.2,
-    7.5,
+    105,
+    24.4,
     0,
-    4.2,
-    10,
-    381,
-    1.2000000000000002
+    0.8,
+    0,
+    0,
+    50,
+    0.3
   ],
   [
     "turkey crown roast",
@@ -6285,16 +6310,18 @@ const ROWS: TupleRow[] = [
     448,
     12.8
   ],
+  // Marigold Engevita B12 Nutritional Yeast Flakes label (Ocado 594317011), per 100 g. Was
+  // 25 kcal and 4.2 g protein.
   [
     "nutritional yeast flakes",
-    25,
-    4.2,
-    7.5,
-    0,
-    2.2,
-    12,
-    131,
-    1.2000000000000002
+    349,
+    47,
+    19,
+    5,
+    20,
+    1,
+    100,
+    1
   ],
   // Clearspring Organic Soya Mince 250 g, dried (organic textured soya meal),
   // label per 100 g (ocado.com product 424750011, read 16 Nov 2026). Salt
@@ -6665,16 +6692,19 @@ const ROWS: TupleRow[] = [
     2240,
     0.6
   ],
+  // Lee Kum Kee Seasoned Rice Vinegar label (Ocado 586093011), per 100 ml; fat is "<0.5 g"
+  // (0 here) and there is no fibre figure. Acetic acid carries the energy the macros
+  // don't. Was 67 kcal and 10 g sugar in 7.5 g carbohydrate.
   [
     "rice vinegar seasoned",
-    67,
-    4.2,
-    7.5,
-    0.20000000000000018,
-    4.2,
-    10,
-    301,
-    1.2000000000000002
+    96,
+    3.6,
+    16,
+    0,
+    0,
+    13,
+    800,
+    0
   ],
   [
     "black vinegar chinese",
@@ -6780,16 +6810,19 @@ const ROWS: TupleRow[] = [
     10,
     0.4
   ],
+  // CoFID 13-827 "Fennel seeds", with the carbohydrate, fibre and energy CoFID lacks from
+  // USDA SR Legacy 171323, as cofidEnergyGaps.ts fills them. CoFID gives no sugar figure
+  // (0 here). Was 64 kcal and 3.2 g fat.
   [
     "fennel seeds whole",
-    64,
-    2.2,
-    7.5,
-    3.2,
-    2.2,
-    12,
-    91,
-    1.2000000000000002
+    345,
+    15.8,
+    12.5,
+    14.9,
+    39.8,
+    0,
+    88,
+    0.5
   ],
   [
     "fenugreek seeds",

@@ -1234,3 +1234,91 @@ import { isKievMismatch } from "@/lib/nutrition/cofidMatch";
   if (lookupNutrition("chicken breast")?.name !== "chicken breast") throw new Error("local: chicken breast is unchanged");
 }
 console.log("OK: 17 Nov 2026 chicken kiev");
+
+// 17 Nov 2026: wrong-food CoFID matches found by the sugar-over-carbohydrate
+// scan. Plain vinegars took wine, cider, sherry or raw brown rice; snack and
+// dish names took one ingredient's raw row; and seven foods CoFID lacks now
+// answer from a labelled local row.
+{
+  for (const [query, expected] of [
+    ["rice vinegar", "vinegar"],
+    ["rice wine vinegar", "vinegar"],
+    ["white wine vinegar", "vinegar"],
+    ["red wine vinegar", "vinegar"],
+    ["apple cider vinegar", "vinegar"],
+    ["sherry vinegar", "vinegar"],
+    ["balsamic vinegar", "balsamic vinegar"],
+    ["fennel seeds whole", "fennel seeds"],
+    ["whole fennel seeds", "fennel seeds"],
+    ["fennel", "fennel"],
+    ["primula cheese tube", "cheese spread plain"],
+    ["cheese cubes snack", "cheddar"],
+    ["simnel cake", "rich iced fruit cake"],
+    ["duck spring roll", "meat spring rolls"],
+    ["prawn spring rolls", "meat spring rolls"],
+    ["chicken tikka masala ready meal", "curry chicken tikka masala"],
+    ["chicken tikka masala", "curry chicken tikka masala"],
+    ["tikka masala sauce", "tikka masala sauce"],
+    ["turkey escalopes", "turkey light meat raw"],
+    ["turkey breast steaks", "turkey light meat raw"],
+    ["turkey breast", "turkey breast"],
+    ["baked beans chorizo", "baked beans with pork sausages"],
+    ["beans and sausages", "baked beans with pork sausages"],
+    ["baked beans", "baked beans"],
+  ] as const) {
+    if (cofidSearchQuery(query) !== expected) throw new Error(`17 Nov: "${query}" → "${cofidSearchQuery(query)}", expected "${expected}"`);
+  }
+
+  const rejected: [string, string][] = [
+    ["vinegar", "Rice, brown, basmati, raw"],
+    ["vinegar", "Wine, white, dry"],
+    ["prawn spring rolls", "Prawns, king, raw"],
+    ["curd cheese", "Cheese, Caerphilly"],
+    ["yoghurt coated nuts", "Nuts, mixed"],
+    ["yoghurt coated peanuts", "Peanuts, kernel only, plain, unsalted"],
+    ["cracker cheese ham snack", "Ham, gammon joint, raw"],
+    ["ham and cheese crackers", "Cream crackers"],
+    ["nutritional yeast flakes", "Yeast, bakers, compressed"],
+    ["nutritional yeast", "Yeast, dried"],
+    ["seasoned rice vinegar", "Vinegar"],
+    ["rice vinegar seasoned", "Rice, brown, basmati, raw"],
+    ["spring roll pastry", "Pastries, Asian"],
+    ["vegetable spring rolls", "Spring rolls, meat, takeaway"],
+    ["vegetable spring rolls", "Vegetables, mixed, frozen, boiled in unsalted water"],
+  ];
+  for (const [query, row] of rejected) {
+    if (scoreCofidMatch(query, row, "partial") !== -Infinity) throw new Error(`17 Nov: "${query}" may not take "${row}"`);
+  }
+  const kept: [string, string][] = [
+    ["vinegar", "Vinegar"],
+    ["meat spring rolls", "Spring rolls, meat, takeaway"],
+    ["spring rolls", "Spring rolls, meat, takeaway"],
+    ["lemon curd", "Lemon curd"],
+    ["dried yeast", "Yeast, dried"],
+    ["cream crackers", "Cream crackers"],
+    ["ham", "Ham"],
+    ["yoghurt coated raisins", "Raisins, dried"],
+  ];
+  for (const [query, row] of kept) {
+    if (scoreCofidMatch(query, row, "partial") === -Infinity) throw new Error(`17 Nov: "${query}" should still reach "${row}"`);
+  }
+
+  for (const [name, expected, minKcal, maxKcal] of [
+    ["seasoned rice vinegar", "rice vinegar seasoned", 80, 120],
+    ["sushi vinegar", "rice vinegar seasoned", 80, 120],
+    ["vegetable spring rolls", "vegetable spring roll", 180, 260],
+    ["spring roll pastry", "spring roll wrapper", 280, 330],
+    ["spring roll wrappers", "spring roll wrapper", 280, 330],
+    ["yoghurt coated peanuts", "yoghurt coated nuts", 500, 600],
+    ["ham and cheese crackers", "cracker cheese ham snack", 250, 320],
+    ["nutritional yeast", "nutritional yeast flakes", 300, 400],
+    ["curd cheese", "curd cheese", 100, 150],
+  ] as const) {
+    const entry = lookupNutrition(name);
+    if (entry?.name !== expected) throw new Error(`17 Nov local: "${name}" → ${entry?.name ?? null}, expected ${expected}`);
+    const kcal = entry.per_100g.calories;
+    if (kcal < minKcal || kcal > maxKcal) throw new Error(`17 Nov local: "${name}" is ${kcal} kcal`);
+  }
+  if (lookupNutrition("lemon curd")?.name !== "lemon curd") throw new Error("17 Nov local: lemon curd is unchanged");
+}
+console.log("OK: 17 Nov 2026 vinegars, dishes and foods CoFID lacks");

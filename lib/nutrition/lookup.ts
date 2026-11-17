@@ -1,7 +1,7 @@
 import type { NutritionLookupEntry } from "@/types";
 import { NUTRITION_DB } from "@/lib/nutrition/nutrition-db";
 import { canonicalIngredientPhrase } from "@/lib/nutrition/ingredientPhrase";
-import { isPlainWaterQuery } from "@/lib/nutrition/cofidMatch";
+import { isPlainWaterQuery, noCofidRowLocalName } from "@/lib/nutrition/cofidMatch";
 
 function normalizeName(value: string): string {
   return value.toLowerCase().trim();
@@ -273,6 +273,10 @@ function resolveLookupName(name: string): string {
   if (SUN_DRIED_TOMATOES.test(normalized)) return "sun dried tomatoes jar";
   if (RED_PESTO.test(normalized)) return "pesto jar red";
   if (CHICKEN_KIEV.test(normalized)) return "chicken kiev";
+  // Foods CoFID lacks answer from their local row; partial matching found
+  // "rice" for "seasoned rice vinegar" and "spring roll" for the vegetable ones.
+  const noCofidRow = noCofidRowLocalName(normalized);
+  if (noCofidRow) return noCofidRow;
   return (
     INGREDIENT_LOOKUP_ALIASES[normalized] ??
     INGREDIENT_LOOKUP_ALIASES[canonicalIngredientPhrase(normalized)] ??
