@@ -69,6 +69,11 @@ jobs:
       - name: Analytics regression tests
         run: npm run test:analytics
 
+      # Hijri dates, prayer times against published timetables, reminders,
+      # and fasting days that still meet protein on 20 generated weeks.
+      - name: Ramadan and fasting tests
+        run: npm run test:fasting
+
       # Unmatched foods contribute zero to the weekly analysis rather than
       # reporting as unknown, so a coverage gap reads as a deficiency. Renaming
       # "buckwheat groats" to "buckwheat" broke this and nothing caught it.

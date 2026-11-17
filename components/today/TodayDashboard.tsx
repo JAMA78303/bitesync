@@ -13,7 +13,8 @@ import { SnapMealButton } from "@/components/today/SnapMealButton";
 import type { Person } from "@/lib/nutrition/drv";
 import type { TodayMeal, TodayTotals } from "@/lib/planner/today";
 import type { UserNutritionTargets } from "@/lib/utils/nutrition-targets";
-import { MEAL_LABELS, type MealType } from "@/types";
+import { FASTING_MEAL_ORDER, mealSlotLabel } from "@/lib/fasting/slots";
+import type { MealType } from "@/types";
 import { formatLongDateWithOrdinal } from "@/lib/utils/dates";
 import { ds } from "@/lib/ui/classes";
 
@@ -34,6 +35,8 @@ type Props = {
  extras?: React.ReactNode;
  /** Set when photo logging is on for this account (lib/photoMeal/access.ts). */
  photoPerson?: Person | null;
+ /** Today is a fasting day: slots read Suhoor, Iftar, Late snack, in that order. */
+ fasting?: boolean;
 };
 
 export function TodayDashboard({
@@ -46,13 +49,15 @@ export function TodayDashboard({
  dateLabel,
  extras,
  photoPerson = null,
+ fasting = false,
 }: Props) {
  const remaining = Math.max(0, targets.kcal - totals.kcal);
  const calorieStatus = getGoalStatus("kcal", totals.kcal, targets.kcal);
  const headerDate = dateLabel ?? formatLongDateWithOrdinal(new Date());
  const weekdayName = new Date().toLocaleDateString("en-GB", { weekday: "long" });
+ const order = fasting ? FASTING_MEAL_ORDER : MEAL_ORDER;
  const orderedMeals = [...meals].sort(
- (a, b) => MEAL_ORDER.indexOf(a.mealType) - MEAL_ORDER.indexOf(b.mealType) || a.slotIndex - b.slotIndex,
+ (a, b) => order.indexOf(a.mealType) - order.indexOf(b.mealType) || a.slotIndex - b.slotIndex,
  );
  // The first meal of the day not yet eaten or skipped.
  const nextMeal = orderedMeals.find((m) => m.status === "planned") ?? null;
@@ -145,7 +150,9 @@ export function TodayDashboard({
  )}
  </article>
 
- {nextMeal && !compactHero && !heroOnly ? <UpNextCard meal={nextMeal} /> : null}
+ {nextMeal && !compactHero && !heroOnly ? (
+ <UpNextCard meal={nextMeal} label={mealSlotLabel(nextMeal.mealType, fasting)} />
+ ) : null}
  </div>
 
  {extras && !heroOnly && !compactHero ? <div className="mt-6">{extras}</div> : null}
@@ -185,6 +192,7 @@ export function TodayDashboard({
  meal={meal}
  dietaryPreferences={dietaryPreferences}
  photoPerson={photoPerson}
+ label={fasting ? mealSlotLabel(meal.mealType, true) : undefined}
  />
  ))}
  </div>
@@ -196,7 +204,7 @@ export function TodayDashboard({
  );
 }
 
-function UpNextCard({ meal }: { meal: TodayMeal }) {
+function UpNextCard({ meal, label }: { meal: TodayMeal; label: string }) {
  const name = meal.recipe?.name ?? meal.quickAddName ?? "Meal";
  const kcal = meal.recipe?.kcal ?? meal.quickAddCalories;
  return (
@@ -211,7 +219,7 @@ function UpNextCard({ meal }: { meal: TodayMeal }) {
  />
  <div className="flex-1">
  <p className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[var(--brand-primary)]">
- {MEAL_LABELS[meal.mealType]}
+ {label}
  </p>
  <h3 className="mt-1 text-lg font-bold leading-snug text-[var(--text-primary)]">{name}</h3>
  {kcal != null ? (

@@ -65,8 +65,8 @@ export async function deleteAccount(confirmEmail: string): Promise<{ error?: str
   }
 
   // Last step: the login itself. Every step above is safe to repeat, so if this
-  // fails the person can press Delete again. Plan runs, pantry items and push
-  // subscriptions cascade from the login.
+  // fails the person can press Delete again. Plan runs, pantry items, push
+  // subscriptions and fasting settings cascade from the login.
   let authError: string | null = null;
   try {
     const { error } = await createSupabaseAuthAdmin().auth.admin.deleteUser(user.id);

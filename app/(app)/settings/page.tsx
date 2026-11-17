@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CreditCard, FileText, KeyRound, Mail, ShieldCheck, Target } from "lucide-react";
+import { CreditCard, FileText, KeyRound, Mail, Moon, ShieldCheck, Target } from "lucide-react";
 import { RowIcon } from "@/components/ui/RowIcon";
 import { DeleteAccountSection } from "@/components/settings/DeleteAccountSection";
 import { SignOutButton } from "@/components/settings/SignOutButton";
@@ -127,6 +127,18 @@ export default async function SettingsPage() {
  <span className="flex-1">
  <span className="block text-sm font-semibold text-[var(--text-primary)]">Nutrition &amp; goals</span>
  <span className="text-xs text-[var(--text-muted)]">Dietary preferences and calorie targets</span>
+ </span>
+ <Chevron />
+ </Link>
+
+ <Link
+ href="/settings/fasting"
+ className={`${ds.card} flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-[var(--surface-muted)] `}
+ >
+ <RowIcon Icon={Moon} />
+ <span className="flex-1">
+ <span className="block text-sm font-semibold text-[var(--text-primary)]">Ramadan &amp; fasting days</span>
+ <span className="text-xs text-[var(--text-muted)]">Suhoor and iftar at your local times</span>
  </span>
  <Chevron />
  </Link>
