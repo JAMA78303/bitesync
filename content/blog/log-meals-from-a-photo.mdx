@@ -1,0 +1,95 @@
+export const meta = {
+  title: "Log a meal from a photo: how BiteSync's Snap a meal works (and how accurate it is)",
+  description:
+    "Ate something that wasn't on your meal plan? Take a photo and BiteSync lists the foods and portions, works out calories, protein and vitamins from food composition tables, and lets you check every number before it's added.",
+  category: "Meal planning",
+  datePublished: "2026-11-18",
+  dateModified: "2026-11-18",
+  reviewedBy: "founder",
+};
+
+export const faq = [
+  {
+    q: "Can BiteSync log a meal from a photo?",
+    a: "Yes. Tap Snap a meal on the Today screen, or Ate something else on a planned meal, and take or choose a photo. BiteSync lists the foods it can see with a portion for each in grams, shows a calorie range with protein, carbs, fat and fibre, and adds the meal to today once you've checked it. It counts towards your day, your week's totals and the weekly vitamin and mineral check.",
+  },
+  {
+    q: "How accurate is calorie counting from a photo?",
+    a: "It's an estimate, and portion size is the hardest part. In our tests on 40 weighed plates from Google's public Nutrition5k dataset, BiteSync's first estimate, before any edits, was a median of about 30% from the true calories. On five UK chain meals with published calories it was 17%, but that's too few meals to lean on. That's why BiteSync shows a range and asks you to check portions before anything is added.",
+  },
+  {
+    q: "Does BiteSync keep my food photos?",
+    a: "No. The photo is sent once to Claude, Anthropic's AI model, to name the foods and estimate portions, then deleted. BiteSync stores only the foods, amounts and nutrition you save.",
+  },
+  {
+    q: "Is BiteSync's photo logging free?",
+    a: "It's part of BiteSync Pro. Every new account gets a 7-day free trial of Pro with no card needed; after that, Pro is £6.99 a month or £59 a year, billed in pounds. You can log up to 30 photos a day.",
+  },
+  {
+    q: "Can I snap a meal in the BiteSync iPhone app?",
+    a: "Not yet. For now, use bitesync.io in your phone's browser, where Take a photo opens the camera. Photo logging comes to the iPhone app in an update.",
+  },
+];
+
+**Yes: BiteSync can now log a meal from a photo.** Tap **Snap a meal** on the Today screen, take a picture of your plate, and in about 10 seconds you get a list of the foods with a portion for each, a calorie range, and protein, carbs, fat and fibre. You check it, change anything that's wrong, and it's added to today. It's built for the meals that weren't on your plan: eating out, a takeaway, a friend's cooking, or a snack you didn't plan.
+
+*BiteSync is our app. This post explains how the feature works and what it can't do, including our own accuracy numbers.*
+
+## Plan first, snap the rest
+
+BiteSync is a meal planner first. When you cook a planned recipe, its nutrition comes from the recipe's own ingredients, weighed in grams and matched to a food composition table. That will always be more accurate than any photo, because nothing has to be guessed.
+
+But nobody eats exactly what they planned every day. Before, a meal off the plan meant typing in a name and a calorie guess, with no protein or vitamins. Now a photo does most of that for you, and the meal counts properly towards your day and your week.
+
+## How it works
+
+1. **Snap or choose a photo.** On Today, tap **Snap a meal**. If you were planned to eat something else, tap **Ate something else** on that meal, then **Or snap a photo**: the photo meal replaces the planned one, so your totals aren't counted twice.
+2. **The AI names the foods and estimates portions.** The photo goes to Claude, Anthropic's AI model, which lists what it can see, such as "chicken breast, grilled", "basmati rice, boiled" and "broccoli, steamed", with a weight range in grams for each. It also lists things that are hard to see in a photo, like the oil or butter something was cooked in.
+3. **Nutrition comes from food tables, not the AI.** BiteSync doesn't ask the AI for calories. Each food is matched to the UK's food composition tables (CoFID, the data behind McCance and Widdowson's), or to a nutrition label where CoFID has no entry. Cooked foods match cooked entries, so boiled rice isn't counted as dry rice. Calories, protein, carbs, fat, fibre and vitamins are worked out from those entries and the grams.
+4. **You check it.** The review screen is marked as an estimate. For each food you can:
+   - move its portion up or down;
+   - rename it, which looks the nutrition up again;
+   - remove it;
+   - add a food the photo missed.
+
+   Oil and butter start switched off; tap **Yes** if your meal was cooked in them. Anything with no nutrition match is flagged, because the real total would be higher.
+5. **Add it.** The total shows as a range, with the number that will be added from the portions as you've set them, plus the vitamins and minerals the meal gives towards your day. Tap **Add to lunch** (or whichever meal it was) and it's on today's plan.
+
+Once it's saved, a photo meal counts like a planned one: in Today's totals, in the week's calories, protein, carbs, fat, fibre and sugar, and in the weekly vitamin and mineral check.
+
+## How accurate is it?
+
+Portion size is the hard part. A photo can show what's on the plate much more reliably than how much: a heaped spoon of rice and a level one look alike from above, and oil soaked into a stir-fry can't be seen at all.
+
+We test every change against meals where the true numbers are known:
+
+| Test set | What it is | Typical error before any edits |
+| --- | --- | --- |
+| Nutrition5k (Google) | 40 cafeteria plates, every ingredient weighed, photographed from above | About 30% of calories (median) |
+| UK chain meals | 5 meals with the chain's own published calories, such as a sausage roll and a katsu curry | 17% (too few meals to lean on) |
+
+Those are the numbers before you touch anything. Checking the portions on the review screen is where most of the error goes. Even so, a photo estimate isn't a weighed meal, which is why BiteSync shows a range rather than one exact number, and why planned meals still use their recipes.
+
+For context, guessing by eye is hard for everyone. In a well-known study in the *New England Journal of Medicine* (Lichtman et al., 1992), people who said they couldn't lose weight on a low-calorie diet reported eating about half of what they actually ate. A photo with a checked portion beats a guess typed from memory.
+
+## Getting a better estimate
+
+- **Get the whole plate in.** Shoot from above or at a slight angle, in decent light.
+- **One plate per photo.** If there's a side or a drink, it'll be listed too. Remove what you didn't have.
+- **Check the biggest food first.** Rice, pasta, potatoes and meat carry most of the calories, so their portions matter most.
+- **Say yes to the oil if it was there.** Fried and roasted food usually has oil you can't see.
+- **Rename vague foods.** "Curry" could be many things; "chicken tikka masala" gets a closer match.
+
+## What it doesn't do (yet)
+
+- **It isn't in the iPhone app yet.** Use bitesync.io in your phone's browser for now. Photo logging comes to the app in an update.
+- **It doesn't scan barcodes or read labels.**
+- **It isn't for medical use.** If you need exact numbers for a medical reason, such as carb counting for insulin, weigh your food and follow your care team's advice.
+
+## Privacy
+
+Your photo isn't saved. It's sent once to Anthropic to name the foods and estimate portions, then deleted. BiteSync stores only what you save: the meal's name, its foods and amounts, and their nutrition.
+
+## Try it
+
+Photo logging is part of BiteSync Pro, alongside weekly meal plans built to your calorie and protein targets, the shopping list and the vitamin and mineral check. Every new account gets 7 days of Pro free, with no card needed.
