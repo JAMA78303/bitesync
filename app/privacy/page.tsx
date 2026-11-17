@@ -24,6 +24,7 @@ const SECTIONS = [
       "Ramadan and fasting days, if you turn them on: your fasting dates, the place used for prayer times (a city you pick, or your device's location rounded to about 1 km if you choose “Use my location”), the calculation method and minute adjustments, and your reminder choices.",
       "The fasting health check: if you tick any item (such as diabetes treated with medicine, or pregnancy), we store only that something was ticked, never which item.",
       "Feedback you send from the app, with the screen you sent it from and the app version.",
+      "Meals you log from a photo (Snap a meal): the meal's name, the foods and amounts you save, and their nutrition. We don't keep the photo itself.",
       "Payment information: on the website, billing is handled by Stripe; we store Stripe customer and subscription IDs, not full card numbers. In the iPhone app, subscriptions are bought through Apple; we receive confirmation of the purchase and when it renews or ends, never your card details.",
     ],
   },
@@ -43,6 +44,7 @@ const SECTIONS = [
     body: [
       "We use these data processors: Supabase (database and authentication), Vercel (hosting and anonymous usage statistics), Stripe (payments on the website), Apple and RevenueCat (subscriptions bought in the iPhone app), and Resend (sending email, such as sign-up confirmations, and passing feedback you send us to our inbox). Your data is stored on servers in regions chosen by those providers.",
       "AI features (AI week plans, AI-written recipes and nutrition estimates) are powered by Anthropic. To produce them we send the recipes involved, your calorie and protein targets, and your dietary preferences and allergens. We do not send your name or email address.",
+      "When you log a meal from a photo, the photo is sent once to Anthropic to name the foods and estimate portions, then deleted; BiteSync doesn't store it. Nutrition is then worked out by BiteSync from food composition tables, not by the AI.",
       "We do not sell your personal data.",
     ],
   },
@@ -85,7 +87,7 @@ export default function PrivacyPage() {
       <article className="mx-auto max-w-2xl px-4 py-12">
         <p className="text-sm font-medium text-[var(--brand-primary)]">Legal</p>
         <h1 className="mt-2 text-3xl font-bold text-[var(--text-primary)]">Privacy policy</h1>
-        <p className="mt-2 text-sm text-[var(--text-muted)]">Last updated: 17 November 2026</p>
+        <p className="mt-2 text-sm text-[var(--text-muted)]">Last updated: 18 November 2026</p>
         <p className="mt-6 text-base leading-relaxed text-[var(--text-secondary)]">
           This policy explains what personal data BiteSync collects, why we collect it, and your choices.
         </p>
