@@ -1,7 +1,9 @@
 import { LocalNotifications, type LocalNotificationSchema } from "@capacitor/local-notifications";
 import { Preferences } from "@capacitor/preferences";
 import { getPlannedWeekStarts } from "@/app/(app)/planner/upcoming-actions";
+import { getFastingReminders } from "@/app/(app)/settings/fasting/actions";
 import type { PushPreferences } from "@/app/(app)/settings/push-actions";
+import { FASTING_REMINDER_DAYS } from "@/lib/fasting/reminderTimes";
 import { NATIVE_WEEKLY_BODY, REMINDER_PAYLOADS, TEST_REMINDER_PAYLOAD } from "@/lib/push/reminderPayloads";
 import { isNativeApp, OFFLINE_GROCERY_KEY } from "@/lib/native/bridge";
 import { signOutOfPurchases } from "@/lib/native/purchases";
@@ -25,6 +27,13 @@ const PREFS_KEY = "reminders";
 const WEEKLY_IDS = Array.from({ length: WEEKLY_REMINDER_WEEKS }, (_, i) => 1001 + i); // one per Sunday
 const DAILY_ID = 2001;
 const TEST_ID = 2999;
+// Ramadan and other fasting days (lib/fasting/reminderTimes.ts): suhoor and
+// "plan tomorrow's iftar", at most one of each a day for two weeks. With the
+// four Sundays and the evening one that's 33 of iOS's 64 pending notifications.
+const SUHOOR_IDS = Array.from({ length: FASTING_REMINDER_DAYS }, (_, i) => 3001 + i);
+const IFTAR_PLAN_IDS = Array.from({ length: FASTING_REMINDER_DAYS }, (_, i) => 3101 + i);
+const FASTING_IDS = [...SUHOOR_IDS, ...IFTAR_PLAN_IDS];
+const GENERAL_IDS = [...WEEKLY_IDS, DAILY_ID];
 
 export const NOTIFICATIONS_BLOCKED_MESSAGE =
   "Notifications are off for BiteSync. Turn them on in your iPhone's Settings → BiteSync → Notifications.";
@@ -60,6 +69,19 @@ export async function nativeNotificationPermission(): Promise<"granted" | "denie
   if (display === "granted") return "granted";
   if (display === "denied") return "denied";
   return "prompt";
+}
+
+/**
+ * Turning on fasting reminders in Settings → Ramadan & fasting: asks the
+ * phone once if it hasn't been asked. They follow the fasting settings, not
+ * the weekly/evening reminder switch.
+ */
+export async function ensureNativeNotificationPermission(): Promise<boolean> {
+  if (!isNativeApp()) return false;
+  const current = await nativeNotificationPermission();
+  if (current !== "prompt") return current === "granted";
+  const { display } = await LocalNotifications.requestPermissions();
+  return display === "granted";
 }
 
 /** Asks the phone for permission, then saves the choice and schedules. Throws if notifications are blocked. */
@@ -116,15 +138,16 @@ export function refreshNativeReminders(): void {
 export async function clearNativeAccountData(): Promise<void> {
   if (!isNativeApp()) return;
   await Promise.allSettled([
-    turnOffNativeReminders(),
+    turnOffNativeReminders().then(() => oneAtATime(() => cancelReminders(FASTING_IDS))),
     Preferences.remove({ key: OFFLINE_GROCERY_KEY }),
     LocalNotifications.removeAllDeliveredNotifications(),
     signOutOfPurchases(),
   ]);
 }
 
-async function cancelReminders(ids?: number[]): Promise<void> {
-  const ours = new Set(ids ?? [...WEEKLY_IDS, DAILY_ID]);
+/** Cancels the given reminders; by default the Sunday and evening ones. */
+async function cancelReminders(ids: number[] = GENERAL_IDS): Promise<void> {
+  const ours = new Set(ids);
   const { notifications } = await LocalNotifications.getPending();
   const pending = notifications.filter((n) => ours.has(n.id));
   if (pending.length) await LocalNotifications.cancel({ notifications: pending.map((n) => ({ id: n.id })) });
@@ -137,18 +160,23 @@ async function cancelReminders(ids?: number[]): Promise<void> {
  * evening one stays. If the planned weeks can't be fetched, the Sunday
  * reminders already scheduled are kept, the evening one is still updated, and
  * this rejects so a caller can say so.
+ *
+ * Fasting reminders (suhoor, "plan tomorrow's iftar") follow the fasting
+ * settings instead of the switch above, so they're planned even when the
+ * Sunday and evening ones are off. If they can't be fetched, the ones already
+ * scheduled are kept, quietly: the next open tries again.
  */
 async function plan(now: Date): Promise<void> {
   const prefs = await getNativeReminderPrefs();
-  if (!prefs || (await nativeNotificationPermission()) !== "granted") {
-    await cancelReminders();
+  if ((await nativeNotificationPermission()) !== "granted") {
+    await cancelReminders([...GENERAL_IDS, ...FASTING_IDS]);
     return;
   }
 
   const notifications: LocalNotificationSchema[] = [];
   let weeklyFailed = false;
 
-  if (prefs.weeklyPlanReminder) {
+  if (prefs?.weeklyPlanReminder) {
     const weeks = upcomingWeekStarts(now);
     const result = await getPlannedWeekStarts(weeks);
     if ("error" in result) {
@@ -177,7 +205,7 @@ async function plan(now: Date): Promise<void> {
     }
   }
 
-  if (prefs.dailyLogReminder) {
+  if (prefs?.dailyLogReminder) {
     const { title, body, url } = REMINDER_PAYLOADS.daily;
     notifications.push({
       id: DAILY_ID,
@@ -188,9 +216,31 @@ async function plan(now: Date): Promise<void> {
     });
   }
 
-  await cancelReminders(weeklyFailed ? [DAILY_ID] : undefined);
+  const fasting = await fastingNotifications();
+  if (fasting) notifications.push(...fasting);
+
+  const keep = new Set([...(weeklyFailed ? WEEKLY_IDS : []), ...(fasting ? [] : FASTING_IDS)]);
+  await cancelReminders([...GENERAL_IDS, ...FASTING_IDS].filter((id) => !keep.has(id)));
   if (notifications.length) await LocalNotifications.schedule({ notifications });
   if (weeklyFailed) throw new Error(PLANNED_WEEKS_FAILED_MESSAGE);
+}
+
+/** The next two weeks of fasting reminders, or null if they couldn't be fetched. */
+async function fastingNotifications(): Promise<LocalNotificationSchema[] | null> {
+  let result: Awaited<ReturnType<typeof getFastingReminders>>;
+  try {
+    result = await getFastingReminders();
+  } catch {
+    return null;
+  }
+  if ("error" in result) return null;
+  let suhoor = 0;
+  let iftarPlan = 0;
+  return result.reminders.flatMap((r) => {
+    const id = r.kind === "suhoor" ? SUHOOR_IDS[suhoor++] : IFTAR_PLAN_IDS[iftarPlan++];
+    if (id == null) return [];
+    return [{ id, title: r.title, body: r.body, schedule: { at: new Date(r.at), allowWhileIdle: true }, extra: { url: r.url } }];
+  });
 }
 
 /** The "Send test" button: a reminder five seconds from now. */

@@ -11,13 +11,16 @@ import { getDailyCalorieTarget, getDailyProteinTarget } from "@/lib/utils/nutrit
 import { getAccess } from "@/lib/subscription";
 import { nativeWithoutPurchases } from "@/lib/native/server";
 import { UpgradeCard } from "@/components/billing/UpgradeCard";
-import { PlannerGrid } from "@/components/planner/PlannerGrid";
+import { PlannerGrid, type PlannerFastingDay } from "@/components/planner/PlannerGrid";
 import { WeekNav } from "@/components/planner/WeekNav";
 import { GenerateListButton } from "@/components/planner/GenerateListButton";
 import { GenerateAIWeekPlanButton } from "@/components/planner/GenerateAIWeekPlanButton";
 import { PlannerMicroSummary } from "@/components/planner/PlannerMicroSummary";
 import { getWeeklyMicroAnalysis } from "@/lib/supabase/nutrition";
 import { ds } from "@/lib/ui/classes";
+import { formatClock } from "@/lib/fasting/isoDate";
+import { getFastingSettings } from "@/lib/fasting/server";
+import { fastingDayCalorieTarget, fastingDayIndexes, timesForDay } from "@/lib/fasting/settings";
 import { MEAL_TYPES } from "@/types";
 
 type Props = { searchParams: Promise<{ week?: string }> };
@@ -48,7 +51,10 @@ export default async function PlannerPage({ searchParams }: Props) {
  const currentWeek = isCurrentWeek(weekStart);
  const initialActiveDay = currentWeek ? (today.getDay() === 0 ? 6 : today.getDay() - 1) : 0;
 
- const [{ data: recipes }, mealPlanResult, profile, native] = await Promise.all([
+ const {
+ data: { user },
+ } = await supabase.auth.getUser();
+ const [{ data: recipes }, mealPlanResult, profile, native, fastingSettings] = await Promise.all([
  supabase
  .from("recipes")
  .select("id,name,fits_vegetarian,fits_vegan,fits_gluten_free")
@@ -60,6 +66,7 @@ export default async function PlannerPage({ searchParams }: Props) {
  : getOrCreateMealPlan(weekStartISO),
  getProfile(),
  nativeWithoutPurchases(),
+ user ? getFastingSettings(supabase, user.id) : Promise.resolve(null),
  ]);
  const { data: mealPlan, error } = mealPlanResult;
 
@@ -117,6 +124,19 @@ export default async function PlannerPage({ searchParams }: Props) {
  });
  const dailyCalorieTarget = getDailyCalorieTarget(profile);
  const dailyProteinTarget = getDailyProteinTarget(profile);
+ // Ramadan mode and other fasting days: suhoor and iftar times, and a day's
+ // own calorie target when the safety screen asked for no deficit.
+ const fastingIndexes = new Set(fastingDayIndexes(fastingSettings, weekStartISO));
+ const fastingDays: (PlannerFastingDay | null)[] = weekDates.map((date, day) => {
+ if (!fastingSettings || !fastingIndexes.has(day)) return null;
+ const times = timesForDay(fastingSettings, toLocalISO(date));
+ const kcal = dailyCalorieTarget ? fastingDayCalorieTarget(profile, fastingSettings, dailyCalorieTarget) : null;
+ return {
+ suhoorEnds: times ? formatClock(times.fajr, fastingSettings.timeZone) : null,
+ iftarAt: times ? formatClock(times.maghrib, fastingSettings.timeZone) : null,
+ calorieTarget: kcal && kcal !== dailyCalorieTarget ? kcal : null,
+ };
+ });
  const dietPrefs = profile
  ? {
  follows_vegetarian: Boolean(profile.follows_vegetarian),
@@ -127,6 +147,10 @@ export default async function PlannerPage({ searchParams }: Props) {
  const dietaryPreferences = initialDietaryPreferencesFromProfile(profile);
  const grid = buildGridFromEntries(entries ?? []);
  const plannerEntries = entries ?? [];
+ // Planned as a normal day before it became a fasting day.
+ const fastingDaysWithLunch = [...fastingIndexes].filter((day) =>
+ plannerEntries.some((e) => e.day_of_week === day && e.meal_type ==="lunch" && (e.recipe_id != null || !!e.quick_add_name)),
+ );
  const filledDays = Array.from({ length: 7 }, (_, day) => {
  const hasEntry = plannerEntries.some(
  (entry) => entry.day_of_week === day && (entry.recipe_id != null || !!entry.quick_add_name),
@@ -194,6 +218,13 @@ export default async function PlannerPage({ searchParams }: Props) {
           />
  ) : null}
 
+ {fastingDaysWithLunch.length && !readOnly ? (
+ <p className={`${ds.infoCallout} rounded-2xl px-4 py-3 text-sm`}>
+ {fastingDaysWithLunch.length === 1 ? "A fasting day this week was" : `${fastingDaysWithLunch.length} fasting days this week were`}{" "}
+ planned as normal days. Generate the plan again to get suhoor, iftar and a late snack.
+ </p>
+ ) : null}
+
  <PlannerGrid
  grid={grid}
  entries={plannerEntries}
@@ -207,6 +238,7 @@ export default async function PlannerPage({ searchParams }: Props) {
  dietPrefs={dietPrefs}
  dietaryPreferences={dietaryPreferences}
  readOnly={readOnly}
+ fastingDays={fastingDays}
  />
 
  {microAnalysis ? (

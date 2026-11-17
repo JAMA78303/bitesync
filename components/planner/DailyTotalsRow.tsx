@@ -10,6 +10,8 @@ type Props = {
  entries: MealPlanEntry[];
  dailyCalorieTarget?: number | null;
  dailyProteinTarget?: number | null;
+ /** A day's own calorie target where it differs (a fasting day planned without a deficit). */
+ calorieTargetByDay?: (number | null | undefined)[];
 };
 
 function getCalorieBarColour(actual: number, target: number): string {
@@ -38,8 +40,8 @@ function getProteinBarColour(actual: number, target: number): string {
   : ds.trafficAmber;
 }
 
-export function DailyTotalsRow({ entries, dailyCalorieTarget, dailyProteinTarget }: Props) {
- const hasTargets = !!dailyCalorieTarget && !!dailyProteinTarget;
+export function DailyTotalsRow({ entries, dailyCalorieTarget: weekCalorieTarget, dailyProteinTarget, calorieTargetByDay }: Props) {
+ const hasTargets = !!weekCalorieTarget && !!dailyProteinTarget;
  return (
  <>
  <div className="flex items-center justify-end border-t border-[var(--border-default)] px-2 py-2">
@@ -47,6 +49,7 @@ export function DailyTotalsRow({ entries, dailyCalorieTarget, dailyProteinTarget
  </div>
  {Array.from({ length: 7 }, (_, day) => {
  const dayEntries = entries.filter((e) => e.day_of_week === day);
+ const dailyCalorieTarget = calorieTargetByDay?.[day] ?? weekCalorieTarget;
  const { kcal: calories, protein } = sumDayNutritionFromEntries(day, entries);
  const isEmpty = dayEntries.length === 0;
  const calRatio = dailyCalorieTarget ? calories / dailyCalorieTarget : 0;

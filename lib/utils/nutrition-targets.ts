@@ -93,6 +93,11 @@ function macroSplitFromKcalProtein(
   return { ...rounded, fibre: 30 };
 }
 
+/** Full targets for a given calorie and protein figure, split the same way as everywhere else. */
+export function nutritionTargetsFor(kcal: number, protein: number, weightKg?: number): UserNutritionTargets {
+  return { kcal, protein, ...macroSplitFromKcalProtein(kcal, protein, weightKg) };
+}
+
 /** kcal from protein/carbs/fat gram targets — used in tests and sanity checks. */
 export function macroTargetsKcalSum(targets: Pick<UserNutritionTargets, "protein" | "carbs" | "fat">): number {
   return macroKcalSum(targets.protein, targets.carbs, targets.fat);

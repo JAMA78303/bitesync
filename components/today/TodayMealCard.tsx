@@ -13,9 +13,11 @@ type Props = {
  dietaryPreferences?: string[];
  /** Set when photo logging is on: "Ate something else" can take a photo. */
  photoPerson?: Person | null;
+ /** The slot's name when it isn't the usual one (Suhoor, Iftar on a fasting day). */
+ label?: string;
 };
 
-export function TodayMealCard({ meal, dietaryPreferences = [], photoPerson = null }: Props) {
+export function TodayMealCard({ meal, dietaryPreferences = [], photoPerson = null, label }: Props) {
  const name = meal.recipe?.name ?? meal.quickAddName ??"Meal";
  const recipe = meal.recipe;
 
@@ -41,7 +43,7 @@ export function TodayMealCard({ meal, dietaryPreferences = [], photoPerson = nul
 
  <div className="min-w-0 flex-1">
  <p className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[var(--brand-primary)]">
- {MEAL_LABELS[meal.mealType]}
+ {label ?? MEAL_LABELS[meal.mealType]}
  </p>
  <p className={`line-clamp-2 ${ds.cardTitle} ${skipped ?"line-through" :""}`}>{name}</p>
  {skipped ? <p className={`mb-1 ${ds.tierMeta}`}>Skipped — not counted today</p> : null}

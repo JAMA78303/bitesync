@@ -66,6 +66,9 @@ import {
 import { readSnacksPerDay, resolveSnacksPerDay } from "@/lib/planner/snack-preference";
 import { describeError, markPlanRunPhase, recordPlanRun, startPlanRun, type PlanRunTrace } from "@/lib/planner/plan-run-log";
 import { fixMisplacedBreakfastRecipesForDay } from "@/lib/planner/breakfast-slot-fix";
+import { applyFastingDays } from "@/lib/fasting/dayPlan";
+import { getFastingSettings } from "@/lib/fasting/server";
+import { fastingDayCalorieTarget, fastingDayIndexes } from "@/lib/fasting/settings";
 
 export type GoalContext = {
   calorieTarget: number | null;
@@ -148,6 +151,7 @@ async function replacePlanDaysWithClaudePlan(
   dailyCalorieTarget: number,
   dailyProteinTarget: number,
   goalBias: CalorieGoalBias,
+  fasting: FastingWeek,
 ): Promise<{ error: string } | { success: true; warning?: string; snackLibraryNotice?: string }> {
   const rows: MealPlanInsertRow[] = [];
   const calById = new Map(pool.map((r) => [r.id, r.calories]));
@@ -303,9 +307,10 @@ async function replacePlanDaysWithClaudePlan(
     allowedRecipeIds,
     snackMicroPriorities: DEFAULT_SNACK_MICRO_PRIORITIES,
   });
+  const fastingNotice = planFastingDaysInRows(rows, pool, mealPlanId, dailyProteinTarget, fasting);
 
   const calorieWarning = buildPlanCalorieAccuracyWarning(
-    selectedDays,
+    daysJudgedOnWeekCalories(selectedDays, fasting, dailyCalorieTarget),
     rows as PlanCalorieRow[],
     calById,
     dailyCalorieTarget,
@@ -331,7 +336,7 @@ async function replacePlanDaysWithClaudePlan(
     slotGaps.count > 0
       ? `${slotGaps.count} slot${slotGaps.count === 1 ? " was" : "s were"} left empty — no recipe in your library suits that meal type at your calorie target. Add breakfast-style recipes (oats, eggs, yoghurt, toast) or fill those slots by hand.`
       : null;
-  const combinedWarning = [warning, slotGapNotice].filter(Boolean).join(" ") || undefined;
+  const combinedWarning = [warning, slotGapNotice, fastingNotice].filter(Boolean).join(" ") || undefined;
 
   const persisted = await persistWeeklyMealPlanRows(supabase, mealPlanId, rows, selectedDays);
   if ("error" in persisted) return { error: persisted.error };
@@ -342,6 +347,46 @@ type GenerateAIWeekPlanInput = {
   mealPlanId: string;
   goals: GoalContext;
 };
+
+/** This week's fasting days (Ramadan mode and others), and their calorie target. */
+type FastingWeek = { days: number[]; kcalTarget: number };
+
+/**
+ * Re-plans the week's fasting days as suhoor, iftar and up to two late snacks
+ * (lib/fasting/dayPlan.ts), after every other pass so nothing puts lunch back.
+ * Returns a notice for days the library couldn't cover.
+ */
+function planFastingDaysInRows(
+  rows: MealPlanInsertRow[],
+  pool: RecipeWithNutrition[],
+  mealPlanId: string,
+  dailyProteinTarget: number,
+  fasting: FastingWeek,
+): string | undefined {
+  if (!fasting.days.length) return undefined;
+  const { unplanned } = applyFastingDays(rows, fasting.days, {
+    pool,
+    kcalTarget: fasting.kcalTarget,
+    proteinTarget: dailyProteinTarget,
+    maxSnacks: 2,
+    makeRow: (pick, day) => ({
+      meal_plan_id: mealPlanId,
+      recipe_id: pick.recipe_id,
+      day_of_week: day,
+      meal_type: pick.meal_type,
+      slot_index: pick.slot_index,
+      quick_add_name: null,
+      quick_add_calories: null,
+    }),
+  });
+  if (!unplanned.length) return undefined;
+  return `${unplanned.length} fasting day${unplanned.length === 1 ? " was" : "s were"} planned as normal days: your library needs a breakfast-style recipe (oats, eggs, yoghurt) for suhoor and a main meal for iftar.`;
+}
+
+/** Fasting days planned without a deficit have their own target, so the week's calorie check skips them. */
+function daysJudgedOnWeekCalories(days: number[], fasting: FastingWeek, dailyCalorieTarget: number): number[] {
+  return fasting.kcalTarget === dailyCalorieTarget ? days : days.filter((d) => !fasting.days.includes(d));
+}
 
 type RecipeRow = {
   id: string;
@@ -1050,6 +1095,13 @@ async function generateAIWeekPlanInner(
     Number(input.goals.proteinTarget ?? getDailyProteinTarget(profile) ?? 120),
   );
   const goalBias = calorieGoalBiasFromProfile(profile);
+  // Ramadan mode and other fasting days in this week. Before the table exists
+  // (or with no settings) there are none, and the week plans exactly as before.
+  const fastingSettings = await getFastingSettings(supabase, user.id);
+  const fasting: FastingWeek = {
+    days: plan.week_start_date ? fastingDayIndexes(fastingSettings, plan.week_start_date) : [],
+    kcalTarget: fastingDayCalorieTarget(profile, fastingSettings, dailyCalorieTarget),
+  };
 
   // The plan leans towards the vitamins and minerals that are running low: in
   // this week's meals when it's being re-planned, or in the last planned week
@@ -1130,6 +1182,7 @@ async function generateAIWeekPlanInner(
         allergies: input.goals.allergens ?? [],
         microPriorityFoods,
         microPrioritySource: microFocus?.from,
+        fastingDays: fasting.days,
       });
       trace.claudeMs = Date.now() - claudeStarted;
       if (aiPlan?.telemetry) {
@@ -1155,6 +1208,7 @@ async function generateAIWeekPlanInner(
           dailyCalorieTarget,
           dailyProteinTarget,
           goalBias,
+          fasting,
         );
         trace.applyMs = Date.now() - applyStarted;
         if ("success" in applied && applied.success) {
@@ -1391,6 +1445,7 @@ async function generateAIWeekPlanInner(
       allowedRecipeIds: allowedIds,
       snackMicroPriorities,
     });
+    const fastingNotice = planFastingDaysInRows(rows, pool, input.mealPlanId, dailyProteinTarget, fasting);
 
     const mealOrder: Record<string, number> = { breakfast: 0, lunch: 1, dinner: 2, snack: 3 };
     const nameById = new Map(pool.map((r) => [r.id, r.name]));
@@ -1443,7 +1498,7 @@ async function generateAIWeekPlanInner(
 
     const minPoolCal = Math.min(...pool.map((r) => r.calories ?? 0));
     const calorieWarning = buildPlanCalorieAccuracyWarning(
-      selectedDaysFullWeek,
+      daysJudgedOnWeekCalories(selectedDaysFullWeek, fasting, dailyCalorieTarget),
       rows as PlanCalorieRow[],
       calById,
       dailyCalorieTarget,
@@ -1454,7 +1509,7 @@ async function generateAIWeekPlanInner(
       proById,
       dailyProteinTarget,
     );
-    heuristicWarning = [calorieWarning, proteinWarning].filter(Boolean).join(" ") || undefined;
+    heuristicWarning = [calorieWarning, proteinWarning, fastingNotice].filter(Boolean).join(" ") || undefined;
     snackLibraryNotice = buildSnackLibraryNotice(
       pool,
       selectedDaysFullWeek,

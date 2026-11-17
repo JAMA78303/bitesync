@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Moon } from "lucide-react";
 import { formatDayWithOrdinal } from "@/lib/utils/dates";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { RecipeSlotCard } from "@/components/planner/RecipeSlotCard";
@@ -13,6 +13,7 @@ import { getGoalStatus } from "@/lib/today/goal-status";
 import { RecipePickerModal } from "@/components/planner/RecipePickerModal";
 import type { ProfileDietPrefs } from "@/lib/utils/diet";
 import { sumDayNutritionFromEntries } from "@/lib/planner/weekly-macros";
+import { FASTING_MEAL_ORDER, mealSlotLabel } from "@/lib/fasting/slots";
 import { DAY_LABELS, MEAL_LABELS, MEAL_TYPES } from "@/types";
 import type { PlannerGrid as PlannerGridType, MealPlanEntry, MealType } from "@/types";
 
@@ -46,6 +47,35 @@ function isBreakfastRowEmpty(grid: PlannerGridType): boolean {
  return true;
 }
 
+/** A fasting day in the week shown (Ramadan mode or another fasting day). */
+export type PlannerFastingDay = {
+ /** "05:34", when the person has set a place. */
+ suhoorEnds: string | null;
+ iftarAt: string | null;
+ /** The day's own calorie target when it differs from the week's. */
+ calorieTarget: number | null;
+};
+
+/** On a fasting day: "Suhoor · ends 05:34", "Iftar · 17:03", "Late snack". */
+function fastingSlotCaption(mealType: MealType, info: PlannerFastingDay): string {
+ if (mealType ==="breakfast" && info.suhoorEnds) return `Suhoor · ends ${info.suhoorEnds}`;
+ if (mealType ==="dinner" && info.iftarAt) return `Iftar · ${info.iftarAt}`;
+ return mealSlotLabel(mealType, true);
+}
+
+function FastingCaption({ text }: { text: string }) {
+ return <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.06em] text-[var(--brand-primary)]">{text}</p>;
+}
+
+/** Lunch on a fasting day with nothing planned: no slot to fill. */
+function FastingNoLunch() {
+ return (
+ <div className="flex min-h-[64px] w-full items-center justify-center rounded-[14px] bg-[var(--surface-muted)]/60 text-2xs font-medium text-[var(--text-muted)]">
+ Fasting
+ </div>
+ );
+}
+
 /** An unplanned slot in a view-only planner: the shape of the add button, nothing to tap. */
 function EmptySlot() {
  return (
@@ -76,6 +106,8 @@ type Props = {
   * without paying (lib/billing/access.ts: canPlan); the actions refuse anyway.
   */
  readOnly?: boolean;
+ /** Fasting days of this week, by day (0 = Monday); null on normal days. */
+ fastingDays?: (PlannerFastingDay | null)[];
 };
 
 export function PlannerGrid({
@@ -92,6 +124,7 @@ export function PlannerGrid({
  dietaryPreferences = [],
  forceMobileLayout = false,
  readOnly = false,
+ fastingDays = [],
 }: Props) {
  const [modalOpen, setModalOpen] = useState(false);
  const [activeDay, setActiveDay] = useState<number | null>(null);
@@ -158,6 +191,12 @@ export function PlannerGrid({
  <div key={`head-${day}`} className="border-b border-l border-[var(--border-default)] p-2 text-center">
  <p className="text-[11px] font-bold tracking-[0.04em] text-[var(--text-muted)]">{DAY_LABELS[day]}</p>
  <p className="font-display text-base font-extrabold tracking-[-0.02em] text-[var(--text-primary)]">{formatDayWithOrdinal(weekDates[day].getDate())}</p>
+ {fastingDays[day] ? (
+ <p className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-bold text-[var(--brand-primary)]">
+ <Moon className="h-3 w-3" aria-hidden />
+ Fasting
+ </p>
+ ) : null}
  </div>
  ))}
 
@@ -169,9 +208,13 @@ export function PlannerGrid({
  {Array.from({ length: 7 }, (_, day) => {
  const entry = grid[day][mealType];
  const snackEntries = mealType ==="snack" ? snackEntriesForDay(day) : [];
+ const fastingDay = fastingDays[day];
  return (
  <div key={`${mealType}-${day}`} className="min-w-0 border-b border-l border-[var(--border-default)] p-2">
- {mealType ==="snack" ? (
+ {fastingDay && mealType !=="lunch" ? <FastingCaption text={fastingSlotCaption(mealType, fastingDay)} /> : null}
+ {fastingDay && mealType ==="lunch" && !entry ? (
+ <FastingNoLunch />
+ ) : mealType ==="snack" ? (
  <div className="space-y-1">
  {snackEntries.length > 0 ? (
  snackEntries.map((snack) => (
@@ -228,6 +271,7 @@ export function PlannerGrid({
  entries={entries}
  dailyCalorieTarget={dailyCalorieTarget}
  dailyProteinTarget={dailyProteinTarget}
+ calorieTargetByDay={fastingDays.map((f) => f?.calorieTarget)}
  />
  </div>
  </div>
@@ -247,6 +291,7 @@ export function PlannerGrid({
  showBreakfastTip={showBreakfastTip}
  forceMobileLayout={forceMobileLayout}
  readOnly={readOnly}
+ fastingDays={fastingDays}
  />
 
  {readOnly ? null : (
@@ -282,6 +327,7 @@ type MobileProps = {
  showBreakfastTip: boolean;
  forceMobileLayout?: boolean;
  readOnly?: boolean;
+ fastingDays: (PlannerFastingDay | null)[];
 };
 
 function PlannerGridMobileInline({
@@ -299,13 +345,20 @@ function PlannerGridMobileInline({
  showBreakfastTip,
  forceMobileLayout = false,
  readOnly = false,
+ fastingDays,
 }: MobileProps) {
  const [activeDay, setActiveDay] = useState(initialActiveDay);
 
  useEffect(() => {
  setActiveDay(initialActiveDay);
  }, [weekStartIso, initialActiveDay]);
- const hasTargets = !!dailyCalorieTarget && !!dailyProteinTarget;
+ const activeFasting = fastingDays[activeDay] ?? null;
+ const dayCalorieTarget = activeFasting?.calorieTarget ?? dailyCalorieTarget;
+ const hasTargets = !!dayCalorieTarget && !!dailyProteinTarget;
+ // A fasting day runs suhoor, iftar, late snack; lunch shows only if something is planned there.
+ const mealOrder = activeFasting
+ ? FASTING_MEAL_ORDER.filter((m) => m !=="lunch" || grid[activeDay].lunch)
+ : MEAL_TYPES;
  const snackEntries = entries
  .filter((entry) => entry.day_of_week === activeDay && entry.meal_type ==="snack")
  .sort((a, b) => (a.slot_index ?? 0) - (b.slot_index ?? 0));
@@ -317,7 +370,8 @@ function PlannerGridMobileInline({
  {Array.from({ length: 7 }, (_, day) => {
  const dayKcal = sumDayNutritionFromEntries(day, entries).kcal;
  const active = activeDay === day;
- const fill = dailyCalorieTarget ? Math.min(dayKcal / dailyCalorieTarget, 1) : dayKcal > 0 ? 1 : 0;
+ const chipTarget = fastingDays[day]?.calorieTarget ?? dailyCalorieTarget;
+ const fill = chipTarget ? Math.min(dayKcal / chipTarget, 1) : dayKcal > 0 ? 1 : 0;
  return (
  <button
  key={day}
@@ -330,8 +384,14 @@ function PlannerGridMobileInline({
  :"border-[var(--border-default)] bg-[var(--surface-card)] text-[var(--text-primary)] hover:border-[var(--brand-primary)]"
  }`}
  >
- <span className={`text-[11px] font-bold tracking-[0.04em] ${active ? "opacity-80" : "text-[var(--text-muted)]"}`}>
+ <span className={`inline-flex items-center gap-0.5 text-[11px] font-bold tracking-[0.04em] ${active ? "opacity-80" : "text-[var(--text-muted)]"}`}>
  {DAY_LABELS[day]}
+ {fastingDays[day] ? (
+ <>
+ <Moon className="h-2.5 w-2.5" aria-hidden />
+ <span className="sr-only">, fasting</span>
+ </>
+ ) : null}
  </span>
  <span className="font-display text-lg font-extrabold leading-none tracking-[-0.03em]">
  {formatDayWithOrdinal(weekDates[day].getDate())}
@@ -354,11 +414,13 @@ function PlannerGridMobileInline({
  </div>
 
  <div className="space-y-3">
- {MEAL_TYPES.map((mealType) => {
+ {mealOrder.map((mealType) => {
  const entry = grid[activeDay][mealType];
  return (
  <div key={mealType} className="meal-section space-y-2">
- <p className="meal-type-label">{MEAL_LABELS[mealType]}</p>
+ <p className="meal-type-label">
+ {activeFasting ? fastingSlotCaption(mealType, activeFasting) : MEAL_LABELS[mealType]}
+ </p>
  {mealType ==="breakfast" && showBreakfastTip ? (
  <BreakfastEmptyTip className="rounded-xl bg-[var(--surface-brand-subtle)]/80 px-3 py-2" />
  ) : null}
@@ -422,7 +484,7 @@ function PlannerGridMobileInline({
  entries,
  );
  if (dayEntries.length === 0) return <p className="text-sm text-[var(--text-muted)]">No meals planned</p>;
- const status = hasTargets ? getGoalStatus("kcal", cal, dailyCalorieTarget!) : null;
+ const status = hasTargets ? getGoalStatus("kcal", cal, dayCalorieTarget!) : null;
  return (
  <>
  <div className="mb-4 flex items-center justify-between gap-3">
@@ -436,13 +498,13 @@ function PlannerGridMobileInline({
  ) : null}
  </div>
  <div className="mb-4 flex items-center gap-4">
- {hasTargets ? <CalorieRing consumed={cal} target={dailyCalorieTarget!} size={76} /> : null}
+ {hasTargets ? <CalorieRing consumed={cal} target={dayCalorieTarget!} size={76} /> : null}
  <div>
  <p className="font-display text-[28px] font-extrabold leading-none tracking-[-0.04em] text-[var(--text-primary)]">
  {Math.round(cal).toLocaleString("en-GB")}
  </p>
  <p className="mt-1 text-xs text-[var(--text-muted)]">
- {hasTargets ? `of ${dailyCalorieTarget!.toLocaleString("en-GB")} kcal` : "kcal"}
+ {hasTargets ? `of ${dayCalorieTarget!.toLocaleString("en-GB")} kcal` : "kcal"}
  </p>
  </div>
  </div>

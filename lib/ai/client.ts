@@ -68,7 +68,27 @@ export type GenerateMealPlanParams = {
   microPriorityFoods?: string[];
   /** Where the priorities came from: this week's meals, or the last planned week's. */
   microPrioritySource?: "this-week" | "last-week";
+  /**
+   * Days (0 = first day) the person is fasting, Ramadan or otherwise. Their
+   * picks are re-balanced afterwards (lib/fasting/dayPlan.ts), so this only
+   * steers which recipes the model reaches for.
+   */
+  fastingDays?: number[];
 };
+
+/** The prompt section for fasting days, or "" when there are none. */
+export function fastingDaysPromptSection(fastingDays: number[] | undefined): string {
+  if (!fastingDays?.length) return "";
+  return `
+FASTING DAYS (Ramadan or other fasts): days ${fastingDays.join(", ")}.
+On these days nothing is eaten between dawn and sunset, so:
+  - "breakfast" is SUHOOR, eaten before dawn. It has to keep me full until iftar: slow-release carbs, protein, fibre and fluids. Prefer oats, eggs, yoghurt, beans and wholegrains.
+  - "lunch" must be null.
+  - "dinner" is IFTAR, at sunset. It opens with dates and water, then a protein-first plate.
+  - "snack" is a LATE SNACK in the evening, protein-rich if possible.
+  - Spread the day's protein roughly 40% suhoor, 40% iftar, 20% late snack; the daily calorie and protein targets stay the same.
+`;
+}
 
 function requireApiKey(): string {
   const key = process.env.ANTHROPIC_API_KEY;
@@ -228,8 +248,7 @@ ${
         params.microPrioritySource === "last-week" ? "My last planned week was" : "My week is currently"
       } low on micronutrients found in: ${params.microPriorityFoods.join(", ")}.\n  Prefer recipes containing these ingredients when calories and protein allow.\n`
     : ""
-}
-
+}${fastingDaysPromptSection(params.fastingDays)}
 DIETARY REQUIREMENTS:
   Vegan: ${params.dietaryFlags.isVegan}
   Vegetarian: ${params.dietaryFlags.isVegetarian}
