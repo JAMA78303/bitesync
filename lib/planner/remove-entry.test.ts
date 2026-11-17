@@ -123,4 +123,31 @@ assert(
 assert(Math.round(totalsWithSkip.protein) === 42, `protein should be the eaten dinner only, got ${totalsWithSkip.protein}`);
 assert(dayWithSkip.length === 3, "skipping must not remove the entry from the plan");
 
+// --- a photo-logged quick-add counts its macros; a typed one only its calories ---
+const photoMeal = sampleEntry({
+  id: "photo",
+  day_of_week: 5,
+  meal_type: "dinner",
+  recipe_id: null,
+  recipe: undefined,
+  quick_add_name: "Chicken katsu curry",
+  quick_add_calories: 750,
+  logged_meal: { protein_g: 38, carbs_g: 90, fat_g: 24, fibre_g: 4, sugar_g: 12 },
+});
+const typedSnack = sampleEntry({
+  id: "typed",
+  day_of_week: 5,
+  meal_type: "snack",
+  recipe_id: null,
+  recipe: undefined,
+  quick_add_name: "Flapjack",
+  quick_add_calories: 300,
+});
+const photoDay = sumDayNutritionFromEntries(5, [photoMeal, typedSnack]);
+assert(photoDay.kcal === 1050, `photo meal and typed snack calories both count: expected 1050, got ${photoDay.kcal}`);
+assert(photoDay.protein === 38 && photoDay.carbs === 90 && photoDay.fat === 24, `photo meal macros count: ${JSON.stringify(photoDay)}`);
+assert(photoDay.fibre === 4 && photoDay.sugar === 12, `photo meal fibre and sugar count: ${JSON.stringify(photoDay)}`);
+const photoSkipped = sumDayNutritionFromEntries(5, [{ ...photoMeal, skipped_at: "2026-11-17T19:00:00Z" }]);
+assert(photoSkipped.kcal === 0 && photoSkipped.protein === 0, "a skipped photo meal leaves the totals");
+
 console.log("remove-entry.test.ts: ok");

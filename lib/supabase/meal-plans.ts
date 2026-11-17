@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { fetchRecipeNutritionMap } from "@/lib/supabase/recipe-nutrition-query";
+import { fetchLoggedMealMacros } from "@/lib/photoMeal/loggedMacros";
 import { getAccess } from "@/lib/subscription";
 import { TRIAL_ENDED_PLANNING } from "@/lib/billing/access";
 import type { MealType, MealPlanEntry } from "@/types";
@@ -25,10 +26,16 @@ async function enrichEntriesWithNutrition(
 ): Promise<MealPlanEntry[] | null> {
   if (!entries?.length) return entries;
   const ids = [...new Set(entries.map((e) => e.recipe_id).filter(Boolean))] as string[];
-  if (!ids.length) return entries;
-  const map = await fetchRecipeNutritionMap(supabase, ids);
+  const quickAddIds = entries.filter((e) => !e.recipe_id && e.quick_add_name).map((e) => String(e.id));
+  if (!ids.length && !quickAddIds.length) return entries;
+  const [map, logged] = await Promise.all([
+    ids.length ? fetchRecipeNutritionMap(supabase, ids) : Promise.resolve(new Map()),
+    fetchLoggedMealMacros(supabase, quickAddIds),
+  ]);
   return entries.map((entry) => {
     const rid = entry.recipe_id;
+    const photo = rid ? undefined : logged.get(String(entry.id));
+    if (photo) return { ...entry, logged_meal: photo };
     if (!rid || !entry.recipe) return entry;
     const n = map.get(rid);
     if (!n) return entry;
