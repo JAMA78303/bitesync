@@ -22,9 +22,18 @@ export function mealSlotLabel(mealType: MealType, fasting: boolean): string {
 /**
  * Share of the day's protein (and calories) for each slot on a fasting day.
  *
- * PROPOSED, awaiting James's sign-off as dietitian: the spec's starting point
- * of 40% suhoor, 40% iftar, 20% late snack. The day's totals don't change
- * (DEC-007); only how they're spread.
+ * Signed off 17 Nov 2026 (dietitian review, DEC-007): 40% suhoor, 40% iftar,
+ * 20% late snack. The day's totals don't change; only how they're spread.
+ * - Calories: inside every range of the IDF-DAR Ramadan Nutrition Plan
+ *   (IDF-DAR Practical Guidelines, ch. 7, table 2): suhoor 30–40%, iftar
+ *   40–50%, snacks 10–20%. It sits at the suhoor end on purpose, to keep
+ *   people full through the fast and keep iftar from becoming the one big meal
+ *   the guidelines warn about.
+ * - Protein: an even spread beats one heavy meal for muscle protein synthesis
+ *   (Mamerow 2014, Areta 2013); with three feeds, each needs a real share, and
+ *   the late snack covers protein before sleep (Res 2012, Snijders 2015).
+ * If iftar should ever carry more calories than protein, that needs a second
+ * constant; the planner uses one share per slot for both today.
  */
 export const FASTING_SLOT_SHARES = { breakfast: 0.4, dinner: 0.4, snack: 0.2 } as const;
 
