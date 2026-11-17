@@ -2,3 +2,5 @@
 photos/
 cases.json
 results/
+# Nutrition5k photos and metadata (downloaded by nutrition5k.ts)
+nutrition5k/

@@ -144,7 +144,11 @@ export function cleanIdentification(raw: unknown): Identification {
  * Ask Claude what's in the photo. Foods and weight ranges only: nutrition is
  * looked up afterwards from CoFID (matchFood), never taken from the model.
  */
-export async function identifyMeal(image: PhotoImage): Promise<Identification> {
+export async function identifyMeal(
+  image: PhotoImage,
+  /** The eval uses this to report what a run cost. */
+  opts: { onUsage?: (usage: { inputTokens: number; outputTokens: number }) => void } = {},
+): Promise<Identification> {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) return { kind: "failed", reason: "ANTHROPIC_API_KEY is not set" };
   const client = anthropicClient(key);
@@ -178,7 +182,9 @@ export async function identifyMeal(image: PhotoImage): Promise<Identification> {
     return { kind: "failed", reason: err instanceof Error ? err.message : "request failed" };
   }
 
+  opts.onUsage?.({ inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens });
   if (response.stop_reason === "refusal") return { kind: "failed", reason: "declined" };
+  if (response.stop_reason === "max_tokens") return { kind: "failed", reason: "answer cut off (max_tokens)" };
   const text = response.content.find((b): b is Anthropic.Messages.TextBlock => b.type === "text")?.text;
   if (!text) {
     console.warn("[photo-meal]", describeEmptyResponse(response));
