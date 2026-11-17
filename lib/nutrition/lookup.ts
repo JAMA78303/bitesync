@@ -1,7 +1,7 @@
 import type { NutritionLookupEntry } from "@/types";
 import { NUTRITION_DB } from "@/lib/nutrition/nutrition-db";
 import { canonicalIngredientPhrase } from "@/lib/nutrition/ingredientPhrase";
-import { isPlainWaterQuery } from "@/lib/nutrition/cofidMatch";
+import { isPlainWaterQuery, noCofidRowLocalName } from "@/lib/nutrition/cofidMatch";
 
 function normalizeName(value: string): string {
   return value.toLowerCase().trim();
@@ -192,6 +192,12 @@ const RED_PESTO = /^(?:(?:(?:sun[- ]?)?dried\s+)?tomato\s+pesto|red\s+pesto|pest
 const SUN_DRIED_TOMATOES =
   /^(?:(?:chopped|sliced|drained|jar(?: of)?|jarred)\s+)*(?:sun[- ]?)?dried\s+(?:cherry\s+)?tomato(?:es)?(?:\s+in\s+(?:olive\s+|sunflower\s+)?oil)?(?:\s+jar)?$/;
 
+/**
+ * Any chicken kiev ("garlic chicken kiev", "breaded chicken kievs") is the
+ * "chicken kiev" row. Partial matching found "garlic" for the garlic ones.
+ */
+const CHICKEN_KIEV = /\bchicken\s+kievs?\b/;
+
 /** Grating, maturity and strength don't change cheddar per 100 g: "grated mature cheddar" is cheddar. */
 const CHEDDAR_FORM_WORDS = /\b(?:grated|shredded|mild|medium|mature|extra|vintage|strong|sharp)\s+(?=(?:\w+\s+)*cheddar\b)/g;
 
@@ -266,6 +272,11 @@ function resolveLookupName(name: string): string {
   const normalized = normalizeName(name).replace(CHEDDAR_FORM_WORDS, "");
   if (SUN_DRIED_TOMATOES.test(normalized)) return "sun dried tomatoes jar";
   if (RED_PESTO.test(normalized)) return "pesto jar red";
+  if (CHICKEN_KIEV.test(normalized)) return "chicken kiev";
+  // Foods CoFID lacks answer from their local row; partial matching found
+  // "rice" for "seasoned rice vinegar" and "spring roll" for the vegetable ones.
+  const noCofidRow = noCofidRowLocalName(normalized);
+  if (noCofidRow) return noCofidRow;
   return (
     INGREDIENT_LOOKUP_ALIASES[normalized] ??
     INGREDIENT_LOOKUP_ALIASES[canonicalIngredientPhrase(normalized)] ??

@@ -276,6 +276,34 @@ function rewriteWholeQuery(q: string): string {
     if (/^(?:wholewheat|wholemeal|brown)$/.test(form)) return "wholewheat pasta";
     return form === "egg" || RIBBON_PASTA_PATTERN.test(shape[2]) ? "egg pasta" : "pasta";
   }
+  // 17 Nov 2026 audit: names whose best-scoring row was another food.
+  // Plain vinegars are CoFID's "Vinegar" (22 kcal). "rice vinegar" took
+  // "Rice, brown, basmati, raw" (355), "white wine vinegar" white wine (75),
+  // "sherry vinegar" sherry (116) and "cider vinegar" cider.
+  if (/^(?:(?:apple )?cider|(?:white |red )?wine|rice(?: wine)?|sherry|malt|distilled|spirit|white|champagne) vinegar$/.test(q)) {
+    return "vinegar";
+  }
+  // Whole fennel seeds took "Fennel, Florence, raw" (12 kcal against 345).
+  if (/^(?:whole |ground )?fennel seeds?(?: whole| ground)?$/.test(q)) return "fennel seeds";
+  // Primula and other cheese in a tube is cheese spread; it took "Cheese, Caerphilly".
+  if (/\bprimula\b|\bcheese (?:spread )?tubes?\b|\btube cheese\b/.test(q)) {
+    return /\b(?:light|lighter|reduced fat)\b/.test(q) ? "cheese spread plain reduced fat" : "cheese spread plain";
+  }
+  // Snack cheese cubes are cheddar; they took Caerphilly too.
+  if (/^(?:snack )?cheese cubes?(?: snack)?$/.test(q)) return "cheddar";
+  // Simnel cake is a rich fruit cake with marzipan; it took "Cake, chocolate fudge".
+  if (/^simnel cakes?$/.test(q)) return "rich iced fruit cake";
+  // Duck, chicken and pork spring rolls are CoFID's meat spring rolls; they took
+  // raw duck and raw chicken. CoFID has no prawn spring roll ("prawn spring
+  // rolls" took raw king prawns); the meat one is the nearest per 100 g.
+  if (/^(?:crispy )?(?:duck|chicken|pork|prawn|meat) spring rolls?$/.test(q)) return "meat spring rolls";
+  // The dish, not its meat: "chicken tikka masala" took "Chicken, meat, average, raw".
+  if (/^chicken tikka masala(?: ready meal| curry)?$/.test(q)) return "curry chicken tikka masala";
+  // Turkey escalopes and steaks are sliced breast, which is light meat; they took dark meat.
+  if (/^(?:british )?turkey (?:breast )?(?:escalopes?|steaks?)$/.test(q)) return "turkey light meat raw";
+  // Beans with chorizo or sausages: "baked beans chorizo" took butter beans and
+  // "beans and sausages" took raw pork sausages (309 kcal).
+  if (/^(?:baked )?beans (?:with |and |n )?(?:chorizo|(?:pork )?sausages?)$/.test(q)) return "baked beans with pork sausages";
   return q;
 }
 
@@ -1122,6 +1150,64 @@ export function isSalsaMismatch(query: string, foodName: string): boolean {
   return !/\bsalsa\b/.test(normalizeForMatch(foodName));
 }
 
+/**
+ * CoFID has no kiev; "chicken kiev" took "Chicken, meat, average, raw" (108
+ * kcal, against about 290 for a breaded kiev with its garlic butter).
+ */
+export function isKievMismatch(query: string, foodName: string): boolean {
+  if (!/\bkievs?\b/.test(normalizeCofidQuery(query))) return false;
+  return !/\bkievs?\b/.test(normalizeForMatch(foodName));
+}
+
+/** A vinegar must be a vinegar row: "rice vinegar" took raw brown rice and the wine vinegars took wine. */
+export function isVinegarMismatch(query: string, foodName: string): boolean {
+  if (!/\bvinegar\b/.test(normalizeCofidQuery(query))) return false;
+  return !/\bvinegar\b/.test(normalizeForMatch(foodName));
+}
+
+/** A spring roll must be a spring roll row: "prawn spring rolls" took raw king prawns. */
+export function isSpringRollMismatch(query: string, foodName: string): boolean {
+  if (!/\bspring rolls?\b/.test(normalizeCofidQuery(query))) return false;
+  return !/\bspring rolls?\b/.test(normalizeForMatch(foodName));
+}
+
+/**
+ * Foods CoFID has no row for, each with the local row (from a UK label) that
+ * answers instead. Their best-scoring CoFID row was another food:
+ *   "curd cheese"              → "Cheese, Caerphilly" (375 kcal; twaróg is 115)
+ *   "yoghurt coated nuts"      → "Nuts, mixed" (no sugar coating)
+ *   "cracker cheese ham snack" → "Ham, gammon joint, raw"
+ *   "nutritional yeast flakes" → "Yeast, bakers, compressed" (53 kcal against 349)
+ *   "seasoned rice vinegar"    → "Rice, brown, basmati, raw" (355 kcal); it is
+ *                                sweetened, so plain "Vinegar" is wrong too
+ *   "spring roll pastry"       → "Pastries, Asian" (538 kcal, sweet)
+ *   "vegetable spring rolls"   → "Vegetables, mixed, frozen, boiled" (42 kcal);
+ *                                CoFID's only spring roll is meat
+ */
+const NO_COFID_ROW_FOODS: readonly { pattern: RegExp; local: string }[] = [
+  { pattern: /\bcurd cheese\b/, local: "curd cheese" },
+  { pattern: /\byogh?urt[- ]coated (?:mixed )?(?:nuts|peanuts|almonds|brazil nuts|brazils|cashews?)\b/, local: "yoghurt coated nuts" },
+  { pattern: /\blunch(?:ers|ables)\b|^(?=.*\bcrackers?\b)(?=.*\bham\b)(?=.*\bcheese\b)/, local: "cracker cheese ham snack" },
+  { pattern: /\bnutritional yeast\b/, local: "nutritional yeast flakes" },
+  {
+    pattern: /\bseasoned rice (?:wine )?vinegar\b|\brice vinegar,? seasoned\b|\bsushi (?:rice )?(?:vinegar|seasoning)\b/,
+    local: "rice vinegar seasoned",
+  },
+  { pattern: /\bspring roll (?:wrappers?|pastry|sheets?|skins?)\b/, local: "spring roll wrapper" },
+  { pattern: /\b(?:vegetable|veg|vegan|vegetarian) spring rolls?\b/, local: "vegetable spring roll" },
+];
+
+/** The local row for a food CoFID has no row for, or null. */
+export function noCofidRowLocalName(name: string): string | null {
+  const q = normalizeForMatch(name);
+  return NO_COFID_ROW_FOODS.find((f) => f.pattern.test(q))?.local ?? null;
+}
+
+/** Every CoFID row is a different food for these names; the local row answers. */
+export function isNoCofidRowFood(query: string): boolean {
+  return noCofidRowLocalName(normalizeCofidQuery(query)) != null;
+}
+
 const TEXTURED_SOYA_QUERY_PATTERN =
   /\b(?:textured (?:vegetable|soya?) protein|tvp|soya? (?:mince|chunks?|pieces))\b/;
 
@@ -1151,7 +1237,11 @@ export function isDifferentFoodRow(query: string, foodName: string): boolean {
     isTeaDrinkMismatch(query, foodName) ||
     isWaterFoodMismatch(query, foodName) ||
     isSourCreamDipMismatch(query, foodName) ||
-    isSalsaMismatch(query, foodName)
+    isSalsaMismatch(query, foodName) ||
+    isKievMismatch(query, foodName) ||
+    isVinegarMismatch(query, foodName) ||
+    isSpringRollMismatch(query, foodName) ||
+    isNoCofidRowFood(query)
   );
 }
 
