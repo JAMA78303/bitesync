@@ -13,6 +13,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { lookupNutritionAsync } from "@/lib/nutrition/lookupAsync";
 import { matchFood } from "@/lib/photoMeal/matchFood";
+import { displayName } from "@/lib/photoMeal/platedMatch";
 import { mealRange, startingGrams } from "@/lib/photoMeal/totals";
 import type { ReviewItem } from "@/lib/photoMeal/types";
 import { isNamed, median, TARGETS, type TrueFood } from "./score";
@@ -158,12 +159,12 @@ async function main() {
     const items: ReviewItem[] = await Promise.all(
       identified.foods.map(async (f, i) => ({
         key: `f${i}`,
-        name: f.food,
+        name: displayName(f.food, f.cookingMethod),
         gramsLow: f.gramsLow,
         gramsHigh: f.gramsHigh,
         grams: startingGrams(f.gramsLow, f.gramsHigh),
         edited: false,
-        match: await matchFood(f.food),
+        match: await matchFood(f.food, f.cookingMethod),
       })),
     );
     // Hidden extras start switched off on the review screen, so they're left out here too.

@@ -1,5 +1,6 @@
 import { isNamed, median } from "@/evals/photo-meals/score";
 import { cleanIdentification } from "@/lib/photoMeal/identify";
+import { displayName, fallbackFoods, parseFoodName, pickCofidRow, type CookingMethod } from "@/lib/photoMeal/platedMatch";
 import { formatRange, mealRange, microSummary, startingGrams } from "@/lib/photoMeal/totals";
 import type { FoodMatch, ReviewItem } from "@/lib/photoMeal/types";
 
@@ -10,7 +11,9 @@ function assert(condition: boolean, message: string): void {
 const rice: FoodMatch = {
   per100: { kcal: 130, protein: 2.7, carbs: 28, fat: 0.3, fibre: 0.4 },
   micros100: null,
+  more100: { sugar: 0.1, sodiumMg: 1, saturatedFat: 0.1 },
   source: "CoFID: Rice, white, boiled",
+  cofid: { name: "Rice, white, boiled", code: "test" },
 };
 const chicken: FoodMatch = {
   per100: { kcal: 160, protein: 30, carbs: 0, fat: 4, fibre: 0 },
@@ -19,7 +22,9 @@ const chicken: FoodMatch = {
     iron_mg: 0.7, calcium_mg: 10, zinc_mg: 1.5, magnesium_mg: 30, potassium_mg: 350,
     selenium_mcg: 20, iodine_mcg: 5, saturated_fat_g: 1, salt_g: 0.2, sugar_g: 0,
   },
+  more100: { sugar: 0, sodiumMg: 70, saturatedFat: 1 },
   source: "CoFID: Chicken breast, grilled",
+  cofid: { name: "Chicken breast, grilled", code: "test" },
 };
 
 const item = (key: string, match: FoodMatch | null, low: number, high: number, edited = false, grams?: number): ReviewItem => ({
@@ -101,6 +106,7 @@ assert(formatRange(1234, 1600, "kcal") === "1,230–1,600 kcal", `thousands sepa
     assert(out.foods[0]!.gramsLow === 120 && out.foods[0]!.gramsHigh === 180, "low and high put in order");
     assert(out.foods[0]!.food === "Chicken breast, grilled", "names trimmed");
     assert(out.foods[1]!.gramsLow === 1 && out.foods[1]!.gramsHigh === 2000, "grams clamped to 1–2000");
+    assert(out.foods[0]!.cookingMethod === "grilled", "a listed cooking method is kept");
     assert(out.foods[1]!.cookingMethod === null, "empty cooking method is null");
     assert(out.extras.length === 1 && out.extras[0]!.food === "Olive oil" && out.extras[0]!.grams === 8, "extras deduped against foods");
   }
@@ -128,6 +134,96 @@ assert(cleanIdentification(null).kind === "failed", "null fails");
   assert(many.kind === "meal" && many.foods.length === 12, "at most 12 foods");
   assert(many.kind === "meal" && many.title === "Food 0 and Food 1", "empty title falls back to the first foods");
 }
+
+// --- cleanIdentification: free-text cooking methods map onto the fixed list.
+{
+  const out = cleanIdentification({
+    is_food: true,
+    title: "Plate",
+    items: [
+      { food: "potatoes", cooking_method: "Pan-fried", portion_g_low: 100, portion_g_high: 150, confidence: "high" },
+      { food: "bread", cooking_method: "none", portion_g_low: 30, portion_g_high: 40, confidence: "high" },
+      { food: "carrots", cooking_method: "glazed", portion_g_low: 50, portion_g_high: 80, confidence: "high" },
+    ],
+    hidden_extras: [],
+  });
+  assert(out.kind === "meal", "meal");
+  if (out.kind === "meal") {
+    assert(out.foods[0]!.cookingMethod === "fried", `pan-fried → fried, got ${out.foods[0]!.cookingMethod}`);
+    assert(out.foods[1]!.cookingMethod === null, "none → null");
+    assert(out.foods[2]!.cookingMethod === null, "an unknown method → null");
+  }
+}
+
+// --- Photo matching: plain plate names to the right CoFID row, wrong foods refused.
+{
+  const cofid = [
+    "Sweets, boiled", "Sweet potato, raw, flesh only", "Sweet potato, baked", "Sweet potato, steamed",
+    "Sweet potato, flesh only, boiled in unsalted water",
+    "Rice, white, basmati, raw", "Rice, white, basmati, boiled in unsalted water", "Rice, brown, basmati, boiled in unsalted water",
+    "Quinoa, raw", "Salad, Waldorf, homemade", "Lettuce, average, raw", "Rocket, raw",
+    "Bacon loin steaks, lean, grilled", "Bacon rashers, back, grilled", "Bacon, fat only, average, cooked",
+    "Beef, fat, average, cooked", "Beef, fillet steak, raw, lean", "Beef, fillet steak, grilled, lean",
+    "Beef, fillet steak, grilled, lean and fat", "Beef, sirloin steak, grilled, lean and fat",
+    "Potatoes, old, raw, flesh only", "Potatoes, old, baked, flesh only", "Potatoes, old, roasted in sunflower oil, flesh only",
+    "Eggs, chicken, whole, raw", "Eggs, chicken, whole, boiled", "Eggs, chicken, white, boiled",
+    "Baked beans, canned in tomato sauce", "Beans, green, boiled in unsalted water",
+    "Pepper, black", "Pepper, capsicum, red, raw", "Melon, Canteloupe-type, flesh only",
+    "Curry, chicken tikka masala, retail, reheated", "Beans, chick peas, canned, re-heated, drained",
+    "Chicken, breast, grilled without skin, meat only", "Chicken, breast, raw, meat only",
+  ].map((food_name, i) => ({ food_code: String(i), food_name }));
+  const pick = (name: string, method: CookingMethod | null = null) =>
+    pickCofidRow(parseFoodName(name, method), cofid)?.row.food_name ?? null;
+  const cases: [string, CookingMethod | null, string | null][] = [
+    ["sweet potato", "roasted", "Sweet potato, baked"],
+    ["roast sweet potato", null, "Sweet potato, baked"],
+    ["white rice", "boiled", "Rice, white, basmati, boiled in unsalted water"],
+    ["brown rice", "boiled", "Rice, brown, basmati, boiled in unsalted water"],
+    ["mixed salad leaves", "raw", "Lettuce, average, raw"],
+    ["arugula", "raw", "Rocket, raw"],
+    ["steak", "grilled", "Beef, fillet steak, grilled, lean and fat"],
+    ["sirloin steak", "grilled", "Beef, sirloin steak, grilled, lean and fat"],
+    ["bacon", "grilled", "Bacon rashers, back, grilled"],
+    // Never the fat-only row, and cooked even with no method given.
+    ["beef", null, "Beef, fillet steak, grilled, lean and fat"],
+    ["potatoes", "roasted", "Potatoes, old, roasted in sunflower oil, flesh only"],
+    ["egg", "boiled", "Eggs, chicken, whole, boiled"],
+    ["egg whites", "boiled", "Eggs, chicken, white, boiled"],
+    ["baked beans", "none", "Baked beans, canned in tomato sauce"],
+    ["red pepper", "raw", "Pepper, capsicum, red, raw"],
+    ["cantaloupe", "raw", "Melon, Canteloupe-type, flesh only"],
+    ["chicken tikka masala", null, "Curry, chicken tikka masala, retail, reheated"],
+    ["chickpeas", "none", "Beans, chick peas, canned, re-heated, drained"],
+    ["chicken breast", "grilled", "Chicken, breast, grilled without skin, meat only"],
+    ["quinoa", "boiled", null],
+    ["waldorf salad", null, "Salad, Waldorf, homemade"],
+  ];
+  for (const [name, method, want] of cases) {
+    const got = pick(name, method);
+    assert(got === want, `${name} (${method ?? "no method"}) → ${want ?? "no match"}, got ${got ?? "no match"}`);
+  }
+  assert(parseFoodName("Sweet potato, roasted").method === "roasted", "a method in the name is read");
+  assert(parseFoodName("jacket potato").method === "baked", "jacket potato is baked");
+  assert(parseFoodName("Goat's cheese").required.join(" ") === "goat cheese", "apostrophes dropped");
+}
+
+// --- Fallbacks when the full name matches nothing.
+{
+  const names = (text: string) => fallbackFoods(text).map((f) => f.required.join(" "));
+  assert(names("Chicken in tomato sauce")[0] === "chicken", `before "in": ${names("Chicken in tomato sauce").join(" | ")}`);
+  assert(names("tomato salsa").includes("salsa"), "salsa keeps its head word");
+  assert(names("purple sweet potato")[0] === "sweet potato", `drops one word at a time: ${names("purple sweet potato").join(" | ")}`);
+  assert(!names("purple sweet potato").includes("potato"), "never drops 'sweet'");
+  assert(names("cauliflower rice").length === 0, "cauliflower rice never becomes rice");
+  assert(!names("sun dried tomatoes").includes("tomato"), "sun-dried tomatoes never become fresh ones");
+  assert(!names("crispy chicken").includes("chicken"), "crispy chicken never becomes plain chicken");
+}
+
+// --- displayName
+assert(displayName("sweet potato", "roasted") === "Sweet potato, roasted", displayName("sweet potato", "roasted"));
+assert(displayName("roast potatoes", "roasted") === "Roast potatoes", "a method already in the name isn't repeated");
+assert(displayName("naan bread", null) === "Naan bread", "no method");
+assert(displayName("houmous", "none") === "Houmous", "none shows nothing");
 
 // --- Eval scoring
 assert(isNamed({ name: "Rice, white, boiled", grams: 150 }, ["Basmati rice, boiled"]), "rice named");
