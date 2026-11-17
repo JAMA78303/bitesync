@@ -34,7 +34,7 @@ type CaseResult = {
   outcome: "meal" | "not_food" | "failed";
   reason?: string;
   seconds: number;
-  predicted: { name: string; low: number; high: number; matched: boolean }[];
+  predicted: { name: string; low: number; high: number; matched: boolean; source: string | null; kcalPer100: number | null }[];
   foodsTotal: number;
   foodsNamed: number;
   missed: string[];
@@ -100,6 +100,11 @@ async function main() {
   if (model) process.env.PHOTO_MEAL_MODEL = model;
   // Imported after PHOTO_MEAL_MODEL is set, because the module reads it on load.
   const { identifyMeal, PHOTO_MEAL_MODEL } = await import("@/lib/photoMeal/identify");
+  // Outside the web app there's no signed-in request, so CoFID lookups use the
+  // service connection, as the other nutrition scripts do. Read-only here.
+  const { createServiceClient } = await import("@/lib/supabase/service");
+  const { setCofidLookupSupabase } = await import("@/lib/nutrition/cofidLookup");
+  setCofidLookupSupabase(createServiceClient());
 
   const casesFile = path.resolve(arg("cases") ?? "evals/photo-meals/cases.json");
   const limit = Number(arg("limit") ?? Infinity);
@@ -172,7 +177,14 @@ async function main() {
     const result: CaseResult = {
       ...base,
       outcome: "meal",
-      predicted: items.map((i) => ({ name: i.name, low: i.gramsLow, high: i.gramsHigh, matched: Boolean(i.match) })),
+      predicted: items.map((i) => ({
+        name: i.name,
+        low: i.gramsLow,
+        high: i.gramsHigh,
+        matched: Boolean(i.match),
+        source: i.match?.source ?? null,
+        kcalPer100: i.match ? Math.round(i.match.per100.kcal) : null,
+      })),
       foodsNamed: named.length,
       missed: c.foods.filter((f) => !named.includes(f)).map((f) => f.name),
       estimate: {
@@ -248,7 +260,7 @@ async function main() {
   console.log(
     `Tokens: ${usage.inputTokens.toLocaleString("en-GB")} in, ${usage.outputTokens.toLocaleString("en-GB")} out` +
       (summary.costUsd != null
-        ? ` ≈ $${summary.costUsd.toFixed(2)} (about $${(summary.costUsd / Math.max(results.length, 1)).toFixed(3)} a photo)`
+        ? ` ≈ $${summary.costUsd.toFixed(summary.costUsd < 0.1 ? 4 : 2)} (about $${(summary.costUsd / Math.max(results.length, 1)).toFixed(4)} a photo)`
         : " (no price on file for this model)"),
   );
 
