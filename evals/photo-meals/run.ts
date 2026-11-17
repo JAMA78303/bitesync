@@ -34,7 +34,7 @@ type CaseResult = {
   outcome: "meal" | "not_food" | "failed";
   reason?: string;
   seconds: number;
-  predicted: { name: string; low: number; high: number; matched: boolean }[];
+  predicted: { name: string; low: number; high: number; matched: boolean; source: string | null; kcalPer100: number | null }[];
   foodsTotal: number;
   foodsNamed: number;
   missed: string[];
@@ -48,6 +48,19 @@ type CaseResult = {
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
   return i >= 0 ? process.argv[i + 1] : undefined;
+}
+
+/** List prices, $ per million tokens (input, output), standard API, prompts under 100K tokens. */
+const PRICES: Record<string, [number, number]> = {
+  "claude-opus-5-5": [4, 20],
+  "claude-sonnet-5-5": [2, 10],
+  "claude-haiku-5-5": [0.1, 0.5],
+};
+
+function costUsd(model: string, u: { inputTokens: number; outputTokens: number }): number | null {
+  const price = PRICES[model];
+  if (!price) return null;
+  return (u.inputTokens * price[0] + u.outputTokens * price[1]) / 1_000_000;
 }
 
 async function truthFor(c: Case): Promise<{ kcal: number; protein: number; unmatched: string[] }> {
@@ -87,6 +100,11 @@ async function main() {
   if (model) process.env.PHOTO_MEAL_MODEL = model;
   // Imported after PHOTO_MEAL_MODEL is set, because the module reads it on load.
   const { identifyMeal, PHOTO_MEAL_MODEL } = await import("@/lib/photoMeal/identify");
+  // Outside the web app there's no signed-in request, so CoFID lookups use the
+  // service connection, as the other nutrition scripts do. Read-only here.
+  const { createServiceClient } = await import("@/lib/supabase/service");
+  const { setCofidLookupSupabase } = await import("@/lib/nutrition/cofidLookup");
+  setCofidLookupSupabase(createServiceClient());
 
   const casesFile = path.resolve(arg("cases") ?? "evals/photo-meals/cases.json");
   const limit = Number(arg("limit") ?? Infinity);
@@ -94,17 +112,23 @@ async function main() {
   if (!cases.length) throw new Error(`No cases in ${casesFile}`);
   if (!process.env.ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY isn't set (run with --env-file=.env.local).");
 
-  console.log(`Photo meal eval: ${cases.length} cases, model ${PHOTO_MEAL_MODEL}\n`);
-  const results: CaseResult[] = [];
+  const concurrency = Math.max(1, Number(arg("concurrency") ?? 4));
+  console.log(`Photo meal eval: ${cases.length} cases, model ${PHOTO_MEAL_MODEL}, ${concurrency} at a time\n`);
+  const usage = { inputTokens: 0, outputTokens: 0 };
 
-  for (const c of cases) {
+  const runCase = async (c: Case): Promise<CaseResult> => {
     const truth = await truthFor(c);
     if (truth.unmatched.length && (c.kcal == null || c.protein == null)) {
       console.warn(`  ${c.id}: true foods with no nutrition match (${truth.unmatched.join(", ")}); add kcal/protein to the case or rename them.`);
     }
     const started = performance.now();
     const photo = await loadPhoto(path.resolve(path.dirname(casesFile), c.photo));
-    const identified = await identifyMeal(photo);
+    const identified = await identifyMeal(photo, {
+      onUsage: (u) => {
+        usage.inputTokens += u.inputTokens;
+        usage.outputTokens += u.outputTokens;
+      },
+    });
     const seconds = Math.round((performance.now() - started) / 100) / 10;
 
     const base = {
@@ -116,7 +140,8 @@ async function main() {
     };
 
     if (identified.kind !== "meal") {
-      results.push({
+      console.log(`✗ ${c.id}: ${identified.kind}${identified.kind === "failed" ? ` (${identified.reason})` : ""}`);
+      return {
         ...base,
         outcome: identified.kind,
         reason: identified.kind === "failed" ? identified.reason : undefined,
@@ -127,9 +152,7 @@ async function main() {
         energyError: null,
         proteinError: null,
         inRange: null,
-      });
-      console.log(`✗ ${c.id}: ${identified.kind}${identified.kind === "failed" ? ` (${identified.reason})` : ""}`);
-      continue;
+      };
     }
 
     const items: ReviewItem[] = await Promise.all(
@@ -151,10 +174,17 @@ async function main() {
     const proteinError = truth.protein > 0 ? Math.abs(range.current.protein - truth.protein) / truth.protein : null;
     const inRange = truth.kcal >= range.low.kcal * 0.995 && truth.kcal <= range.high.kcal * 1.005;
 
-    results.push({
+    const result: CaseResult = {
       ...base,
       outcome: "meal",
-      predicted: items.map((i) => ({ name: i.name, low: i.gramsLow, high: i.gramsHigh, matched: Boolean(i.match) })),
+      predicted: items.map((i) => ({
+        name: i.name,
+        low: i.gramsLow,
+        high: i.gramsHigh,
+        matched: Boolean(i.match),
+        source: i.match?.source ?? null,
+        kcalPer100: i.match ? Math.round(i.match.per100.kcal) : null,
+      })),
       foodsNamed: named.length,
       missed: c.foods.filter((f) => !named.includes(f)).map((f) => f.name),
       estimate: {
@@ -166,7 +196,7 @@ async function main() {
       energyError,
       proteinError,
       inRange,
-    });
+    };
     const pct = (n: number | null) => (n == null ? "–" : `${Math.round(n * 100)}%`);
     console.log(
       `${inRange ? "✓" : "·"} ${c.id}: ${named.length}/${c.foods.length} foods named, ` +
@@ -174,7 +204,20 @@ async function main() {
         `energy ${pct(energyError)}, protein ${pct(proteinError)}, ${seconds}s` +
         (named.length < c.foods.length ? `; missed ${c.foods.filter((f) => !named.includes(f)).map((f) => f.name).join(", ")}` : ""),
     );
-  }
+    return result;
+  };
+
+  // A few photos at a time; results keep the cases' order.
+  const results: CaseResult[] = new Array(cases.length);
+  let next = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, cases.length) }, async () => {
+      while (next < cases.length) {
+        const i = next++;
+        results[i] = await runCase(cases[i]!);
+      }
+    }),
+  );
 
   const foodsTotal = results.reduce((n, r) => n + r.foodsTotal, 0);
   const foodsNamed = results.reduce((n, r) => n + r.foodsNamed, 0);
@@ -192,6 +235,9 @@ async function main() {
     rangeCoverage: results.length ? ranged / results.length : 0,
     medianSeconds: median(results.map((r) => r.seconds)) ?? 0,
     failures: results.filter((r) => r.outcome !== "meal").length,
+    inputTokens: usage.inputTokens,
+    outputTokens: usage.outputTokens,
+    costUsd: costUsd(PHOTO_MEAL_MODEL, usage),
   };
   const pass = {
     identification: summary.identification >= TARGETS.identification,
@@ -211,6 +257,12 @@ async function main() {
   const allPass = Object.values(pass).every(Boolean);
   console.log(allPass ? "\nAll targets met." : "\nNot ready: at least one target missed.");
   if (results.length < 30) console.log(`Only ${results.length} cases: the spec asks for at least 30 before deciding.`);
+  console.log(
+    `Tokens: ${usage.inputTokens.toLocaleString("en-GB")} in, ${usage.outputTokens.toLocaleString("en-GB")} out` +
+      (summary.costUsd != null
+        ? ` ≈ $${summary.costUsd.toFixed(summary.costUsd < 0.1 ? 4 : 2)} (about $${(summary.costUsd / Math.max(results.length, 1)).toFixed(4)} a photo)`
+        : " (no price on file for this model)"),
+  );
 
   const outDir = path.resolve("evals/photo-meals/results");
   await mkdir(outDir, { recursive: true });

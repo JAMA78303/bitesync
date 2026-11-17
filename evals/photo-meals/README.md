@@ -23,13 +23,33 @@ Aim for a spread, as the spec asks: home-cooked plates, a takeaway, a sandwich, 
 
 Photos, `cases.json` and results are kept out of git (`.gitignore` here).
 
+## No scale? Use Nutrition5k
+
+[Nutrition5k](https://github.com/google-research-datasets/Nutrition5k) (Google, CVPR 2021, CC BY 4.0) has about 5,000 cafeteria plates photographed from above, with every ingredient weighed. `nutrition5k.ts` picks 40 whole plates from its test split and turns them into cases:
+
+```bash
+mkdir -p evals/photo-meals/nutrition5k && cd evals/photo-meals/nutrition5k
+B=https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset
+curl -O "$B/metadata/dish_metadata_cafe1.csv" -O "$B/metadata/dish_metadata_cafe2.csv" -O "$B/dish_ids/splits/rgb_test_ids.txt"
+cd - && node --import tsx evals/photo-meals/nutrition5k.ts --count 40
+node --env-file=.env.local --import tsx evals/photo-meals/run.ts --cases evals/photo-meals/nutrition5k/cases.json
+```
+
+What it does and doesn't tell you:
+- It's food from California cafeterias (salads, roast veg, meat, rice), not UK curries or biryani, and the photos come from a fixed overhead camera, not a phone.
+- Its true calories and protein come from US (USDA) data; the app's come from CoFID, so a little of the error is the two tables disagreeing. Real users see that difference too.
+- Foods under 20 g (oil, salt, herbs) count towards the true totals but aren't expected to be named.
+- US names are matched to UK ones (arugula = rocket, zucchini = courgette, mixed greens = salad leaves).
+
+Good for checking that the photo reading works and for comparing models. Add some UK meals (labelled packs, chain menu items with published calories) before relying on it alone.
+
 ## Running it
 
 ```bash
 node --env-file=.env.local --import tsx evals/photo-meals/run.ts
 ```
 
-Options: `--model claude-sonnet-5-5` to try another model, `--cases path/to/cases.json`, `--limit 5` for a quick check.
+Options: `--model claude-sonnet-5-5` to try another model, `--cases path/to/cases.json`, `--limit 5` for a quick check, `--concurrency 4` photos at a time. It needs `ANTHROPIC_API_KEY` in `.env.local`, and prints the tokens used and what the run cost.
 
 Each meal is one paid call to the Claude API (one photo in, a short list of foods out). Try `--limit 3` first to check the cases file before a full run.
 
