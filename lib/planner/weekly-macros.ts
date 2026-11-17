@@ -56,11 +56,14 @@ export function sumDayNutritionFromEntries(
     const cals = getEntryCalories(entry);
     if (cals != null) kcal += cals;
     else if (n?.calories != null) kcal += n.calories;
-    protein += n?.protein_g ?? 0;
-    carbs += n?.carbs_g ?? 0;
-    fat += n?.fat_g ?? 0;
-    fibre += n?.fibre_g ?? 0;
-    sugar += n?.sugar_g ?? 0;
+    // A recipe's nutrition, or a photo-logged meal's stored macros. A typed
+    // quick-add has calories only.
+    const m = n ?? entry.logged_meal ?? null;
+    protein += m?.protein_g ?? 0;
+    carbs += m?.carbs_g ?? 0;
+    fat += m?.fat_g ?? 0;
+    fibre += m?.fibre_g ?? 0;
+    sugar += m?.sugar_g ?? 0;
   }
 
   return { kcal, protein, carbs, fat, fibre, sugar };

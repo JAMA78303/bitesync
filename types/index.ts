@@ -90,6 +90,18 @@ export type MealPlanEntry = {
   eaten_at?: string | null;
   /** Skipped meals stay in the plan but leave every total. See isSkippedEntry. */
   skipped_at?: string | null;
+  /**
+   * A quick-add logged from a photo: its stored macros (logged_meals), so
+   * weekly totals count more than its calories. Absent for typed quick-adds
+   * and recipes.
+   */
+  logged_meal?: {
+    protein_g: number;
+    carbs_g: number;
+    fat_g: number;
+    fibre_g: number;
+    sugar_g: number;
+  } | null;
   recipe?: {
     id: string;
     name: string;

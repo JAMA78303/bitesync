@@ -1,3 +1,4 @@
+import { fetchLoggedMealMacros } from "@/lib/photoMeal/loggedMacros";
 import { createClient } from "@/lib/supabase/server";
 import { fetchRecipeNutritionMap } from "@/lib/supabase/recipe-nutrition-query";
 import { getMonday, toLocalISO } from "@/lib/utils/dates";
@@ -43,38 +44,22 @@ export type TodayMeal = {
   loggedMeal: { protein: number; carbs: number; fat: number; fibre: number; coveragePct: number } | null;
 };
 
-type LoggedMealRow = {
-  meal_plan_entry_id: string;
-  protein_g: number | string | null;
-  carbs_g: number | string | null;
-  fat_g: number | string | null;
-  fibre_g: number | string | null;
-  coverage_pct: number | string | null;
-};
-
 /**
  * Macros for photo-logged quick-adds (sql/2026-11-16_logged_meals.sql). Until
- * that migration runs the table doesn't exist: the query fails and every
- * quick-add stays calories-only, exactly as before.
+ * that migration runs every quick-add stays calories-only, exactly as before.
  */
 async function loggedMealMacros(
   supabase: Awaited<ReturnType<typeof createClient>>,
   entryIds: string[],
 ): Promise<Map<string, NonNullable<TodayMeal["loggedMeal"]>>> {
   const map = new Map<string, NonNullable<TodayMeal["loggedMeal"]>>();
-  if (!entryIds.length) return map;
-  const { data, error } = await supabase
-    .from("logged_meals")
-    .select("meal_plan_entry_id, protein_g, carbs_g, fat_g, fibre_g, coverage_pct")
-    .in("meal_plan_entry_id", entryIds);
-  if (error || !data) return map;
-  for (const row of data as LoggedMealRow[]) {
-    map.set(String(row.meal_plan_entry_id), {
-      protein: Math.round(Number(row.protein_g ?? 0)),
-      carbs: Math.round(Number(row.carbs_g ?? 0)),
-      fat: Math.round(Number(row.fat_g ?? 0)),
-      fibre: Math.round(Number(row.fibre_g ?? 0)),
-      coveragePct: Number(row.coverage_pct ?? 0),
+  for (const [id, m] of await fetchLoggedMealMacros(supabase, entryIds)) {
+    map.set(id, {
+      protein: Math.round(m.protein_g),
+      carbs: Math.round(m.carbs_g),
+      fat: Math.round(m.fat_g),
+      fibre: Math.round(m.fibre_g),
+      coveragePct: m.coverage_pct,
     });
   }
   return map;
