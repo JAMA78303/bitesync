@@ -1,4 +1,5 @@
-import { matchPieceWeight } from "@/lib/nutrition/pieceWeights";
+import { PIECE_WEIGHT_MAP, type PieceWeightEntry } from "@/lib/nutrition/pieceWeights";
+import { normalizeUnitLabel } from "@/lib/utils/merge";
 
 export interface StoreUnit {
   unit: string;
@@ -91,7 +92,7 @@ export const STORE_UNIT_MAP: Record<string, StoreUnit> = {
   paprika: { unit: "jar", size: 45, baseUnit: "g" },
   "smoked paprika": { unit: "jar", size: 45, baseUnit: "g" },
   turmeric: { unit: "jar", size: 38, baseUnit: "g" },
-  coriander: { unit: "jar", size: 28, baseUnit: "g" },
+  // Not plain "coriander": in recipes that's usually the fresh herb.
   "ground coriander": { unit: "jar", size: 28, baseUnit: "g" },
   "chilli flakes": { unit: "jar", size: 25, baseUnit: "g" },
   "chilli powder": { unit: "jar", size: 38, baseUnit: "g" },
@@ -130,36 +131,55 @@ export const STORE_UNIT_MAP: Record<string, StoreUnit> = {
   "desiccated coconut": { unit: "bag", size: 200, baseUnit: "g" },
 };
 
-const SORTED_KEYS = Object.keys(STORE_UNIT_MAP).sort((a, b) => b.length - a.length);
+/** Longest first, so "chopped tomatoes" is tried before "tomato" and "black pepper" before "pepper". */
+const STORE_KEYS = Object.keys(STORE_UNIT_MAP).sort((a, b) => b.length - a.length);
+const PIECE_KEYS = Object.keys(PIECE_WEIGHT_MAP).sort((a, b) => b.length - a.length);
 
-const MIN_PARTIAL_KEY_LEN = 4;
+/**
+ * Packs vary by a few per cent and recipes round, so 410 g of chopped
+ * tomatoes is still one 400 g tin rather than two.
+ */
+const PACK_SLACK = 0.05;
+
+const GRAMS_PER_UNIT = new Map([["g", 1], ["kg", 1000], ["oz", 28.35], ["lb", 453.59]]);
+const ML_PER_UNIT = new Map([["ml", 1], ["l", 1000], ["cl", 10], ["tsp", 5], ["tbsp", 15], ["cup", 240], ["fl oz", 29.57]]);
 
 function formatQty(qty: number): string {
   return qty % 1 === 0 ? String(qty) : qty.toFixed(1);
 }
 
-function pluralPieceLabel(label: string, count: number): string {
-  if (count === 1) return label;
-  if (label.endsWith("s")) return label;
+/** "tomato" → "tomatoes", "peach" → "peaches", "garlic bulb" → "garlic bulbs". */
+function pluralLabel(label: string, count: number): string {
+  if (count === 1 || label.endsWith("s")) return label;
+  if (label === "loaf") return "loaves";
+  if (/(?:tomato|potato|ch|sh|x)$/.test(label)) return `${label}es`;
   return `${label}s`;
 }
 
-/** Resolve typical retail pack for an ingredient name (exact match, then longest substring ≥4 chars). */
+/** The food a line names, for matching: before any comma or bracket, lower case, single spaces. */
+function foodName(raw: string): string {
+  return raw.toLowerCase().split(/[,(]/)[0]!.replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Whether a table key is the food this name is, rather than a word inside the
+ * name of another food: the whole name or its last words, allowing a plural.
+ * "brown rice" is rice and "red onions" is red onion, but "rice noodles",
+ * "flour tortillas", "egg noodles" and "chicken" (not chicken stock) aren't.
+ */
+function isFood(name: string, key: string): boolean {
+  return [key, `${key}s`, `${key}es`].some((k) => name === k || name.endsWith(` ${k}`));
+}
+
+function bestKey(name: string, keys: string[]): string | null {
+  if (!name) return null;
+  return keys.find((key) => isFood(name, key)) ?? null;
+}
+
+/** Typical retail pack for an ingredient, or null when the name isn't a packed food we know. */
 export function getStoreUnit(ingredientName: string): StoreUnit | null {
-  const normalised = ingredientName.toLowerCase().trim();
-  if (!normalised) return null;
-
-  const exact = STORE_UNIT_MAP[normalised];
-  if (exact) return exact;
-
-  for (const key of SORTED_KEYS) {
-    if (key.length < MIN_PARTIAL_KEY_LEN) continue;
-    if (normalised.includes(key) || (normalised.length >= MIN_PARTIAL_KEY_LEN && key.includes(normalised))) {
-      return STORE_UNIT_MAP[key];
-    }
-  }
-
-  return null;
+  const key = bestKey(foodName(ingredientName), STORE_KEYS);
+  return key ? STORE_UNIT_MAP[key]! : null;
 }
 
 const SKIP_STORE_BRACKETS = ["bread", "loaf", "stock cube", "pitta", "wrap", "tortilla"];
@@ -168,9 +188,66 @@ function shouldSkipStoreBrackets(normalised: string): boolean {
   return SKIP_STORE_BRACKETS.some((s) => normalised.includes(s));
 }
 
+/** The amount in the pack's own measure (grams, millilitres or items), or null if it's measured another way. */
+function amountInPackMeasure(pack: StoreUnit, quantity: number, unit: string): number | null {
+  const perUnit = pack.baseUnit === "g" ? GRAMS_PER_UNIT.get(unit) : pack.baseUnit === "ml" ? ML_PER_UNIT.get(unit) : null;
+  if (perUnit != null) return quantity * perUnit;
+  return pack.baseUnit === "each" && unit === "piece" ? quantity : null;
+}
+
 /**
- * Grocery list display: piece counts for whole foods, retail unit + recipe amount, or raw qty + unit + name.
- * Display-only; does not change stored quantities.
+ * Spoonfuls of a spice sold by weight, or grams of a liquid sold by volume:
+ * without the food's density we can't count packs, but a small amount plainly
+ * fits in one. Taken at water's density, as the nutrition code does for foods
+ * it has no cup weight for.
+ */
+function fitsInOnePack(pack: StoreUnit, quantity: number, unit: string): boolean {
+  const perUnit = pack.baseUnit === "g" ? ML_PER_UNIT.get(unit) : pack.baseUnit === "ml" ? GRAMS_PER_UNIT.get(unit) : null;
+  return perUnit != null && quantity * perUnit <= pack.size * (1 + PACK_SLACK);
+}
+
+/** "2 tins chopped tomatoes (800 g needed)", or null when the packs can't be counted. */
+function packLine(pack: StoreUnit, name: string, quantity: number, unit: string): string | null {
+  const inPacks =
+    unit === pack.unit ||
+    unit === pluralLabel(pack.unit, 2) ||
+    (pack.unit === "tin" && (unit === "can" || unit === "cans")) ||
+    // "2 milk" added by hand means two of whatever milk comes in.
+    (unit === "piece" && pack.baseUnit !== "each");
+  let count: number;
+  if (inPacks) {
+    count = Math.max(1, Math.ceil(quantity - 1e-9));
+  } else {
+    const amount = amountInPackMeasure(pack, quantity, unit);
+    if (amount != null) count = Math.max(1, Math.ceil(amount / pack.size - PACK_SLACK));
+    else if (fitsInOnePack(pack, quantity, unit)) count = 1;
+    else return null;
+  }
+  const line = `${count} ${pluralLabel(pack.unit, count)} ${name}`;
+  if (inPacks || shouldSkipStoreBrackets(name.toLowerCase())) return line;
+  return `${line} (${formatQty(quantity)} ${unit} needed)`;
+}
+
+/** "3 red onions" from grams or a count; null for spoonfuls, cups and the like. */
+function pieceLine(piece: PieceWeightEntry, quantity: number, unit: string): string | null {
+  let count: number;
+  const grams = GRAMS_PER_UNIT.get(unit);
+  if (grams != null) {
+    count = Math.max(1, Math.ceil((quantity * grams) / piece.grams));
+  } else if (unit === "piece" || piece.label === unit || piece.label.endsWith(` ${unit}`)) {
+    // "2 bulb" of garlic is 2 garlic bulbs.
+    count = Number.isInteger(quantity) ? quantity : Number(quantity.toFixed(2));
+  } else {
+    return null;
+  }
+  return `${formatQty(count)} ${pluralLabel(piece.label, count)}`;
+}
+
+/**
+ * Grocery list display: a count for foods bought whole ("3 red onions"), the
+ * number of packs for packed foods ("2 tins chopped tomatoes (800 g needed)"),
+ * otherwise the amount ("300 g chicken breast"). Display only; stored
+ * quantities don't change.
  */
 export function formatGroceryItem(
   name: string,
@@ -178,37 +255,21 @@ export function formatGroceryItem(
   unit: string | undefined,
 ): string {
   const trimmedName = name.trim();
-  const normalised = trimmedName.toLowerCase();
-  const u = unit?.trim().toLowerCase();
-  const q = quantity;
+  if (quantity == null || !Number.isFinite(quantity)) return trimmedName;
+  const u = normalizeUnitLabel(unit ?? "");
 
-  const piece = matchPieceWeight(normalised);
-  if (piece) {
-    if (q != null && (u === "g" || u === "kg")) {
-      const grams = u === "kg" ? q * 1000 : q;
-      const count = Math.max(1, Math.ceil(grams / piece.grams));
-      return `${count} ${pluralPieceLabel(piece.label, count)}`;
-    }
-    if (q != null) {
-      const count = Math.floor(q) === q ? q : Number(q.toFixed(2));
-      return `${formatQty(count)} ${pluralPieceLabel(piece.label, count)}`;
-    }
-    return trimmedName;
-  }
+  // The more specific name wins: "chopped tomatoes" is a tin, not tomatoes,
+  // and "black pepper" a jar, not a pepper.
+  const food = foodName(trimmedName);
+  const storeKey = bestKey(food, STORE_KEYS);
+  const pieceKey = bestKey(food, PIECE_KEYS);
+  const line =
+    pieceKey && (!storeKey || pieceKey.length > storeKey.length)
+      ? pieceLine(PIECE_WEIGHT_MAP[pieceKey]!, quantity, u)
+      : storeKey
+        ? packLine(STORE_UNIT_MAP[storeKey]!, trimmedName, quantity, u)
+        : null;
+  if (line) return line;
 
-  const storeUnit = getStoreUnit(trimmedName);
-  if (storeUnit && q != null) {
-    const skip = shouldSkipStoreBrackets(normalised);
-    const unitLabel = u ?? "";
-    const neededLabel =
-      !skip && unitLabel
-        ? ` (${formatQty(q)} ${unitLabel} needed)`
-        : skip
-          ? ""
-          : "";
-    return `1 ${storeUnit.unit} ${trimmedName}${neededLabel}`;
-  }
-
-  if (q != null && u) return `${formatQty(q)} ${u} ${trimmedName}`;
-  return trimmedName;
+  return u === "piece" ? `${formatQty(quantity)} ${trimmedName}` : `${formatQty(quantity)} ${u} ${trimmedName}`;
 }
