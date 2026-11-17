@@ -18,8 +18,12 @@ export type FoodMatch = {
   per100: Macros;
   /** Vitamins and minerals per 100 g, or null when this food has no data (unknown, not zero). */
   micros100: MicroEntry | null;
+  /** Sugar, sodium and saturated fat per 100 g, for the saved meal. Null = unknown. */
+  more100: { sugar: number | null; sodiumMg: number | null; saturatedFat: number | null };
   /** Where the numbers came from, shown on the review screen: "CoFID: Rice, white, boiled". */
   source: string;
+  /** The CoFID row used, or null for BiteSync's own food list. */
+  cofid: { name: string; code: string } | null;
 };
 
 export type PhotoMealConfidence = "high" | "medium" | "low";

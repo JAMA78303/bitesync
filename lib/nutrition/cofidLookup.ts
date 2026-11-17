@@ -95,6 +95,44 @@ export function setCofidLookupSupabase(client: SupabaseClient | null): void {
   injectedSupabase = client;
   overrideCache = null;
   lookupCache.clear();
+  nameIndex = null;
+}
+
+let nameIndex: Promise<{ food_code: string; food_name: string }[]> | null = null;
+
+/**
+ * Every CoFID food's code and name (about 2,900 rows), loaded once per server
+ * instance. The photo matcher scores all of them itself rather than relying on
+ * the text search recipe lookups use.
+ */
+export function loadCofidIndex(): Promise<{ food_code: string; food_name: string }[]> {
+  nameIndex ??= (async () => {
+    const supabase = await resolveSupabase();
+    const rows: { food_code: string; food_name: string }[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await supabase
+        .from("cofid_foods")
+        .select("food_code,food_name")
+        .order("food_code")
+        .range(from, from + 999);
+      if (error) throw new Error(`CoFID index: ${error.message}`);
+      rows.push(...((data ?? []) as { food_code: string; food_name: string }[]));
+      if (!data || data.length < 1000) break;
+    }
+    return rows;
+  })().catch((err) => {
+    // Don't keep a failed load: the next request tries again.
+    nameIndex = null;
+    throw err;
+  });
+  return nameIndex;
+}
+
+/** One CoFID food's nutrition per 100 g by its code, or null. */
+export async function cofidNutritionByCode(foodCode: string): Promise<CoFIDNutrition | null> {
+  const supabase = await resolveSupabase();
+  const { data } = await supabase.from("cofid_foods").select(COFID_SELECT).eq("food_code", foodCode).maybeSingle();
+  return data ? rowToNutrition(data as CofidDbRow, "exact") : null;
 }
 
 async function resolveSupabase(): Promise<SupabaseClient> {

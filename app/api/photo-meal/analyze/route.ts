@@ -3,6 +3,7 @@ import { z } from "zod";
 import { photoLoggingVisible, takePhotoLog } from "@/lib/photoMeal/access";
 import { identifyMeal } from "@/lib/photoMeal/identify";
 import { matchFood } from "@/lib/photoMeal/matchFood";
+import { displayName } from "@/lib/photoMeal/platedMatch";
 import type { PhotoMealAnalysis } from "@/lib/photoMeal/types";
 import { createClient } from "@/lib/supabase/server";
 
@@ -60,12 +61,12 @@ export async function POST(request: Request) {
     Promise.all(
       identified.foods.map(async (f, i) => ({
         key: `f${i}`,
-        name: f.food,
+        name: displayName(f.food, f.cookingMethod),
         cookingMethod: f.cookingMethod,
         gramsLow: f.gramsLow,
         gramsHigh: f.gramsHigh,
         confidence: f.confidence,
-        match: await matchFood(f.food),
+        match: await matchFood(f.food, f.cookingMethod),
       })),
     ),
     Promise.all(

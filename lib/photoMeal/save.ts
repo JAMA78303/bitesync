@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import { lookupNutritionAsync } from "@/lib/nutrition/lookupAsync";
+import { matchFood } from "@/lib/photoMeal/matchFood";
 import { todayDayOfWeek } from "@/lib/planner/today";
 import { getMonday, toLocalISO } from "@/lib/utils/dates";
 import { MEAL_TYPES, type MealType } from "@/types";
@@ -40,14 +40,28 @@ export type LoggedMealTotals = {
 };
 
 /**
- * Nutrition for the foods as saved, from the same chain recipes use (CoFID,
- * then BiteSync's food list, never an AI estimate). A food that doesn't match
- * adds nothing and lowers coverage_pct (DEC-005).
+ * Nutrition for the foods as saved, from the same photo matcher the review
+ * screen used (CoFID, then BiteSync's food list, never an AI estimate), so
+ * the saved meal matches what the person saw. A food that doesn't match adds
+ * nothing and lowers coverage_pct (DEC-005).
  */
 export async function totalsForLines(lines: Line[]): Promise<LoggedMealTotals> {
-  const resolved = await Promise.all(
-    lines.map((l) => lookupNutritionAsync(l.name, l.quantity, l.unit, { skipAI: true })),
-  );
+  const matches = await Promise.all(lines.map((l) => matchFood(l.name)));
+  const resolved = matches.map((m, i) => {
+    if (!m) return null;
+    const f = lines[i]!.quantity / 100;
+    return {
+      kcal: m.per100.kcal * f,
+      protein: m.per100.protein * f,
+      carbs: m.per100.carbs * f,
+      fat: m.per100.fat * f,
+      fibre: m.per100.fibre * f,
+      sugar_g: (m.more100.sugar ?? 0) * f,
+      sodium_mg: (m.more100.sodiumMg ?? 0) * f,
+      saturated_fat_g: m.more100.saturatedFat == null ? null : m.more100.saturatedFat * f,
+      cofid: m.cofid,
+    };
+  });
   const t: LoggedMealTotals = {
     calories: 0,
     protein_g: 0,
@@ -63,13 +77,9 @@ export async function totalsForLines(lines: Line[]): Promise<LoggedMealTotals> {
   };
   let matchedCount = 0;
   for (const r of resolved) {
-    const ok = Boolean(r && !r.estimated);
-    t.matched.push(ok);
-    t.cofid.push({
-      name: ok && r?.source === "cofid" ? (r.cofid_food_name ?? null) : null,
-      matchedBy: ok && r?.source === "cofid" ? (r.cofid_matched_by ?? null) : null,
-    });
-    if (!ok || !r) continue;
+    t.matched.push(Boolean(r));
+    t.cofid.push({ name: r?.cofid?.name ?? null, matchedBy: r?.cofid ? "photo" : null });
+    if (!r) continue;
     matchedCount += 1;
     t.calories += r.kcal;
     t.protein_g += r.protein;

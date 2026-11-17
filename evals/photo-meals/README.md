@@ -17,7 +17,7 @@ Photo logging stays switched off (`PHOTO_MEAL_LOGGING` unset; admins only) until
 4. Add the meal to `evals/photo-meals/cases.json` (copy the shape from `cases.example.json`):
    - `foods`: each food with its CoFID-style name and grams. The script works out the true calories and protein from these with the same food data the app uses, so the eval measures the photo reading, not the food tables.
    - `accept`: words that count as the AI naming that food correctly, if the first word of the name isn't enough (`"biryani"`, `"yogurt"`/`"yoghurt"`).
-   - `kcal` and `protein`: only for packaged food, from the label for the whole item. These override the worked-out values.
+   - `kcal` and `protein`: only for packaged food, from the label for the whole item. These override the worked-out values. `"protein": null` when only calories are published: the case is left out of the protein measure.
 
 Aim for a spread, as the spec asks: home-cooked plates, a takeaway, a sandwich, a bowl, mixed dishes (curry, biryani, stew), a snack and a drink.
 
@@ -42,6 +42,24 @@ What it does and doesn't tell you:
 - US names are matched to UK ones (arugula = rocket, zucchini = courgette, mixed greens = salad leaves).
 
 Good for checking that the photo reading works and for comparing models. Add some UK meals (labelled packs, chain menu items with published calories) before relying on it alone.
+
+## UK chain meals
+
+`uk/chains.json` has 5 UK chain meals: openly licensed photos from Wikimedia Commons, with the chain's own published calories (and protein where it's published). They are a Greggs sausage roll, a Pret ham and cheese toastie, Nando's 3 wings with chips and corn, a Nando's Caesar salad and a Wagamama hot chicken katsu curry. Each case records the photo's page, its licence and author, and the nutrition page used.
+
+```bash
+cd evals/photo-meals/uk && mkdir -p photos
+node -e 'for (const c of require("./chains.json")) console.log(c.photo, c.source.photo.split("/wiki/File:")[1])' |
+  while read out file; do curl -sL -o "$out" "https://commons.wikimedia.org/wiki/Special:FilePath/$file?width=1280"; sleep 2; done
+cd - && node --env-file=.env.local --import tsx evals/photo-meals/run.ts --cases evals/photo-meals/uk/chains.json
+```
+
+What it does and doesn't tell you:
+- The truth is the chain's published figure for the menu item, not a weighed plate. Portions vary by restaurant and recipes change (an itsu dish was left out because its published calories changed while this set was being made).
+- Nando's and Wagamama don't publish protein, so only 2 of the 5 cases count towards the protein measure.
+- Some photos have a drink or another plate in shot. The AI may list the drink; that's what a user would see too, and they can remove it on the review screen.
+- 5 meals is far too few to decide anything. It checks foods Nutrition5k doesn't have (pastry, coated chicken, chip-shop sides, katsu sauce).
+- The photos aren't committed. Their licences (CC0, CC BY 4.0, CC BY-SA 4.0) need the author credited if they're ever shown anywhere; `chains.json` records who.
 
 ## Running it
 
