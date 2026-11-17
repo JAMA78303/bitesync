@@ -1122,6 +1122,15 @@ export function isSalsaMismatch(query: string, foodName: string): boolean {
   return !/\bsalsa\b/.test(normalizeForMatch(foodName));
 }
 
+/**
+ * CoFID has no kiev; "chicken kiev" took "Chicken, meat, average, raw" (108
+ * kcal, against about 290 for a breaded kiev with its garlic butter).
+ */
+export function isKievMismatch(query: string, foodName: string): boolean {
+  if (!/\bkievs?\b/.test(normalizeCofidQuery(query))) return false;
+  return !/\bkievs?\b/.test(normalizeForMatch(foodName));
+}
+
 const TEXTURED_SOYA_QUERY_PATTERN =
   /\b(?:textured (?:vegetable|soya?) protein|tvp|soya? (?:mince|chunks?|pieces))\b/;
 
@@ -1151,7 +1160,8 @@ export function isDifferentFoodRow(query: string, foodName: string): boolean {
     isTeaDrinkMismatch(query, foodName) ||
     isWaterFoodMismatch(query, foodName) ||
     isSourCreamDipMismatch(query, foodName) ||
-    isSalsaMismatch(query, foodName)
+    isSalsaMismatch(query, foodName) ||
+    isKievMismatch(query, foodName)
   );
 }
 

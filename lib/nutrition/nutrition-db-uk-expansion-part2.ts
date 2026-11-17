@@ -515,16 +515,18 @@ const ROWS: TupleRow[] = [
     738,
     12.8
   ],
+  // Tesco All Day Breakfast frozen ready meal label (Tesco 292400397), per 100 g oven
+  // cooked. Was 65 kcal, 0 g fat and 10 g sugar in 7.5 g carbohydrate.
   [
     "full english frozen",
-    65,
-    0.20000000000000018,
-    7.5,
-    0,
-    4.2,
-    10,
-    21,
-    1.2000000000000002
+    131,
+    7.3,
+    12.8,
+    4.9,
+    3.1,
+    2.3,
+    312,
+    1.4
   ],
   // Tesco Hash Browns label (Tesco 282059931), per 100 g oven cooked. Was 247 kcal and 6 g
   // fat.
@@ -633,16 +635,18 @@ const ROWS: TupleRow[] = [
     420,
     6.8
   ],
+  // Tesco 2 Breaded Garlic Chicken Kievs label (Tesco 307733170), per 100 g oven cooked.
+  // CoFID has no kiev. Was 58 kcal, 1.2 g fat and 12 g sugar in 7.5 g carbohydrate.
   [
     "chicken kiev",
-    58,
-    4.2,
-    7.5,
-    1.2000000000000002,
-    2.2,
-    12,
-    211,
-    1.2000000000000002
+    291,
+    12.5,
+    11,
+    21.8,
+    0.8,
+    0.8,
+    172,
+    8.6
   ],
   [
     "fish cake",
@@ -1695,16 +1699,18 @@ const ROWS: TupleRow[] = [
     638,
     12.8
   ],
+  // Spring Home TYJ Spring Roll Pastry label (Tesco 259494478), per 100 g. The label gives
+  // no fibre figure (0 here). Was 65 kcal and 14 g sugar in 7.5 g carbohydrate.
   [
     "spring roll wrapper",
-    65,
-    4.2,
-    7.5,
-    0.20000000000000018,
-    4.2,
-    14,
-    321,
-    1.2000000000000002
+    307,
+    7.4,
+    58,
+    4.9,
+    0,
+    1.4,
+    376,
+    3.9
   ],
   [
     "wonton wrapper",
@@ -3853,16 +3859,19 @@ const ROWS: TupleRow[] = [
     458,
     12.8
   ],
+  // Old El Paso Garlic & Paprika Taco Seasoning Mix label (Ocado 380863011), per 100 g.
+  // No UK supermarket sells a burrito-named mix; this is the same kind of sachet. Was 63
+  // kcal and 10 g sugar in 7.5 g carbohydrate.
   [
     "burrito seasoning",
-    63,
-    4.2,
-    7.5,
-    0,
-    4.2,
-    10,
-    141,
-    1.2000000000000002
+    291,
+    8.8,
+    40.2,
+    6.9,
+    16.3,
+    4.6,
+    6608,
+    0.8
   ],
   // Doritos Nacho Cheese Dip label (Ocado 56366011), per 100 g. Was 247 kcal and 6 g fat.
   [

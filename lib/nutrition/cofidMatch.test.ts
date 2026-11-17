@@ -1207,3 +1207,30 @@ console.log("OK: 16 Nov 2026 soya, sun-dried tomatoes, rice noodles, dried borlo
   if (local("tomatoes")?.name?.includes("pesto")) throw new Error("local: tomatoes are not pesto");
 }
 console.log("OK: 16 Nov 2026 pesto, five spice, cassia and sourced template rows");
+
+// 17 Nov 2026: chicken kiev. CoFID has no kiev, so "chicken kiev" took
+// "Chicken, meat, average, raw" (108 kcal), and the local row it would have
+// fallen back to was a template at 58 kcal with 12 g sugar in 7.5 g
+// carbohydrate. "Garlic chicken kiev" found the "garlic" row.
+import { isKievMismatch } from "@/lib/nutrition/cofidMatch";
+{
+  for (const query of ["chicken kiev", "chicken kievs", "garlic chicken kiev"]) {
+    if (!isKievMismatch(query, "Chicken, meat, average, raw")) throw new Error(`kiev: "${query}" may not take raw chicken`);
+    if (scoreCofidMatch(query, "Chicken, meat, average, raw", "partial") !== -Infinity) {
+      throw new Error(`kiev: "${query}" scored raw chicken`);
+    }
+    if (scoreCofidMatch(query, "Garlic, raw", "partial") !== -Infinity) throw new Error(`kiev: "${query}" scored garlic`);
+  }
+  if (isKievMismatch("chicken thighs", "Chicken, meat, average, raw")) throw new Error("kiev: plain chicken is unchanged");
+
+  for (const name of ["chicken kiev", "chicken kievs", "garlic chicken kiev", "breaded garlic chicken kievs", "2 garlic & herb chicken kievs"]) {
+    const entry = lookupNutrition(name);
+    if (entry?.name !== "chicken kiev") throw new Error(`local: "${name}" → ${entry?.name ?? null}, expected chicken kiev`);
+    const p = entry.per_100g;
+    if (p.calories < 250) throw new Error(`local: chicken kiev is ${p.calories} kcal`);
+    if (p.sugar_g > p.carbs_g) throw new Error("local: chicken kiev sugar exceeds carbohydrate");
+  }
+  if (lookupNutrition("garlic")?.name !== "garlic") throw new Error("local: garlic is still garlic");
+  if (lookupNutrition("chicken breast")?.name !== "chicken breast") throw new Error("local: chicken breast is unchanged");
+}
+console.log("OK: 17 Nov 2026 chicken kiev");

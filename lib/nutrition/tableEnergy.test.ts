@@ -9,12 +9,15 @@
  * CoFID or a UK label, with the source in a comment above the row), delete it
  * here; the test fails if a listed row starts passing, so the list can't go
  * stale. Never add a new row to it.
+ *
+ * No row may have more sugar than carbohydrate either; SUGAR_OVER_CARBS is
+ * the same kind of shrink-only list for that.
  */
 import type { NutritionLookupEntry } from "@/types";
 import { NUTRITION_DB } from "@/lib/nutrition/nutrition-db";
 import { NUTRITION_DB_UK_EXPANSION } from "@/lib/nutrition/nutrition-db-uk-expansion";
 import { NUTRITION_DB_UK_EXPANSION_PART2 } from "@/lib/nutrition/nutrition-db-uk-expansion-part2";
-import { atwaterKcal, energyCheck, energyReconciles } from "@/lib/nutrition/tableAudit";
+import { atwaterKcal, energyCheck, energyReconciles, sugarExceedsCarbs } from "@/lib/nutrition/tableAudit";
 
 /** Real foods with energy the four macros don't carry. */
 const KNOWN_EXCEPTIONS: Record<string, string> = {
@@ -53,7 +56,6 @@ const UNSOURCED = new Set<string>([
   "farro",
   "flavoured sparkling lemon",
   "fudge clotted cream",
-  "full english frozen",
   "ginger beer",
   "golden milk powder",
   "hearts palm tin",
@@ -78,6 +80,36 @@ const UNSOURCED = new Set<string>([
   "wrap beetroot",
   "yoghurt drink mango",
   "yoghurt drink strawberry",
+]);
+
+/**
+ * Template rows whose sugar exceeds their carbohydrate. The energy check can't
+ * see these when the made-up macros happen to add up: "chicken kiev" was 58
+ * kcal with 12 g sugar in 7.5 g carbohydrate and passed. Shrink only, like
+ * UNSOURCED. Most of these are answered by a CoFID row today, so the local
+ * figures rarely reach a recipe.
+ */
+const SUGAR_OVER_CARBS = new Set<string>([
+  "bagel everything",
+  "baked beans chorizo",
+  "berbere spice",
+  "cheese cubes snack",
+  "chicken tikka masala ready meal",
+  "couscous cup lemon",
+  "cracker cheese ham snack",
+  "curd cheese",
+  "duck spring roll",
+  "fennel seeds whole",
+  "nutritional yeast flakes",
+  "popcorn salted",
+  "primula cheese tube",
+  "rice vinegar seasoned",
+  "simnel cake",
+  "snacking olives",
+  "soy bean sprouts",
+  "turkey escalopes",
+  "turmeric latte powder",
+  "yoghurt coated nuts",
 ]);
 
 function assert(condition: unknown, message: string): asserts condition {
@@ -144,6 +176,22 @@ for (const name of Object.keys(KNOWN_EXCEPTIONS)) {
   assert(names.has(name), `KNOWN_EXCEPTIONS lists "${name}", which is no longer in the table.`);
 }
 
+const sugarRows = rows.filter(sugarExceedsCarbs);
+const sugarFailures = sugarRows
+  .filter((r) => !SUGAR_OVER_CARBS.has(r.name))
+  .map((r) => `  ${r.name}: sugar ${r.per_100g.sugar_g} g, carbohydrate ${r.per_100g.carbs_g} g`);
+assert(
+  sugarFailures.length === 0,
+  `Rows with more sugar than carbohydrate:\n${sugarFailures.join("\n")}\n` +
+    "Fix the values from CoFID or a UK label (source in a comment above the row).",
+);
+const sugarNames = new Set(sugarRows.map((r) => r.name));
+for (const name of SUGAR_OVER_CARBS) {
+  assert(names.has(name), `SUGAR_OVER_CARBS lists "${name}", which is no longer in the table — delete it from the list.`);
+  assert(sugarNames.has(name), `"${name}" no longer has more sugar than carbohydrate — delete it from SUGAR_OVER_CARBS.`);
+}
+
 console.log(
-  `tableEnergy.test.ts: ${rows.length} rows checked; ${UNSOURCED.size} unsourced rows still to fix`,
+  `tableEnergy.test.ts: ${rows.length} rows checked; ${UNSOURCED.size} unsourced rows and ` +
+    `${SUGAR_OVER_CARBS.size} sugar-over-carbohydrate rows still to fix`,
 );

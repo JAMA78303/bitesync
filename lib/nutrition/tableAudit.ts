@@ -94,6 +94,11 @@ const CLASS_BANDS: ClassBand[] = [
 
 export type Flag = { check: string; detail: string };
 
+/** Sugars are part of carbohydrate, so more sugar than carbohydrate is impossible (0.5 g for rounding). */
+export function sugarExceedsCarbs(entry: NutritionLookupEntry): boolean {
+  return entry.per_100g.sugar_g > entry.per_100g.carbs_g + 0.5;
+}
+
 export function classFlags(entry: NutritionLookupEntry): Flag[] {
   const name = entry.name.toLowerCase();
   const p = entry.per_100g;
@@ -111,7 +116,7 @@ export function classFlags(entry: NutritionLookupEntry): Flag[] {
   if (p.fat_g < 0.5 && FATTY_NAME.test(name) && !FAT_FREE_OK.test(name)) {
     flags.push({ check: "zero-fat", detail: `${p.fat_g} g fat for a food that has fat` });
   }
-  if (p.sugar_g > p.carbs_g + 0.5) {
+  if (sugarExceedsCarbs(entry)) {
     flags.push({ check: "impossible", detail: `sugar ${p.sugar_g} g > carbohydrate ${p.carbs_g} g` });
   }
   if (p.saturated_fat_g > p.fat_g + 0.05) {
