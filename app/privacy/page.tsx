@@ -21,6 +21,9 @@ const SECTIONS = [
       "Profile and health-related inputs you choose to provide: body stats (weight, height, age, sex), activity level, nutrition goals, dietary preferences, and any recipes or meal plans you create.",
       "Usage data: how you use the app (e.g. pages visited, features used) to improve the product.",
       "How you heard about BiteSync, if you choose to tell us when you sign up — used only to understand which channels bring people to the app.",
+      "Ramadan and fasting days, if you turn them on: your fasting dates, the place used for prayer times (a city you pick, or your device's location rounded to about 1 km if you choose “Use my location”), the calculation method and minute adjustments, and your reminder choices.",
+      "The fasting health check: if you tick any item (such as diabetes treated with medicine, or pregnancy), we store only that something was ticked, never which item.",
+      "Feedback you send from the app, with the screen you sent it from and the app version.",
       "Payment information: on the website, billing is handled by Stripe; we store Stripe customer and subscription IDs, not full card numbers. In the iPhone app, subscriptions are bought through Apple; we receive confirmation of the purchase and when it renews or ends, never your card details.",
     ],
   },
@@ -29,6 +32,8 @@ const SECTIONS = [
     body: [
       "To provide meal planning, grocery lists, nutrition tracking, and related features.",
       "To calculate calorie and macro targets from the profile information you enter.",
+      "To work out suhoor and iftar times, plan your fasting days, and set suhoor reminders on your phone, if you use Ramadan mode or fasting days. Prayer times are calculated within BiteSync: we don't send your location to a prayer-times service or use it for anything else.",
+      "To read and reply to feedback you send us.",
       "To process subscriptions and send service-related emails.",
       "To improve reliability, security, and product quality.",
     ],
@@ -36,7 +41,7 @@ const SECTIONS = [
   {
     title: "Processors and storage",
     body: [
-      "We use these data processors: Supabase (database and authentication), Vercel (hosting and anonymous usage statistics), Stripe (payments on the website), and Apple and RevenueCat (subscriptions bought in the iPhone app). Your data is stored on servers in regions chosen by those providers.",
+      "We use these data processors: Supabase (database and authentication), Vercel (hosting and anonymous usage statistics), Stripe (payments on the website), Apple and RevenueCat (subscriptions bought in the iPhone app), and Resend (sending email, such as sign-up confirmations, and passing feedback you send us to our inbox). Your data is stored on servers in regions chosen by those providers.",
       "AI features (AI week plans, AI-written recipes and nutrition estimates) are powered by Anthropic. To produce them we send the recipes involved, your calorie and protein targets, and your dietary preferences and allergens. We do not send your name or email address.",
       "We do not sell your personal data.",
     ],
@@ -45,6 +50,7 @@ const SECTIONS = [
     title: "Health information",
     body: [
       "Nutrition targets and dietary preferences are used only to personalise your experience in the app.",
+      "The fasting health check is used only to plan your fasting days without a calorie deficit and to suggest you speak to your doctor before fasting. You can change it at any time in Settings → Ramadan & fasting days.",
       "BiteSync is not a medical device and does not provide medical advice. See our terms for the full health disclaimer.",
     ],
   },
@@ -79,7 +85,7 @@ export default function PrivacyPage() {
       <article className="mx-auto max-w-2xl px-4 py-12">
         <p className="text-sm font-medium text-[var(--brand-primary)]">Legal</p>
         <h1 className="mt-2 text-3xl font-bold text-[var(--text-primary)]">Privacy policy</h1>
-        <p className="mt-2 text-sm text-[var(--text-muted)]">Last updated: 10 November 2026</p>
+        <p className="mt-2 text-sm text-[var(--text-muted)]">Last updated: 17 November 2026</p>
         <p className="mt-6 text-base leading-relaxed text-[var(--text-secondary)]">
           This policy explains what personal data BiteSync collects, why we collect it, and your choices.
         </p>
