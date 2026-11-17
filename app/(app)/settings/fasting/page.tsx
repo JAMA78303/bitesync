@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { FastingSettingsForm } from "@/components/fasting/FastingSettingsForm";
+import { fastingModeVisible } from "@/lib/fasting/access";
 import { expectedRamadan, FASTING_PRESETS, presetDates } from "@/lib/fasting/hijri";
 import { getFastingSettings } from "@/lib/fasting/server";
 import { createClient } from "@/lib/supabase/server";
@@ -15,6 +16,7 @@ export default async function FastingSettingsPage() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+  if (!fastingModeVisible(user.id)) notFound();
 
   const settings = await getFastingSettings(supabase, user.id);
   const today = toLocalISO(new Date());

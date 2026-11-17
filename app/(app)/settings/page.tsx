@@ -8,6 +8,7 @@ import { NotificationSettings } from "@/components/settings/NotificationSettings
 import { FeedbackForm } from "@/components/feedback/FeedbackForm";
 import { getAccess, isProSubscriptionStatus } from "@/lib/subscription";
 import { reconcileBillingSubscriptionFromStripe } from "@/lib/stripe/reconcile-billing-subscription";
+import { fastingModeVisible } from "@/lib/fasting/access";
 import { getProfile } from "@/lib/supabase/profile";
 import { createClient } from "@/lib/supabase/server";
 import { ds } from "@/lib/ui/classes";
@@ -82,6 +83,8 @@ export default async function SettingsPage() {
  .filter(Boolean)
  .includes(user.id);
 
+ const showFasting = fastingModeVisible(user?.id);
+
  const email = user?.email ??"Account";
  const initial = email[0]?.toUpperCase() ??"?";
 
@@ -131,17 +134,19 @@ export default async function SettingsPage() {
  <Chevron />
  </Link>
 
- <Link
- href="/settings/fasting"
- className={`${ds.card} flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-[var(--surface-muted)] `}
- >
- <RowIcon Icon={Moon} />
- <span className="flex-1">
- <span className="block text-sm font-semibold text-[var(--text-primary)]">Ramadan &amp; fasting days</span>
- <span className="text-xs text-[var(--text-muted)]">Suhoor and iftar at your local times</span>
- </span>
- <Chevron />
- </Link>
+ {showFasting ? (
+  <Link
+  href="/settings/fasting"
+  className={`${ds.card} flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-[var(--surface-muted)] `}
+  >
+  <RowIcon Icon={Moon} />
+  <span className="flex-1">
+  <span className="block text-sm font-semibold text-[var(--text-primary)]">Ramadan &amp; fasting days</span>
+  <span className="text-xs text-[var(--text-muted)]">Suhoor and iftar at your local times</span>
+  </span>
+  <Chevron />
+  </Link>
+ ) : null}
 
  <div>
  <p className={`${ds.label} mb-2 px-1`}>Feedback</p>

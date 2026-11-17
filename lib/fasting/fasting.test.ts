@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { fastingDaysPromptSection } from "@/lib/ai/client";
-import { isMissingTableError } from "@/lib/fasting/server";
+import { fastingModeVisible } from "@/lib/fasting/access";
+import { getFastingSettings, isMissingTableError } from "@/lib/fasting/server";
 import { expectedRamadan, hijriDate, isEidDay, presetDates, ramadanOfferOpen } from "@/lib/fasting/hijri";
 import { formatClock, isoDateInZone, weekdayIndexISO, zonedDateTime } from "@/lib/fasting/isoDate";
 import { searchPlaces } from "@/lib/fasting/places";
@@ -241,4 +242,31 @@ assert.equal(
   "a real save error isn't reported as 'not available yet'",
 );
 
-console.log("fasting tests passed");
+// --- Not released yet: admins only until FASTING_MODE=on -----------------
+
+void (async () => {
+  const saved = { mode: process.env.FASTING_MODE, admins: process.env.ADMIN_USER_ID };
+  process.env.ADMIN_USER_ID = "admin-1, admin-2";
+  delete process.env.FASTING_MODE;
+  assert.equal(fastingModeVisible("admin-2"), true, "an admin sees Ramadan mode before release");
+  assert.equal(fastingModeVisible("someone"), false, "nobody else does");
+  assert.equal(fastingModeVisible(null), false, "nor a signed-out visitor");
+  process.env.FASTING_MODE = "on";
+  assert.equal(fastingModeVisible("someone"), true, "FASTING_MODE=on releases it to everyone");
+  process.env.FASTING_MODE = "off";
+
+  // Hidden means nobody's settings are read: Today, the planner, plan
+  // generation and iPhone reminders all see "never set up".
+  let queried = false;
+  const spy = { from: () => { queried = true; throw new Error("should not query"); } };
+  const hidden = await getFastingSettings(spy as never, "someone");
+  assert.equal(hidden, null, "hidden: no settings");
+  assert.equal(queried, false, "hidden: the table isn't even queried");
+
+  if (saved.mode === undefined) delete process.env.FASTING_MODE; else process.env.FASTING_MODE = saved.mode;
+  if (saved.admins === undefined) delete process.env.ADMIN_USER_ID; else process.env.ADMIN_USER_ID = saved.admins;
+  console.log("fasting tests passed");
+})().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

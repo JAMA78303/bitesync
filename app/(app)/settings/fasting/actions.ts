@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { fastingModeVisible } from "@/lib/fasting/access";
 import { isIsoDate } from "@/lib/fasting/isoDate";
 import { fastingReminderTimes, type FastingReminder } from "@/lib/fasting/reminderTimes";
 import { getFastingSettings, isMissingTableError } from "@/lib/fasting/server";
@@ -36,6 +37,7 @@ export async function saveFastingSettings(input: FastingSettingsInput): Promise<
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Please sign in again." };
+  if (!fastingModeVisible(user.id)) return { error: NOT_AVAILABLE };
   if (!input.safetyAnswered) return { error: "Please answer the health question first." };
 
   const existing = await getFastingSettings(supabase, user.id);
@@ -103,6 +105,7 @@ export async function endRamadanMode(): Promise<ActionResult> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Please sign in again." };
+  if (!fastingModeVisible(user.id)) return { error: NOT_AVAILABLE };
   const { error } = await supabase
     .from("fasting_settings")
     .update({ ramadan_on: false, ramadan_start: null, ramadan_end: null, updated_at: new Date().toISOString() })
