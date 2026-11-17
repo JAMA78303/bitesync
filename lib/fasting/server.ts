@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { fastingModeVisible } from "@/lib/fasting/access";
 import { fastingSettingsFromRow, type FastingSettings } from "@/lib/fasting/settings";
 
 /**
@@ -8,6 +9,8 @@ import { fastingSettingsFromRow, type FastingSettings } from "@/lib/fasting/sett
  * same tolerance as loggedMealMacros in lib/planner/today.ts).
  */
 export async function getFastingSettings(supabase: SupabaseClient, userId: string): Promise<FastingSettings | null> {
+  // Not released to this person yet (lib/fasting/access.ts): as if never set up.
+  if (!fastingModeVisible(userId)) return null;
   try {
     const { data, error } = await supabase.from("fasting_settings").select("*").eq("user_id", userId).maybeSingle();
     if (error || !data) return null;

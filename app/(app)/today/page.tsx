@@ -6,6 +6,7 @@ import { UpcomingWeekCard } from "@/components/habit/UpcomingWeekCard";
 import { WeeklyHabitCard } from "@/components/habit/WeeklyHabitCard";
 import { WeekStatsCard } from "@/components/today/WeekStatsCard";
 import { initialDietaryPreferencesFromProfile } from "@/lib/dietary/constraints";
+import { fastingModeVisible } from "@/lib/fasting/access";
 import { expectedRamadan, ramadanOfferOpen } from "@/lib/fasting/hijri";
 import { daysBetweenISO, formatClock, formatShortDate, weekdayIndexISO } from "@/lib/fasting/isoDate";
 import { getFastingSettings } from "@/lib/fasting/server";
@@ -87,7 +88,10 @@ export default async function TodayPage({ searchParams }: Props) {
  const normalTargets = deriveNutritionTargets(profile);
  const targets = fasting ? fastingDayTargets(profile, fastingSettings, normalTargets) : normalTargets;
  const totals = sumTodayTotals(meals);
- const fastingCards = fastingTodayCards(fastingSettings, todayISO, meals, targets.kcal !== normalTargets.kcal);
+ // Not released yet (lib/fasting/access.ts): no cards, including the Ramadan offer.
+ const fastingCards = fastingModeVisible(user.id)
+  ? fastingTodayCards(fastingSettings, todayISO, meals, targets.kcal !== normalTargets.kcal)
+  : null;
  const dietaryPreferences = initialDietaryPreferencesFromProfile(profile);
  // A trial that has ended can't plan (lib/billing/access.ts), so no one-tap
  // week, no auto-plan from the Sunday reminder link, and no offer of a
