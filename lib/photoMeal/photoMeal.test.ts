@@ -171,6 +171,18 @@ assert(cleanIdentification(null).kind === "failed", "null fails");
     "Pepper, black", "Pepper, capsicum, red, raw", "Melon, Canteloupe-type, flesh only",
     "Curry, chicken tikka masala, retail, reheated", "Beans, chick peas, canned, re-heated, drained",
     "Chicken, breast, grilled without skin, meat only", "Chicken, breast, raw, meat only",
+    // Foods from the UK chain photos.
+    "Sausage rolls, short pastry, homemade", "Sausage roll, flaky pastry, ready-to-eat, retail",
+    "Peppers, capsicum, chilli, red, raw", "Chilli, Quorn, homemade", "Chilli con carne, homemade",
+    "Chicken pieces, coated, takeaway", "Chicken, portions, not coated, deep-fried, meat and skin",
+    "Sauce, curry, sweet, UK type, homemade", "Sauce, curry, onion, with vegetable oil, homemade",
+    "Bread, white, sliced, fried in rapeseed oil", "Cod, flesh only, baked", "Cod, in batter, fried, takeaway",
+    "Haddock, in batter, fried in blended oil", "Haddock, fillets, flesh only, in flour, fried in sunflower oil",
+    "Chicken wings, marinated, meat and skin, barbecued",
+    "Chicken wings, marinated, meat and skin, barbecued, weighed with bone",
+    "Lamb, leg chops, grilled, lean and fat", "Lamb, leg chops, grilled, lean and fat, weighed with bone",
+    "Pork, spare ribs, 'barbecue style', homemade, weighed with bone",
+    "Haddock, flesh only, grilled", "Haddock, flesh only, grilled, fillets weighed with bones and skin",
   ].map((food_name, i) => ({ food_code: String(i), food_name }));
   const pick = (name: string, method: CookingMethod | null = null) =>
     pickCofidRow(parseFoodName(name, method), cofid)?.row.food_name ?? null;
@@ -197,6 +209,26 @@ assert(cleanIdentification(null).kind === "failed", "null fails");
     ["chicken breast", "grilled", "Chicken, breast, grilled without skin, meat only"],
     ["quinoa", "boiled", null],
     ["waldorf salad", null, "Salad, Waldorf, homemade"],
+    // A bought sausage roll is flaky pastry.
+    ["sausage roll", "baked", "Sausage roll, flaky pastry, ready-to-eat, retail"],
+    // A chilli garnish is the fresh pod, never a chilli dish.
+    ["red chilli", "raw", "Peppers, capsicum, chilli, red, raw"],
+    ["chillies", "raw", "Peppers, capsicum, chilli, red, raw"],
+    ["chilli", null, "Chilli con carne, homemade"],
+    ["breaded chicken", "fried", "Chicken pieces, coated, takeaway"],
+    ["chicken katsu", null, "Chicken pieces, coated, takeaway"],
+    // "Not coated" rows never count as coated, and plain chicken isn't coated.
+    ["chicken", "fried", "Chicken, portions, not coated, deep-fried, meat and skin"],
+    ["katsu curry sauce", "none", "Sauce, curry, sweet, UK type, homemade"],
+    ["croutons", "none", "Bread, white, sliced, fried in rapeseed oil"],
+    ["battered cod", "fried", "Cod, in batter, fried, takeaway"],
+    ["cod", "baked", "Cod, flesh only, baked"],
+    ["haddock", "fried", "Haddock, fillets, flesh only, in flour, fried in sunflower oil"],
+    // Pieces on the bone are judged with their bone; everything else without.
+    ["chicken wings", "grilled", "Chicken wings, marinated, meat and skin, barbecued, weighed with bone"],
+    ["lamb chops", "grilled", "Lamb, leg chops, grilled, lean and fat, weighed with bone"],
+    ["spare ribs", null, "Pork, spare ribs, 'barbecue style', homemade, weighed with bone"],
+    ["haddock", "grilled", "Haddock, flesh only, grilled"],
   ];
   for (const [name, method, want] of cases) {
     const got = pick(name, method);

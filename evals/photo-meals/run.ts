@@ -26,7 +26,8 @@ type Case = {
   foods: TrueFood[];
   /** From packaging or a recipe app, when the food list can't express it exactly. */
   kcal?: number;
-  protein?: number;
+  /** null: not published (some chains list calories only), so this case is left out of the protein measure. */
+  protein?: number | null;
 };
 
 type CaseResult = {
@@ -39,7 +40,7 @@ type CaseResult = {
   foodsTotal: number;
   foodsNamed: number;
   missed: string[];
-  truth: { kcal: number; protein: number };
+  truth: { kcal: number; protein: number | null };
   estimate: { kcal: number; protein: number; kcalLow: number; kcalHigh: number } | null;
   energyError: number | null;
   proteinError: number | null;
@@ -64,7 +65,7 @@ function costUsd(model: string, u: { inputTokens: number; outputTokens: number }
   return (u.inputTokens * price[0] + u.outputTokens * price[1]) / 1_000_000;
 }
 
-async function truthFor(c: Case): Promise<{ kcal: number; protein: number; unmatched: string[] }> {
+async function truthFor(c: Case): Promise<{ kcal: number; protein: number | null; unmatched: string[] }> {
   let kcal = 0;
   let protein = 0;
   const unmatched: string[] = [];
@@ -77,7 +78,7 @@ async function truthFor(c: Case): Promise<{ kcal: number; protein: number; unmat
     kcal += r.kcal;
     protein += r.protein;
   }
-  return { kcal: c.kcal ?? kcal, protein: c.protein ?? protein, unmatched };
+  return { kcal: c.kcal ?? kcal, protein: c.protein === null ? null : (c.protein ?? protein), unmatched };
 }
 
 /** The app sends a 1,024 px JPEG; the eval sends the same, so it measures what users get. */
@@ -119,7 +120,7 @@ async function main() {
 
   const runCase = async (c: Case): Promise<CaseResult> => {
     const truth = await truthFor(c);
-    if (truth.unmatched.length && (c.kcal == null || c.protein == null)) {
+    if (truth.unmatched.length && (c.kcal == null || c.protein === undefined)) {
       console.warn(`  ${c.id}: true foods with no nutrition match (${truth.unmatched.join(", ")}); add kcal/protein to the case or rename them.`);
     }
     const started = performance.now();
@@ -137,7 +138,7 @@ async function main() {
       kind: c.kind ?? null,
       seconds,
       foodsTotal: c.foods.length,
-      truth: { kcal: Math.round(truth.kcal), protein: Math.round(truth.protein) },
+      truth: { kcal: Math.round(truth.kcal), protein: truth.protein == null ? null : Math.round(truth.protein) },
     };
 
     if (identified.kind !== "meal") {
@@ -172,7 +173,8 @@ async function main() {
     const names = identified.foods.map((f) => f.food);
     const named = c.foods.filter((f) => isNamed(f, names));
     const energyError = truth.kcal > 0 ? Math.abs(range.current.kcal - truth.kcal) / truth.kcal : null;
-    const proteinError = truth.protein > 0 ? Math.abs(range.current.protein - truth.protein) / truth.protein : null;
+    const proteinError =
+      truth.protein != null && truth.protein > 0 ? Math.abs(range.current.protein - truth.protein) / truth.protein : null;
     const inRange = truth.kcal >= range.low.kcal * 0.995 && truth.kcal <= range.high.kcal * 1.005;
 
     const result: CaseResult = {
@@ -224,7 +226,7 @@ async function main() {
   const foodsNamed = results.reduce((n, r) => n + r.foodsNamed, 0);
   // A failed or "not food" answer on a real meal is the worst outcome, so it counts as 100% off.
   const energyErrors = results.map((r) => r.energyError ?? 1);
-  const proteinErrors = results.map((r) => r.proteinError ?? 1);
+  const proteinErrors = results.filter((r) => r.truth.protein != null).map((r) => r.proteinError ?? 1);
   const ranged = results.filter((r) => r.inRange).length;
 
   const summary = {
@@ -253,7 +255,12 @@ async function main() {
   console.log(`\nSummary (${summary.cases} cases, ${summary.failures} with no result, median ${summary.medianSeconds}s per photo)`);
   line("Foods named correctly", p(summary.identification), "≥ 85%", pass.identification);
   line("Energy, median error", p(summary.energyMedianError), "≤ 20%", pass.energyMedianError);
-  line("Protein, median error", p(summary.proteinMedianError), "≤ 20%", pass.proteinMedianError);
+  line(
+    proteinErrors.length < results.length ? `Protein, median error (${proteinErrors.length} cases)` : "Protein, median error",
+    p(summary.proteinMedianError),
+    "≤ 20%",
+    pass.proteinMedianError,
+  );
   line("True energy inside range", p(summary.rangeCoverage), "≥ 70%", pass.rangeCoverage);
   const allPass = Object.values(pass).every(Boolean);
   console.log(allPass ? "\nAll targets met." : "\nNot ready: at least one target missed.");

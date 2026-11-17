@@ -1,0 +1,80 @@
+[
+  {
+    "id": "greggs-sausage-roll",
+    "photo": "photos/greggs-sausage-roll.jpg",
+    "kind": "uk-chain",
+    "foods": [{ "name": "sausage roll", "grams": 103, "accept": ["sausage roll", "sausage"] }],
+    "kcal": 347,
+    "protein": 9.1,
+    "source": {
+      "photo": "https://commons.wikimedia.org/wiki/File:Greggs_sausage_roll.jpg",
+      "licence": "CC BY 4.0, APK",
+      "nutrition": "https://www.greggs.co.uk/menu/product/sausage-roll-1000446"
+    }
+  },
+  {
+    "id": "pret-ham-cheese-toastie",
+    "photo": "photos/pret-ham-cheese-toastie.jpg",
+    "kind": "uk-chain",
+    "foods": [{ "name": "ham and cheese toastie", "grams": 212, "accept": ["toastie", "sandwich", "ham", "cheese"] }],
+    "kcal": 601,
+    "protein": 31.9,
+    "source": {
+      "photo": "https://commons.wikimedia.org/wiki/File:Pret_a_Manger_Tottenham_Hale_02_ham_cheese_and_mustard_toastie.jpg",
+      "licence": "CC BY-SA 4.0, Acabashi",
+      "nutrition": "https://pret.co.uk/en-GB/products/UK020169/ham-and-cheese-toastie",
+      "note": "Photo March 2025; figures are Pret's current Ham & Cheese Bloomer Toastie."
+    }
+  },
+  {
+    "id": "nandos-wings-chips-corn",
+    "photo": "photos/nandos-wings-chips-corn.jpg",
+    "kind": "uk-chain",
+    "foods": [
+      { "name": "chicken wings", "grams": 0, "accept": ["wing", "chicken"] },
+      { "name": "PERi-salted chips", "grams": 0, "accept": ["chips", "fries"] },
+      { "name": "corn on the cob", "grams": 0, "accept": ["corn", "sweetcorn"] }
+    ],
+    "kcal": 876,
+    "protein": null,
+    "source": {
+      "photo": "https://commons.wikimedia.org/wiki/File:3_Chicken_Wings,_PERi-Salted_Chips,_Corn_on_the_Cob_-_Nando%27s.jpg",
+      "licence": "CC0, Andy Li",
+      "nutrition": "https://www.nandos.co.uk/food/menu",
+      "note": "3 Wings 236 + regular PERi-Salted Chips 498 + regular Corn on the Cob 142 kcal. Nando's doesn't publish protein or weights. Another plate is partly in shot."
+    }
+  },
+  {
+    "id": "nandos-caesar-salad",
+    "photo": "photos/nandos-caesar-salad.jpg",
+    "kind": "uk-chain",
+    "foods": [{ "name": "caesar salad", "grams": 0, "accept": ["caesar", "lettuce", "salad", "leaves", "crouton"] }],
+    "kcal": 477,
+    "protein": null,
+    "source": {
+      "photo": "https://commons.wikimedia.org/wiki/File:Caesar_Salad_-_Nando%27s_2026-10-11.jpg",
+      "licence": "CC0, Andy Li",
+      "nutrition": "https://www.nandos.co.uk/food/menu",
+      "note": "Salad only (no chicken added). A drink can and glass are beside it and aren't part of the truth."
+    }
+  },
+  {
+    "id": "wagamama-hot-chicken-katsu-curry",
+    "photo": "photos/wagamama-hot-katsu-curry.jpg",
+    "kind": "uk-chain",
+    "foods": [
+      { "name": "chicken katsu", "grams": 0, "accept": ["katsu", "chicken"] },
+      { "name": "white rice", "grams": 0, "accept": ["rice"] },
+      { "name": "katsu curry sauce", "grams": 0, "accept": ["curry", "sauce"] },
+      { "name": "dressed salad", "grams": 0, "accept": ["salad", "leaves", "lettuce"] }
+    ],
+    "kcal": 1115,
+    "protein": null,
+    "source": {
+      "photo": "https://commons.wikimedia.org/wiki/File:Wagamama_666-hot_chicken_katsu_curry_2026-08-14.jpg",
+      "licence": "CC BY 4.0, k7hpn",
+      "nutrition": "https://www.wagamama.com/menu/curry/hot-chicken-katsu-curry",
+      "note": "1,115 kcal includes dressed salad and pickles. Wagamama doesn't publish protein online."
+    }
+  }
+]

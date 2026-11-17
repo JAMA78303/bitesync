@@ -105,6 +105,7 @@ const OPTIONAL = new Set([
   // Varieties that don't change the food's nutrition much.
   "cos", "romaine", "iceberg", "gem", "butterhead", "chestnut", "button", "portobello", "closed", "organic",
   "british", "pulled", "savoy", "vine", "gala", "braeburn", "granny", "smith", "maris", "piper", "free", "range",
+  "flaky",
 ]);
 
 const MEAT_OR_FISH = /\b(beef|pork|lamb|chicken|turkey|gammon|venison|tuna|salmon|swordfish|cod|halibut)\b/;
@@ -150,6 +151,17 @@ const ALIASES: [RegExp, string][] = [
   [/^salad dressing$/, "french dressing"],
   [/^pizza$/, "cheese and tomato pizza"],
   [/\bwhite fish\b|^fish$/, "cod"],
+  // Katsu, goujons, nuggets, "breaded chicken": CoFID's coated chicken pieces.
+  [/^(?:breadcrumbs|coated|panko|katsu|popcorn) chicken(?: breasts?| fillets?| pieces?| strips?| goujons?)?$|^chicken (?:katsu|goujons?|nuggets?|dippers?|breadcrumbs)$/, "coated chicken piece"],
+  // Curry sauce on its own (chips and curry sauce, katsu, Japanese curry) is the sweet, mild UK kind.
+  [/^(?:(?:katsu|japanese)(?: curry)?|curry) sauce$/, "sweet curry sauce"],
+  // CoFID has no croutons: they're cubes of bread crisped in oil, so fried white bread.
+  [/^croutons?$/, "white bread fried"],
+  // A fresh chilli on the plate, not chilli con carne.
+  [/^(?:(red|green) )?(?:chill?(?:i|ies|is|y)|chiles?)(?: peppers?)$|^(red|green) (?:chill?(?:i|ies|is|y)|chiles?)$|^chillies$/, "$1$2 chilli capsicum pepper"],
+  [/^(?:(?:pork|bbq|barbecue) )?(?:spare )?ribs$/, "pork spare ribs"],
+  // Bought sausage rolls (bakery chains, supermarkets) are flaky pastry: CoFID's retail row.
+  [/^sausage rolls?$/, "flaky sausage roll"],
   [/\b(tikka masala|korma|balti|vindaloo|madras|jalfrezi|bhuna|dhansak|rogan josh|thai green|thai red)\b(?!.*\bcurry\b)/, "$1 curry"],
 ];
 
@@ -164,8 +176,11 @@ const EATEN_COOKED = new Set([
 const NEUTRAL = new Set([
   "average", "flesh", "only", "meat", "and", "in", "with", "without", "unsalted", "water", "standard",
   "whole", "lean", "fat", "oil", "sunflower", "rapeseed", "corn", "blended", "retail", "homemade",
-  "takeaway", "skin", "of", "the", "a", "type", "plain", "fresh", "medium", "rasher", "style",
+  "takeaway", "skin", "of", "the", "a", "type", "plain", "fresh", "medium", "rasher", "style", "ready", "to", "eat",
 ]);
+
+/** A crumb or batter coating adds a lot of energy: prefer uncoated rows unless the food is coated. */
+const COATING = new Set(["coated", "batter", "breadcrumb"]);
 
 function normaliseText(text: string): string {
   return text
@@ -177,7 +192,10 @@ function normaliseText(text: string): string {
     .replace(/\bchar[- ]grilled\b/g, "chargrilled")
     .replace(/\bre[- ]heated\b/g, "reheated")
     .replace(/canteloupe/g, "cantaloupe")
-    .replace(/yoghurt/g, "yogurt");
+    .replace(/yoghurt/g, "yogurt")
+    // CoFID says "in batter" and "in (bread)crumbs"; people say battered and breaded.
+    .replace(/\bbattered\b/g, "batter")
+    .replace(/\b(?:breaded|(?:bread)?crumbed|(?:bread)?crumbs?)\b/g, "breadcrumbs");
 }
 
 export function singular(word: string): string {
@@ -230,6 +248,9 @@ export function parseFoodName(text: string, method: CookingMethod | null = null)
   let phrase = kept.join(" ");
   for (const [pattern, replacement] of ALIASES) phrase = phrase.replace(pattern, replacement);
   phrase = phrase.replace(/\s+/g, " ").trim();
+  const chosen = method && method !== "none" ? method : found;
+  // Plain "chilli": a raw one is the fresh pod, otherwise the dish.
+  if (/^chill?(?:i|y)$/.test(phrase)) phrase = chosen === "raw" ? "chilli capsicum pepper" : "chilli con carne";
   // "Sirloin steak" is beef unless another meat is named.
   if (/\bsteak\b/.test(phrase) && !MEAT_OR_FISH.test(phrase)) phrase = `beef ${phrase}`;
   const tokens = phrase.split(" ").filter(Boolean).map(singular);
@@ -237,7 +258,6 @@ export function parseFoodName(text: string, method: CookingMethod | null = null)
   const isOptional = (t: string, i: number) => OPTIONAL.has(t) && i < tokens.length - 1;
   const required = [...new Set(tokens.filter((t, i) => !isOptional(t, i)))];
   const optional = [...new Set(tokens.filter((t, i) => isOptional(t, i)))];
-  const chosen = method && method !== "none" ? method : found;
   return { required, optional, method: chosen, phrase };
 }
 
@@ -257,7 +277,7 @@ const HEAD_FALLBACK = new Set([
 /** Words that change a food too much to drop: "sun dried tomato", "crispy chicken", "sweet potato". */
 const NEVER_DROP = new Set([
   "dried", "dry", "sweet", "chocolate", "coconut", "cauliflower", "broccoli", "cream", "creamy", "cheese",
-  "cheesy", "butter", "buttered", "sugar", "honey", "syrup", "candied", "glazed", "battered", "breaded",
+  "cheesy", "butter", "buttered", "sugar", "honey", "syrup", "candied", "glazed", "batter", "breadcrumb", "coated",
   "crispy", "peanut", "nut", "garlic", "fried", "stuffed", "puff", "pastry",
 ]);
 
@@ -293,6 +313,14 @@ function wantsCooked(food: ParsedFood): boolean {
   return food.required.some((w) => EATEN_COOKED.has(w));
 }
 
+/** Pieces served on the bone: wings, drumsticks, chops, cutlets, spare ribs (not rib-eye or rib roast). */
+function isBoneIn(food: ParsedFood, queryWords: Set<string>): boolean {
+  if (queryWords.has("boneless") || queryWords.has("fillet")) return false;
+  const w = new Set(food.required);
+  if (["wing", "drumstick", "chop", "cutlet"].some((x) => w.has(x))) return true;
+  return w.has("rib") && !w.has("steak") && !w.has("eye") && !w.has("roast");
+}
+
 /** Score one CoFID row for a parsed food, or null when it isn't this food. */
 export function scoreCofidName(food: ParsedFood, cofidName: string): number | null {
   const text = normaliseText(cofidName);
@@ -300,6 +328,9 @@ export function scoreCofidName(food: ParsedFood, cofidName: string): number | nu
   const all = new Set(segments.flat());
   if (!food.required.length || !food.required.every((w) => all.has(w))) return null;
   const queryWords = new Set([...food.required, ...food.optional]);
+  // "Chicken, portions, not coated, deep-fried" is never coated chicken.
+  const negated = new Set([...text.matchAll(/\b(?:not|no) ([a-z]+)/g)].map((m) => singular(m[1]!)));
+  if (food.required.some((w) => negated.has(w))) return null;
 
   // The first part of CoFID's name is the food itself ("Bacon rashers"); a
   // trailing "in gravy" / "with rice" says what it comes in.
@@ -341,11 +372,17 @@ export function scoreCofidName(food: ParsedFood, cofidName: string): number | nu
     if (withFat && queryWords.has("lean")) score -= 1;
   }
 
-  if (/weighed with|with bones?\b|weighed whole/.test(text)) score -= 10;
+  // Wings, drumsticks, chops and ribs are judged by how big they look, bone and
+  // all, so CoFID's "weighed with bone" rows fit them. Anything else is weighed
+  // as the food itself.
+  const withBone = /weighed with|with bones?\b|weighed whole/.test(text);
+  if (withBone) score += isBoneIn(food, queryWords) ? 3 : -10;
   // "Bacon, fat only", "Beef, fat, average, cooked", "Chicken, skin, raw": a part, not the food.
   if (/\b(fat|skin) only\b/.test(text) || segments.slice(1).some((seg) => seg.length === 1 && (seg[0] === "fat" || seg[0] === "skin"))) {
     score -= 10;
   }
+  const coatedRow = [...all].some((w) => COATING.has(w) && !negated.has(w));
+  if (coatedRow && ![...queryWords].some((w) => COATING.has(w))) score -= 3;
   if (/\bcanned\b/.test(text) && !queryWords.has("canned")) score -= 3;
   if (/\bfrozen\b/.test(text) && !queryWords.has("frozen")) score -= 1;
   if (all.has("baby") && !queryWords.has("baby")) score -= 2;
