@@ -2,6 +2,7 @@ import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server
 import { createServerClient } from "@supabase/ssr";
 import { identifyCrawler } from "@/lib/analytics/aiCrawlers";
 import { identifyAiReferral } from "@/lib/analytics/aiReferrals";
+import { identifySocialReferral } from "@/lib/analytics/socialReferrals";
 import { recordCrawlerVisit } from "@/lib/analytics/recordCrawlerVisit";
 import {
   isAllowedWithoutEmailConfirmation,
@@ -71,12 +72,13 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
     event.waitUntil(recordCrawlerVisit(crawler, path, userAgent));
   } else if (request.headers.get("sec-fetch-mode") === "navigate" && !request.headers.get("rsc")) {
     // A person landing on a page (not a prefetch or in-app navigation) from
-    // an AI assistant's answer. Only the landing page is recorded: clicks
-    // within the site carry bitesync.io as their Referer.
-    const referral = identifyAiReferral(
-      request.headers.get("referer"),
-      request.nextUrl.searchParams.get("utm_source"),
-    );
+    // an AI assistant's answer, or from a link shared on Facebook, Instagram,
+    // Messenger or Threads. Only the landing page is recorded: clicks within
+    // the site carry bitesync.io as their Referer and no fbclid.
+    const referer = request.headers.get("referer");
+    const referral =
+      identifyAiReferral(referer, request.nextUrl.searchParams.get("utm_source")) ??
+      identifySocialReferral(referer, request.nextUrl.searchParams.has("fbclid"));
     if (referral) event.waitUntil(recordCrawlerVisit(referral, path, null));
   }
 

@@ -15,7 +15,7 @@
 
 /** "referral" is a person, not a bot: someone who clicked through from an AI
  *  assistant's answer (see aiReferrals.ts). It shares the table and page. */
-export type CrawlerKind = "referral" | "user" | "search" | "training" | "preview";
+export type CrawlerKind = "referral" | "social" | "user" | "search" | "training" | "preview";
 
 export type Crawler = { bot: string; kind: CrawlerKind };
 
@@ -58,6 +58,10 @@ export const CRAWLER_KIND_LABELS: Record<CrawlerKind, { title: string; descripti
   referral: {
     title: "Visitors from AI answers",
     description: "A person clicked through to BiteSync from an AI assistant's answer.",
+  },
+  social: {
+    title: "Visitors from shared links",
+    description: "A person opened a BiteSync link shared on Facebook, Instagram, Messenger or Threads.",
   },
   user: {
     title: "Read to answer someone",
