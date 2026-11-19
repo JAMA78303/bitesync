@@ -383,14 +383,17 @@
 }
 .lp .hero-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 24px;
+  gap: 16px 24px;
 }
 .lp .hero-text-link {
   color: var(--lp-ink);
   font-size: 14px;
   font-weight: 700;
   text-decoration: none;
+  /* Kept on one line: it moves under the button when the row is too narrow. */
+  white-space: nowrap;
 }
 .lp .hero-text-link span {
   display: inline-block;
@@ -1675,6 +1678,12 @@
 @media (max-width: 560px) {
   .lp {
     --lp-wrap: calc(100% - 32px);
+  }
+  /* The blog strip runs edge to edge: match the 16px phone gutter, or it
+     sticks out 4px and the whole page scrolls sideways. */
+  .lp .posts {
+    margin-inline: -16px;
+    padding-inline: 16px;
   }
   /* Logo, switch, button and menu on one line down to a 360px phone. */
   .lp .nav-cta {
