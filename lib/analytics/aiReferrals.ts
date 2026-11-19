@@ -27,7 +27,7 @@ const ASSISTANTS: { name: string; hosts: string[]; utm: string[] }[] = [
   { name: "Poe", hosts: ["poe.com"], utm: ["poe.com"] },
 ];
 
-function hostOf(referer: string): string | null {
+export function hostOf(referer: string): string | null {
   try {
     return new URL(referer).hostname.toLowerCase().replace(/^www\./, "");
   } catch {
@@ -35,7 +35,7 @@ function hostOf(referer: string): string | null {
   }
 }
 
-function matchesHost(host: string, candidate: string): boolean {
+export function matchesHost(host: string, candidate: string): boolean {
   return host === candidate || host.endsWith(`.${candidate}`);
 }
 
