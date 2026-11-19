@@ -49,6 +49,10 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://bitesync.io" },
 };
 
+// Rebuilt once a day, so the example week in the hero shows the current week
+// rather than the week of the last deploy.
+export const revalidate = 86400;
+
 const NAV_LINKS: readonly HomeNavLink[] = [
   { href: "#how-it-works", label: "How it works" },
   { href: "#features", label: "Features" },
@@ -82,8 +86,30 @@ function formatPostDate(iso: string): string {
   });
 }
 
+const DAY_LETTERS = ["M", "T", "W", "T", "F", "S", "S"] as const;
+
+/** Monday to Sunday of the week containing `now` (UTC). */
+function currentWeekDays(now: Date): Date[] {
+  const monday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7));
+  return Array.from({ length: 7 }, (_, i) => new Date(monday.getTime() + i * 86_400_000));
+}
+
+/** "16–22 Nov", or "30 Nov – 6 Dec" when the week crosses a month. */
+function weekLabel(days: Date[]): string {
+  const first = days[0]!;
+  const last = days[6]!;
+  const month = (d: Date) => d.toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" });
+  return first.getUTCMonth() === last.getUTCMonth()
+    ? `${first.getUTCDate()}–${last.getUTCDate()} ${month(last)}`
+    : `${first.getUTCDate()} ${month(first)} – ${last.getUTCDate()} ${month(last)}`;
+}
+
 /** The example card in the hero. Illustrative figures, described for screen readers as an example. */
 function HeroPlannerExample() {
+  // The current week, so the example never looks out of date. Wednesday stays
+  // selected because the figures below are Wednesday's.
+  const days = currentWeekDays(new Date());
   return (
     <div
       className="mock-wrap"
@@ -103,25 +129,17 @@ function HeroPlannerExample() {
         <div className="mock-head">
           <div>
             <span className="mock-eyebrow">WEEKLY PLAN</span>
-            <h3>May 12–18</h3>
+            <h3>{weekLabel(days)}</h3>
           </div>
           <span className="mock-action">
             <CalendarDays className="h-[18px] w-[18px]" />
           </span>
         </div>
         <div className="mock-days">
-          {[
-            ["M", 12],
-            ["T", 13],
-            ["W", 14],
-            ["T", 15],
-            ["F", 16],
-            ["S", 17],
-            ["S", 18],
-          ].map(([d, n]) => (
-            <span key={n} className={`mock-day${n === 14 ? " on" : ""}`}>
-              <span>{d}</span>
-              <b>{n}</b>
+          {days.map((day, i) => (
+            <span key={i} className={`mock-day${i === 2 ? " on" : ""}`}>
+              <span>{DAY_LETTERS[i]}</span>
+              <b>{day.getUTCDate()}</b>
             </span>
           ))}
         </div>
@@ -276,9 +294,12 @@ export default async function LandingPage() {
                 <Link className="btn btn-primary" href="/signup">
                   Plan my week — {TRIAL_DAYS} days free <ArrowRight className="h-[18px] w-[18px]" aria-hidden />
                 </Link>
-                <a className="hero-text-link" href="#how-it-works">
-                  See how it works <span aria-hidden>↓</span>
-                </a>
+                {/* Visitors from AI answers are often still comparing apps: give
+                    them a step that needs no account. The calculator hands its
+                    answers to setup (lib/onboarding/setupDefaults.ts). */}
+                <Link className="hero-text-link" href="/macro-calculator">
+                  Get your targets free — no sign-up <span aria-hidden>→</span>
+                </Link>
               </div>
               <div className="hero-trust">
                 <span className="seal" aria-hidden>
